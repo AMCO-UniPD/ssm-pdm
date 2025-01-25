@@ -2,6 +2,10 @@
 
 # Obsidian
 Chronos_pdm_Notes/.obsidian/
+# templates
+Chronos_pdm_Notes/templates/
+# daily notes
+Chronos_pdm_Notes/daily_notes/
 
 # pycache
 __pycache__/
