@@ -1,0 +1,31 @@
+# gitignore file for the chronos-pdm project
+
+# Obsidian
+Chronos_pdm_Notes/.obsidian/
+
+# pycache
+__pycache__/
+
+#ipynb checkpoints
+.ipynb_checkpoints/
+
+# js stuff created by MarkdownPreview
+node_modules/
+package-lock.json
+package.json
+
+# txt and xlsx files containing the acquisitions. Only txt.gz files will be pushed 
+*.txt
+*.xlsx
+*.csv
+
+# some file types files
+*.pickle
+*.pth
+*.pdf
+# file types generates by qmd files 
+*.png
+*.html
+*.js
+*.css
+*.woff
