@@ -6,6 +6,10 @@ Chronos_pdm_Notes/.obsidian/
 Chronos_pdm_Notes/templates/
 # daily notes
 Chronos_pdm_Notes/daily_notes/
+# hf_course notes
+Chronos_pdm_Notes/Notes/hf_course/
+# git_token.md
+Chronos_pdm_Notes/Notes/git_token.md
 
 # pycache
 __pycache__/
