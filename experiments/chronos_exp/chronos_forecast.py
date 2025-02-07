@@ -11,17 +11,27 @@ import argparse
 # Add the path to the sys path
 chronos_path = os.path.join(os.path.dirname(__file__),"..","..","src",
                             "chronos-forecasting","src")
+src_path = os.path.join(os.path.dirname(__file__),"..","..","src",
+)
+sys.path.append(src_path)
 sys.path.append(chronos_path)
 
 import pandas as pd
 import matplotlib.pyplot as plt  # requires: pip install matplotlib
 import torch
+from utils import get_current_time
+from plots import plot_forecast
 from chronos import BaseChronosPipeline, ChronosPipeline
+from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
 
 parser=argparse.ArgumentParser(description="Simple forecasting with chronos")
 parser.add_argument("--device_num",type=int,default=0,help="Device to use for inference")
 parser.add_argument("--prediction_length",type=int,default=12,help="Number of steps to predict")
 parser.add_argument("--quantile_levels",nargs='+', type=float, default=[0.1,0.5,0.9],help="Quantile levels to predict")
+parser.add_argument("--dataset", type=str, default="CMAPSS", help="Dataset to use for forecasting")
+parser.add_argument("--life_idx", type=int, default=0, help="Index of the CMAPSS life to consider")
+parser.add_argument("--cmapss_model", type=str, default="FD001", help="CMAPSS model to use for forecasting")
+parser.add_argument("--sensor_num", type=int, default=4, help="Number of the sensor to use for forecasting")
 
 args=parser.parse_args()
 config=args.__dict__
@@ -31,42 +41,37 @@ print(f"Using device: {device}")
 
 # Load the pipeline
 pipeline = BaseChronosPipeline.from_pretrained(
-    "amazon/chronos-bolt-small",
+    "amazon/chronos-bolt-base",
     device_map=device,
     torch_dtype=torch.bfloat16,
 )
 
 # Load the data
-df = pd.read_csv(
-    "https://raw.githubusercontent.com/AileenNielsen/TimeSeriesAnalysisWithPython/master/data/AirPassengers.csv"
-)
-
-context=torch.tensor(df["#Passengers"])
-embeddings,tokenizer_state=pipeline.embed(context)
-
-ipdb.set_trace()
+if args.dataset=="CMAPSS":
+    df = CMAPSSDataset(train=True,models=args.cmapss_model)
+    life = df[args.life_idx]
+    prompt=torch.tensor(life[f"SensorMeasure{args.sensor_num}"])
+else:
+    df = pd.read_csv(
+        "https://raw.githubusercontent.com/AileenNielsen/TimeSeriesAnalysisWithPython/master/data/AirPassengers.csv"
+    )
+    prompt=torch.tensor(df["#Passengers"])
 
 # Do inference
 quantiles, mean = pipeline.predict_quantiles(
-    context=torch.tensor(df["#Passengers"]),
-    prediction_length=12,
-    quantile_levels=[0.1, 0.5, 0.9],
+    context=prompt[:-args.prediction_length],
+    prediction_length=args.prediction_length,
+    quantile_levels=args.quantile_levels,
 )
 
-filename="forecast.png"
-plot_path=os.path.join(os.getcwd(),"plots",filename)
-
-forecast_index = range(len(df), len(df) + 12)
-low, median, high = quantiles[0, :, 0], quantiles[0, :, 1], quantiles[0, :, 2]
-
-plt.figure(figsize=(8, 4))
-plt.plot(df["#Passengers"], color="royalblue", label="historical data")
-plt.plot(forecast_index, median, color="tomato", label="median forecast")
-plt.fill_between(forecast_index, low, high, color="tomato", alpha=0.3, label="80% prediction interval")
-plt.legend()
-plt.grid()
-
-plt.savefig(plot_path)
-print(f"Plot saved at: {plot_path}")
-
+plot_path=os.path.join(os.getcwd(),"plots")
+# Plot the forecast
+fig = plot_forecast(life=life,
+                    prompt=prompt,
+                    quantile_levels=args.quantile_levels,
+                    pred_quantiles=quantiles,
+                    prediction_length=args.prediction_length,
+                    sensor_num=args.sensor_num,
+                    data_name=args.dataset,
+                    plot_path=plot_path)
 
