@@ -22,7 +22,7 @@ Two ideas come into my mind right now:
 
 - In a lot of `PdM` papers they talk about using feature extraction to estimate the Health Indexes (HI) so some features that at each time step can quantitatively tell us the health state of the machine. This can be monotonic features that continues to increase (or decrease → degradation pattern) as the `RUL` decreases. If we can extract these indexes we can then perform time series forecasting on them and then estimate the `RUL` in function of a threshold that we can set. When the forecasted `HI` go over (or under if we are working with a degradation pattern) a certain value we raise the alarm signaling that maintenance has to be performed.
 - Since `CHRONOS` is a language model and, through pre-training, it should have learned the language of time series I can simply fine-tune it on a `RUL` dataset (like the usual `CMAPSS`) to learn a new task, the `RUL` estimation task.
-    - I asked at `DeepSeek` about this fine-tuning approach and actually it may be a little bit more complicated than I thought because it is probably necessary to modify the architecture of `CHRONOS`. Read carefully the answer [here](https://chat.deepseek.com/a/chat/s/e2672e89-8e66-4b97-998f-981da657a77b)
+    - I asked at `DeepSeek` about this fine-tuning approach and actually it may be a little bit more complicated than I thought because it is probably necessary to modify the architecture of `CHRONOS`. Read carefully the answer [here](https://chat.deepseek.com/a/chat/s/e2672e89-8e66-4b97-998f-981da657a77b) 
 
 ## Ideas from `DeepSeek` thinking mode
 
@@ -71,7 +71,6 @@ Maybe following this reasonment we can change the head of the `CHRONOS` model (w
 
 The head of `T5` is probably the typical head of a `text-generation` model, so it has a node for each token in the vocabulary and it outputs the probability of each token to be the next token. In order to do regression we need a Regression Head, which usually consists in a `FFN` layer and than a single node containing the `RUL` prediction. I don't think that there is something like that in a model like `T5` so we have to implement it by ourselves.
 
-
 The alternative is to change the `CHRONOS` architecture and adapt it to the `PDM` task. We may use as backbone a model contained in 🤗 that supports some time series regression tasks. In fact, from the [[chronos|`CHRONOS` note]] we know that we can use any language model after having tokenized the time series. So I may have to find a `LLM` that works for time series regression and then use it as backbone for the `CHRONOS` model.
 
 This would be more complicated because we have to enter inside the codebase of `CHRONOS` and work from there but may surely be more interesting and a more novel contribution than just applying the model as it is.
@@ -80,3 +79,61 @@ Another problem is that I don't know if the model is able to transfer its knowle
 
 >[!note]
 > In fact the model checkpoints available in 🤗 are only the ones using `T5` as the backbone.
+
+#### Update on this idea
+
+I am now looking at the `CHRONOS` codebase on the `chronos-forecasting` repository and there is the [scripts](https://github.com/amazon-science/chronos-forecasting/tree/main/scripts) section that is very well documented and explains well how to launch the scripts to fine tune and pre train the model. There are several interesting things:
+
+- In the training script (they provide a bunch of shell commands so I will wrap them inside a `sh` script) it is possible to specify the `model-id` which is the identifier of the models contained in 🤗, so this means that:
+    - If we pass one of the `chronos` model `ID`s and we also pass `random_init: false` in the `yaml` configuration file we will be doing fine tuning
+    - If we pass a `random_init: true` we will be doing pre training
+    - We can also pass the `model-id` of another 🤗 model to pre train on that model. This is very cool because it means that I can pre train on any language model I want.
+
+Starting from this and following on the idea above I think that we may also be able to adapt `CHRONOS` to perform directly `RUL` estimation without having to perform strange passages to exploit forecasting to get the `RUL`. In fact from a theoretical point of view (as we saw in the Coursera course) **once I have a base model, I can fine tune it on a different task from its pre training task/objective** → this is in fact exactly what happens in any chatbot → these models are pre trained on next token prediciton and then they are fine tuned to do question answering.
+
+There is a little difference (and potentially a complication) in my specific case → we **have to change the model head** from a `text-generation`/`forecasting` head to a Regression Head. Actually in this way we will also lose quantile and uncertainty estimation thing. Moreover I think I have to intervene in the code in order to perform this change of head of the model.
+
+#### Implementation ideas
+
+I am trying to think at exactly how to implement this. Essentially I think we have to create a new kind of model, taking inspiration from the `ChronosModel` class there is inside `chronos.py`. This class wraps a `PreTrainedModel` from 🤗 `transformers` (so here I can potentially use any model I want) and returns sample paths  for time series tokens → so essentially it should return us with the final emebedding of the model.
+
+This thing I can keep as it is because this is what I need to load with `from_pretrained` because I need to use the pre trained model from `chronos`. What I need to change afterwards it's the model head that I add to do the predictions, which should be a simple set of `FFN` layers and then a single node as the output that will contain the `RUL` predictions. In the `chronos-forecasting` repo there is the `ChronosPipeline` that takes the `ChronosModel` and returns the forecasting, so maybe I need to add here the regression head. The problem is that I don't know weather it is actualy this pipeline that is then used in the `train.py` script to take the ouput at every epochs and compute the loss to do the backward gradient step.
+
+>[!success] Maybe I have the solution
+> Use `AutoModelForSequenceClassification` and pass `num_labels=1`. In this way the model head should be the usual `FFN` layer/s with a single node as output (since we set `num_labels=1`) and (as written in the docs) with `num_labels=1` the `forward` method returns a regression loss automatically.
+
+#### Prompt for Gemini 2.0
+
+Ok so since I am pretty stuck on how to do this model head change I will try to create a good prompt to pass to the new Gemini 2.0 (that is hosted for free on T3 Chat) to try to see weather it can help me. 
+
+Here is the prompt:
+
+I am working on a research idea I have about using the model presented in [Chronos:Learning the Language of time series](https://arxiv.org/abs/2403.07815) to the field of Predictive Maintenance, in particular in the Remaining Useful Life (`RUL`) estimation task.
+
+Let me outline my idea:
+
+`CHRONOS` is a very powerful time series forecasting model that essentially tokenizes time series in order to use them as inputs to a language model. It can be used with any one of the multiple language models that are coming out these days. In the paper however they pretrained it on a time series dataset they created and the used the `T5` language model as the backbone. In the paper they show how this model is very good in forecasting time series, in particular it has really high zero-shot forecasting performances. 
+
+The `CHRONOS` checkpoints on `T5` are [available in 🤗 HuggingFace](https://huggingface.co/amazon/chronos-t5-large) in different sizes. 
+
+So since in Predictive Maintenance and `RUL` estimation we are always using time series data (that are the raw measurements registered from sensors embedded in the machines we are studying) I thought that it may be a good idea to try to adapt `CHRONOS` to perform `RUL` estimation. 
+
+There are however some passages to do because time series forecasting (the task in which `CHRONOS` was trained on and on which it is very good) is differenty from `RUL` estimation. In fact in `RUL` estimation we have a set of time series and we want to predict the remaining useful life of the machine, which is a scalar value → so this is a supervised learning regression task. 
+
+What I was thinking is the following → In `CHRONOS` the model head is the same as the one of a text generation language model, so we have an output neuron for each token in the dictionary which contains the probability of that token to be the next token and then the next token is sampled from this distribution. In order to do regression we need a regression head, which is a simple feed forward neural network that takes the final embedding of the model and outputs a single scalar value. So my idea is to change the model head of `CHRONOS` to adapt it to the `RUL` estimation task. Obviously I want to keep all the pre trained weights of the model and only change the head, so that I can exploit all the knowledge embeeded in the `CHRONOS` weights throught pre training and then fine tune it on a `RUL` dataset so that it can transfer its knowledge to solve the `RUL` estimation task.
+
+The problem is that implementing this is not very easy I think. I in fact started by cloning the [`chronos-forecasting`](https://github.com/amazon-science/chronos-forecasting) repository (the official repository released by the `CHRONOS` authors).
+
+Since `CHRONOS` is hosted in HugginFace I want to use the `transformers` API. Here from the HuggingFace documentation I know that I can use the `AutoModel*` classes to instantiate the correct model architecture just passing the model checkpoint and this should also work in case I pass a checkpoint which was not pre trained on the task I want to fine tune it on. For example I can do the following:
+
+```python
+from transformers import AutoModelForSequenceClassification
+checkpoint="bert-base-uncased"
+model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=2)
+```
+
+Here I am passing the `bert-base-uncased` checkpoint (which is trained on Masked Language Modelling) to the `AutoModelForSequenceClassification` class where the task is Sequence Classification, which is a different downstream task that Masked Language Modelling and so what will happen in the background is that the model head will be changed in order to work with the new task and it will be randomly initialized. So here I also get a warning saying that the model head was changed and that I should fine tune the model on the new task in order to obtain decent results. 
+
+So I was thinking that I can do the same with `CHRONOS` → I can load the `T5` model from the `chronos` checkpoints and then pass it to the `AutoModelForSequenceRegression` class so that it will change the `CHRONOS` head to a regression head (randomly initalized) that makes the model usable for a regression task such as `RUL` estimation.
+
+The problem is 
