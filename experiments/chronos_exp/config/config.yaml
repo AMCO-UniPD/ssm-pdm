@@ -1,0 +1,45 @@
+# tokenizer_class is used to specify the kind of Chronos tokenizer to use
+# There is only MeanScaleUniformBins available at the moment
+tokenizer_class: "MeanScaleUniformBins"
+# The kwargs for the tokenizer are just low_limit and high_limit which are needed to define the 
+# limits to create the linspaced bins
+tokenizer_kwargs:
+  low_limit: -15.0
+  high_limit: 15.0
+# context_length is the length of the input sequence
+context_length: 512
+# prediction_length is the maximum length of the output sequence
+prediction_length: 64
+# The number of tokens in the vocabulary
+n_tokens: 4096
+# This is the number of special tokens we use: if we use padding and eos tokens, this should be 2.
+# In the ChronosConfig class there is a __post_init__ method that checks if n_special_tokens is correct depending on 
+# the use_eos_token and pad_token_id values
+n_special_tokens: 2
+# Padding token id → Set 0 to do 0 padding
+pad_token_id: 0
+# This should be the id for the EOS token, set to 1 as it is set in train.py
+eos_token_id: 1
+# Boolean to specify if we use the EOS token
+use_eos_token: true
+# model_type is needed to specify weather we are using an Encoder-Decoder (i.e. T5) or a Decoder only (i.e. gpt2) model 
+# as the backbone of Chronos. Use seq2seq for T5 and causal for gpt2
+model_type: seq2seq
+# model_id: huggingface id for the backbone model
+model_id: google/t5-efficient-small
+# random_init: boolean to specify if we want to initialize the model randomly or with the pretrained weights
+random_init: false
+# tie_embeddings: boolean to specify if we want to tie the embeddings of the encoder and Decoder
+tie_embeddings: true
+#####################################
+# All the parmaters below are probably useless if I convert Chronos into a regression model
+#####################################
+# Number of samples to sample from the model (maybe needed to compute the quantiles)
+num_samples: 20
+# temperature parameter for the sampling. For the moment we use 1 (no change in the softmax induced distribution)
+temperature: 1
+# top_k parameter for sampling
+top_k: 50
+# top_p parameter for sampling, for them moment top-p is 1 so it considers all the tokens. Doing the intersection with top_k it
+# means that it will consider the top_k tokens that have a cumulative probability of 1 → so the top_k tokens
+top_p: 1.0
