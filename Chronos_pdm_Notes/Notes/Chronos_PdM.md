@@ -60,3 +60,23 @@ Look at this [link](https://huggingface.co/amazon/chronos-t5-large) for how to u
 
 Interestingly there are also different sized of `CHRONOS` (in terms of number of parameters) so we do not have to use the large one if we do not have enough computational resources.
 
+
+#### Idea: Change the `CHRONOS` architecture to adapt it to the `RUL` estimation task
+
+This idea came to my mind while I was doing the 🤗 `NLP` course, in particular looking at how to [[hugging-face-🤗-tutorial-chapter-3#Training|fine-tune models]].
+
+Here they say that if we load a model to fine tune it on a task that is different from the one it was trained on the `AutoModel*` class associated to that model will automatically change the model head to adapt it to the new task. Obviously the new head will be randomly initialized, but with the fine-tuning data we can update it to perform well on the new task.
+
+Maybe following this reasonment we can change the head of the `CHRONOS` model (which will be the head of `T5`) to have a new head for the `PDM` task to predict the `RUL` of the machines. Here it depends if `CHRONOS` is recognized by one of the `AutoModel*` classes, maybe something like `AutoModelForTimeSeriesForecasting` or `AutoModelForTimeSeriesRegression`.
+
+The head of `T5` is probably the typical head of a `text-generation` model, so it has a node for each token in the vocabulary and it outputs the probability of each token to be the next token. In order to do regression we need a Regression Head, which usually consists in a `FFN` layer and than a single node containing the `RUL` prediction. I don't think that there is something like that in a model like `T5` so we have to implement it by ourselves.
+
+
+The alternative is to change the `CHRONOS` architecture and adapt it to the `PDM` task. We may use as backbone a model contained in 🤗 that supports some time series regression tasks. In fact, from the [[chronos|`CHRONOS` note]] we know that we can use any language model after having tokenized the time series. So I may have to find a `LLM` that works for time series regression and then use it as backbone for the `CHRONOS` model.
+
+This would be more complicated because we have to enter inside the codebase of `CHRONOS` and work from there but may surely be more interesting and a more novel contribution than just applying the model as it is.
+
+Another problem is that I don't know if the model is able to transfer its knowledge from a forecasting task to a regression task. This is something that has to be tested. Otherwise we have to pre train the model with `RUL` data and there are surely not enough data to do that.
+
+>[!note]
+> In fact the model checkpoints available in 🤗 are only the ones using `T5` as the backbone.
