@@ -54,7 +54,7 @@ The main steps are the following:
             - a `list of 1D tensors` → in case we have multiple time series
             - a left padded `2D tensor` with the `batch_size` as the first dimension
             - The outputs of the method are:
-                - `quantiles` → These are the quantiles predicted. It is a `torch.tensor` with shape `[batch_size,prediction_length,num_quantile_levels] 
+                - `quantiles` → These are the quantiles predicted. It is a `torch.tensor` with shape `[batch_size,prediction_length,num_quantile_levels]`
                 - `mean` → The mean of the posterior distribution at the time we want to predict. It has shape `[batch_size,prediction_length]`
         - `prediction_length` → This is the number of steps we want to forecast in the future
         - `quantile_levels` → The quantile levels we want to predict.
