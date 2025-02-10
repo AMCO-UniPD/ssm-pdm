@@ -50,19 +50,24 @@ pipeline = BaseChronosPipeline.from_pretrained(
 if args.dataset=="CMAPSS":
     df = CMAPSSDataset(train=True,models=args.cmapss_model)
     life = df[args.life_idx]
-    prompt=torch.tensor(life[f"SensorMeasure{args.sensor_num}"])
+    sensors_idx=[f"SensorMeasure{args.sensor_num}",f"SensorMeasure{args.sensor_num+1}"]
+    prompt=torch.tensor(life[sensors_idx].values)
 else:
     df = pd.read_csv(
         "https://raw.githubusercontent.com/AileenNielsen/TimeSeriesAnalysisWithPython/master/data/AirPassengers.csv"
     )
     prompt=torch.tensor(df["#Passengers"])
 
+prompt_list = [prompt[:-args.prediction_length,i] for i in range(prompt.shape[1])]
+
 # Do inference
 quantiles, mean = pipeline.predict_quantiles(
-    context=prompt[:-args.prediction_length],
+    context=prompt_list,
     prediction_length=args.prediction_length,
     quantile_levels=args.quantile_levels,
 )
+
+ipdb.set_trace()
 
 plot_path=os.path.join(os.getcwd(),"plots")
 # Plot the forecast

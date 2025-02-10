@@ -17,56 +17,26 @@ sys.path.append(src_path)
 sys.path.append(chronos_path)
 sys.path.append(chronos_path_train)
 
-from utils import load_yaml_to_dict
-from transformers import AutoModelForSequenceClassification
-from chronos import MeanScaleUniformBins, ChronosConfig
-from training.train import load_model
-from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
+from utils import *
 
-# Load the model with num_labels=1 to perform regression
-chronos=AutoModelForSequenceClassification.from_pretrained("amazon/chronos-t5-small",num_labels=1)
-# Load the model config file
-config=load_yaml_to_dict("config/config.yaml")
-# Create the ChronosConfig object
-chronos_config=ChronosConfig(
-    tokenizer_class=config["tokenizer_class"],
-    tokenizer_kwargs=config["tokenizer_kwargs"],
-    n_tokens=config["n_tokens"],
-    n_special_tokens=config["n_special_tokens"],
-    pad_token_id=config["pad_token_id"],
-    eos_token_id=config["eos_token_id"],
-    use_eos_token=config["use_eos_token"],
-    model_type=config["model_type"],
-    context_length=config["context_length"],
-    prediction_length=config["prediction_length"],
-    num_samples=config["num_samples"],
-    temperature=config["temperature"],
-    top_k=config["top_k"],
-    top_p=config["top_p"],
-)
+# Load the configuration files
+model_config_path="config/config.yaml"
+exp_config_path="config/exp_config.yaml"
+config=load_yaml_to_dict(model_config_path)
+exp_config=load_yaml_to_dict(exp_config_path)
 
-model = load_model(
-    model_id=config["model_id"],
-    model_type=chronos_config.model_type,
-    vocab_size=chronos_config.n_tokens,
-    random_init=config["random_init"],
-    tie_embeddings=config["tie_embeddings"],
-    pad_token_id=chronos_config.pad_token_id,
-    eos_token_id=chronos_config.eos_token_id,
-)
+exp_config=ExperimentConfig(exp_config)
 
-chronos_tokenizer=MeanScaleUniformBins(
-                                       low_limit=chronos_config.tokenizer_kwargs["low_limit"],
-                                       high_limit=chronos_config.tokenizer_kwargs["high_limit"],
-                                       config=chronos_config
-                                      )
+device = torch.device(f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu")
 
+df,regression_dataset,reg_loader=load_reg_data(exp_config)
 
-df = CMAPSSDataset(train=True,models="FD001")
-life = df[0]
-prompt=torch.tensor(life["SensorMeasure4"]).unsqueeze(0)
+model,tokenizer=load_model_tokenizer(model_config=config,exp_config=exp_config)
+model.to(device)
 
-input_ids,attention_mask,scale=chronos_tokenizer.context_input_transform(prompt)
-
-# Do inference
-output=chronos(input_ids=input_ids,attention_mask=attention_mask)
+for life,rul in reg_loader:
+    life = life.to(device)
+    rul = rul.to(device)
+    input_ids,attention_mask,scale=tokenizer.context_input_transform(life)
+    output=model(input_ids=input_ids,attention_mask=attention_mask)
+    break
