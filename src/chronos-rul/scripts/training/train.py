@@ -173,7 +173,8 @@ def load_model(
         AutoModelForSeq2SeqLM if model_type == "seq2seq" else AutoModelForCausalLM
     )
     if random_init:
-        log_on_main("Using random initialization", logger)
+        # log_on_main("Using random initialization", logger)
+        print("Using random initialization")
         config = AutoConfig.from_pretrained(model_id)
         if isinstance(config, T5Config):
             # The default initializer_factor (1.0) in transformers is too large
@@ -181,7 +182,7 @@ def load_model(
         config.tie_word_embeddings = tie_embeddings
         model = AutoModelClass.from_config(config)
     else:
-        log_on_main(f"Using pretrained initialization from {model_id}", logger)
+        print(f"Using pretrained initialization from {model_id}")
         model = AutoModelClass.from_pretrained(model_id)
 
     model.resize_token_embeddings(vocab_size)
