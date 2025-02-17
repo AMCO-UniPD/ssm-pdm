@@ -93,6 +93,56 @@ plt.show()
 
 The predictions looks very good. Obviously this is a time series with a very clear trend and seasonality behavior, I want to see how good `chronos` is on the `CMAPSS` dataset. 
 
+## Loading the `ChronosModel`
+
+Up to now we have used the `ChronosPipeline` to do forecasts. This class in the background uses the `ChronosModel` which is a wrapper which takes a `ChronosConfig` object and a `PreTrainedModel` object from 🤗 and it is used to obtain the tokens sample paths. I used it to do some experiments and see how the model was structured. However right now it is not useful anymore so I will leave here the code to do that. 
+
+First of all we have to load the `PreTrainedModel` from 🤗. This can be done with the `load_model` function that is contained inside `chronos.py`:
+
+
+```python
+pretrained_model = load_model(
+    model_id=model_config["model_id"],
+    model_type=model_config["model_type"],
+    vocab_size=model_config["n_tokens"],
+    random_init=model_config["random_init"],
+    tie_embeddings=model_config["tie_embeddings"],
+    pad_token_id=model_config["pad_token_id"],
+    eos_token_id=model_config["eos_token_id"],
+)
+```
+
+The `ChronosConfig` object is also created inside `chronos.py` and it defines all the hyperparameters needed for the model:
+
+
+```python
+chronos_config=ChronosConfig(
+    tokenizer_class=model_config["tokenizer_class"],
+    tokenizer_kwargs=model_config["tokenizer_kwargs"],
+    n_tokens=model_config["n_tokens"],
+    n_special_tokens=model_config["n_special_tokens"],
+    pad_token_id=model_config["pad_token_id"],
+    eos_token_id=model_config["eos_token_id"],
+    use_eos_token=model_config["use_eos_token"],
+    model_type=model_config["model_type"],
+    context_length=model_config["context_length"],
+    prediction_length=model_config["prediction_length"],
+    num_samples=model_config["num_samples"],
+    temperature=model_config["temperature"],
+    top_k=model_config["top_k"],
+    top_p=model_config["top_p"],
+)
+```
+
+In this case the `model_config` object is a dictionary I loaded from a `yaml` file where I stored al the hyperparameters of the model. 
+
+Finally we can create the `ChronosModel` object:
+
+
+```python
+model = ChronosModel(model=pretrained_model,config=chronos_config)
+```
+
 ## Extracting Encoder Embeddings
 
 Another interesting example proposed in the repository let us play a little bit with the `chronos` internals. Here we can infact use the `embed` method from `ChronosPipeline` (or `ChronosBoltPipeline`) to extract the embeddings of the model encoder and the tokenizer state for a given input. Here is the code:
@@ -203,8 +253,8 @@ Since the model will output directly the `RUL` (so it does not predict another t
 
 The `MeanScaleUniformBins` class requires some input arguments in the constructor:
 
-- `low_limit` and `high_limit` → These are the limits used to created the uniformed spaced bins that are used tu quantize the time series. 
-- `config` → This is an instance of the `ChronosConfig` object. I have to understand how to create this object. Maybe I can use the `AutoConfig` class from `transformers` that if I pass a model checkpoint will automatically loed the model config for me.
+- `low_limit` and `high_limit` → These are the limits used to created the uniformed spaced bins that are used tu quantize the time series.
+- `config` → This is an instance of the `ChronosConfig` object. I have to understand how to create this object. Maybe I can use the `AutoConfig` class from `transformers` that if I pass a model checkpoint will automatically load the model config for me.
 
 Ok so the `ChronosConfig` class is a `dataclass` (like the `ModelConfig` class I created for the `ad_mg` project) and it has a lot of input parameters that however do not have default values so we have to pass all of them. In the `train.py` experiments they used `yaml` files to store all the configurations so probably I will have to do the same. No ok here they do a huge call with all the parameters passed one by one, I will obtian those parameters from a `dict` I can obtain from a `yaml` file and I will try to use similar values for the config parameters as the ones that they set in the config files available in the repository.
 
