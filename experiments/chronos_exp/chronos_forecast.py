@@ -67,8 +67,6 @@ quantiles, mean = pipeline.predict_quantiles(
     quantile_levels=args.quantile_levels,
 )
 
-ipdb.set_trace()
-
 plot_path=os.path.join(os.getcwd(),"plots")
 # Plot the forecast
 fig = plot_forecast(life=life,

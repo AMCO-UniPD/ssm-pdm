@@ -203,46 +203,15 @@ class MeanScaleUniformBins(ChronosTokenizer):
 
         return token_ids, attention_mask, scale
 
-    #NOTE: New version of _input_transform to make it work with multiple signals
-    
-    def _input_transform_sensors(
-        self, context: torch.Tensor, scale: Optional[torch.Tensor] = None
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        context = context.to(dtype=torch.float32)
-        attention_mask = ~torch.isnan(context)
-
-        if scale is None:
-            scale = torch.nansum(
-                torch.abs(context) * attention_mask, dim=1
-            ) / torch.nansum(attention_mask, dim=1)
-            scale[~(scale > 0)] = 1.0
-
-        scaled_context = context.squeeze(-1) / scale
-        token_ids = (
-            torch.bucketize(
-                input=scaled_context,
-                boundaries=self.boundaries.to(scaled_context.device),
-                # buckets are open to the right, see:
-                # https://pytorch.org/docs/2.1/generated/torch.bucketize.html#torch-bucketize
-                right=True,
-            )
-            + self.config.n_special_tokens
-        )
-
-        token_ids.clamp_(0, self.config.n_tokens - 1)
-
-        token_ids[~attention_mask.squeeze(-1)] = self.config.pad_token_id
-
-        return token_ids, attention_mask, scale
 
     def _append_eos_token(
         self, token_ids: torch.Tensor, attention_mask: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         batch_size = token_ids.shape[0]
-        eos_tokens = torch.full((batch_size, 1), fill_value=self.config.eos_token_id).to(token_ids.device)
+        eos_tokens = torch.full((batch_size, 1), fill_value=self.config.eos_token_id)
         token_ids = torch.concat((token_ids, eos_tokens), dim=1)
-        eos_mask = torch.full((batch_size, 1), fill_value=True).to(attention_mask.device)
-        attention_mask = torch.concat((attention_mask.squeeze(-1), eos_mask), dim=1)
+        eos_mask = torch.full((batch_size, 1), fill_value=True)
+        attention_mask = torch.concat((attention_mask, eos_mask), dim=1)
 
         return token_ids, attention_mask
 
@@ -254,10 +223,7 @@ class MeanScaleUniformBins(ChronosTokenizer):
         if length > self.config.context_length:
             context = context[..., -self.config.context_length :]
 
-        if context.ndim == 3:
-            token_ids, attention_mask, scale = self._input_transform_sensors(context=context)
-        else:
-            token_ids, attention_mask, scale = self._input_transform(context=context)
+        token_ids, attention_mask, scale = self._input_transform(context=context)
 
         if self.config.use_eos_token and self.config.model_type == "seq2seq":
             token_ids, attention_mask = self._append_eos_token(
@@ -396,6 +362,7 @@ class ChronosModel(nn.Module):
             ),
         )
 
+        ipdb.set_trace()
         if self.config.model_type == "seq2seq":
             preds = preds[..., 1:]  # remove the decoder start token
         else:

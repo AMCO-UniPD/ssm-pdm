@@ -1,6 +1,6 @@
 # tokenizer_class is used to specify the kind of Chronos tokenizer to use
 # There is only MeanScaleUniformBins available at the moment
-tokenizer_class: "MeanScaleUniformBins"
+tokenizer_class: "MeanScaleUniformBinsSensor"
 # The kwargs for the tokenizer are just low_limit and high_limit which are needed to define the 
 # limits to create the linspaced bins
 tokenizer_kwargs:

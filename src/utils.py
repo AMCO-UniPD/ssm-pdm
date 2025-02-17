@@ -8,14 +8,15 @@ import time
 import yaml
 import ipdb
 import pandas as pd
-from typing import Tuple, List
+import numpy as np
+from typing import Tuple, List, Optional
 from dataclasses import dataclass
 
-chronos_path = os.path.join(os.path.dirname(__file__),"chronos-forecasting","src")
+chronos_path = os.path.join(os.path.dirname(__file__),"chronos-rul","src")
 sys.path.append(chronos_path)
 
-from chronos import ChronosConfig, MeanScaleUniformBins
-from transformers import AutoModelForSequenceClassification
+# chronos imports
+from chronos import MeanScaleUniformBins, ChronosConfig
 
 # ceruleo imports
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset
@@ -91,20 +92,96 @@ class RegressionDataset(Dataset):
         self,
         life: pd.DataFrame,
         sensors: List[str],
+        sequence_length: int = 500,
     ):
-        sequences=[life[sensor].values for sensor in sensors]
-        targets=life["RUL"].values
+        
+        if sequence_length > life.shape[0]:
+            pad_arr=np.zeros(sequence_length-life.shape[0])
+            mask=[np.concatenate((np.ones(life.shape[0]),np.zeros(sequence_length-life.shape[0]))) for sensor in sensors]
+            sequences=[np.concatenate((life[sensor].values,pad_arr)) for sensor in sensors]
+            targets=[np.concatenate((life["RUL"].values,pad_arr)) for _ in sensors]
+        else:
+            sequences=[life[sensor].values[:sequence_length] for sensor in sensors]
+            mask=[np.ones(sequence_length) for _ in sensors]
+            targets=[life["RUL"].values[:sequence_length] for _ in sensors]
 
         self.sequences = sequences
         self.targets = targets
+        self.mask = mask
 
     def __len__(self):
         return len(self.sequences)
 
     def __getitem__(self, idx):
         sequence = torch.tensor(self.sequences[idx], dtype=torch.float32).unsqueeze(-1)
-        target = torch.tensor(self.targets, dtype=torch.float32)
-        return sequence, target
+        target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
+        mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
+        return sequence, target, mask
+
+class MeanScaleUniformBinsSensor(MeanScaleUniformBins):
+    def __init__(self, low_limit:float, high_limit:float, config:ChronosConfig):
+        super().__init__(low_limit, high_limit,config)
+    
+    def _input_transform(
+        self, context: torch.Tensor, mask: torch.Tensor, scale: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        context = context.to(dtype=torch.float32)
+        # attention_mask = ~torch.isnan(context)
+        attention_mask = mask.to(torch.bool)
+
+        if scale is None:
+            scale = torch.nansum(
+                torch.abs(context) * attention_mask, dim=1
+            ) / torch.nansum(attention_mask, dim=1)
+            scale[~(scale > 0)] = 1.0
+
+
+        scaled_context = context.squeeze(-1) / scale
+        token_ids = (
+            torch.bucketize(
+                input=scaled_context,
+                boundaries=self.boundaries.to(scaled_context.device),
+                # buckets are open to the right, see:
+                # https://pytorch.org/docs/2.1/generated/torch.bucketize.html#torch-bucketize
+                right=True,
+            )
+            + self.config.n_special_tokens
+        )
+
+        token_ids.clamp_(0, self.config.n_tokens - 1)
+
+        token_ids[~attention_mask.squeeze(-1)] = self.config.pad_token_id
+
+        return token_ids, attention_mask, scale
+
+    def _append_eos_token(
+        self, token_ids: torch.Tensor, attention_mask: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        batch_size = token_ids.shape[0]
+        eos_tokens = torch.full((batch_size, 1), fill_value=self.config.eos_token_id).to(token_ids.device)
+        token_ids = torch.concat((token_ids, eos_tokens), dim=1)
+        eos_mask = torch.full((batch_size, 1), fill_value=True).to(attention_mask.device)
+        attention_mask = torch.concat((attention_mask.squeeze(-1), eos_mask), dim=1)
+
+        return token_ids, attention_mask
+
+    def context_input_transform(
+        self, context: torch.Tensor, mask: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        length = context.shape[-1]
+
+        if length > self.config.context_length:
+            context = context[..., -self.config.context_length :]
+
+        token_ids, attention_mask, scale = self._input_transform(context=context,mask=mask)
+
+        if self.config.use_eos_token and self.config.model_type == "seq2seq":
+            token_ids, attention_mask = self._append_eos_token(
+                token_ids=token_ids, attention_mask=attention_mask
+            )
+
+        return token_ids, attention_mask, scale
+
 
 @dataclass
 class ExperimentConfig:
@@ -176,72 +253,12 @@ def load_reg_data(config:ExperimentConfig) -> Tuple[CMAPSSDataset, List[Regressi
     lifes=TransData(transformed_df)
 
     # Create a RegressionDataset
-    regression_datasets = [RegressionDataset(life=life,sensors=config.sensors) for life in lifes]
+    regression_datasets = [RegressionDataset(life=life,sensors=config.sensors,sequence_length=config.sequence_length) for life in lifes]
 
     # Create a DataLoader
-    reg_loaders=[DataLoader(regression_dataset,batch_size=len(config.sensors),shuffle=False) for regression_dataset in regression_datasets]
+    # reg_loaders=[DataLoader(regression_dataset,batch_size=len(config.sensors),shuffle=False) for regression_dataset in regression_datasets]
 
     reg_loader=DataLoader(ConcatDataset(regression_datasets),batch_size=len(config.sensors),shuffle=False)
 
     return df, regression_datasets, reg_loader
 
-def load_model_tokenizer(
-        model_config:ChronosConfig,
-        exp_config:ExperimentConfig) -> Tuple[torch.nn.Module, MeanScaleUniformBins]:
-    """
-    Load the model and the tokenizer for the `chronos` model
-
-    Args:
-        model_config (ChronosConfig): The configuration dictionary for the model
-        exp_config (ExperimentConfig): The configuration dictionary for the experiment
-
-    Returns:
-        model (torch.nn.Module): The model object
-        tokenizer (MeanScaleUniformBins): The Transformer object
-    """
-
-    model = AutoModelForSequenceClassification.from_pretrained(exp_config.model_id,num_labels=exp_config.num_labels)
-    
-    #NOTE: To change the classification head so that it returns the entire RUL sequence
-    # We arrive to the classification head with a shape of (n_sensors,512)
-    # (where 512 I think is the hidden size of the model)
-    # Probably it's better to create a nn.Module for the new classification head
-    # so that in the forward method I can also work with the shape of the input
-
-    # new_classification_head = nn.Sequential(
-    #     # Define here the correct layers (now I put some placeholders)
-    #     nn.Linear(model.config.hidden_size, model.config.hidden_size),
-    #     nn.Dropout(model.config.hidden_dropout_prob),
-    #     nn.Linear(model.config.seq_length, model.config.seq_length),
-    # )
-
-    # new_classification_head = nn.Sequential(nn.Identity())
-
-    # Substitute classification_head with the new one
-    model.classification_head = new_classification_head
-
-    # Create the ChronosConfig object
-    chronos_config=ChronosConfig(
-        tokenizer_class=model_config["tokenizer_class"],
-        tokenizer_kwargs=model_config["tokenizer_kwargs"],
-        n_tokens=model_config["n_tokens"],
-        n_special_tokens=model_config["n_special_tokens"],
-        pad_token_id=model_config["pad_token_id"],
-        eos_token_id=model_config["eos_token_id"],
-        use_eos_token=model_config["use_eos_token"],
-        model_type=model_config["model_type"],
-        context_length=model_config["context_length"],
-        prediction_length=model_config["prediction_length"],
-        num_samples=model_config["num_samples"],
-        temperature=model_config["temperature"],
-        top_k=model_config["top_k"],
-        top_p=model_config["top_p"],
-    )
-
-    tokenizer=MeanScaleUniformBins(
-        low_limit=chronos_config.tokenizer_kwargs["low_limit"],
-        high_limit=chronos_config.tokenizer_kwargs["high_limit"],
-        config=chronos_config
-    )
-
-    return model, tokenizer

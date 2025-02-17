@@ -14,7 +14,14 @@ scaler_kwargs:
 sensors:
   - SensorMeasure2
   - SensorMeasure3
-
+sequence_length: 500
 # Model configurations
 model_id: amazon/chronos-t5-small
 num_labels: 1
+
+# Loss function to use for training
+loss: mae
+# Loss function to use for evaluation
+eval_loss: rmse
+# tau parameter for the quantile loss
+tau: 0.5
