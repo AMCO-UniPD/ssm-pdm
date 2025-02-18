@@ -1,22 +1,49 @@
 # Config file for the experiment
 
+# Paths to the config files
+model_config_path: config/config.yaml
+
 # cuda config
 device_num: 0
 
+# wandb config
+project_name: "chronos-rul"
+
 # Dataset configurations
 data_name: CMAPSS # CMAPSS, CMPASS-2
-train: true
+val_idx:
+  - 0
+  - 15
+test_idx:
+  - 15
+  - 30
+val_size: 0.3
 cmapss_models: FD001 # FD001, FD002, FD003, FD004
+
+# Feature extraction configurations
+transformer_type: 1 # 1,2
+window_size: 20
+features:
+  - kurtosis
+  - skewness
+  - mean
+  - rms
 scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
 scaler_kwargs:
   low_limit: -1.0
   high_limit: 1.0
+
+# Training parameters
+epochs: 3
+lr: 1.0e-3
 sensors:
   - SensorMeasure2
   - SensorMeasure3
 sequence_length: 500
+
 # Model configurations
 model_id: amazon/chronos-t5-small
+model_name: chronos-rul # in the future: S4,S5,S4D?
 num_labels: 1
 
 # Loss function to use for training
@@ -25,3 +52,7 @@ loss: mae
 eval_loss: rmse
 # tau parameter for the quantile loss
 tau: 0.5
+
+# best_model_perf config
+file_pos: 0
+test_script: true

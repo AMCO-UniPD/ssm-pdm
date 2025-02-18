@@ -17,8 +17,6 @@ sys.path.append(src_path)
 sys.path.append(chronos_path)
 sys.path.append(chronos_path_train)
 
-from transformers import TrainingArguments, Trainer
-
 from utils import *
 from models import *
 from loss import load_loss_functions
@@ -30,10 +28,6 @@ config=load_yaml_to_dict(model_config_path)
 exp_config=load_yaml_to_dict(exp_config_path)
 
 exp_config=ExperimentConfig(exp_config)
-
-training_args=TrainingArguments.from_pretrained(exp_config.model_id)
-
-ipdb.set_trace()
 
 device = torch.device(f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu")
 
@@ -49,10 +43,10 @@ criterion,eval_loss=load_loss_functions(loss_name=exp_config.loss,
 
 for life,rul,mask in reg_loader:
     life = life.to(device)
-    rul = rul.to(device).squeeze(-1)
+    rul = rul.to(device)
     mask = mask.to(device)
     input_ids,attention_mask,scale=tokenizer.context_input_transform(context=life,mask=mask)
     output=model(input_ids=input_ids,
                  attention_mask=attention_mask)
-    loss=criterion(output.logits,rul,mask)
+    loss=criterion(output.logits,rul.squeeze(-1),mask)
     break
