@@ -34,7 +34,7 @@ In this section we will perform a first exploratory data analysis on the `CMAPSS
 
 ### Data Structure
 
-In the note `RESULTS  `XAI_PDM.md` there are some useful information on some preprocessing steps to perform on the `CMAPSS` dataset. Here I will report them:
+In the note `RESULTS XAI_PDM.md` there are some useful information on some preprocessing steps to perform on the `CMAPSS` dataset. Here I will report them:
 
 - First of all we have to use the `sensor_indices` list (
 `from ceruleo.dataset.catalog.CMAPSS import sensor_indices`
@@ -116,4 +116,24 @@ Obviously this approach is not very generalizable to arbitrary sequence lengths 
 
 With this new approach now the `logits` attribute of the `output` object returned by the `forward` method of the model has shape `(batch_size,sequence_length)` as we wanted. Now the values we get are pretty bad because we are using a randomly initialized head but fine tuning on the `CMAPSS` dataset should improve the results.
 
+##### `CMAPSS` Data Split
 
+This note is becoming a bit of a mess, maybe in the future we will make it more organized. In any case an important thing to note is the fact that I used a different split of the `CMAPSS` dataset than the one used in the `SSM_PDM` project. In fact in `SSM_PDM` I divided the train dataset (that one that can be loaded doing `CMAPSSDataset(train=True,models=config.cmapss_models)`) into a train and validation set using the `train_test_split` function from `sklearn`. However in the `CMAPSS` dataset the training lifes have the `RUL` that goes to 0 while the test ones have the `RUL` that stops before 0 (because they are representing engines that have not arrived to the end of their useful life). 
+
+Since the best model will be the one with the best performance on the validation set it is better to choose a model that is good in prtedicting the `RUL` in the same conditions as in the test set (i.e. with non full life cycles) so I decided to divide the test set of `CMPASS` into validation and test and to keep the full training set for training. To be more specific the three splits are obtained as follows:
+
+
+```python
+train_data = CMAPSSDataset(train=True,models=config.cmapss_models)
+val_data = CMAPSSDataset(train=False,models=config.cmapss_models)[config.val_idx[0]:config.val_idx[1]]
+test_data = CMAPSSDataset(train=False,models=config.cmapss_models)[config.test_idx[0]:config.test_idx[1]]
+```
+
+where for the moment:
+
+```python
+val_idx=[0,15]
+test_idx=[15,30]
+```
+
+The test lifes are 100 so maybe in the future I can do something like `val_idx=[0,50]` and `test_idx=[50,100]`.
