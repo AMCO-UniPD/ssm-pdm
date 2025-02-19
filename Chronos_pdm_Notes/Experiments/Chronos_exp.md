@@ -265,3 +265,4 @@ Obviously here in the test that I did the returned output makes no sense because
 Now I will have to set up all the code to perform the fine tuning, I can take inspiration from the `train.py` script in the `chronos-forecasting` repository.
 
 Before writing down the training script however I have to understand how to structure the `CMAPSS` dataset, see all the notes [[chronos-data|here]].
+
