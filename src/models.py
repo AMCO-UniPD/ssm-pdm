@@ -41,14 +41,17 @@ from utils import(
 
 from loss import load_loss_functions
 
+from perf import lifes_metrics
+
 # chronos imports
 from training.train import load_model
 from chronos import ChronosModel, ChronosConfig, MeanScaleUniformBins
-from transformers import AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoModelForSeq2SeqLM
+from transformers import AutoConfig, T5Config
 from utils import ExperimentConfig, MeanScaleUniformBinsSensor, get_current_time
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-experiment_path = os.path.join(cwd, "experiments")
+experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 
 class RegressionHead(nn.Module):
     def __init__(self, sequence_length:int, hidden_size:int):
@@ -103,7 +106,14 @@ def load_model_tokenizer(
         config=chronos_config
     )
 
-    model = AutoModelForSequenceClassification.from_pretrained(exp_config.model_id,num_labels=exp_config.num_labels)
+    if model_config["random_init"]:
+        random_conf = AutoConfig.from_pretrained(exp_config.model_id)
+        if isinstance(random_conf,T5Config):
+            random_conf.initializer_factor = 0.05
+        random_conf.tie_word_embeddings = True
+        model = AutoModelForSequenceClassification.from_config(random_conf)
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(exp_config.model_id)
     
     # The classification head can also be defined with a nn.Module
     new_classification_head = RegressionHead(sequence_length=exp_config.sequence_length, hidden_size=model.config.hidden_size)
@@ -124,7 +134,7 @@ def train_loop(
         tokenizer: MeanScaleUniformBinsSensor,
         optimizer: optim.Optimizer,
         criterion: nn.Module,
-        device: str = "cpu",
+        device: torch.device = torch.device("cpu"),
 ) -> float:
     """
     Train loop for one epoch
@@ -173,7 +183,7 @@ def eval_loop(
         criterion: nn.Module,
         eval_criterion: nn.Module,
         mode: str = "Test",
-        device: str = "cpu",
+        device: torch.device = torch.device("cpu"),
         use_tqdm: bool = True,
 ) -> Tuple[float,float,np.ndarray,np.ndarray]:
     """
@@ -229,7 +239,7 @@ def eval_loop(
 def save_best_model(
     best_model_state_dict: dict,
     config: ExperimentConfig,
-    best_model_path: str,
+    best_model_path: str = experiment_path,
 ) -> None:
     """
     This function saves the best model into best_model_path
@@ -237,14 +247,14 @@ def save_best_model(
     Args:
         best_model_state_dict (dict): The state dictionary of the best model
         config (ExperimentConfig): The configuration object
-        best_model_path (str): The path to save the best model
 
     Returns:
         The function saves the best model and does not return anything
     """
 
     best_model_path = generate_path(basepath=best_model_path,
-                                    folders=[config.model_name,
+                                    folders=["best_models",
+                                             config.model_name,
                                              config.cmapss_models])
 
 
@@ -271,8 +281,8 @@ def wandb_train_test(
         optimizer:optim.Optimizer,
         scheduler: optim.lr_scheduler._LRScheduler,
         config: ExperimentConfig,
-        device:str="cpu",
-        best_model_path:str = os.getcwd()
+        device:torch.device=torch.device("cpu"),
+        best_model_path:str = experiment_path,
 ) -> dict:
     """
     Train and test the model on a wandb run and log the metrics
@@ -393,7 +403,7 @@ def wandb_train_test(
             save_best_model(
                 best_model_state_dict=best_model_state_dict,
                 config=config,
-                best_model_path=best_model_path,
+                best_mdoel_path=best_model_path,
             )
 
     except torch.cuda.OutOfMemoryError:
@@ -410,7 +420,6 @@ def wandb_train_test(
     save_best_model(
         best_model_state_dict=best_model_state_dict,
         config=config,
-        best_model_path=best_model_path,
     )
 
     return model_info
@@ -418,25 +427,22 @@ def wandb_train_test(
 # Function to get the best model performance
 
 def best_model_perf(
-    config: dict,
+    config: ExperimentConfig,
     model_config: ChronosConfig,
-    train_loader: DataLoader,
-    criterion: nn.Module,
-    experiment_path: str = os.getcwd(),
-    device: str = "cuda:0",
-    plot_path: str = os.getcwd(),
-    metrics_path: str = os.getcwd(),
+    device: torch.device = torch.device("cpu"),
+    best_model_path: str = experiment_path,
+    outputs_path: str = experiment_path,
     ) -> None:
     """
     This function loads the best model according to the validation set and
     computes the performance on the test set
     
     Args:
-        config (dict): The configuration dictionary
+        config (ExperimentConfig): The configuration dictionary
         model_config (ChronosConfig): The model configuration object
-        criterion (nn.Module): The loss function
-        experiment_path (str): The path to the experiment
         device (str): The device to use
+        best_model_path (str): The path to save the best model
+        outputs_path (str): The path to save the outputs
         plot_path (str): The path to save the plots
         metrics_path (str): The path to save the test metrics
 
@@ -446,20 +452,54 @@ def best_model_perf(
 
     # Load the best model
 
-    best_model_dirpath = generate_path(basepath=experiment_path,
-                                       folders=[config.model_name,
-                                                config.cmapss_models])
-
-    best_model_filepath = get_most_recent_file(dirpath=best_model_dirpath,
+    best_model_filepath = get_most_recent_file(dirpath=best_model_path,
                                                file_pos=config.file_pos)
 
     best_model_state_dict = open_element(best_model_filepath,
                                          filetype="pickle")
-    model,_,_,_ = load_model_tokenizer(train_loader=train_loader,
-                                       model_config=model_config,
-                                       exp_config=config)
+    
+    train_loader,_,test_loader=load_reg_data(config)
 
+    model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
+                                               model_config=model_config,
+                                               exp_config=config)
     model.load_state_dict(best_model_state_dict)
+    model=model.to(device)
+
+    criterion,eval_criterion=load_loss_functions(
+        loss_name=config.loss,
+        eval_loss_name=config.eval_loss,
+        tau=config.tau
+    )
+
+    # Evaluate the model on the test set
+    print("Evaluating the best model on the test set")
+    _,_,y_pred,y_true = eval_loop(
+        dataloader=test_loader,
+        model=model,
+        tokenizer=tokenizer,
+        criterion=criterion,
+        eval_criterion=eval_criterion,
+        mode="Test",
+        device=device,
+        use_tqdm=False,
+    )
+    print("#" * 50)
+    print(f"y_pred shape: {y_pred.shape} | y_true shape: {y_true.shape}")
+
+    # Save the predictions and true values
+    outputs_dict = {
+        "y_pred": y_pred,
+        "y_true": y_true,
+    }
+
+    save_element(
+        element=outputs_dict,
+        dirpath=outputs_path,
+        filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
+        filetype="pickle",
+    )
+
 
 # Function that implements a wandb run
 
@@ -467,8 +507,10 @@ def wandb_run(
     run_name:str,
     config:ExperimentConfig,
     model_config:ChronosConfig,
-    device:str="cpu",
-    best_model_path:str=os.getcwd(),
+    device:torch.device=torch.device("cpu"),
+    best_model_path:str=experiment_path,
+    metrics_path:str=experiment_path,
+    plot_path:str=experiment_path,
 ) -> Tuple[nn.Module, dict]:
     """
     Function that implements a wandb run
@@ -519,15 +561,12 @@ def wandb_run(
     best_model_perf(
         config=config,
         model_config=model_config,
-        train_loader=train_loader,
-        criterion=criterion,
         experiment_path=experiment_path,
         device=device,
-        plot_path=os.path.join(experiment_path,"plots"),
-        metrics_path=os.path.join(experiment_path,"metrics"),
+        best_model_path=best_model_path,
+        plot_path=plot_path,
+        metrics_path=metrics_path
     )
-
-
 
 
     return model,model_info

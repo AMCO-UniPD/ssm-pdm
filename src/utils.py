@@ -152,6 +152,8 @@ def save_element(
         with open(path + ".pickle", "wb") as f:
             pickle.dump(element, f)
 
+    print(f"Element successfully saved at path: {path}")
+
 def generate_path(basepath:str = os.getcwd(),
                   folders:List[str] = []) -> str:
     """
@@ -399,3 +401,24 @@ def load_reg_data(config:ExperimentConfig) -> Tuple[DataLoader,DataLoader,DataLo
 
     return train_loader,val_loader,test_loader
 
+# Function that returns the feature names in the CMAPSS dataset
+
+def get_feature_names(
+        config:ExperimentConfig,
+) -> List[str]:
+
+    """
+    Function to get the feature names in the CMAPSS dataset according to the specific CeRULeO transformer used
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+
+    Returns:
+        feature_names (List[str]): The list of feature names in the CMAPSS dataset
+    """
+
+    train_data = CMAPSSDataset(train=True,models=config.cmapss_models)
+    transformer = get_transformer(config,train_data)
+    transformer.fit(train_data)
+    feature_names = transformer.columns()
+    return feature_names

@@ -14,7 +14,16 @@ src_path = os.path.join(os.path.dirname(__file__),"..","..","src",
 )
 sys.path.append(src_path)
 
-from utils import get_current_time
+cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
+
+from utils import (
+        ExperimentConfig,
+        get_current_time,
+        get_most_recent_file,
+        open_element,
+        get_feature_names,
+)
 
 def plot_forecast(life:pd.DataFrame,
                   prompt:np.ndarray,
@@ -68,5 +77,60 @@ def plot_forecast(life:pd.DataFrame,
 
     plt.savefig(plot_path)
     print(f"Plot saved at: {plot_path}")
+
+# Re adaptation of function plot_torch_predictions_grid from `SSM_PDM` project
+
+def plot_predictions_grid(
+    config:ExperimentConfig,
+    sensor_idx:int=0,
+    outputs_path:str=experiment_path,
+    plot_path:str=experiment_path,
+) -> plt.figure:
+
+    """
+    Function to plot in a grid the `RUL` prediction of each life for a specific
+    feature/sensor
+    """
+
+    assert config.nrows*config.ncols == (config.test_idx[1]-config.test_idx[0]), "Number of rows and columns must match the number of lives"
+
+    # Get the name of the sensor to plot
+    feature_names = get_feature_names(config)
+    sensor_name = feature_names[sensor_idx]
+
+    # Get the y_pred and y_true tensors
+    outputs_path = get_most_recent_file(outputs_path,file_pos=config.file_pos)
+    outputs_dict = open_element(
+        file_path=outputs_path,
+        filetype="pickle"
+    )
+
+    # Select the predictions and true values for the sensor
+    y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
+    pred,true = y_pred[:,sensor_idx,:],y_true[:,sensor_idx,:]
+
+    # Produce the plot
+    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(15,15))
+    for i in range(config.nrows):
+        for j in range(config.ncols):
+            if i*config.ncols+j<(config.nrows*config.ncols):
+                
+                ax=axs[i,j]
+                ax.plot(true[i*config.ncols+j,:],color="blue",label='True RUL')
+                ax.plot(pred[i*config.ncols+j,:],color="orange",label='Predicted RUL')
+                ax.set_title(f'Life {i*config.ncols+j+1+config.test_idx[0]} {sensor_name}')
+                ax.set_xticks([])
+                ax.set_ylabel('RUL')
+                ax.legend()
+
+    if config.save_plot:
+        filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid.pdf"
+        plot_path=os.path.join(plot_path,filename)
+        plt.savefig(plot_path,bbox_inches='tight')
+        print('#'*50)
+        print(f'Plot saved at: {plot_path}')
+        print('#'*50)
+
+    return fig
 
 
