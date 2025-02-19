@@ -4,7 +4,7 @@
 model_config_path: config/config.yaml
 
 # cuda config
-device_num: 0
+device_num: 2
 
 # wandb config
 project_name: "chronos-rul"

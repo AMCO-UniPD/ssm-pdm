@@ -47,13 +47,13 @@ device = torch.device(f"cuda:{exp_config.device_num}" if torch.cuda.is_available
 
 best_model_path = generate_path(basepath=experiment_path,
                                    folders=["best_models",
-                                            config.model_name,
-                                            config.cmapss_models])
+                                            exp_config.model_name,
+                                            exp_config.cmapss_models])
 
 outputs_path = generate_path(basepath=experiment_path,
                                    folders=["outputs",
-                                            config.model_name,
-                                            config.cmapss_models])
+                                            exp_config.model_name,
+                                            exp_config.cmapss_models])
 
 metrics_path = generate_path(basepath=experiment_path,
                              folders=["metrics",
@@ -64,6 +64,7 @@ plot_path = generate_path(basepath=experiment_path,
                              folders=["plots",
                                       exp_config.model_name,
                                       exp_config.cmapss_models])
+ipdb.set_trace()
 
 if exp_config.test_script:
     
