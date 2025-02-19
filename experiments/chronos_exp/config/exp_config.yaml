@@ -44,7 +44,8 @@ sequence_length: 500
 # Model configurations
 model_id: amazon/chronos-t5-small
 model_name: chronos-rul # in the future: S4,S5,S4D?
-num_labels: 1
+# model_name: chronos-random
+# num_labels: 1
 
 # Loss function to use for training
 loss: mae
@@ -56,3 +57,10 @@ tau: 0.5
 # best_model_perf config
 file_pos: 0
 test_script: true
+save_outputs: true
+
+# plot function config
+save_plot: true
+nrows: 5
+ncols: 3
+sensor_idx: 0
