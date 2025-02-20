@@ -59,9 +59,17 @@ def lifes_metrics(
     )
 
     for i in range(y_pred.shape[0]):
-        mask = y_pred[i,0,:]!=0
+        mask = torch.tensor(y_true[i,0,:]!=0).unsqueeze(0)
         for j,sensor in zip(range(y_pred.shape[1]),feature_names):
-            metrics_df.at[f"Life_{i}",sensor]=eval_criterion(y_pred=y_pred[i,j,:],y_true=y_true[i,j,:],mask=mask)
+            pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
+            true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
+            eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
+            metrics_df.at[f"Life_{i}",sensor]=eval_loss
+
+    # Add a row Life_mean with the mean of the metrics over all the columns
+    metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0)
+    # Add a column Sensor_mean with the mean of the metrics over all the rows
+    metrics_df["Sensor_mean"]=metrics_df.mean(axis=1)
 
     save_element(
         element=metrics_df,

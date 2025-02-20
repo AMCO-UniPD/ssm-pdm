@@ -23,7 +23,7 @@ class RMSELoss(nn.Module):
             torch.Tensor: The RMSE loss
         """
 
-        mask=mask.squeeze(-1).bool()
+        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
         masked_preds=[y_pred[i][mask[i]].unsqueeze(0) for i in range(y_pred.shape[0])]
         masked_true=[y_true[i][mask[i]].unsqueeze(0) for i in range(y_true.shape[0])]
         y_pred_unpadded=torch.cat(masked_preds)
@@ -46,7 +46,7 @@ class MSELoss(nn.Module):
             torch.Tensor: The RMSE loss
         """
 
-        mask=mask.squeeze(-1).bool()
+        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
         masked_preds=[y_pred[i][mask[i]].unsqueeze(0) for i in range(y_pred.shape[0])]
         masked_true=[y_true[i][mask[i]].unsqueeze(0) for i in range(y_true.shape[0])]
         y_pred_unpadded=torch.cat(masked_preds)
@@ -69,7 +69,7 @@ class MAELoss(nn.Module):
             torch.Tensor: The RMSE loss
         """
 
-        mask=mask.squeeze(-1).bool()
+        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
         masked_preds=[y_pred[i][mask[i]].unsqueeze(0) for i in range(y_pred.shape[0])]
         masked_true=[y_true[i][mask[i]].unsqueeze(0) for i in range(y_true.shape[0])]
         y_pred_unpadded=torch.cat(masked_preds)
@@ -94,7 +94,8 @@ class PinballLoss(nn.Module):
             torch.Tensor: The Pinball loss
         """
 
-        mask=mask.squeeze(-1).bool()
+        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
+        ipdb.set_trace()
         masked_preds=[y_pred[i][mask[i]].unsqueeze(0) for i in range(y_pred.shape[0])]
         masked_true=[y_true[i][mask[i]].unsqueeze(0) for i in range(y_true.shape[0])]
         y_pred_unpadded=torch.cat(masked_preds)

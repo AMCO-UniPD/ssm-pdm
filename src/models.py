@@ -473,7 +473,9 @@ def best_model_perf(
     )
 
     # Evaluate the model on the test set
+    print("#" * 50)
     print("Evaluating the best model on the test set")
+    print("#" * 50)
     _,_,y_pred,y_true = eval_loop(
         dataloader=test_loader,
         model=model,
@@ -558,15 +560,16 @@ def wandb_run(
             best_model_path=best_model_path,
         )
 
-    best_model_perf(
-        config=config,
-        model_config=model_config,
-        experiment_path=experiment_path,
-        device=device,
-        best_model_path=best_model_path,
-        plot_path=plot_path,
-        metrics_path=metrics_path
-    )
+    if config.save_outputs:
+        best_model_perf(
+            config=config,
+            model_config=model_config,
+            experiment_path=experiment_path,
+            device=device,
+            best_model_path=best_model_path,
+            plot_path=plot_path,
+            metrics_path=metrics_path
+        )
 
 
     return model,model_info
