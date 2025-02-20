@@ -127,7 +127,7 @@ if exp_config.test_script:
         print("Producing grid plot of the predictions")
         print("#" * 50)
 
-        fig = plot_predictions_grid(
+        _ = plot_predictions_grid(
             config=exp_config,
             sensor_idx=exp_config.sensor_idx,
             outputs_path=outputs_path,

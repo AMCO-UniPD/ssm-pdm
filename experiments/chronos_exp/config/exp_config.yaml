@@ -34,12 +34,12 @@ scaler_kwargs:
   high_limit: 1.0
 
 # Training parameters
-epochs: 3
+epochs: 10
 lr: 1.0e-3
-sensors:
-  - SensorMeasure2
-  - SensorMeasure3
 sequence_length: 500
+# sensors:
+#   - SensorMeasure2
+#   - SensorMeasure3
 
 # Model configurations
 model_id: amazon/chronos-t5-small
@@ -56,16 +56,19 @@ tau: 0.5
 
 # test_script config
 test_script: true
+file_pos: 0
 save_outputs: false
 compute_metrics: false
 obsidian_table: false
 plot_preds: true
 
-# best_model_perf config
-file_pos: 0
-
 # plot function config
 save_plot: true
-nrows: 5
-ncols: 3
+life_idx:
+  - 0
+  - 1
+  - 2
+  - 3
+nrows: 2
+ncols: 2
 sensor_idx: 0
