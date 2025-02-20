@@ -10,7 +10,14 @@ tags:
 
 Now that we have set up the [[chronos-data#Padding Regression Approach|padding regression approach experiment code]] we can start running experiments and see how the results are. 
 
-## Experiment 1 ⏰
+## Pretrained model experiments 🧠
+
+These experiments start from `CHRONOS` with the pre trained weights from the time series forecasting task.
+
+>[!info]
+> We will represent these experiments with the 🧠 emoji because the model has some knowledge in its pre training weights so it has something in its 🧠.
+
+### Experiment 1 ⏰ 🧠
 
 This first experiment was using a small configuration (in the sense that I fine tuned the model for a small number of epochs) because it was used just to see weather the code worked or not. So the configuration is the following:
 
@@ -53,7 +60,7 @@ As we can see they are preetty good, the model has learned the decreasing trend 
 >[!warning]
 > Differently from the `AD_MG` project now we want to **underestimate** the `RUL` to avoid unexpected breaks in the system. In fact here the smaller the `RUL` the closer we are to failure. Inversely, in the `AD_MG` project the higher the damage the closer to failure.
 
-### Metrics table
+#### Metrics table
 
 As written [[chronos-data#`CMAPSS` Data Split|here]] actually the model performance vary a lot across different lifes since the predictions are almost equal across all the sensors and across all the lifes (always start from 201, so in lifes where the inital `RUL` value is higher the model is not doing very well). A confirmation of this can be seen in the metrics table where I report the `RMSE` loss for all the pairs of lifes and sensors.
 
@@ -81,11 +88,11 @@ As written [[chronos-data#`CMAPSS` Data Split|here]] actually the model performa
 
 We can see that some lifes have much higher `RMSE` values than others and the errors across the different sensors are very similar.
 
-### Prediction plots
+#### Prediction plots
 
 Now I also finish to set up the `plot_predictions_grid` function that produces a subplot with the comparison between the true and predicted `RUL` values over all the test lifes for a specific sensor.
 
-#### Truncated life plot
+##### Truncated life plot
 
 File `20-02-2025_11-16-26_chronos-rul_FD001_SensorMeasure2_predictions_grid.pdf`.
 
@@ -94,7 +101,7 @@ The first kind of plots I want to analyze are the ones I used also in the `SSM_P
 
 These plots are actually very similar to the ones obtained in the `SSM_PDM` project, this confirms the probably non optimal format of the predictions [[chronos-data#`CMAPSS` Data Split|discussed here]]. In fact in some lifes the predictions are pretty good, in other they are much worse.
 
-#### Full life plot
+##### Full life plot
 
 File `20-02-2025_11-05-17_chronos-rul_FD001_SensorMeasure2_predictions_grid.pdf`.
 
@@ -108,29 +115,8 @@ One interesting thing to try may be the following:
 - This forecasted values will form a new dataset that will be fed to the regression version of `CHRONOS` to see what kind of `RUL` it predicts
 - We do not have any label to evaluate how good the predictions are but we can see the future of the `RUL` values. In fact the test lifes of `CMAPSS` represent a real-world situation where the machine is working and we are monitoring it, so the life it's still going on and we want to predict how that life changes in the future. This is a very interesting experiment to do.
 
-## Experiment 2 ⏰
 
-In [[chronos_reg_exp#experiment-1|experiment 1]] the model had the pre trained weights of `chronos` in its hidden layers (only the model head was randomly initialized since I changed it) and the predictions were not bad at all. Now I want to see what happens if I use a model with randomly initialized weights with the same configuration. If the results are worse we can confirm the utility of using the pre trained weights → it will mean that the knowledge `chronos` gained when pre trained for the time series forecasting task was transferred to the `RUL` estimation taks.
-
->[!note]
-> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/lts3ilb9?nw=nwuserfrizzodavide)
-
-Looking at the predictions, at the loss plots and at the loss values we can confirm that this is clearly worse than the model exploiting the pre trained weights of `chronos` 💪:
-
-
-```python
-y_true[0,0,:10]
-array([196., 195., 194., 193., 192., 191., 190., 189., 188., 187.],
-      dtype=float32)
-
-y_pred[0,0,:10]
-array([98.33607 , 98.3955  , 97.90683 , 98.1296  , 98.50427 , 97.86396 ,
-       98.47129 , 98.586784, 98.05804 , 98.070755], dtype=float32)
-```
-
-Here the model predicts more or less a constant value, so it has not learned yet the decreasing trend of the `RUL`. However looking at the plots the loss was going down so maybe with more epochs it could have learned the trend. We should do another comparison with more epochs to see if this is true.
-
-## Experiment 3 ⏰
+### Experiment 2 ⏰ 🧠
 
 Let's try now to launch an experiment with more epochs and more test and validation lifes. In particular the new configuration will be:
 
@@ -152,6 +138,57 @@ Let's try now to launch an experiment with more epochs and more test and validat
 | `eval_loss` | `mse` |
 
 >[!note]
-> [Link to the `wandb` run]()
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/jolend3p?nw=nwuserfrizzodavide)
+
+Looking at the `wandb` plots unfortunately the results are not very reassuring. In fact the `test_loss` goes down in the first 2 epochs (like in experiment 1) but then settles at a sligthly higher value for the rest of the epochs, as if the model stopped the learning process. Maybe this happens because of the maybe too simple regression head I am using without non linearities.
+
+Looking at the predictions we can see that now they all start from 200 instead of 201 and as usual they are more or less the same across all the sensors and all the lifes.
+
+Moreover I want to see what happens with the randomly initialized model here becase looking at the loss plots of [[chronos_reg_exp#randomly-initialized-model-experiments|experiment 1 of the 👶 experiments]] the loss was going down pretty fast.
+
+## Randomly initialized model experiments 👶
+
+In these experiments the model has randomly initialized weights. These are the weights that `CHRONOS` started from before the pre training stage.
+
+>[!info]
+> We will represent these experiments with the 👶 emoji because the model has no prior knowledge in its weights so it is like it is a 👶
+
+### Experiment 1 ⏰ 👶
+
+In [[chronos_reg_exp#experiment-1|experiment 1]] the model had the pre trained weights of `chronos` in its hidden layers (only the model head was randomly initialized since I changed it) and the predictions were not bad at all. Now I want to see what happens if I use a model with randomly initialized weights with the same configuration. If the results are worse we can confirm the utility of using the pre trained weights → it will mean that the knowledge `chronos` gained when pre trained for the time series forecasting task was transferred to the `RUL` estimation taks.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/lts3ilb9?nw=nwuserfrizzodavide)
+
+Looking at the predictions, at the loss plots and at the loss values we can confirm that this is clearly worse than the model exploiting the pre trained weights of `chronos` 💪:
 
 
+```python
+y_true[0,0,:10]
+array([196., 195., 194., 193., 192., 191., 190., 189., 188., 187.],
+      dtype=float32)
+
+y_pred[0,0,:10]
+array([98.33607 , 98.3955  , 97.90683 , 98.1296  , 98.50427 , 97.86396 ,
+       98.47129 , 98.586784, 98.05804 , 98.070755], dtype=float32)
+```
+
+Here the model predicts more or less a constant value, so it has not learned yet the decreasing trend of the `RUL`. However looking at the plots the loss was going down so maybe with more epochs it could have learned the trend. We should do another comparison with more epochs to see if this is true.
+
+### Experiment 2 ⏰ 👶
+
+Let's use the same configuration of [[chronos_reg_exp#experiment-2--|experiment 2 🧠]] but with the 👶 model. Let's see weather it is still worse or not.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ya9ypvt3?nw=nwuserfrizzodavide)
+
+As I expected also the 👶 model after some epochs is able to reach more or less the same performances of the 🧠 model. The loss goes down with the same trend and I bet the the predictions will be more or less on the same range. As I expected this is what happens: the different is that the `RUL` predictions starts from 196. It's like the model learns a starting point for the `RUL` and than from that point goes down with a more or less linearly decreasing trend. Hopefully this thing changes using a more complex regression head.
+
+>[!important] Pretrained `CHRONOS` is not helping
+> This result shows how the pretrained weights of `CHRONOS` are just helping in converging faster to the best solution but they are not giving a significant advantage in terms of performances. Let's see what happens using a different regression head but from this point onwards potentially the contribute of `CHRONOS` could be the one of [[chronos-data#Experient Idea: Forecasting + Regression `CHRONOS`|this experiment idea]] or we can simply use it to compare with the `SSM` models results combining the `SSM_PDM` and `chronos_pdm` projects.
+
+## Zero Shot experiments ⏰ 🚀
+
+Here I will try some zero shot experiments, so I will pass the pretraind `chronos` model directly to `eval_loop` to evaluate its performances on the test set without any fine tuning. Probably there will be not so many experiments in this section because, considering that the regression head is randomly initialized, I am pretty sure that the results will be bad.
+
+As expected the results are very bad and the predictions do not make any sense because of the randomly initialized head.
