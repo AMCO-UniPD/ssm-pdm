@@ -454,19 +454,35 @@ def best_model_perf(
 
     # Load the best model
 
-    best_model_filepath = get_most_recent_file(dirpath=best_model_path,
-                                               file_pos=config.file_pos)
+    if config.zero_shot:
 
-    best_model_state_dict = open_element(best_model_filepath,
-                                         filetype="pickle")
-    
-    train_loader,_,test_loader=load_reg_data(config)
+        print("#"*50)
+        print("Zero-shot inference")
+        print("#"*50)
 
-    model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
-                                               model_config=model_config,
-                                               exp_config=config)
-    model.load_state_dict(best_model_state_dict)
-    model=model.to(device)
+        train_loader,_,test_loader=load_reg_data(config)
+
+        model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
+                                                   model_config=model_config,
+                                                   exp_config=config)
+        model=model.to(device)
+
+    else:
+
+        best_model_filepath = get_most_recent_file(dirpath=best_model_path,
+                                                   file_pos=config.file_pos)
+
+        best_model_state_dict = open_element(best_model_filepath,
+                                             filetype="pickle")
+        
+        train_loader,_,test_loader=load_reg_data(config)
+
+        model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
+                                                   model_config=model_config,
+                                                   exp_config=config)
+
+        model.load_state_dict(best_model_state_dict)
+        model=model.to(device)
 
     criterion,eval_criterion=load_loss_functions(
         loss_name=config.loss,
