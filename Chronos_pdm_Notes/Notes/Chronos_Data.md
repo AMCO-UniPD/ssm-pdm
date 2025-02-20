@@ -45,6 +45,7 @@ In the note `RESULTS XAI_PDM.md` there are some useful information on some prepr
 >[!note]
 > I think that if we want to divide the lifes into single mini batches in a `DataLoader` is easier to design the fine tuning code using `PyTorch` following the `Full pytorch training` note in the 🤗 `NLP` course notes.
 
+
 ## How to use `CMAPSS` with the model
 
 Here I have to understand how to use the `CMAPSS` dataset with the `CHRONOS` model. In fact here it is not like with the forecasting task where we pass an input sequence and the model predicts the next values of it.
@@ -137,3 +138,26 @@ test_idx=[15,30]
 ```
 
 The test lifes are 100 so maybe in the future I can do something like `val_idx=[0,50]` and `test_idx=[50,100]`.
+
+After the [[chronos-regression-experiments|first experiments]] I realized that after just 3 epochs the model is producing some decent results: it gets the decreasing trend of the `RUL` and the values are not so different from the true ones. Actually I realized that this holds for the first lifes in the test set. In fact over all the sensors and over all the lifes the predictions are quite similar (they differ just in the decimal digits): they start from about 201 and go down following the `RUL` decreasing trend. This makes them good predictions for some of the test lifes that have durations around 190-200 but for other lifes with durations around 250 this predictions starts to become a bit far (even though they are underestimations which may be good to avoid unexpected breaks in the system, but obviously we do not want to have too extreme underestimations).
+
+So I checked the mean and standard deviation of the durations across the different splits of the dataset. Now I considered the split where I use `val_idx=[0,50]` and `test_idx=[50,100]` and actually the values are not that different across the different splits:
+
+| Split | Mean Duration | Std Duration |
+|-------|---------------|--------------|
+| Train | 205.3 | 46.11 |
+| Val   | 201.1 | 47.24 |
+| Test  | 209.86 | 39.63 |
+
+In the test set we have higher durations and with a smaller standard deviation so maybe the model may underestimate the `RUL`. In any case these almost constant results across different lifes are not very good because it means that the model is not able to capture the different degradation patterns in different lifes, but it may also be due to the fact that we have trained just for 3 epochs. Let's see what happens with more epochs.
+
+>[!note]
+> In any case this kind of predictions (similar across different lifes and all with the same range of `RUL` values) were obtained also with the `SSM` models in the `SSM_PDM` project and that may be due to the Regression Head I am using, which maybe is not optimal. For example may be I just have to add multiple `nn.Linear` layers → in fact (now that I think about it) I did not even insert an activation after the `nn.Linear` layer → maybe that the issue.
+
+## Experient Idea: Forecasting + Regression `CHRONOS`
+
+One interesting thing to try may be the following:
+
+- In the test set use the forecasting version of `CHRONOS` to forecast the values of the sensor measurements
+- This forecasted values will form a new dataset that will be fed to the regression version of `CHRONOS` to see what kind of `RUL` it predicts
+- We do not have any label to evaluate how good the predictions are but we can see the future of the `RUL` values. In fact the test lifes of `CMAPSS` represent a real-world situation where the machine is working and we are monitoring it, so the life it's still going on and we want to predict how that life changes in the future. This is a very interesting experiment to do.
