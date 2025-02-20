@@ -93,7 +93,7 @@ def plot_predictions_grid(
     feature/sensor
     """
 
-    assert config.nrows*config.ncols == (config.test_idx[1]-config.test_idx[0]), "Number of rows and columns must match the number of lives"
+    assert config.nrows*config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
 
     # Get the name of the sensor to plot
     feature_names = get_feature_names(config)
@@ -108,8 +108,10 @@ def plot_predictions_grid(
 
     # Select the predictions and true values for the sensor
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
-    pred,true = y_pred[:,sensor_idx,:],y_true[:,sensor_idx,:]
+    # pred,true = y_pred[:,sensor_idx,:],y_true[:,sensor_idx,:]
+    pred,true = y_pred[config.life_idx][:,sensor_idx,:],y_true[config.life_idx][:,sensor_idx,:]
     mask = torch.tensor(true!=0)
+    ipdb.set_trace()
 
     # Produce the plot
     fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(15,15))
@@ -120,7 +122,7 @@ def plot_predictions_grid(
                 ax=axs[i,j]
                 ax.plot(true[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="blue",label='True RUL')
                 ax.plot(pred[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="orange",label='Predicted RUL')
-                ax.set_title(f'Life {i*config.ncols+j+1+config.test_idx[0]} {sensor_name}')
+                ax.set_title(f'Life {config.life_idx[i*config.ncols+j+1]} {sensor_name}')
                 ax.set_xticks([])
                 ax.set_ylabel('RUL')
                 ax.legend()

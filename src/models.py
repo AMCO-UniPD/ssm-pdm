@@ -41,7 +41,9 @@ from utils import(
 
 from loss import load_loss_functions
 
-from perf import lifes_metrics
+from perf import lifes_metrics, df_with_index_to_obsidian_table
+
+from plots import plot_predictions_grid
 
 # chronos imports
 from training.train import load_model
@@ -511,6 +513,7 @@ def wandb_run(
     model_config:ChronosConfig,
     device:torch.device=torch.device("cpu"),
     best_model_path:str=experiment_path,
+    outputs_path:str=experiment_path,
     metrics_path:str=experiment_path,
     plot_path:str=experiment_path,
 ) -> Tuple[nn.Module, dict]:
@@ -523,6 +526,9 @@ def wandb_run(
         model_config (ChronosConfig): The model configuration object
         device (str): The device to use
         best_model_path (str): The path to save the best model
+        outputs_path (str): The path to save the outputs
+        metrics_path (str): The path to save the metrics
+        plot_path (str): The path to save the plots
 
     Returns:
         model (nn.Module): The model object
@@ -561,14 +567,54 @@ def wandb_run(
         )
 
     if config.save_outputs:
+
+        print("#"*50)
+        print("Saving outputs")
+        print("#"*50)
+
         best_model_perf(
             config=config,
             model_config=model_config,
-            experiment_path=experiment_path,
             device=device,
             best_model_path=best_model_path,
+            outputs_path=outputs_path
+        )
+
+    if config.compute_metrics:
+
+        print("#" * 50)
+        print("Computing metrics for each life and for each sensor in the test set")
+        print("#" * 50)
+
+        metrics_df = lifes_metrics(
+            config=config,
+            outputs_path=outputs_path,
+            metrics_path=metrics_path,
+        )
+        print("#" * 50)
+        print(f"metrics_df shape: {metrics_df.shape}")
+
+    if config.obsidian_table:
+
+       print("#" * 50)
+       print("Producing the obsidian table")
+       print("#" * 50)
+
+       metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
+       metrics_df = open_element(metrics_path)
+       print(df_with_index_to_obsidian_table(metrics_df))
+
+    if config.plot_preds:
+
+        print("#" * 50)
+        print("Producing grid plot of the predictions")
+        print("#" * 50)
+
+        _ = plot_predictions_grid(
+            config=config,
+            sensor_idx=config.sensor_idx,
+            outputs_path=outputs_path,
             plot_path=plot_path,
-            metrics_path=metrics_path
         )
 
 
