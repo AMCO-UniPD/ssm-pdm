@@ -13,10 +13,10 @@ project_name: "chronos-rul"
 data_name: CMAPSS # CMAPSS, CMPASS-2
 val_idx:
   - 0
-  - 15
+  - 50
 test_idx:
-  - 15
-  - 30
+  - 50
+  - 100
 val_size: 0.3
 cmapss_models: FD001 # FD001, FD002, FD003, FD004
 
@@ -54,10 +54,14 @@ eval_loss: rmse
 # tau parameter for the quantile loss
 tau: 0.5
 
+# test_script config
+test_script: true
+save_outputs: false
+compute_metrics: true
+plot_preds: false
+
 # best_model_perf config
 file_pos: 0
-test_script: true
-save_outputs: true
 
 # plot function config
 save_plot: true
