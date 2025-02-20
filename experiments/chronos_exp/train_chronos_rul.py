@@ -20,7 +20,9 @@ sys.path.append(chronos_path)
 from utils import (
     ExperimentConfig,
     generate_path,
+    get_most_recent_file,
     load_yaml_to_dict,
+    open_element,
 )
 
 from models import (
@@ -29,7 +31,10 @@ from models import (
 )
 
 from loss import load_loss_functions
-from perf import lifes_metrics
+from perf import (
+        lifes_metrics,
+        df_with_index_to_obsidian_table,
+)
 from plots import plot_predictions_grid
 
 experiment_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"chronos_exp")
@@ -76,6 +81,8 @@ if exp_config.test_script:
     print("Running best model performance test")
     print("#"*50)
 
+    setproctitle.setproctitle("chronos-rul-test-script")
+
     if exp_config.save_outputs:
 
         print("#"*50)
@@ -104,6 +111,15 @@ if exp_config.test_script:
         print("#" * 50)
         print(f"metrics_df shape: {metrics_df.shape}")
 
+    if exp_config.obsidian_table:
+
+       print("#" * 50)
+       print("Producing the obsidian table")
+       print("#" * 50)
+
+       metrics_path = get_most_recent_file(metrics_path, file_pos=exp_config.file_pos)
+       metrics_df = open_element(metrics_path)
+       print(df_with_index_to_obsidian_table(metrics_df))
 
     if exp_config.plot_preds:
 

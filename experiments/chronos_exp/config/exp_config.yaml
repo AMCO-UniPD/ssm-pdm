@@ -13,10 +13,10 @@ project_name: "chronos-rul"
 data_name: CMAPSS # CMAPSS, CMPASS-2
 val_idx:
   - 0
-  - 50
+  - 15
 test_idx:
-  - 50
-  - 100
+  - 15
+  - 30
 val_size: 0.3
 cmapss_models: FD001 # FD001, FD002, FD003, FD004
 
@@ -57,8 +57,9 @@ tau: 0.5
 # test_script config
 test_script: true
 save_outputs: false
-compute_metrics: true
-plot_preds: false
+compute_metrics: false
+obsidian_table: false
+plot_preds: true
 
 # best_model_perf config
 file_pos: 0
