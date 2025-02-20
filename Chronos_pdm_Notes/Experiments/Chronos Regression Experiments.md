@@ -129,3 +129,29 @@ array([98.33607 , 98.3955  , 97.90683 , 98.1296  , 98.50427 , 97.86396 ,
 ```
 
 Here the model predicts more or less a constant value, so it has not learned yet the decreasing trend of the `RUL`. However looking at the plots the loss was going down so maybe with more epochs it could have learned the trend. We should do another comparison with more epochs to see if this is true.
+
+## Experiment 3 ⏰
+
+Let's try now to launch an experiment with more epochs and more test and validation lifes. In particular the new configuration will be:
+
+
+| Parameter | Value |
+|-----------|-------|
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 10    |
+| `lr` | 1e-3 |
+| `sequence_length` | 500 |
+| `model_id` | `amazon/chronos-t5-small` |
+| `hidden_size` | 512 |
+| `loss` | `mae` |
+| `eval_loss` | `mse` |
+
+>[!note]
+> [Link to the `wandb` run]()
+
+
