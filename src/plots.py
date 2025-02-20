@@ -93,7 +93,10 @@ def plot_predictions_grid(
     feature/sensor
     """
 
-    assert config.nrows*config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
+    if config.life_idx is None:
+        config.life_idx = np.arange(config.nrows*config.ncols)
+    else:
+        assert config.nrows*config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
 
     # Get the name of the sensor to plot
     feature_names = get_feature_names(config)
@@ -108,9 +111,8 @@ def plot_predictions_grid(
 
     # Select the predictions and true values for the sensor
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
-    # pred,true = y_pred[:,sensor_idx,:],y_true[:,sensor_idx,:]
     pred,true = y_pred[config.life_idx][:,sensor_idx,:],y_true[config.life_idx][:,sensor_idx,:]
-    mask = torch.tensor(true!=0) if not config.full_life else torch.ones_like(true)
+    mask = torch.tensor(true!=0) if not config.full_life else torch.ones(true.shape).int()
 
     # Produce the plot
     fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(15,15))
@@ -121,13 +123,18 @@ def plot_predictions_grid(
                 ax=axs[i,j]
                 ax.plot(true[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="blue",label='True RUL')
                 ax.plot(pred[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="orange",label='Predicted RUL')
-                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]} {sensor_name}')
+                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1} {sensor_name}')
                 ax.set_xticks([])
                 ax.set_ylabel('RUL')
                 ax.legend()
 
     if config.save_plot:
-        filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid.pdf"
+        if config.full_life:
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid_full"
+        else:
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid_pad"
+        life_idx_str="_".join(str(x) for x in config.life_idx)
+        filename=f"{filename}_life_{life_idx_str}.pdf"
         plot_path=os.path.join(plot_path,filename)
         plt.savefig(plot_path,bbox_inches='tight')
         print('#'*50)

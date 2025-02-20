@@ -65,7 +65,8 @@ plot_preds: true
 # plot function config
 save_plot: true
 full_life: false
-life_idx: [14,13,0,5,7,2,3,9,11]
-nrows: 3
+# life_idx: [16,17,18,19,20,21,22,23,24,25,26,27,28,29]
+life_idx: null
+nrows: 5
 ncols: 3
-sensor_idx: 0
+sensor_idx: 1
