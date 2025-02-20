@@ -109,7 +109,7 @@ def plot_predictions_grid(
     # Select the predictions and true values for the sensor
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
     pred,true = y_pred[:,sensor_idx,:],y_true[:,sensor_idx,:]
-    mask = torch.tensor(true!=0)
+    mask = torch.tensor(true!=0) if not exp_config.full_life else torch.ones(true.shape)
 
     # Produce the plot
     fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(15,15))
