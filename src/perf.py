@@ -58,18 +58,20 @@ def lifes_metrics(
         tau=config.tau
     )
 
+    pd.options.display.float_format = "{:.2f}".format
+
     for i in range(y_pred.shape[0]):
         mask = torch.tensor(y_true[i,0,:]!=0).unsqueeze(0)
         for j,sensor in zip(range(y_pred.shape[1]),feature_names):
             pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
             true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
             eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
-            metrics_df.at[f"Life_{i}",sensor]=eval_loss
-
+            metrics_df.at[f"Life_{i}",sensor]=round(eval_loss,2)
+    
     # Add a row Life_mean with the mean of the metrics over all the columns
-    metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0)
+    metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0).round(2)
     # Add a column Sensor_mean with the mean of the metrics over all the rows
-    metrics_df["Sensor_mean"]=metrics_df.mean(axis=1)
+    metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
 
     save_element(
         element=metrics_df,
@@ -77,6 +79,27 @@ def lifes_metrics(
         filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}.pkl"
     )
 
+    pd.options.display.float_format = None
+
     return metrics_df
+
+# Function to render the data contained in a pd.DataFrame into a markdown table
+
+def df_to_obsidian_table(df):
+    markdown = "| " + " | ".join(df.columns) + " |\n"
+    markdown += "| " + " | ".join("---" for _ in df.columns) + " |\n"
+    for row in df.itertuples(index=False):
+        markdown += "| " + " | ".join(map(str, row)) + " |\n"
+    return markdown
+
+
+def df_with_index_to_obsidian_table(df):
+    lines = []
+    # Include index column name as the first header
+    lines.append("| " + " | ".join([df.index.name or ""] + list(df.columns)) + " |")
+    lines.append("| " + " | ".join(["---"] * (len(df.columns) + 1)) + " |")
+    for idx, row in df.iterrows():
+        lines.append("| " + " | ".join([str(idx)] + list(map(str, row))) + " |")
+    return "\n".join(lines)
 
 

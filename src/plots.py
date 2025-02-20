@@ -2,8 +2,9 @@
 Python script containing the plotting functions for the chronos pdm project 
 """
 
-import os 
+import os
 import sys
+import ipdb
 from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
@@ -108,6 +109,7 @@ def plot_predictions_grid(
     # Select the predictions and true values for the sensor
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
     pred,true = y_pred[:,sensor_idx,:],y_true[:,sensor_idx,:]
+    mask = torch.tensor(true!=0)
 
     # Produce the plot
     fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(15,15))
@@ -116,8 +118,8 @@ def plot_predictions_grid(
             if i*config.ncols+j<(config.nrows*config.ncols):
                 
                 ax=axs[i,j]
-                ax.plot(true[i*config.ncols+j,:],color="blue",label='True RUL')
-                ax.plot(pred[i*config.ncols+j,:],color="orange",label='Predicted RUL')
+                ax.plot(true[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="blue",label='True RUL')
+                ax.plot(pred[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="orange",label='Predicted RUL')
                 ax.set_title(f'Life {i*config.ncols+j+1+config.test_idx[0]} {sensor_name}')
                 ax.set_xticks([])
                 ax.set_ylabel('RUL')
