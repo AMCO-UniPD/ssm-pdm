@@ -81,7 +81,7 @@ if exp_config.test_script:
     print("Running best model performance test")
     print("#"*50)
 
-    setproctitle.setproctitle("chronos-rul-test-script")
+    setproctitle.setproctitle(f"{exp_config.model_name}-test-script")
 
     if exp_config.save_outputs:
 
@@ -147,7 +147,7 @@ else:
     print(f"Scaler: {exp_config.scaler}")
     print(f"Epochs: {exp_config.epochs}")
     print(f"Learning rate: {exp_config.lr}")
-    print(f"Sequence length: {exp_config.seq_len}")
+    print(f"Sequence length: {exp_config.sequence_length}")
     print(f"Training loss: {exp_config.loss}")
     print(f"Eval loss: {exp_config.eval_loss}")
     print("#"*50)
@@ -160,6 +160,7 @@ else:
         model_config=model_config,
         device=device,
         best_model_path=best_model_path,
+        outputs_path=outputs_path,
         metrics_path=metrics_path,
         plot_path=plot_path
     )

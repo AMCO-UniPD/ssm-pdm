@@ -13,10 +13,10 @@ project_name: "chronos-rul"
 data_name: CMAPSS # CMAPSS, CMPASS-2
 val_idx:
   - 0
-  - 15
+  - 50
 test_idx:
-  - 15
-  - 30
+  - 50
+  - 100
 val_size: 0.3
 cmapss_models: FD001 # FD001, FD002, FD003, FD004
 
@@ -42,9 +42,11 @@ sequence_length: 500
 #   - SensorMeasure3
 
 # Model configurations
+zero_shot: true
 model_id: amazon/chronos-t5-small
-model_name: chronos-rul # in the future: S4,S5,S4D?
+# model_name: chronos-rul # in the future: S4,S5,S4D?
 # model_name: chronos-random
+model_name: chronos-zero-shot
 # num_labels: 1
 
 # Loss function to use for training
@@ -57,10 +59,10 @@ tau: 0.5
 # test_script config
 test_script: true
 file_pos: 0
-save_outputs: false
-compute_metrics: false
+save_outputs: true
+compute_metrics: true
 obsidian_table: false
-plot_preds: true
+plot_preds: false
 
 # plot function config
 save_plot: true
@@ -69,4 +71,4 @@ full_life: false
 life_idx: null
 nrows: 5
 ncols: 3
-sensor_idx: 1
+sensor_idx: 0
