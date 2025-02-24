@@ -54,3 +54,5 @@ regression_dataset = RegressionDataset(lifes)
 
 # Create a DataLoader
 reg_loader=DataLoader(regression_dataset,batch_size=1,shuffle=False)
+
+
