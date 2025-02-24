@@ -4,7 +4,7 @@
 model_config_path: config/config.yaml
 
 # cuda config
-device_num: 2
+device_num: 0
 
 # wandb config
 project_name: "chronos-rul"
@@ -42,12 +42,25 @@ sequence_length: 500
 #   - SensorMeasure3
 
 # Model configurations
-zero_shot: true
-model_id: amazon/chronos-t5-small
-# model_name: chronos-rul # in the future: S4,S5,S4D?
-# model_name: chronos-random
-model_name: chronos-zero-shot
-# num_labels: 1
+zero_shot: false
+# model_id: amazon/chronos-t5-small
+model_id: amazon/chronos-t5-base
+# model_id: amazon/chronos-t5-large
+# in the future: S4,S5,S4D?
+# Pre trained models
+random_init: false
+# model_name: chronos-rul-small
+model_name: chronos-rul-base
+# model_name: chronos-rul-large
+# Randomly initialized models
+# random_init: true
+# model_name: chronos-random-small
+# zero shot models
+# model_name: chronos-zero-shot
+use_fc_layers: false
+num_fc_layers: 3
+act: relu
+dropout_rate: 0.0
 
 # Loss function to use for training
 loss: mae
@@ -60,9 +73,13 @@ tau: 0.5
 test_script: true
 file_pos: 0
 save_outputs: true
-compute_metrics: true
+compute_metrics: false
 obsidian_table: false
 plot_preds: false
+
+# metrics_df experiment config
+metrics_idx: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+metrics_cols: ["SensorMeasure2"]
 
 # plot function config
 save_plot: true

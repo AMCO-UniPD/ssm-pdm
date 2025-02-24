@@ -28,7 +28,7 @@ model_type: seq2seq
 # model_id: huggingface id for the backbone model
 model_id: google/t5-efficient-small
 # random_init: boolean to specify if we want to initialize the model randomly or with the pretrained weights
-random_init: true
+random_init: false
 # tie_embeddings: boolean to specify if we want to tie the embeddings of the encoder and Decoder
 tie_embeddings: true
 #####################################
