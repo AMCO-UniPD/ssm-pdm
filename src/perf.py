@@ -50,6 +50,7 @@ def lifes_metrics(
         file_path=outputs_path,
         filetype="pickle"
     )
+    print(f"Opened outputs_dict at path: {outputs_path}")
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
 
     _,eval_criterion=load_loss_functions(
@@ -66,7 +67,7 @@ def lifes_metrics(
             pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
             true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
             eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
-            metrics_df.at[f"Life_{i}",sensor]=round(eval_loss,2)
+            metrics_df.at[f"Life_{i+config.test_idx[0]}",sensor]=round(eval_loss,2)
     
     # Add a row Life_mean with the mean of the metrics over all the columns
     metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0).round(2)
@@ -82,6 +83,34 @@ def lifes_metrics(
     pd.options.display.float_format = None
 
     return metrics_df
+
+# Function to select a subset of the rows and a subset of the columns 
+# of a metrics_df
+
+def sub_lifes_metrics(
+    config: ExperimentConfig,
+    metrics_df: pd.DataFrame,
+):
+
+    """
+    Select a subset of the rows and a subset of the columns of a metrics_df
+
+    Args:
+        config:ExperimentConfig ExperimentConfig object
+        metrics_df:pd.DataFrame Metrics DataFrame
+
+    Returns:
+        pd.DataFrame Subset of the metrics_df
+    """
+
+    metrics_idx = [f"Life_{i+config.test_idx[0]}" for i in config.metrics_idx]
+    metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
+    metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
+    if len(config.metrics_cols)>1:
+        metrics_df["Sensor_mean"] = metrics_df.mean(axis=1).round(2)
+
+    return metrics_df
+
 
 # Function to render the data contained in a pd.DataFrame into a markdown table
 

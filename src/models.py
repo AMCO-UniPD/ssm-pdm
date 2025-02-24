@@ -55,14 +55,62 @@ from utils import ExperimentConfig, MeanScaleUniformBinsSensor, get_current_time
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 
+def get_activation(act:str) -> nn.Module:
+    """
+    Get the activation function
+
+    Args:
+        act (str): The name of the activation function for the regression head
+
+    Returns:
+        activation (nn.Module): The activation function
+    """
+
+    if act == "relu":
+        activation = nn.ReLU()
+    elif act == "tanh":
+        activation = nn.Tanh()
+    elif act == "gelu":
+        activation = nn.GELU()
+    elif act == "glu":
+        activation = nn.GLU()
+    else:
+        raise ValueError(f"Activation function {act} not recognized")
+
+    return activation
+
 class RegressionHead(nn.Module):
-    def __init__(self, sequence_length:int, hidden_size:int):
+    def __init__(self,
+                 sequence_length:int=500,
+                 hidden_size:int=512,
+                 num_fc_layers:int=1,
+                 activation:str="relu",
+                 dropout_rate:float=0.1,
+                 use_fc_layers:bool=False):
         super(RegressionHead, self).__init__()
 
         self.fc = nn.Linear(hidden_size, sequence_length)
+        self.use_fc_layers = use_fc_layers
+        if self.use_fc_layers:
+            self.fc_layers = nn.ModuleList()
+            for _ in range(num_fc_layers):
+                self.fc_layers.append(nn.Linear(hidden_size, hidden_size))
+            self.activation = get_activation(act=activation)
+            self.dropout = nn.Dropout(p=dropout_rate)
  
     def forward(self, x:torch.Tensor) -> torch.Tensor:
+        
+        if self.use_fc_layers:
+            for layer in self.fc_layers:
+                x = layer(x)
+                x = self.activation(x)
+                x = self.dropout(x)
+
+            x=self.fc(x)
+            return x
+
         x = self.fc(x) # (n_sensors,hidden_size) -> (n_sensors,sequence_length)
+        # x = self.dropout(x)
         return x
 
 def load_model_tokenizer(
@@ -108,7 +156,7 @@ def load_model_tokenizer(
         config=chronos_config
     )
 
-    if model_config["random_init"]:
+    if exp_config.random_init:
         random_conf = AutoConfig.from_pretrained(exp_config.model_id)
         if isinstance(random_conf,T5Config):
             random_conf.initializer_factor = 0.05
@@ -118,7 +166,14 @@ def load_model_tokenizer(
         model = AutoModelForSequenceClassification.from_pretrained(exp_config.model_id)
     
     # The classification head can also be defined with a nn.Module
-    new_classification_head = RegressionHead(sequence_length=exp_config.sequence_length, hidden_size=model.config.hidden_size)
+    new_classification_head = RegressionHead(
+        sequence_length=exp_config.sequence_length,
+        hidden_size=model.config.hidden_size,
+        num_fc_layers=exp_config.num_fc_layers,
+        activation=exp_config.act,
+        dropout_rate=exp_config.dropout_rate,
+        use_fc_layers=exp_config.use_fc_layers
+    )
 
     # Substitute classification_head with the new one
     model.classification_head = new_classification_head
