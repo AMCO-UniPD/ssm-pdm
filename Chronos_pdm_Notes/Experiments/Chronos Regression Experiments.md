@@ -427,6 +427,10 @@ The metrics values are a bit better than experiment 2 (and that is because we ar
 | Life_64 | 4.21 |
 | Life_mean | 30.0 |
 
+#### Prediction plots
+
+Similar to the ones of experiment 1. The orange line of the `RUL` predictions is more or less a straight line. The only exception, as we have seen also in previous experiments, is that in some lifes there is a little increase at the end of the predictions.
+
 ## Pretrained model experiments 🧠 🏈 - `chronos-t5-large`
 
 In this section I will report the details of the experiments using the `chronos-t5-large` model checkpoint which is the largest version of the `chronos` model and so hopefully it may produce better results.
