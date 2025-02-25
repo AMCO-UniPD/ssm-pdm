@@ -214,11 +214,11 @@ class RegressionDataset(Dataset):
             targets=[np.concatenate((life["RUL"].values,pad_arr)) for _ in sensors]
         else:
             print("*"*50)
-            print(f"Warning: This life is longer than {sequence_length}, considerinf only the first {sequence_length} timesteps")
+            print(f"Warning: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps")
             print("*"*50)
-            sequences=[life[sensor].values[:sequence_length] for sensor in sensors]
+            sequences=[life[sensor].values[life.shape[0]-sequence_length:] for sensor in sensors]
             mask=[np.ones(sequence_length) for _ in sensors]
-            targets=[life["RUL"].values[:sequence_length] for _ in sensors]
+            targets=[life["RUL"].values[life.shape[0]-sequence_length:] for _ in sensors]
 
         self.sequences = sequences
         self.targets = targets
