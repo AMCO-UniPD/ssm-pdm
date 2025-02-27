@@ -244,10 +244,11 @@ class SSMRegressionDataset(Dataset):
     ):
         
         if sequence_length > life.shape[0]:
+            life,rul = life.iloc[:,:-1],life["RUL"]
             pad_arr=np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))
-            mask=np.concatenate((np.ones(shape=(life.shape[0],life.shape[1])),np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))))
+            mask=np.concatenate((np.ones(shape=(life.shape[0])),np.zeros(shape=(sequence_length-life.shape[0]))))
             sequences=np.concatenate((life.values,pad_arr))
-            targets=np.concatenate((life["RUL"].values,pad_arr))
+            targets=np.concatenate((rul.values,pad_arr[:,-1]))
         else:
             print("*"*50)
             print(f"Warning: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps")
@@ -437,7 +438,7 @@ def load_reg_data(config:ExperimentConfig) -> Tuple[DataLoader,DataLoader,DataLo
         val_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in val_lifes]
         test_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in test_lifes]
 
-    batch_size = len(feature_names) if config.model_name.startswith("chronos") else 1
+    batch_size = len(feature_names) if config.model_name.startswith("chronos") else config.sequence_length
 
     train_loader=DataLoader(ConcatDataset(train_datasets),batch_size=batch_size,shuffle=False)
     val_loader=DataLoader(ConcatDataset(val_datasets),batch_size=batch_size,shuffle=False)

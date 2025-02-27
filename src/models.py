@@ -12,7 +12,7 @@ import time
 import wandb
 import numpy as np
 from tqdm.auto import tqdm
-from typing import Tuple
+from typing import Tuple, Union
 
 # torch imports
 import torch
@@ -37,7 +37,10 @@ from utils import(
     load_reg_data,
     get_most_recent_file,
     open_element,
+    get_feature_names
 )
+
+from ssm_models import load_ssm_model
 
 from loss import load_loss_functions
 
@@ -188,6 +191,7 @@ def load_model_tokenizer(
 def train_loop(
         dataloader: DataLoader,
         model: nn.Module,
+        model_name: str,
         tokenizer: MeanScaleUniformBinsSensor,
         optimizer: optim.Optimizer,
         criterion: nn.Module,
@@ -199,6 +203,7 @@ def train_loop(
     Args:
         dataloader (DataLoader): The DataLoader object
         model (torch.nn.Module): The model object
+        model_name (str): The name of the model
         optimizer (torch.optim.Optimizer): The optimizer object
         criterion (torch.nn.Module): The loss function
         device (str): The device to use
@@ -217,10 +222,16 @@ def train_loop(
         rul = rul.to(device).squeeze(-1)
         mask = mask.to(device)
 
-        input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
-        output = model(input_ids=input_ids, attention_mask=attention_mask)
+        if model_name.startswith("chronos"):
+            input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
+            output = model(input_ids=input_ids, attention_mask=attention_mask).logits
+        else:
+            life = life.permute(2,0,1)
+            mask = mask.permute(1,0)
+            rul = rul.unsqueeze(0)
+            output = model(life)
 
-        loss = criterion(output.logits, rul, mask)
+        loss = criterion(output, rul, mask)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -236,6 +247,7 @@ def train_loop(
 def eval_loop(
         dataloader: DataLoader,
         model: nn.Module,
+        model_name: str,
         tokenizer: MeanScaleUniformBinsSensor,
         criterion: nn.Module,
         eval_criterion: nn.Module,
@@ -249,6 +261,7 @@ def eval_loop(
     Args:
         dataloader (DataLoader): The DataLoader object
         model (torch.nn.Module): The model object
+        model_name (str): The name of the model
         tokenizer (MeanScaleUniformBinsSensor): The tokenizer object
         criterion (torch.nn.Module): The loss function
         eval_criterion (torch.nn.Module): The evaluation loss function
@@ -272,9 +285,13 @@ def eval_loop(
             rul = rul.to(device).squeeze(-1)
             mask = mask.to(device)
 
-            input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
-            output = model(input_ids=input_ids, attention_mask=attention_mask)
-            batch_out = output.logits.to("cpu").detach().numpy()
+            if model_name.startswith("chronos"):
+                input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
+                output = model(input_ids=input_ids, attention_mask=attention_mask).logits
+            else:
+                output = model(life)
+
+            batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
             y_pred.append(batch_out)
             y_true.append(batch_target)
@@ -329,7 +346,7 @@ def save_best_model(
 
 def wandb_train_test(
         model:nn.Module,
-        tokenizer:MeanScaleUniformBinsSensor,
+        tokenizer:Union[MeanScaleUniformBinsSensor,None],
         train_loader:DataLoader,
         val_loader:DataLoader,
         test_loader:DataLoader,
@@ -380,6 +397,7 @@ def wandb_train_test(
             train_loss = train_loop(
                 dataloader=train_loader,
                 model=model,
+                model_name=config.model_name,
                 tokenizer=tokenizer,
                 optimizer=optimizer,
                 criterion=criterion,
@@ -391,6 +409,7 @@ def wandb_train_test(
             val_loss,eval_val_loss,y_pred,y_true = eval_loop(
                 dataloader=val_loader,
                 model=model,
+                model_name=config.model_name,
                 tokenizer=tokenizer,
                 criterion=criterion,
                 eval_criterion=eval_criterion,
@@ -403,6 +422,7 @@ def wandb_train_test(
             test_loss,eval_test_loss, y_pred, y_true = eval_loop(
                 dataloader=test_loader,
                 model=model,
+                model_name=config.model_name,
                 tokenizer=tokenizer,
                 criterion=criterion,
                 eval_criterion=eval_criterion,
@@ -610,15 +630,25 @@ def wandb_run(
 
         train_loader,val_loader,test_loader=load_reg_data(config)
 
-        model,tokenizer,optimizer,scheduler=load_model_tokenizer(
-            train_loader=train_loader,
-            model_config=model_config,
-            exp_config=config,
-        )
+        if config.model_name.startswith("chronos"):
+            model,tokenizer,optimizer,scheduler=load_model_tokenizer(
+                train_loader=train_loader,
+                model_config=model_config,
+                exp_config=config,
+            )
+        else:
+            feature_names = get_feature_names(config)
+            model,optimizer,scheduler=load_ssm_model(
+                model_config=model_config,
+                exp_config=config,
+                d_input=len(feature_names),
+            )
+            tokenizer=None
         model=model.to(device)
 
         criterion,eval_criterion=load_loss_functions(
             loss_name=config.loss,
+            model_name=config.model_name,
             eval_loss_name=config.eval_loss,
             tau=config.tau
         )

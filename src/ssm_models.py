@@ -41,12 +41,8 @@ experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 class ModelConfig:
 
     def __init__(self,config:dict):
-        function_map = {
-            "DropoutND": DropoutNd
-        }
+
         for key,value in config.items():
-            if isinstance(value,str) and value in function_map:
-                setattr(self,key,function_map[value])
             setattr(self,key,value)
 
 def setup_optimizer(model, lr, weight_decay, epochs):
@@ -102,24 +98,23 @@ class S4Model(nn.Module):
     def __init__(
         self,
         config:ModelConfig,
-        d_input,
+        d_input:int,
+        d_output:int,
         lr,
     ):
         super().__init__()
 
         d_model = config.d_model
-        d_output = config.d_output
         n_layers = config.n_layers
         dropout = config.dropout
-        dropout_fn = config.dropout_fn
-        prenorm = config.prenorm
+        self.prenorm = config.prenorm
         activation = config.activation
         gate_act = config.gate_act
         mult_act = config.mult_act
         final_act = config.final_act
 
         # Linear encoder (d_input = 1 for grayscale and 3 for RGB)
-        self.encoder = nn.Linear(d_input, self.d_model)
+        self.encoder = nn.Linear(d_input, d_model)
 
         # Stack S4 layers as residual blocks
         self.s4_layers = nn.ModuleList()
@@ -136,7 +131,7 @@ class S4Model(nn.Module):
                    transposed=True,
                    lr=min(0.001, lr)))
             self.norms.append(nn.LayerNorm(d_model))
-            self.dropouts.append(self.dropout_fn(dropout))
+            self.dropouts.append(DropoutNd(dropout))
 
         self.decoder = nn.Linear(d_model, d_output)
 
@@ -181,12 +176,12 @@ class S4DModel(nn.Module):
         self,
         config:ModelConfig,
         d_input:int,
+        d_output:int,
     ):
         super().__init__()
 
         d_state = config.d_state
         act = config.act
-        d_output = config.d_output
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
@@ -245,7 +240,8 @@ class S5Model(nn.Module):
     def __init__(
         self,
         config:ModelConfig,
-        d_input,
+        d_input:int,
+        d_output:int,
     ):
         super().__init__()
         # d_output=1, # output dimension for the Regression task → 1
@@ -254,11 +250,9 @@ class S5Model(nn.Module):
         # bidir=False,
         # single_rul=False
 
-        d_output = config.d_output
         d_model = config.d_model
         n_layers = config.n_layers
         bidir = config.bidir
-        single_rul = config.single_rul
 
         self.encoder = nn.Linear(d_input, d_model)
 
@@ -310,11 +304,18 @@ def load_ssm_model(
     """
 
     if exp_config.model_name == "S4":
-        model = S4Model(config=model_config,d_input=d_input,lr=exp_config.lr)
+        model = S4Model(config=model_config,
+                        d_input=d_input,
+                        d_output=1,
+                        lr=exp_config.lr)
     elif exp_config.model_name == "S4D":
-        model = S4DModel(config=model_config,d_input=d_input)
+        model = S4DModel(config=model_config,
+                         d_input=d_input,
+                         d_output=1)
     elif exp_config.model_name == "S5":
-        model = S5Model(config=model_config,d_input=d_input)
+        model = S5Model(config=model_config,
+                        d_input=d_input,
+                        d_output=1)
     else:
         raise ValueError(f"Model {exp_config.model_name} not recognized")
 
