@@ -199,6 +199,8 @@ class TransData(AbstractPDMDataset):
     def n_time_series(self):
         return len(self.lives)
 
+# Regression dataset for chronos
+
 class RegressionDataset(Dataset):
     def __init__(
         self,
@@ -206,10 +208,9 @@ class RegressionDataset(Dataset):
         sensors: List[str],
         sequence_length: int = 500,
     ):
-        
-        if sequence_length > life.shape[0]:
+        if life.shape[0] < sequence_length:
             pad_arr=np.zeros(sequence_length-life.shape[0])
-            mask=[np.concatenate((np.ones(life.shape[0]),np.zeros(sequence_length-life.shape[0]))) for sensor in sensors]
+            mask=[np.concatenate((np.ones(life.shape[0]),np.zeros(sequence_length-life.shape[0]))) for _ in sensors]
             sequences=[np.concatenate((life[sensor].values,pad_arr)) for sensor in sensors]
             targets=[np.concatenate((life["RUL"].values,pad_arr)) for _ in sensors]
         else:
@@ -232,6 +233,42 @@ class RegressionDataset(Dataset):
         target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
         mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
         return sequence, target, mask
+
+# Regression dataset class for SMM models
+
+class SSMRegressionDataset(Dataset):
+    def __init__(
+        self,
+        life: pd.DataFrame,
+        sequence_length: int = 500,
+    ):
+        
+        if sequence_length > life.shape[0]:
+            pad_arr=np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))
+            mask=np.concatenate((np.ones(shape=(life.shape[0],life.shape[1])),np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))))
+            sequences=np.concatenate((life.values,pad_arr))
+            targets=np.concatenate((life["RUL"].values,pad_arr))
+        else:
+            print("*"*50)
+            print(f"Warning: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps")
+            print("*"*50)
+            sequences=life.values[life.shape[0]-sequence_length:,:]
+            mask=np.ones(shape=(sequence_length,life.shape[1]))
+            targets=life["RUL"].values[life.shape[0]-sequence_length:,:]
+
+        self.sequences = sequences
+        self.targets = targets
+        self.mask = mask
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32).unsqueeze(-1)
+        target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
+        mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
+        return sequence, target, mask
+
 
 class MeanScaleUniformBinsSensor(MeanScaleUniformBins):
     def __init__(self, low_limit:float, high_limit:float, config:ChronosConfig):
@@ -391,15 +428,23 @@ def load_reg_data(config:ExperimentConfig) -> Tuple[DataLoader,DataLoader,DataLo
     test_lifes=TransData(transformed_test_data)
 
     # Create the RegressionDatasets
-    train_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in train_lifes]
-    val_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in val_lifes]
-    test_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in test_lifes]
+    if config.model_name.startswith("chronos"):
+        train_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in train_lifes]
+        val_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in val_lifes]
+        test_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in test_lifes]
+    else:
+        train_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in train_lifes]
+        val_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in val_lifes]
+        test_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in test_lifes]
 
-    train_loader=DataLoader(ConcatDataset(train_datasets),batch_size=len(feature_names),shuffle=False)
-    val_loader=DataLoader(ConcatDataset(val_datasets),batch_size=len(feature_names),shuffle=False)
-    test_loader=DataLoader(ConcatDataset(test_datasets),batch_size=len(feature_names),shuffle=False)
+    batch_size = len(feature_names) if config.model_name.startswith("chronos") else 1
+
+    train_loader=DataLoader(ConcatDataset(train_datasets),batch_size=batch_size,shuffle=False)
+    val_loader=DataLoader(ConcatDataset(val_datasets),batch_size=batch_size,shuffle=False)
+    test_loader=DataLoader(ConcatDataset(test_datasets),batch_size=batch_size,shuffle=False)
 
     return train_loader,val_loader,test_loader
+
 
 # Function that returns the feature names in the CMAPSS dataset
 
