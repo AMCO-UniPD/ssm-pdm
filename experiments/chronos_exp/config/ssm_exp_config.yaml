@@ -41,7 +41,7 @@ weight_decay: 1.0e-4
 model_name: S4
 # model_name: S5
 # model_name: S4D
-model_summary: true
+model_summary: false
 
 # Loss function to use for training
 loss: mae

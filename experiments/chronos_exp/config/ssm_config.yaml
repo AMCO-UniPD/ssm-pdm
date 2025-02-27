@@ -1,12 +1,11 @@
 # config file for ssm models
 
+random_init: true # SSM models are always randomly initialized
+
 # General model parametrers
-d_input: 14
-d_output: 1
 d_model: 256
 n_layers: 3
 dropout: 0.2
-dropout_fn: DropoutND
 
 # S4 config
 lr: 1e-03
