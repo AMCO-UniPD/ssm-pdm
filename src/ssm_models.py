@@ -185,7 +185,6 @@ class S4DModel(nn.Module):
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
-        dropout_fn = config.dropout_fn
         d_input = d_input
 
         self.encoder = nn.Linear(d_input, d_model)
@@ -204,7 +203,7 @@ class S4DModel(nn.Module):
                     transposed=True)
             )
             self.norms.append(nn.LayerNorm(d_model))
-            self.dropouts.append(dropout_fn(dropout))
+            self.dropouts.append(DropoutNd(dropout))
 
         self.decoder = nn.Linear(d_model, d_output)
 
@@ -281,6 +280,45 @@ class S5Model(nn.Module):
         x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
         return x
 
+# Manual parameter count computation in case torchinfo does not work
+
+def model_summary_manual(
+    model: nn.Module
+) -> None:
+    
+    """
+    Manual version of torchinfo summary module.
+
+    Args:
+        model: nn.Module object
+
+    Returns:
+        The function prints out the number of trainable and non trainable parameters of the model and does not return anything.
+    """
+
+    total_params = 0
+    trainable_params = 0
+    non_trainable_params = 0
+    for name, param in model.named_parameters():
+        num_params = param.numel()  # Number of elements in the parameter
+        total_params += num_params
+        if param.requires_grad:
+            trainable_params += num_params
+        else:
+            non_trainable_params += num_params
+        print(
+            f"{name}: Shape={list(param.shape)}, Num params={num_params},"
+            f" Trainable={param.requires_grad}"
+        )
+        print('#'* 50)
+
+    print("#" * 50)
+    print("Model Summary:")
+    print("#" * 50)
+    print(f"Total parameters: {total_params}")
+    print(f"Trainable parameters: {trainable_params}")
+    print(f"Non-trainable parameters: {non_trainable_params}")
+
 # Function to create the model
 
 def load_ssm_model(
@@ -322,12 +360,21 @@ def load_ssm_model(
     if exp_config.model_summary:
 
         # Obtain the model summary with torchsummary
-        model_summary=summary(model, input_size=(1, exp_config.sequence_length, d_input))
+        try:
+            model_summary=summary(model, input_size=(1, exp_config.sequence_length, d_input))
 
-        print('#'*50)
-        print(f"Total params: {model_summary.total_params}")
-        print(f"Total mult adds: {model_summary.total_mult_adds}")
-        print('#'*50)
+            print('#'*50)
+            print(f"Total params: {model_summary.total_params}")
+            print(f"Total mult adds: {model_summary.total_mult_adds}")
+            print('#'*50)
+        except Exception as e:
+            print('#'*50)
+            print("torchinfo summary not working, let's use the manual computation")
+            print('#'*50)
+            model_summary_manual(model)
+
+    if exp_config.model_summary_manual:
+        model_summary_manual(model)
 
     optimizer, scheduler = setup_optimizer(
                                        model,

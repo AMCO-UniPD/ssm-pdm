@@ -8,6 +8,7 @@ import sys
 import ipdb
 import torch
 import pandas as pd
+import numpy as np
 from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
 
 chronos_path_src = os.path.join(os.path.dirname(__file__),"chronos-rul","src")
@@ -87,6 +88,12 @@ def lifes_metrics(
     if config.model_name.startswith("chronos"):
         metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
 
+    if config.sub_lifes_metrics:
+        metrics_df = sub_lifes_metrics(
+            config=config,
+            metrics_df=metrics_df
+        )
+
     save_element(
         element=metrics_df,
         dirpath=metrics_path,
@@ -116,10 +123,15 @@ def sub_lifes_metrics(
         pd.DataFrame Subset of the metrics_df
     """
 
+    if config.metrics_idx is None:
+        config.metrics_idx=np.arange(config.nrows*config.ncols)
     metrics_idx = [f"Life_{i+config.test_idx[0]}" for i in config.metrics_idx]
-    metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
+    if config.model_name.startswith("chronos"):
+        metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
+    else:
+        metrics_df = metrics_df.loc[metrics_idx]
     metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
-    if len(config.metrics_cols)>1:
+    if len(config.metrics_cols)>1 and config.model_name.startswith("chronos"):
         metrics_df["Sensor_mean"] = metrics_df.mean(axis=1).round(2)
 
     return metrics_df

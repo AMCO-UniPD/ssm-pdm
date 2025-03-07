@@ -512,7 +512,7 @@ def best_model_perf(
     device: torch.device = torch.device("cpu"),
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
-    ) -> None:
+    ) -> Union[None,nn.Module]:
     """
     This function loads the best model according to the validation set and
     computes the performance on the test set
@@ -527,7 +527,9 @@ def best_model_perf(
         metrics_path (str): The path to save the test metrics
 
     Returns:
-        The function saves the plots and the metrics and does not return anything
+        Union[None,nn.Module]: The function saves the plots and the metrics and does not return anything
+            If model_summary is set to True the function returns the model object, but it will not save the outputs
+
     """
 
     #NOTE: Removed the `if config.zero_shot` block because it is not used in the `ssm_pdm` part
@@ -559,6 +561,9 @@ def best_model_perf(
     model.load_state_dict(best_model_state_dict)
     model=model.to(device)
 
+    if config.model_summary:
+        return model
+
     criterion,eval_criterion=load_loss_functions(
         loss_name=config.loss,
         model_name=config.model_name,
@@ -584,7 +589,7 @@ def best_model_perf(
     print("#" * 50)
     print(f"y_pred shape: {y_pred.shape} | y_true shape: {y_true.shape}")
 
-    # Save the predictions and true values
+   # Save the predictions and true values
     outputs_dict = {
         "y_pred": y_pred if config.model_name.startswith("chronos") else y_pred.squeeze(1),
         "y_true": y_true if config.model_name.startswith("chronos") else y_true.squeeze(1),
@@ -715,7 +720,6 @@ def wandb_run(
 
         _ = plot_predictions_grid(
             config=config,
-            sensor_idx=config.sensor_idx,
             outputs_path=outputs_path,
             plot_path=plot_path,
         )
