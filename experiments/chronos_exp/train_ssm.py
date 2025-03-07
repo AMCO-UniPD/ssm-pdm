@@ -135,7 +135,6 @@ if exp_config.test_script:
         print("Producing grid plot of the predictions")
         print("#" * 50)
 
-        #TODO: Put here the `SSM` version of plot_predictions_grid
         plot_predictions_grid(
             config=exp_config,
             outputs_path=outputs_path,
@@ -168,20 +167,6 @@ else:
 
     run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}"
     setproctitle.setproctitle(run_name)
-
-    #TODO: I think that the function below were called here just to test them without starting a `wanbd` run so
-    # I will have to remove them from here and leave just `wandb_run` in the final version of the script
-    train_loader,val_loader,test_loader=load_reg_data(exp_config)
-    feature_names = get_feature_names(exp_config)
-    model,optimizer,scheduler = load_ssm_model(exp_config=exp_config,
-                                               model_config=model_config,
-                                               d_input=len(feature_names))
-    criterion,eval_criterion=load_loss_functions(
-        loss_name=exp_config.loss,
-        model_name=exp_config.model_name,
-        eval_loss_name=exp_config.eval_loss,
-        tau=exp_config.tau
-    )
 
     model,model_info = wandb_run(
         run_name=run_name,
