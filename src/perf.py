@@ -32,7 +32,7 @@ def lifes_metrics(
         config: ExperimentConfig,
         outputs_path: str = experiment_path,
         metrics_path: str = experiment_path,
-):
+) -> pd.DataFrame:
     """
     Calculate the metrics for each life and each sensor in the dataset and save them in a pd.DataFrame
 
@@ -40,6 +40,9 @@ def lifes_metrics(
         config:dict ExperimentConfig object
         outputs_path:str Path to the outputs
         metrics_path:str Path to save the metrics
+
+    Returns:
+        pd.DataFrame Metrics DataFrame
     """
 
     feature_names = get_feature_names(config)
@@ -55,29 +58,39 @@ def lifes_metrics(
 
     _,eval_criterion=load_loss_functions(
         loss_name=config.loss,
+        model_name=config.model_name,
         eval_loss_name=config.eval_loss,
         tau=config.tau
     )
 
     pd.options.display.float_format = "{:.2f}".format
 
-    for i in range(y_pred.shape[0]):
-        mask = torch.tensor(y_true[i,0,:]!=0).unsqueeze(0)
-        for j,sensor in zip(range(y_pred.shape[1]),feature_names):
-            pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
-            true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
+    if config.model_name.startswith("chronos"):
+        for i in range(y_pred.shape[0]):
+            mask = torch.tensor(y_true[i,0,:]!=0).unsqueeze(0)
+            for j,sensor in zip(range(y_pred.shape[1]),feature_names):
+                pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
+                true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
+                eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
+                metrics_df.at[f"Life_{i+config.test_idx[0]}",sensor]=round(eval_loss,2)
+    else:
+        for i in range(y_pred.shape[0]):
+            mask = torch.tensor(y_true[i]!=0)
+            pred=torch.tensor(y_pred[i])
+            true=torch.tensor(y_true[i])
             eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
-            metrics_df.at[f"Life_{i+config.test_idx[0]}",sensor]=round(eval_loss,2)
-    
+            metrics_df.at[f"Life_{i+config.test_idx[0]}","Eval Loss"]=round(eval_loss,2)
+
     # Add a row Life_mean with the mean of the metrics over all the columns
-    metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0).round(2)
+    metrics_df.loc["Life mean Loss"]=metrics_df.mean(axis=0).round(2)
     # Add a column Sensor_mean with the mean of the metrics over all the rows
-    metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
+    if config.model_name.startswith("chronos"):
+        metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
 
     save_element(
         element=metrics_df,
         dirpath=metrics_path,
-        filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}.pkl"
+        filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}.pickle"
     )
 
     pd.options.display.float_format = None

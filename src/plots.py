@@ -83,7 +83,6 @@ def plot_forecast(life:pd.DataFrame,
 
 def plot_predictions_grid(
     config:ExperimentConfig,
-    sensor_idx:int=0,
     outputs_path:str=experiment_path,
     plot_path:str=experiment_path,
 ) -> plt.figure:
@@ -91,6 +90,20 @@ def plot_predictions_grid(
     """
     Function to plot in a grid the `RUL` prediction of each life for a specific
     feature/sensor
+
+    Parameters:
+    -----------
+    config: ExperimentConfig
+        Experiment configuration object
+    outputs_path: str
+        Path to the outputs dictionary
+    plot_path: str
+        Path to save the plot
+
+    Returns:
+    --------
+    fig: plt.figure 
+        Figure containing the plot
     """
 
     if config.life_idx is None:
@@ -100,7 +113,7 @@ def plot_predictions_grid(
 
     # Get the name of the sensor to plot
     feature_names = get_feature_names(config)
-    sensor_name = feature_names[sensor_idx]
+    sensor_name = feature_names[config.sensor_idx]
 
     # Get the y_pred and y_true tensors
     outputs_path = get_most_recent_file(outputs_path,file_pos=config.file_pos)
@@ -111,15 +124,18 @@ def plot_predictions_grid(
 
     # Select the predictions and true values for the sensor
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
-    pred,true = y_pred[config.life_idx][:,sensor_idx,:],y_true[config.life_idx][:,sensor_idx,:]
-    mask = torch.tensor(true!=0) if not config.full_life else torch.ones(true.shape).int()
+    if config.model_name.startswith("chronos"):
+        pred,true = y_pred[config.life_idx][:,sensor_idx,:],y_true[config.life_idx][:,sensor_idx,:]
+    else:
+        pred,true = y_pred[config.life_idx,:],y_true[config.life_idx,:]
+    mask = true!=0 if not config.full_life else np.ones(true.shape,dtype=int)
 
     # Produce the plot
-    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(15,15))
+    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(30,20))
     for i in range(config.nrows):
         for j in range(config.ncols):
             if i*config.ncols+j<(config.nrows*config.ncols):
-                
+
                 ax=axs[i,j]
                 ax.plot(true[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="blue",label='True RUL')
                 ax.plot(pred[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="orange",label='Predicted RUL')

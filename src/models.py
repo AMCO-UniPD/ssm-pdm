@@ -289,6 +289,9 @@ def eval_loop(
                 input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
                 output = model(input_ids=input_ids, attention_mask=attention_mask).logits
             else:
+                life = life.permute(2,0,1)
+                mask = mask.permute(1,0)
+                rul = rul.unsqueeze(0)
                 output = model(life)
 
             batch_out = output.to("cpu").detach().numpy()
@@ -558,6 +561,7 @@ def best_model_perf(
 
     criterion,eval_criterion=load_loss_functions(
         loss_name=config.loss,
+        model_name=config.model_name,
         eval_loss_name=config.eval_loss,
         tau=config.tau
     )
@@ -582,8 +586,8 @@ def best_model_perf(
 
     # Save the predictions and true values
     outputs_dict = {
-        "y_pred": y_pred,
-        "y_true": y_true,
+        "y_pred": y_pred if config.model_name.startswith("chronos") else y_pred.squeeze(1),
+        "y_true": y_true if config.model_name.startswith("chronos") else y_true.squeeze(1),
     }
 
     save_element(

@@ -232,7 +232,10 @@ def load_loss_functions(loss_name:str,
     elif eval_loss_name=="mse":
         eval_loss=MSELoss()
     elif eval_loss_name=="rmse":
-        eval_loss=RMSELoss()
+        if model_name.startswith("chronos"):
+            eval_loss=RMSELoss()
+        else:
+            eval_loss=SSMRMSELoss()
     elif eval_loss_name=="pinball":
         eval_loss=PinballLoss(tau=tau)
 
