@@ -104,30 +104,64 @@ if exp_config.test_script:
             outputs_path=outputs_path,
         )
 
+    if exp_config.compute_metrics:
+
+        print("#" * 50)
+        print("Computing metrics for each life and for each sensor in the test set")
+        print("#" * 50)
+
+        #TODO: Call here the `SSM` version of lifes_metrics
+
+        print("#" * 50)
+        print(f"metrics_df shape: {metrics_df.shape}")
+
+    if exp_config.obsidian_table:
+
+       print("#" * 50)
+       print("Producing the obsidian table")
+       print("#" * 50)
+
+       metrics_path = get_most_recent_file(metrics_path, file_pos=exp_config.file_pos)
+       metrics_df = open_element(metrics_path)
+       print(df_with_index_to_obsidian_table(metrics_df))
+
+    if exp_config.plot_preds:
+
+        print("#" * 50)
+        print("Producing grid plot of the predictions")
+        print("#" * 50)
+
+        #TODO: Put here the `SSM` version of plot_predictions_grid
+
 else:
 
     print("#"*50)
     print("Model training started")
+    print("Experiment configuration")
+    print('#'* 50)
     print(f"Model name: {exp_config.model_name}")
-    # print(f"Pretrained model id: {exp_config.model_id}") if not model_config["random_init"] else print("Random initialization")
     print(f"CMAPSS model: {exp_config.cmapss_models}")
     print(f"Val idx: {exp_config.val_idx}")
     print(f"Test idx: {exp_config.test_idx}")
     print(f"Transformer type: {exp_config.transformer_type}")
     print(f"Scaler: {exp_config.scaler}")
     print(f"Epochs: {exp_config.epochs}")
-    # All these things are in the model config (ssm_config.yaml)
-    # print(f"Learning rate: {exp_config.lr}")
-    # print(f"Number of fc layers: {exp_config.num_fc_layers}")
-    # print(f"Activation function: {exp_config.act}")
-    # print(f"Dropout: {exp_config.dropout_rate}")
-    # print(f"Sequence length: {exp_config.sequence_length}")
-    # print(f"Training loss: {exp_config.loss}")
-    # print(f"Eval loss: {exp_config.eval_loss}")
+    print(f"Sequence length: {exp_config.sequence_length}")
+    print(f"Training loss: {exp_config.loss}")
+    print(f"Eval loss: {exp_config.eval_loss}")
+    print("Model configuration")
+    print('#'* 50)
+    print(f"Learning rate: {model_config.lr}")
+    print(f"Number of fc layers: {model_config.n_layers)
+    print(f"Activation function: {model_config.activation}")
+    print(f"Dropout: {model_config.dropout}")
     print("#"*50)
 
     run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}"
     setproctitle.setproctitle(run_name)
+
+    #TODO: I think that the function below were called here just to test them without starting a `wanbd` run so
+    # I will have to remove them from here and leave just `wandb_run` in the final version of the script
     train_loader,val_loader,test_loader=load_reg_data(exp_config)
     feature_names = get_feature_names(exp_config)
     model,optimizer,scheduler = load_ssm_model(exp_config=exp_config,
