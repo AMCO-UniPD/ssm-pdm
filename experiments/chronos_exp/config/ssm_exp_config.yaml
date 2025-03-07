@@ -51,10 +51,10 @@ eval_loss: rmse
 tau: 0.5
 
 # test_script config
-test_script: false
+test_script: true
 file_pos: 0
-save_outputs: true
-compute_metrics: true
+save_outputs: false
+compute_metrics: false
 obsidian_table: false
 plot_preds: true
 
@@ -66,6 +66,7 @@ metrics_cols: ["SensorMeasure2"]
 save_plot: true
 full_life: false
 # life_idx: [16,17,18,19,20,21,22,23,24,25,26,27,28,29]
+sensor_idx: 0
 life_idx: null
 nrows: 5
 ncols: 3

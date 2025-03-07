@@ -110,7 +110,11 @@ if exp_config.test_script:
         print("Computing metrics for each life and for each sensor in the test set")
         print("#" * 50)
 
-        #TODO: Call here the `SSM` version of lifes_metrics
+        metrics_df = lifes_metrics(
+            config=exp_config,
+            outputs_path=outputs_path,
+            metrics_path=metrics_path
+        )
 
         print("#" * 50)
         print(f"metrics_df shape: {metrics_df.shape}")
@@ -132,6 +136,11 @@ if exp_config.test_script:
         print("#" * 50)
 
         #TODO: Put here the `SSM` version of plot_predictions_grid
+        plot_predictions_grid(
+            config=exp_config,
+            outputs_path=outputs_path,
+            plot_path=plot_path
+        )
 
 else:
 
@@ -152,7 +161,7 @@ else:
     print("Model configuration")
     print('#'* 50)
     print(f"Learning rate: {model_config.lr}")
-    print(f"Number of fc layers: {model_config.n_layers)
+    print(f"Number of fc layers: {model_config.n_layers}")
     print(f"Activation function: {model_config.activation}")
     print(f"Dropout: {model_config.dropout}")
     print("#"*50)
