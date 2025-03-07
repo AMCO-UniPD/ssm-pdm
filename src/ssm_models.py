@@ -91,6 +91,53 @@ def setup_optimizer(model, lr, weight_decay, epochs):
 
     return optimizer, scheduler
 
+# RNN based models
+    
+class Recurrent_PDM(nn.Module):
+    def __init__(
+            self,
+            config: ModelConfig,
+            input_size: int,
+            output_size: int,
+    ):
+        super(Recurrent_PDM, self).__init__()
+
+        if config.model_type == "LSTM":
+            self.recurrent = nn.LSTM(
+                input_size=input_size,
+                hidden_size=config.hidden_size,
+                num_layers=config.num_layers,
+                batch_first=True,
+                dropout=config.dropout
+            )
+            # self.bn = nn.BatchNorm1d(hidden_size)
+        elif config.model_type == "GRU":
+            self.recurrent = nn.GRU(
+                input_size=input_size,
+                hidden_size=config.hidden_size,
+                num_layers=config.num_layers,
+                batch_first=True,
+                dropout=config.dropout
+            )
+        elif config.model_type == "RNN":
+            self.recurrent = nn.RNN(
+                input_size=input_size,
+                hidden_size=config.hidden_size,
+                num_layers=config.num_layers,
+                batch_first=True,
+                dropout=config.dropout
+            )
+
+        self.fc = nn.Linear(config.hidden_size, output_size)
+    
+    def forward(self, x):
+        
+        out= self.recurrent(x) # (B, L, D) -> (B, L, H)
+        out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
+        out = self.fc(out) # (B, H) -> (B, L)
+        # out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
+        return out
+
 # SSM model classes
 
 class S4Model(nn.Module):
@@ -280,6 +327,121 @@ class S5Model(nn.Module):
         x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
         return x
 
+# Transformer based models
+
+class RULTransformer(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        input_size: int,
+        output_size: int
+    ):
+        super(RULTransformer, self).__init__()
+
+        self.embedding = nn.Sequential(
+            nn.Embedding(
+                num_embeddings=input_size,
+                embedding_dim=config.d_model
+            ),
+            PositionalEncoding(
+                d_model=config.d_model,
+                dropout=config.dropout,
+                max_len=config.sequence_length
+            )
+        )
+
+        self.encoder = TransformerEncoder(
+            d_model=config.d_model,
+            d_ff=config.d_ff,
+            n_heads=config.n_heads,
+            n_layers=config.n_layers,
+            dropout=config.dropout
+        )
+        
+        self.decoder = nn.Linear(
+            in_features=config.d_model,
+            out_features=output_size
+        )
+        
+    def forward(self, x, mask=None):
+        if mask is None:
+            mask = torch.zeros(x.size(0),x.size(1)).to(x.device)
+
+        x = x.argmax(dim=-1) # (B, L, d_input) -> (B, L)
+        x = self.embedding(x) # (B, L) -> (B, L, d_model)
+        x = self.encoder(x, mask) # (B, L, d_model) -> (B, L, d_model)
+        x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
+        x = self.decoder(x) # (B, d_model) -> (B, d_output)
+        return x
+        
+
+# Informer based model 
+# TODO: Add all the imports needed for this model to work, without adding the entire `Informer2020` repository (as I did in `AD_MG`)
+# The required imports are:
+# Informer imports
+# from Informer2020.models.encoder import *
+# from Informer2020.models.decoder import *
+# from Informer2020.utils.masking import TriangularCausalMask, ProbMask
+# from Informer2020.models.attn import *
+# from Informer2020.models.embed import *
+
+class RULInformer(nn.Module):
+    def __init__(self, enc_in, c_out, seq_len,
+                factor=5, d_model=512, n_heads=8, n_layers=3, d_ff=512,
+                dropout=0.0, attn='prob', activation='gelu',
+                output_attention=False,distil=True,single_rul=False):
+        super(RULInformer,self).__init__()
+        self.pred_len = seq_len
+        self.attn = attn
+        self.output_attention = output_attention
+        self.single_rul = single_rul
+
+        # Encoding
+        self.enc_embedding = DataEmbedding(enc_in, d_model, dropout)
+        # Attention
+        Attn = ProbAttention if attn=='prob' else FullAttention
+        # Encoder
+        self.encoder = Encoder(
+            [
+                EncoderLayer(
+                    AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=True), 
+                                d_model, n_heads, mix=False),
+                    d_model,
+                    d_ff,
+                    dropout=dropout,
+                    activation=activation
+                ) for l in range(n_layers)
+            ],
+            [
+                ConvLayer(
+                    d_model
+                ) for l in range(n_layers-1)
+            ] if distil else None,
+            norm_layer=torch.nn.LayerNorm(d_model)
+        )
+            
+        self.projection = nn.Linear(d_model, c_out)
+
+    def forward(self, x_enc, output_attention=False, enc_self_mask=None):
+
+        # B → batch size, L → sequence length, D → feature dimension, H -> d_model
+        
+        # import pdb; pdb.set_trace()
+
+        enc_out = self.enc_embedding(x_enc) # [B,L,D] -> [B,L,H]
+        enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
+        
+        if not self.single_rul:
+            enc_out = enc_out.mean(dim=1) # [B,L,H] -> [B,H]
+            dec_out = self.projection(enc_out) # [B,H] -> [B,L]
+        else:
+            dec_out = self.projection(enc_out).squeeze(-1)
+
+        if output_attention:
+            return dec_out, attns
+        else:
+            return dec_out
+
 # Manual parameter count computation in case torchinfo does not work
 
 def model_summary_manual(
@@ -354,6 +516,16 @@ def load_ssm_model(
         model = S5Model(config=model_config,
                         d_input=d_input,
                         d_output=1)
+    elif exp_config.model_name in ["RNN","LSTM","GRU"]:
+        model = Recurrent_PDM(config=model_config,
+                              input_size=d_input,
+                              output_size=1)
+    elif exp_config.model_name == "RULTransformer":
+        model = RULTransformer(
+            config=model_config,
+            input_size=d_input,
+            output_size=1
+        )
     else:
         raise ValueError(f"Model {exp_config.model_name} not recognized")
 
