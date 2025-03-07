@@ -8,7 +8,7 @@ tags:
 
 # `CHRONOS` Regression Experiments
 
-Now that we have set up the [[chronos-data#Padding Regression Approach|padding regression approach experiment code]] we can start running experiments and see how the results are. 
+Now that we have set up the [[chronos-data#Padding Regression Approach|padding regression approach experiment code]] we can start running experiments and see how the results are.
 
 ## Pretrained model experiments 🧠 - `chronos-t5-small`
 
@@ -74,8 +74,6 @@ As written [[chronos-data#`CMAPSS` Data Split|here]] actually the model performa
 > I decided to remove the full visualization of the `metrics_df` `pd.DataFrame` since it is quite unintuitive and moreover the performances are very similar across the different columns (i.e. across the different sensors). So from now on I will report the `metrics_df` in the first 15 test lifes (which are the same test lifes normally represented in the prediction plots) and only for `SensorMeasure2`.
 
 
-
-
 >[!warning]
 > To have a better visualization of the table use the Markdown Preview (`leader+n+p`)
 
@@ -90,7 +88,6 @@ Now I also finish to set up the `plot_predictions_grid` function that produces a
 File `20-02-2025_11-16-26_chronos-rul_FD001_SensorMeasure2_predictions_grid.pdf`.
 
 The first kind of plots I want to analyze are the ones I used also in the `SSM_PDM` project. Since we are using the padding regression approach our prediction are actually longer than the real length of the raw sensor measurements signals. So in these plots I used the `mask` to select the `y_pred` and `y_true` time steps where there was no padding. These are in fact the time steps used to compute the loss that was used to train the model.
-
 
 These plots are actually very similar to the ones obtained in the `SSM_PDM` project, this confirms the probably non optimal format of the predictions [[chronos-data#`CMAPSS` Data Split|discussed here]]. In fact in some lifes the predictions are pretty good, in other they are much worse.
 
@@ -181,6 +178,7 @@ Ok here, since we are using the 🧠 weights, it starts to overfit after just 1 
 #### Metrics table
 
 Here the metrics table is not bad at all compared to the previous ones.
+
 |  | SensorMeasure2 |
 | --- | --- |
 | Life_50 | 102.28 |
@@ -477,7 +475,6 @@ y_pred[0,0,:10]
 array([98.33607 , 98.3955  , 97.90683 , 98.1296  , 98.50427 , 97.86396 ,
        98.47129 , 98.586784, 98.05804 , 98.070755], dtype=float32)
 ```
-
 Here the model predicts more or less a constant value, so it has not learned yet the decreasing trend of the `RUL`. However looking at the plots the loss was going down so maybe with more epochs it could have learned the trend. We should do another comparison with more epochs to see if this is true.
 
 ### Experiment 2 ⏰ 👶
@@ -522,7 +519,7 @@ Let's try one last thing before passing to the bigger models. Let's try to use 2
 >[!note]
 > [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/9ixyyo29?nw=nwuserfrizzodavide)
 
-Looking at `wandb` while the experiment it's still going I noticed that it gets to more or less the same `val_loss` values of the other experiments after about 5-6 epochs but then it starts to overfit 😢. This is potentially not a great news if we then want to use more complex models like `chronos-t5-base` and `chronos-t5-large` which have a much highe number of parameters but it may also be due to the smaller learning rate.
+Looking at `wandb` while the experiment it's still going I noticed that it gets to more or less the same `val_loss` values of the other experiments after about 5-6 epochs but then it starts to overfit 😢. This is potentially not a great news if we then want to use more complex models like `chronos-t5-base` and `chronos-t5-large` which have a much higher number of parameters but it may also be due to the smaller learning rate.
 
 On the bright side the `train_loss` got to much smaller values than the other experiments after about 5 epochs → I don't know if that is due to the `lr` or to the fact that the model is overfitting.
 
