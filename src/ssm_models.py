@@ -167,7 +167,7 @@ class S4Model(nn.Module):
         x = x.transpose(-1, -2) # (B, d_model, L) -> (B, L, d_model)
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L,1)  if single_rul
+        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
         return x
 
 class S4DModel(nn.Module):
@@ -232,7 +232,7 @@ class S4DModel(nn.Module):
         x = x.transpose(-1, -2)
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L,1)  if single_rul
+        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
         return x
 
 class S5Model(nn.Module):
@@ -278,7 +278,7 @@ class S5Model(nn.Module):
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L,1)  if single_rul
+        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
         return x
 
 # Function to create the model

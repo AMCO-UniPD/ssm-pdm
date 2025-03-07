@@ -296,8 +296,8 @@ def eval_loop(
             y_pred.append(batch_out)
             y_true.append(batch_target)
 
-            loss = criterion(output.logits, rul, mask)
-            rmse_loss = eval_criterion(output.logits, rul, mask)
+            loss = criterion(output, rul, mask)
+            rmse_loss = eval_criterion(output, rul, mask)
             eval_loss += loss.item()
             eval_rmse_loss += rmse_loss.item()
 
@@ -527,37 +527,34 @@ def best_model_perf(
         The function saves the plots and the metrics and does not return anything
     """
 
+    #NOTE: Removed the `if config.zero_shot` block because it is not used in the `ssm_pdm` part
+
     # Load the best model
 
-    if config.zero_shot:
+    best_model_filepath = get_most_recent_file(dirpath=best_model_path,
+                                               file_pos=config.file_pos)
 
-        print("#"*50)
-        print("Zero-shot inference")
-        print("#"*50)
+    best_model_state_dict = open_element(best_model_filepath,
+                                         filetype="pickle")
+    
+    train_loader,_,test_loader=load_reg_data(config)
 
-        train_loader,_,test_loader=load_reg_data(config)
 
+    if config.model_name.startswith("chronos"):
         model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
                                                    model_config=model_config,
                                                    exp_config=config)
-        model=model.to(device)
-
     else:
+        feature_names = get_feature_names(config)
+        model,_,_=load_ssm_model(
+            model_config=model_config,
+            exp_config=config,
+            d_input=len(feature_names),
+        )
+        tokenizer=None
 
-        best_model_filepath = get_most_recent_file(dirpath=best_model_path,
-                                                   file_pos=config.file_pos)
-
-        best_model_state_dict = open_element(best_model_filepath,
-                                             filetype="pickle")
-        
-        train_loader,_,test_loader=load_reg_data(config)
-
-        model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
-                                                   model_config=model_config,
-                                                   exp_config=config)
-
-        model.load_state_dict(best_model_state_dict)
-        model=model.to(device)
+    model.load_state_dict(best_model_state_dict)
+    model=model.to(device)
 
     criterion,eval_criterion=load_loss_functions(
         loss_name=config.loss,
@@ -572,6 +569,7 @@ def best_model_perf(
     _,_,y_pred,y_true = eval_loop(
         dataloader=test_loader,
         model=model,
+        model_name=config.model_name,
         tokenizer=tokenizer,
         criterion=criterion,
         eval_criterion=eval_criterion,
