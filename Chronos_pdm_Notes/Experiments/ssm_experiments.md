@@ -1,5 +1,5 @@
 ---
-id: chronos_reg_exp
+id: ssm_exp
 aliases: []
 tags:
   - experiments
@@ -12,7 +12,7 @@ In this note I will report the results of the experiments performed with the `SS
 
 We will start considering the same approach we used in [[chronos_reg_exp|the `chronos` experiments]], which will be called the `padding` approach.
 
-## `padding` approach experiments
+## `padding` approach experiments 🦜
 
 In this section the experiments using the `padding` approach will be presented.
 
@@ -88,7 +88,12 @@ Looking at the `wandb` plots we have an inital decreasing phase of the loss and 
 
 Comparing with the best experiment done with `chronos` (Experiment 2 of `choronos-t5-small`) we are better in terms of mean performances, 27.68 against 30.48. Looking at the metrics values as usual we have some variability across different lifes.
 
-In the windowed approach used for the Elements of Deep Learning exam the `RMSE` was 19.77, so smaller than here but I don't know weather these two kind of evaluations are comparable. In that case the `RMSE` should be the mean over all the test lifes but I have to check trying to reproduce that approach.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   28.58
+##################################################
+```
 
 | Life  | Eval Loss |
 | --- | --- |
@@ -109,6 +114,8 @@ In the windowed approach used for the Elements of Deep Learning exam the `RMSE` 
 | Life_64 | 17.12 |
 | Life_mean | 27.68 |
 
+In the windowed approach used for the Elements of Deep Learning exam the `RMSE` was 19.77, so smaller than here but I don't know weather these two kind of evaluations are comparable. In that case the `RMSE` should be the mean over all the test lifes but I have to check trying to reproduce that approach.
+
 ###### Prediction plots
 
 The `RUL` grid prediction plots do not look bad at all, in some lifes there is some overestimation/underestimation at the beginning but they converge very closely to the true `RUL` towards the end of the life, which is a good sign.
@@ -117,10 +124,86 @@ Comparing these plots to the plots we produced in the Deep Learning project here
 
 ##### Experiment 2 `S4` `FD001` `padding` 4️⃣ 1️⃣ 🦜
 
-Let's try to add some dropout, putting `dropout=0.2`.
+Let's try to reduce `d_model` from 512 to 128.
 
 >[!note]
-> [Link to the `wandb` run]()
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ftm1ag59?nw=nwuserfrizzodavide)
+
+Looking at the `wandb` loss plots the trend is very similar to the one of the previous experiment but the loss values are a bit lower.
+
+###### Metrics Table
+
+Unfortunately the results are a bit worse.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   30.41
+Name: Life mean Loss, dtype: float64
+##################################################
+```
+
+|  | Eval Loss |
+| --- | --- |
+| Life_50 | 56.33 |
+| Life_51 | 24.12 |
+| Life_52 | 15.12 |
+| Life_53 | 19.43 |
+| Life_54 | 67.1 |
+| Life_55 | 17.2 |
+| Life_56 | 45.28 |
+| Life_57 | 15.44 |
+| Life_58 | 27.89 |
+| Life_59 | 50.39 |
+| Life_60 | 19.59 |
+| Life_61 | 37.52 |
+| Life_62 | 22.16 |
+| Life_63 | 11.24 |
+| Life_64 | 12.76 |
+| Life_mean | 29.44 |
+
+###### Prediction plots
+
+In the prediction plots we can see the fact that we have reduced `d_model`, the predicted `RUL` signals are clearly worse than the ones of the previous experiment.
+
+##### Experiment 3 `S4` `FD001` `padding` 4️⃣ 1️⃣ 🦜
+
+Let's try to come back to `d_model=512` but introduce `dropout=0.2`.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/8xe7msiq?nw=nwuserfrizzodavide)
+
+The loss plots are a bit worse than the previous experiment.
+
+###### Metrics Table
+
+Results a little bit worse, probably the first configuration was the best one.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   32.87
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 55.51 |
+| Life_51 | 20.73 |
+| Life_52 | 23.43 |
+| Life_53 | 16.05 |
+| Life_54 | 61.06 |
+| Life_55 | 27.78 |
+| Life_56 | 54.28 |
+| Life_57 | 15.1 |
+| Life_58 | 36.57 |
+| Life_59 | 38.21 |
+| Life_60 | 20.37 |
+| Life_61 | 23.4 |
+| Life_62 | 28.2 |
+| Life_63 | 6.77 |
+| Life_64 | 43.2 |
+| Life_mean | 31.38 |
+
+###### Prediction plots
 
 ### `S5` Model Experiments 5️⃣
 
@@ -151,6 +234,13 @@ The trend of the loss plots is similar to the one of `S4` but with a slightly hi
 
 The metrics are a little bit higher than in `S4`. Moreover there is no life in which the loss goes below 10.
 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   30.47
+##################################################
+```
+
 | Life  | Eval Loss |
 | --- | --- |
 | Life_50 | 49.05 |
@@ -173,6 +263,49 @@ The metrics are a little bit higher than in `S4`. Moreover there is no life in w
 ###### Prediction plots
 
 Comparing the `RUL` grid plots with the `S4` ones these are clearly more noisy. In `S4` there are multiple lifes in which the predictions are almost straight lines which are almost overlapped with the true `RUL` values, while here we have more oscillations. Oscillations are not very intuitive because they represent an increase in the `RUL`, as if the sensor regenerates its life which physically is not possible.
+
+##### Experiment 2 `S5` `FD001` `padding` 5 1️⃣ 🦜
+
+Let's try to increase `d_model` to 1028, we also use `dropout=0.2`.
+
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/20735991?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+The results are slightly better than the previous experiment.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   30.19
+Name: Life mean Loss, dtype: float64
+##################################################
+```
+
+|  | Eval Loss |
+| --- | --- |
+| Life_50 | 60.63 |
+| Life_51 | 25.85 |
+| Life_52 | 10.55 |
+| Life_53 | 16.07 |
+| Life_54 | 47.05 |
+| Life_55 | 25.12 |
+| Life_56 | 65.74 |
+| Life_57 | 25.41 |
+| Life_58 | 13.0 |
+| Life_59 | 48.92 |
+| Life_60 | 16.07 |
+| Life_61 | 49.09 |
+| Life_62 | 36.41 |
+| Life_63 | 14.22 |
+| Life_64 | 10.6 |
+| Life_mean | 30.98 |
+
+###### Prediction plots
+
+The plots are very similar to the ones of the previous experiment.
+
 
 ### `S4D` Model Experiments 4️⃣D
 
@@ -219,6 +352,13 @@ Here the behavior of the loss functions is a bit peculiar because it starts very
 
 At the end the results are in the middle between `S4` and `S5`. Differently from `S5` here we have at least some loss values going below 10. 
 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   29.24
+##################################################
+```
+
 | Life  | Eval Loss |
 | --- | --- |
 | Life_50 | 45.51 |
@@ -241,3 +381,10 @@ At the end the results are in the middle between `S4` and `S5`. Differently from
 ###### Prediction plots
 
 The plots are more similar to the `S4` ones, not so oscillating like the `S5` ones.
+
+##### Experiment 2 `S4D` `FD001` `padding` 4️⃣D 1️⃣ 🦜
+
+Let's try to add `dropout=0.2`.
+
+>[!note]
+> [Link to the `wandb` run]()
