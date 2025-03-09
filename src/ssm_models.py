@@ -12,9 +12,12 @@ from dataclasses import dataclass
 # torch imports
 import torch
 import torch.nn as nn
+from torch.nn.functional import dropout
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torchinfo import summary
+from transformer_encoder import TransformerEncoder
+from transformer_encoder.utils import PositionalEncoding
 
 from utils import ExperimentConfig
 
@@ -31,6 +34,8 @@ from s4 import S4Block as S4
 from s4d import S4D
 # s5 imports
 from s5 import S5, S5Block
+# informer imports
+from informer import *
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
@@ -97,44 +102,45 @@ class Recurrent_PDM(nn.Module):
     def __init__(
             self,
             config: ModelConfig,
+            model_name: str,
             input_size: int,
             output_size: int,
     ):
         super(Recurrent_PDM, self).__init__()
 
-        if config.model_type == "LSTM":
+        if model_name == "LSTM":
             self.recurrent = nn.LSTM(
                 input_size=input_size,
-                hidden_size=config.hidden_size,
-                num_layers=config.num_layers,
+                hidden_size=config.d_model,
+                num_layers=config.n_layers,
                 batch_first=True,
                 dropout=config.dropout
             )
             # self.bn = nn.BatchNorm1d(hidden_size)
-        elif config.model_type == "GRU":
+        elif model_name == "GRU":
             self.recurrent = nn.GRU(
                 input_size=input_size,
-                hidden_size=config.hidden_size,
-                num_layers=config.num_layers,
+                hidden_size=config.d_model,
+                num_layers=config.n_layers,
                 batch_first=True,
                 dropout=config.dropout
             )
-        elif config.model_type == "RNN":
+        elif model_name == "RNN":
             self.recurrent = nn.RNN(
                 input_size=input_size,
-                hidden_size=config.hidden_size,
-                num_layers=config.num_layers,
+                hidden_size=config.d_model,
+                num_layers=config.n_layers,
                 batch_first=True,
                 dropout=config.dropout
             )
 
-        self.fc = nn.Linear(config.hidden_size, output_size)
+        self.fc = nn.Linear(config.d_model, output_size)
     
     def forward(self, x):
         
-        out= self.recurrent(x) # (B, L, D) -> (B, L, H)
-        out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
-        out = self.fc(out) # (B, H) -> (B, L)
+        out = self.recurrent(x) # (B, L, D) -> (B, L, H)
+        out = out[0].mean(dim=1) # (B, L, H) -> (B, H) out = self.fc(out) # (B, H) -> (B, L)
+        out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
         # out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
         return out
 
@@ -334,7 +340,7 @@ class RULTransformer(nn.Module):
         self,
         config: ModelConfig,
         input_size: int,
-        output_size: int
+        output_size: int,
     ):
         super(RULTransformer, self).__init__()
 
@@ -346,7 +352,7 @@ class RULTransformer(nn.Module):
             PositionalEncoding(
                 d_model=config.d_model,
                 dropout=config.dropout,
-                max_len=config.sequence_length
+                max_len=output_size
             )
         )
 
@@ -372,70 +378,69 @@ class RULTransformer(nn.Module):
         x = self.encoder(x, mask) # (B, L, d_model) -> (B, L, d_model)
         x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
         x = self.decoder(x) # (B, d_model) -> (B, d_output)
+        # x = self.decoder(x).squeeze(-1) # (B, L, d_model) -> (B, L)
         return x
         
 
-# Informer based model 
-# TODO: Add all the imports needed for this model to work, without adding the entire `Informer2020` repository (as I did in `AD_MG`)
-# The required imports are:
-# Informer imports
-# from Informer2020.models.encoder import *
-# from Informer2020.models.decoder import *
-# from Informer2020.utils.masking import TriangularCausalMask, ProbMask
-# from Informer2020.models.attn import *
-# from Informer2020.models.embed import *
+# Informer based model
 
 class RULInformer(nn.Module):
-    def __init__(self, enc_in, c_out, seq_len,
-                factor=5, d_model=512, n_heads=8, n_layers=3, d_ff=512,
-                dropout=0.0, attn='prob', activation='gelu',
-                output_attention=False,distil=True,single_rul=False):
+    def __init__(
+        self,
+        config: ModelConfig,
+        d_input:int,
+        d_output:int,
+        output_attention:bool=False
+       ):
         super(RULInformer,self).__init__()
-        self.pred_len = seq_len
-        self.attn = attn
+
         self.output_attention = output_attention
-        self.single_rul = single_rul
 
         # Encoding
-        self.enc_embedding = DataEmbedding(enc_in, d_model, dropout)
+        self.enc_embedding = DataEmbedding(
+            c_in=d_input,
+            d_model=config.d_model,
+            dropout=config.dropout
+        )
         # Attention
-        Attn = ProbAttention if attn=='prob' else FullAttention
+        Attn = ProbAttention if config.attn=='prob' else FullAttention
         # Encoder
         self.encoder = Encoder(
-            [
+            attn_layers = [
                 EncoderLayer(
-                    AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=True), 
-                                d_model, n_heads, mix=False),
-                    d_model,
-                    d_ff,
-                    dropout=dropout,
-                    activation=activation
-                ) for l in range(n_layers)
+                    attention = AttentionLayer(
+                        attention = Attn(
+                            mask_flag = False,
+                            factor = config.factor,
+                            attention_dropout=config.dropout,
+                            output_attention=True
+                        ),
+                        d_model = config.d_model,
+                        n_heads = config.n_heads,
+                        mix=False),
+                    d_model = config.d_model,
+                    d_ff = config.d_ff,
+                    dropout=config.dropout,
+                    activation=config.inf_activation
+                ) for _ in range(config.n_layers)
             ],
-            [
+            conv_layers = [
                 ConvLayer(
-                    d_model
-                ) for l in range(n_layers-1)
-            ] if distil else None,
-            norm_layer=torch.nn.LayerNorm(d_model)
+                    config.d_model
+                ) for _ in range(config.n_layers-1)
+            ] if config.distil else None,
+            norm_layer=torch.nn.LayerNorm(config.d_model)
         )
-            
-        self.projection = nn.Linear(d_model, c_out)
+
+        self.projection = nn.Linear(config.d_model, d_output)
 
     def forward(self, x_enc, output_attention=False, enc_self_mask=None):
 
-        # B → batch size, L → sequence length, D → feature dimension, H -> d_model
-        
-        # import pdb; pdb.set_trace()
-
         enc_out = self.enc_embedding(x_enc) # [B,L,D] -> [B,L,H]
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
-        
-        if not self.single_rul:
-            enc_out = enc_out.mean(dim=1) # [B,L,H] -> [B,H]
-            dec_out = self.projection(enc_out) # [B,H] -> [B,L]
-        else:
-            dec_out = self.projection(enc_out).squeeze(-1)
+
+        enc_out = enc_out.mean(dim=1) # [B,L,H] -> [B,H]
+        dec_out = self.projection(enc_out) # [B,L,H] -> [B,L]
 
         if output_attention:
             return dec_out, attns
@@ -518,13 +523,21 @@ def load_ssm_model(
                         d_output=1)
     elif exp_config.model_name in ["RNN","LSTM","GRU"]:
         model = Recurrent_PDM(config=model_config,
+                              model_name=exp_config.model_name,
                               input_size=d_input,
-                              output_size=1)
+                              output_size=exp_config.sequence_length)
     elif exp_config.model_name == "RULTransformer":
         model = RULTransformer(
             config=model_config,
             input_size=d_input,
-            output_size=1
+            output_size=exp_config.sequence_length
+        )
+    elif exp_config.model_name == "RULInformer":
+        model = RULInformer(
+            config=model_config,
+            d_input=d_input,
+            d_output=exp_config.sequence_length,
+            output_attention=exp_config.output_attention
         )
     else:
         raise ValueError(f"Model {exp_config.model_name} not recognized")

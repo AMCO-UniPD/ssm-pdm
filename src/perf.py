@@ -88,17 +88,22 @@ def lifes_metrics(
     if config.model_name.startswith("chronos"):
         metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
 
+    print('#'* 50)
+    print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life mean Loss']}")
+    print('#'* 50)
+
     if config.sub_lifes_metrics:
         metrics_df = sub_lifes_metrics(
             config=config,
             metrics_df=metrics_df
         )
 
-    save_element(
-        element=metrics_df,
-        dirpath=metrics_path,
-        filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}.pickle"
-    )
+    if config.save_metrics_df:
+        save_element(
+            element=metrics_df,
+            dirpath=metrics_path,
+            filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}.pickle"
+        )
 
     pd.options.display.float_format = None
 
