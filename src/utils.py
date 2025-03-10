@@ -287,6 +287,11 @@ class SSMWindowRegressionDataset(Dataset):
             mask=np.concatenate((np.ones(shape=(life.shape[0])),np.zeros(shape=(sequence_length-life.shape[0]))))
             sequences=np.concatenate((life.values,pad_arr))
             targets=np.concatenate((rul.values,pad_arr[:,-1]))
+            # Add the extra dimension to match the windowed approach
+            #NOTE: This is the equivalent of `unsqueeze(0)` in PyTorch
+            sequences = np.expand_dims(sequences, axis=0)
+            targets = np.expand_dims(targets, axis=0)
+            mask = np.expand_dims(mask, axis=0)
         else:
             n_windows = life.shape[0] - sequence_length
             # print("*"*50)

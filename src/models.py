@@ -320,7 +320,6 @@ def eval_loop(
 
 def save_best_model(
     best_model_state_dict: dict,
-    config: ExperimentConfig,
     best_model_path: str = experiment_path,
 ) -> None:
     """
@@ -328,17 +327,10 @@ def save_best_model(
 
     Args:
         best_model_state_dict (dict): The state dictionary of the best model
-        config (ExperimentConfig): The configuration object
 
     Returns:
         The function saves the best model and does not return anything
     """
-
-    best_model_path = generate_path(basepath=best_model_path,
-                                    folders=["best_models",
-                                             config.model_name,
-                                             config.cmapss_models])
-
 
     save_element(
         element=best_model_state_dict,
@@ -490,7 +482,6 @@ def wandb_train_test(
         if config.save_best_model:
             save_best_model(
                 best_model_state_dict=best_model_state_dict,
-                config=config,
                 best_model_path=best_model_path,
             )
 
@@ -507,7 +498,6 @@ def wandb_train_test(
     print("No errors occured during the training process, saving the best model")
     save_best_model(
         best_model_state_dict=best_model_state_dict,
-        config=config,
         best_model_path=best_model_path
     )
 
