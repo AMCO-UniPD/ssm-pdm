@@ -19,7 +19,7 @@ In this section the experiments using the `padding` approach will be presented.
 >[!info]
 > For the `padding` experiments we will use the 🦜 emoji, since the word `parrot` is similar to `padding`.
 
-### `S4` Model Experiments 4️⃣
+### `S4` Model Experiments 4️⃣ 🦜
 
 Using the `model_summary` configuration argument we can get information on the size of the model in terms of number of parameters and total number of operations performed:
 
@@ -388,3 +388,143 @@ Let's try to add `dropout=0.2`.
 
 >[!note]
 > [Link to the `wandb` run]()
+
+## `windowed` Approach Experiments 🪟
+
+In this section we will report the results of the experiments using the `windowed` approach.
+
+>[!info]
+> Obviously for the `windowed` approach we will us the 🪟 emoji.
+
+### `S4` Model Experiments 4️⃣ 🪟
+
+Using `model_summary` we can get the number of parameters of the model on this new approach.
+
+```txt
+=========================================================================
+=================
+Total params: 333,569
+Trainable params: 333,569
+Non-trainable params: 0
+Total mult-adds (Units.MEGABYTES): 0.17
+=========================================================================
+=================
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.65
+Params size (MB): 1.33
+Estimated Total Size (MB): 1.98
+=========================================================================
+```
+
+The ones above are the parameters with `d_model=128` and in fact their number is not so big.
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S4` `FDOO1` `windowed` 4️⃣ 1️⃣ 🪟
+
+Let's start with the following configuration:
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `S4` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 30 |
+| `n_layers` | 5 |
+| `dropout` | 0.2 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `mae` |
+| `eval_loss` | `mse` |
+
+>[!note]
+> [Link to the `wandb` run]()
+
+The loss trend is similar to thew one we have seen in the `RNN` based models. After a few epochs the loss saturates at a constant value, which is higher than the values we obtained in the `padding` approach.
+
+###### Metrics Table
+
+In fact the metrics are not very good.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   68.56
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 103.57 |
+| Life_51 | 61.66 |
+| Life_52 | 46.56 |
+| Life_53 | 74.96 |
+| Life_54 | 107.4 |
+| Life_55 | 25.18 |
+| Life_56 | 102.94 |
+| Life_57 | 59.78 |
+| Life_58 | 74.91 |
+| Life_59 | 92.71 |
+| Life_60 | 42.44 |
+| Life_61 | 103.19 |
+| Life_62 | 73.65 |
+| Life_63 | 49.83 |
+| Life_64 | 75.17 |
+| Life_mean | 72.93 |
+
+###### Prediction plots
+
+As expected the plots are not good at all, they are actually very similar to the ones we obtained in the test run I did this morning with just 3 epochs (just to see weather the code worked). The predicted `RUL` signal is constant and slightly decreases in the last time steps.
+
+##### Experiment 2 `S4` `FD001` `windowed` 4️⃣ 1️⃣ 🪟
+
+Now I realized why the results are so bad. Looking back at the last `wandb` experiments I did on the `SSM_PDM` project ([`SSM_PDM` `wandb` project](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/SSM_PDM_final_tests?nw=nwuserfrizzodavide)), I realized that I was using `sequence_length=170`. 
+
+Let's try then a new configuration with `sequence_length=170` and let's also remove the dropout.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/vkd4ojfv?nw=nwuserfrizzodavide)
+
+Now in the `wandb` loss plots we can see a clearer decreasing trend and in the `test_loss` the model saturates at a lower loss value than the previous experiment.
+
+###### Metrics Table
+
+Much better results in the metrics table. We are more or less on the same level reached in the `padding` approach.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   31.71
+Name: Life mean Loss, dtype: float64
+##################################################
+```
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 45.66 |
+| Life_51 | 27.31 |
+| Life_52 | 10.11 |
+| Life_53 | 38.2 |
+| Life_54 | 48.83 |
+| Life_55 | 30.79 |
+| Life_56 | 53.27 |
+| Life_57 | 19.72 |
+| Life_58 | 26.81 |
+| Life_59 | 28.45 |
+| Life_60 | 30.2 |
+| Life_61 | 36.42 |
+| Life_62 | 43.7 |
+| Life_63 | 31.98 |
+| Life_64 | 14.11 |
+| Life_mean | 32.37 |
+
+###### Prediction plots
+
+The prediction plots are surely better than the previous ones, since they are not constant and in same lifes they are almost overlapped to the true values but in some other (like `Life_55`) the predictions are quite bad.

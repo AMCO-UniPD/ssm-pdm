@@ -92,3 +92,39 @@ Topics of interest include, but are not limited to:
 We particularly encourage contributions that address the challenges of dealing with high-dimensional data, data scarcity, noisy measurements, and evolving system dynamics. Methodologies that incorporate domain knowledge and physics-based models are also of great interest. The session welcomes both theoretical advancements and practical case studies demonstrating the effectiveness of machine learning and control approaches in real-world anomaly detection and predictive maintenance applications. We are especially interested in works that show how the combination of these two fields can lead to more effective and reliable solutions than either field alone.
 
 ```
+
+#### Shorter version
+
+Since Francesco told me that the submission platform for the Special Session proposal is very strict on the text length, it's better if I already try to create a new shorter version of the description to be prepared in case the one above is too long.
+
+```txt
+
+```
+
+
+## Potential Contributors to contact
+
+I started a ChatGPT Deep Research query to search for recent papers in Anomaly Detection, Fault Detection and Predictive Maintenance in order to send emails to these authors to ask if they are interested in contributing to the Special Session.
+
+- [Andrea Bonci](https://scholar.google.com/citations?user=85zKCiYAAAAJ&hl=it&oi=ao),[Renat Kermenov](https://scholar.google.com/citations?view_op=list_works&hl=it&hl=it&user=SFCpc7sAAAAJ&sortby=pubdate)
+    - Mail:
+        - Andrea Bonci → `a.bonci@univpm.it`
+        - Renat Kermenov → `r.kermenov@pm.univpm.it`
+    - [Paper](https://www.mdpi.com/2076-3417/14/19/8686#:~:text=Appl,3390%2Fapp14198686)
+    - Topic: These two work in the field of robotics and they have recently released a paper on Anomaly Detection in an industrial setting so they may be a good candidate.
+- [Riccardo Mennilli,Luigi Mazza](https://iris.polito.it/bitstream/11583/2996801/1/sensors-25-00537.pdf#:~:text=Department%20of%20Mechanical%20and%20Aerospace,Correspondence%3A%20luigi.mazza%40polito.it)
+    - Mail: 
+        - Riccardo Mennilli → `riccardo.mennilli@studenti.polito.it`
+        - Luigi Mazza → `luigi.mazza@polito.it`
+    - Topics: Application of `ML` for `PdM` in a `PLC` infrastructure.
+- [Simone Cinquemani](https://www4.ceda.polimi.it/manifesti/manifesti/controller/ricerche/RicercaPerDocentiPublic.do?EVN_PRODOTTI=evento&k_doc=42361&lang=EN&aa=2021&tab_ricerca=1#:~:text=Scheda%20Docente%20,simulation)
+    - Mail: `simone.cinquemani@polimi.it`
+    - [Paper](https://www.mdpi.com/2075-1702/13/2/139#:~:text=Machines%202025%2C%2013%282%29%2C%20139%3B%20https%3A%2F%2Fdoi)
+    - Topics: Vibration signals, vibration control.
+- [Stephan Baggerohr](https://www.researchgate.net/profile/Stephan-Baggerohr-2)
+    - Mail: `stephan.baggerohr@skf.com`
+    - [First paper](https://arxiv.org/html/2404.02304v1#:~:text=Mengjie%20Zhao,Technology%20Development%2C%20Houten%2C%20the%20Netherlands)
+    - [Second paper](https://papers.phmsociety.org/index.php/phme/article/view/4090#:~:text=Published%20Jun%2027%2C%202024)
+    - Topics: Computer Vision techniques for the identification of bearing fault modes
+- [Delia-Elena Dumitru](https://papers.phmsociety.org/index.php/phme/article/view/4054#:~:text=Published%20Jun%2027%2C%202024) → This paper is maybe less connected to the topic.
+
