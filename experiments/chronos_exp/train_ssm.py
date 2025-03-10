@@ -171,7 +171,7 @@ else:
     print(f"Dropout: {model_config.dropout}")
     print("#"*50)
 
-    run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}"
+    run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}"
     setproctitle.setproctitle(run_name)
 
     model,model_info = wandb_run(
