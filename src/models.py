@@ -37,7 +37,8 @@ from utils import(
     load_reg_data,
     get_most_recent_file,
     open_element,
-    get_feature_names
+    get_feature_names,
+    combine_values,
 )
 
 from ssm_models import load_ssm_model
@@ -196,6 +197,7 @@ def train_loop(
         optimizer: optim.Optimizer,
         criterion: nn.Module,
         device: torch.device = torch.device("cpu"),
+        approach: str = "padding"
 ) -> float:
     """
     Train loop for one epoch
@@ -207,6 +209,7 @@ def train_loop(
         optimizer (torch.optim.Optimizer): The optimizer object
         criterion (torch.nn.Module): The loss function
         device (str): The device to use
+        approach (str): The approach to use, by default padding
 
     Returns:
         loss (float): The loss value
@@ -218,17 +221,17 @@ def train_loop(
     pbar=tqdm(enumerate(dataloader))
 
     for batch_idx, (life, rul, mask) in pbar:
-        life = life.to(device)
+        life = life.to(device) if approach=="padding" else life.to(device).squeeze(-1)
         rul = rul.to(device).squeeze(-1)
-        mask = mask.to(device)
+        mask = mask.to(device) if approach=="padding" else mask.to(device).squeeze(-1)
 
         if model_name.startswith("chronos"):
             input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
             output = model(input_ids=input_ids, attention_mask=attention_mask).logits
         else:
-            life = life.permute(2,0,1)
-            mask = mask.permute(1,0)
-            rul = rul.unsqueeze(0)
+            life = life.permute(2,0,1) if approach=="padding" else life
+            mask = mask.permute(1,0) if approach=="padding" else mask
+            rul = rul.unsqueeze(0) if approach=="padding" else rul
             output = model(life)
 
         loss = criterion(output, rul, mask)
@@ -253,6 +256,7 @@ def eval_loop(
         eval_criterion: nn.Module,
         mode: str = "Test",
         device: torch.device = torch.device("cpu"),
+        approach: str = "padding",
         use_tqdm: bool = True,
 ) -> Tuple[float,float,np.ndarray,np.ndarray]:
     """
@@ -267,6 +271,7 @@ def eval_loop(
         eval_criterion (torch.nn.Module): The evaluation loss function
         mode (str): The mode of evaluation
         device (str): The device to use
+        approach (str): The approach to use, by default padding
         use_tqdm (bool): Whether to use tqdm or not
 
     Returns:
@@ -281,23 +286,23 @@ def eval_loop(
 
     with torch.no_grad():
         for life, rul, mask in pbar:
-            life = life.to(device)
+            life = life.to(device) if approach=="padding" else life.to(device).squeeze(-1)
             rul = rul.to(device).squeeze(-1)
-            mask = mask.to(device)
+            mask = mask.to(device) if approach=="padding" else mask.to(device).squeeze(-1)
 
             if model_name.startswith("chronos"):
                 input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
                 output = model(input_ids=input_ids, attention_mask=attention_mask).logits
             else:
-                life = life.permute(2,0,1)
-                mask = mask.permute(1,0)
-                rul = rul.unsqueeze(0)
+                life = life.permute(2,0,1) if approach=="padding" else life
+                mask = mask.permute(1,0) if approach=="padding" else mask
+                rul = rul.unsqueeze(0) if approach=="padding" else rul
                 output = model(life)
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
-            y_pred.append(batch_out)
-            y_true.append(batch_target)
+            y_pred.append(batch_out) if approach=="padding" else y_pred.extend(batch_out)
+            y_true.append(batch_target) if approach=="padding" else y_true.extend(batch_target)
 
             loss = criterion(output, rul, mask)
             rmse_loss = eval_criterion(output, rul, mask)
@@ -405,6 +410,7 @@ def wandb_train_test(
                 optimizer=optimizer,
                 criterion=criterion,
                 device=device,
+                approach=config.approach,
             )
             train_time = time.time() - train_time
 
@@ -418,6 +424,7 @@ def wandb_train_test(
                 eval_criterion=eval_criterion,
                 mode="Val",
                 device=device,
+                approach=config.approach,
             )
             val_time = time.time() - val_time
 
@@ -431,6 +438,7 @@ def wandb_train_test(
                 eval_criterion=eval_criterion,
                 mode="Test",
                 device=device,
+                approach=config.approach,
             )
             test_time = time.time() - test_time
 
@@ -483,7 +491,7 @@ def wandb_train_test(
             save_best_model(
                 best_model_state_dict=best_model_state_dict,
                 config=config,
-                best_mdoel_path=best_model_path,
+                best_model_path=best_model_path,
             )
 
     except torch.cuda.OutOfMemoryError:
@@ -500,6 +508,7 @@ def wandb_train_test(
     save_best_model(
         best_model_state_dict=best_model_state_dict,
         config=config,
+        best_model_path=best_model_path
     )
 
     return model_info
@@ -541,9 +550,9 @@ def best_model_perf(
 
     best_model_state_dict = open_element(best_model_filepath,
                                          filetype="pickle")
-    
-    train_loader,_,test_loader=load_reg_data(config)
 
+    loaders_dict=load_reg_data(config)
+    train_loader,test_loaders=loaders_dict["train_loader"],loaders_dict["test_loaders"]
 
     if config.model_name.startswith("chronos"):
         model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
@@ -575,25 +584,58 @@ def best_model_perf(
     print("#" * 50)
     print("Evaluating the best model on the test set")
     print("#" * 50)
-    _,_,y_pred,y_true = eval_loop(
-        dataloader=test_loader,
-        model=model,
-        model_name=config.model_name,
-        tokenizer=tokenizer,
-        criterion=criterion,
-        eval_criterion=eval_criterion,
-        mode="Test",
-        device=device,
-        use_tqdm=False,
-    )
-    print("#" * 50)
-    print(f"y_pred shape: {y_pred.shape} | y_true shape: {y_true.shape}")
 
-   # Save the predictions and true values
-    outputs_dict = {
-        "y_pred": y_pred if config.model_name.startswith("chronos") else y_pred.squeeze(1),
-        "y_true": y_true if config.model_name.startswith("chronos") else y_true.squeeze(1),
-    }
+    if config.approach == "padding" or config.model_name.startswith("chronos"):
+
+        _,_,y_pred,y_true = eval_loop(
+            dataloader=test_loader,
+            model=model,
+            model_name=config.model_name,
+            tokenizer=tokenizer,
+            criterion=criterion,
+            eval_criterion=eval_criterion,
+            mode="Test",
+            device=device,
+            use_tqdm=False,
+        )
+
+        outputs_dict = {
+                    "y_pred": y_pred,
+                    "y_true": y_true
+                }
+    else:
+
+        preds,true_vals = [],[]
+
+        for i,test_loader in enumerate(test_loaders):
+            print("#" * 50)
+            print(f"Testing on life {i+1}")
+            print("#" * 50)
+            _,_,y_pred,y_true = eval_loop(
+                dataloader=test_loader,
+                model=model,
+                model_name=config.model_name,
+                tokenizer=tokenizer,
+                criterion=criterion,
+                eval_criterion=eval_criterion,
+                mode="Test",
+                device=device,
+                use_tqdm=False,
+                approach=config.approach,
+            )
+            combined_preds,combined_true_vals=combine_values(
+                predictions=y_pred,
+                true_values=y_true,
+                sequence_length=config.sequence_length,
+            )
+            preds.append(combined_preds)
+            true_vals.append(combined_true_vals)
+
+        outputs_dict = {
+            "y_pred": preds,
+            "y_true": true_vals
+        }
+
 
     save_element(
         element=outputs_dict,
@@ -635,7 +677,8 @@ def wandb_run(
 
     with wandb.init(project=config.project_name, name=run_name):
 
-        train_loader,val_loader,test_loader=load_reg_data(config)
+        loaders_dict=load_reg_data(config)
+        train_loader, val_loader, test_loader = loaders_dict["train_loader"], loaders_dict["val_loader"], loaders_dict["test_loader"]
 
         if config.model_name.startswith("chronos"):
             model,tokenizer,optimizer,scheduler=load_model_tokenizer(

@@ -234,7 +234,7 @@ class RegressionDataset(Dataset):
         mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
         return sequence, target, mask
 
-# Regression dataset class for SMM models
+# Regression dataset class for SMM models for the padding approach
 
 class SSMRegressionDataset(Dataset):
     def __init__(
@@ -242,20 +242,59 @@ class SSMRegressionDataset(Dataset):
         life: pd.DataFrame,
         sequence_length: int = 500,
     ):
-        
+
+        life,rul = life.iloc[:,:-1],life["RUL"]
+
         if sequence_length > life.shape[0]:
-            life,rul = life.iloc[:,:-1],life["RUL"]
             pad_arr=np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))
             mask=np.concatenate((np.ones(shape=(life.shape[0])),np.zeros(shape=(sequence_length-life.shape[0]))))
             sequences=np.concatenate((life.values,pad_arr))
             targets=np.concatenate((rul.values,pad_arr[:,-1]))
         else:
             print("*"*50)
-            print(f"Warning: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps")
+            print(f"Padding approach: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps")
             print("*"*50)
             sequences=life.values[life.shape[0]-sequence_length:,:]
             mask=np.ones(shape=(sequence_length,life.shape[1]))
             targets=life["RUL"].values[life.shape[0]-sequence_length:,:]
+
+        self.sequences = sequences
+        self.targets = targets
+        self.mask = mask
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32).unsqueeze(-1)
+        target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
+        mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
+        return sequence, target, mask
+
+# SSM Regression dataset class for the windowed approach
+
+class SSMWindowRegressionDataset(Dataset):
+    def __init__(
+        self,
+        life: pd.DataFrame,
+        sequence_length: int = 500,
+    ):
+
+        life,rul = life.iloc[:,:-1],life["RUL"]
+
+        if sequence_length > life.shape[0]:
+            pad_arr=np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))
+            mask=np.concatenate((np.ones(shape=(life.shape[0])),np.zeros(shape=(sequence_length-life.shape[0]))))
+            sequences=np.concatenate((life.values,pad_arr))
+            targets=np.concatenate((rul.values,pad_arr[:,-1]))
+        else:
+            n_windows = life.shape[0] - sequence_length
+            # print("*"*50)
+            # print(f"Windowed approach: This life is longer than {sequence_length}, dividing it into {n_windows} windows of length {sequence_length}")
+            # print("*"*50)
+            sequences = np.array([life[i:i + sequence_length] for i in range(n_windows+1)])
+            targets = np.array([rul[i:i + sequence_length] for i in range(n_windows+1)])
+            mask = np.array([np.ones(sequence_length) for _ in range(n_windows+1)])
 
         self.sequences = sequences
         self.targets = targets
@@ -392,7 +431,46 @@ def get_transformer(config:ExperimentConfig,df:CMAPSSDataset) -> Tuple[Transform
 
     return transformer
 
-def load_reg_data(config:ExperimentConfig) -> Tuple[DataLoader,DataLoader,DataLoader]:
+# Function to combined the predictions on the sub sequences in the windowed approach
+
+def combine_values(
+    predictions:np.ndarray,
+    true_values:np.ndarray,
+    sequence_length:int
+) -> Tuple[np.ndarray,np.ndarray]:
+
+    """
+    Combine the predictions done by the model on the different sub sequences in which each life was divided in the `seq_to_seq` approach
+
+    Args:
+        predictions: np.array containing the predictions for each sub sequence
+        true_values: np.array containing the true values for each sub sequence
+        sequence_length: length of the sequences
+
+    Returns:
+        combined_predictions: np.array containing the combined
+        combined_true_vals: np.array containing the combined true values
+    """
+    
+    n_samples=len(predictions)+sequence_length-1
+    combined_predictions = np.zeros(n_samples)
+    combined_true_vals = np.zeros(n_samples)
+    counts = np.zeros(n_samples)
+
+    for i, (preds, true) in enumerate(zip(predictions,true_values)):
+        start_index = i
+        end_index = i + sequence_length
+        combined_predictions[start_index:end_index] += preds
+        combined_true_vals[start_index:end_index] += true
+        counts[start_index:end_index] += 1
+
+    nonzero_counts = counts != 0
+    combined_predictions[nonzero_counts] /= counts[nonzero_counts]
+    combined_true_vals[nonzero_counts] /= counts[nonzero_counts]
+
+    return combined_predictions, combined_true_vals
+
+def load_reg_data(config:ExperimentConfig) -> dict:
     """
     Load the data from a RUL dataset (e.g. CMAPSS,CMAPSS-2) and convert them
     into a DataLoader object with minibatched of size 1, each one containing a life
@@ -401,9 +479,8 @@ def load_reg_data(config:ExperimentConfig) -> Tuple[DataLoader,DataLoader,DataLo
         config (ExperimentConfig): The configuration dictionary
 
     Returns:
-        df (CMAPSSDataset): The CMAPSS dataset
-        regression_dataset (RegressionDataset): The RegressionDataset object
-        reg_loader (DataLoader): The DataLoader object
+        loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
+        approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
     if config.data_name == "CMAPSS":
@@ -433,18 +510,36 @@ def load_reg_data(config:ExperimentConfig) -> Tuple[DataLoader,DataLoader,DataLo
         train_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in train_lifes]
         val_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in val_lifes]
         test_datasets = [RegressionDataset(life=life,sensors=feature_names,sequence_length=config.sequence_length) for life in test_lifes]
-    else:
+    elif config.approach == "padding":
         train_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in train_lifes]
         val_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in val_lifes]
         test_datasets = [SSMRegressionDataset(life=life,sequence_length=config.sequence_length) for life in test_lifes]
+    elif config.approach == "windowed":
+        train_datasets = [SSMWindowRegressionDataset(life=life,sequence_length=config.sequence_length) for life in train_lifes]
+        val_datasets = [SSMWindowRegressionDataset(life=life,sequence_length=config.sequence_length) for life in val_lifes]
+        test_datasets = [SSMWindowRegressionDataset(life=life,sequence_length=config.sequence_length) for life in test_lifes]
 
-    batch_size = len(feature_names) if config.model_name.startswith("chronos") else config.sequence_length
+    if config.model_name.startswith("chronos"):
+        batch_size = len(feature_names)
+    elif config.approach == "padding":
+        batch_size=config.sequence_length
+    else:
+        batch_size=config.batch_size
 
     train_loader=DataLoader(ConcatDataset(train_datasets),batch_size=batch_size,shuffle=False)
     val_loader=DataLoader(ConcatDataset(val_datasets),batch_size=batch_size,shuffle=False)
     test_loader=DataLoader(ConcatDataset(test_datasets),batch_size=batch_size,shuffle=False)
 
-    return train_loader,val_loader,test_loader
+    test_loaders=[DataLoader(test_dataset) for test_dataset in test_datasets]
+
+    loaders_dict = {
+        "train_loader":train_loader,
+        "val_loader":val_loader,
+        "test_loader":test_loader,
+        "test_loaders": test_loaders
+    }
+
+    return loaders_dict
 
 
 # Function that returns the feature names in the CMAPSS dataset

@@ -64,22 +64,27 @@ print("#"*50)
 best_model_path = generate_path(basepath=experiment_path,
                                    folders=["best_models",
                                             exp_config.model_name,
-                                            exp_config.cmapss_models])
+                                            exp_config.cmapss_models,
+                                            exp_config.approach])
 
 outputs_path = generate_path(basepath=experiment_path,
                                    folders=["outputs",
                                             exp_config.model_name,
-                                            exp_config.cmapss_models])
+                                            exp_config.cmapss_models,
+                                            exp_config.approach])
 
 metrics_path = generate_path(basepath=experiment_path,
                              folders=["metrics",
                                       exp_config.model_name,
-                                      exp_config.cmapss_models])
+                                      exp_config.cmapss_models,
+                                      exp_config.approach])
+
 
 plot_path = generate_path(basepath=experiment_path,
                              folders=["plots",
                                       exp_config.model_name,
-                                      exp_config.cmapss_models])
+                                      exp_config.cmapss_models,
+                                      exp_config.approach])
 
 
 if exp_config.test_script:
@@ -157,6 +162,7 @@ else:
     print(f"Sequence length: {exp_config.sequence_length}")
     print(f"Training loss: {exp_config.loss}")
     print(f"Eval loss: {exp_config.eval_loss}")
+    print(f"Approach: {exp_config.approach}")
     print("Model configuration")
     print('#'* 50)
     print(f"Learning rate: {model_config.lr}")

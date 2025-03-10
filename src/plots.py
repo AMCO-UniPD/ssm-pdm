@@ -126,9 +126,15 @@ def plot_predictions_grid(
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
     if config.model_name.startswith("chronos"):
         pred,true = y_pred[config.life_idx][:,sensor_idx,:],y_true[config.life_idx][:,sensor_idx,:]
+    elif config.approach == "padding":
+        pred,true = y_pred[config.life_idx,:],y_true[config.life_id,:]
+    elif config.approach == "windowed":
+        pred = [y_pred[i] for i in config.life_idx]
+        true = [y_true[i] for i in config.life_idx]
+    if not config.full_life:
+        mask = true!=0 if config.approach=="padding" else [true[i]!=0 for i in range(len(true))]
     else:
-        pred,true = y_pred[config.life_idx,:],y_true[config.life_idx,:]
-    mask = true!=0 if not config.full_life else np.ones(true.shape,dtype=int)
+        np.ones(true.shape,dtype=int)
 
     # Produce the plot
     fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(30,20))
@@ -137,8 +143,8 @@ def plot_predictions_grid(
             if i*config.ncols+j<(config.nrows*config.ncols):
 
                 ax=axs[i,j]
-                ax.plot(true[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="blue",label='True RUL')
-                ax.plot(pred[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="orange",label='Predicted RUL')
+                ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="blue",label='True RUL')
+                ax.plot(pred[i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL')
                 ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1} {sensor_name}')
                 ax.set_xticks([])
                 ax.set_ylabel('RUL')

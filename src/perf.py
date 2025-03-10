@@ -75,7 +75,7 @@ def lifes_metrics(
                 eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
                 metrics_df.at[f"Life_{i+config.test_idx[0]}",sensor]=round(eval_loss,2)
     else:
-        for i in range(y_pred.shape[0]):
+        for i in range(len(y_pred)):
             mask = torch.tensor(y_true[i]!=0)
             pred=torch.tensor(y_pred[i])
             true=torch.tensor(y_true[i])
