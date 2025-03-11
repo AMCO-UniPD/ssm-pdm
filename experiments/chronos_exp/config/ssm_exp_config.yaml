@@ -11,12 +11,13 @@ project_name: "chronos-rul"
 data_name: CMAPSS # CMAPSS, CMPASS-2
 val_idx:
   - 0
-  - 50
+  - 131
 test_idx:
-  - 50
-  - 100
+  - 131
+  - 259
 val_size: 0.3
-cmapss_models: FD001 # FD001, FD002, FD003, FD004
+# cmapss_models: FD001
+cmapss_models: FD002
 
 # Feature extraction configurations
 transformer_type: 1 # 1,2
@@ -43,9 +44,9 @@ weight_decay: 1.0e-4
 # model_name: GRU
 # model_name: S4
 # model_name: S5
-# model_name: S4D
+model_name: S4D
 # model_name: RULTransformer
-model_name: RULInformer
+# model_name: RULInformer
 output_attention: false
 model_summary: false
 model_summary_manual: false
