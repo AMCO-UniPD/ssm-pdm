@@ -280,3 +280,168 @@ Mean eval loss over all the test lifes: Eval Loss   31.66
 
 Similar to the ones obtained with `RNN,LSTM`.
 
+## `windowed` Approach Experiments 🪟
+
+In this section we report the results of the experiments using the `windowed` approach.
+
+### `RNN` Model Experiments ♻️
+
+#### Dataset `FD001`
+
+##### Experiment 1 `RNN` `FDOO1` `windowed` ♻️ 1️⃣ 🪟
+
+Let's use the same configuration used in the `SSM` models.
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `RNN` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `mae` |
+| `eval_loss` | `mse` |
+
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/sup9ait6?nw=nwuserfrizzodavide)
+
+As it happened in the `padding` approach the loss quickly saturates at an higher value than in `SSM` so probably there will be worse results.
+
+###### Metrics Table
+
+Actually the results are good but as usual the model predicts always the same range of `RUL` values, as it happened in the `padding` approach. So the predictions are good jsut because the test lifes we have are more or less on the range of values learned by the model.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   28.56
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 58.75 |
+| Life_51 | 9.55 |
+| Life_52 | 9.34 |
+| Life_53 | 18.81 |
+| Life_54 | 50.82 |
+| Life_55 | 48.23 |
+| Life_56 | 63.68 |
+| Life_57 | 10.66 |
+| Life_58 | 8.85 |
+| Life_59 | 47.74 |
+| Life_60 | 19.32 |
+| Life_61 | 57.25 |
+| Life_62 | 27.7 |
+| Life_63 | 3.37 |
+| Life_64 | 0.16 |
+| Life_mean | 28.95 |
+
+###### Prediction plots
+
+The plots look good but we can clearly see that the predicted `RUL` signal is essentially the same across all the lifes.
+
+### `LSTM` Model Experiments 🧠
+
+#### Dataset `FD001`
+
+##### Experiment 1 `LSTM` `FDOO1` `windowed` 🧠 1️⃣ 🪟
+
+Let's use the same configuration used in `RNN`.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/fmzf6ry0?nw=nwuserfrizzodavide)
+
+The loss plots are essentially overlapped to the ones of the `RNN` experiment.
+
+###### Metrics Table
+
+The metriccs are almost exactly equal to the `RNN` ones.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   28.56
+Name: Life mean Loss, dtype: float64
+##################################################
+```
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 58.74 |
+| Life_51 | 9.54 |
+| Life_52 | 9.35 |
+| Life_53 | 18.79 |
+| Life_54 | 50.81 |
+| Life_55 | 48.24 |
+| Life_56 | 63.67 |
+| Life_57 | 10.65 |
+| Life_58 | 8.84 |
+| Life_59 | 47.72 |
+| Life_60 | 19.33 |
+| Life_61 | 57.23 |
+| Life_62 | 27.69 |
+| Life_63 | 3.38 |
+| Life_64 | 0.15 |
+| Life_mean | 28.94 |
+
+###### Prediction plots
+
+Very similar to the `RNN` ones.
+
+### `GRU` Model Experiments 🏗️
+
+#### Dataset `FD001`
+
+##### Experiment 1 `GRU` `FDOO1` `windowed` 🏗️ 1️⃣ 🪟
+
+Let's use the same configuration used in `RNN`.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/koe9e5xb?nw=nwuserfrizzodavide)
+
+Also in this case the loss plots are essentially overlapped with the ones obtained with `RNN,LSTM`.
+
+###### Metrics Table
+
+As expected also the metrics are almost the same as the ones obtained with `RNN,LSTM`.
+ 
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   28.56
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 58.74 |
+| Life_51 | 9.55 |
+| Life_52 | 9.35 |
+| Life_53 | 18.8 |
+| Life_54 | 50.82 |
+| Life_55 | 48.23 |
+| Life_56 | 63.67 |
+| Life_57 | 10.66 |
+| Life_58 | 8.85 |
+| Life_59 | 47.73 |
+| Life_60 | 19.32 |
+| Life_61 | 57.25 |
+| Life_62 | 27.7 |
+| Life_63 | 3.37 |
+| Life_64 | 0.16 |
+| Life_mean | 28.95 |
+
+###### Prediction plots
+
+Very similar to the `RNN,LSTM` ones.

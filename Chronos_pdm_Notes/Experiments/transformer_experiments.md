@@ -331,3 +331,123 @@ Name: Life mean Loss, dtype: float64
 
 The plots are similar to the previous experiment, although we can see that the predictions have improved a bit in some lifes.
 
+## `windowed` approach experiments 🪟
+
+In this section we will report the results obtained in the `windowed` approach 🪟
+
+### `Transformer` Model Experiments 🤖
+
+#### Dataset `FD001`
+
+##### Experiment 1 `Transformer` `FDOO1` `windowed` 🤖 1️⃣ 🪟
+
+Let's use the configuration used in the `SSM` and `RNN` experiments.
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `RULTransformer` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_ff` | 128 |
+| `n_heads` | 8 |
+| `loss` | `mae` |
+| `eval_loss` | `mse` |
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/6agf0faz?nw=nwuserfrizzodavide)
+
+The loss plots have a similar trend to the one of the `RNN` based models but the loss value at which it saturates is slightly lower.
+
+###### Metrics table
+
+The results are not bad at all but still slightly worse than the best run obtained with `S4`.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   25.70
+Name: Life mean Loss, dtype: float64
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 44.99 |
+| Life_51 | 12.31 |
+| Life_52 | 16.82 |
+| Life_53 | 40.33 |
+| Life_54 | 70.19 |
+| Life_55 | 28.73 |
+| Life_56 | 10.6 |
+| Life_57 | 6.86 |
+| Life_58 | 30.37 |
+| Life_59 | 57.98 |
+| Life_60 | 7.34 |
+| Life_61 | 21.2 |
+| Life_62 | 7.24 |
+| Life_63 | 15.15 |
+| Life_64 | 24.3 |
+| Life_mean | 26.29 |
+
+###### Prediction plots
+
+The plots are similar to the ones we have already seen in the other `windowed` experiments, smooth decreasing lines that are overlapped with the real `RUL` signals in some lifes and in some others they are a bit far from the real ones.
+
+### `Informer` Model Experiments 🧙‍♂️
+
+#### Dataset `FD001`
+
+##### Experiment 1 `Informer` `FDOO1` `windowed` 🧙‍♂️ 1️⃣ 🪟
+
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/zj9566td?nw=nwuserfrizzodavide)
+
+This model is the slowest of all in terms of training times. The loss plots are not great either, the loss goes down in the first epochs and than it settles at a value close to the one to which the `RULTransformer` saturates but then it starts oscillating a lot.
+
+###### Metrics table
+
+The results are not great, they are the worst ones after `S5,S4D` (however the situation with `S5,S4D` is a bit peculiar as we have seen).
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   33.31
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 82.4 |
+| Life_51 | 8.7 |
+| Life_52 | 1.35 |
+| Life_53 | 57.56 |
+| Life_54 | 89.13 |
+| Life_55 | 33.17 |
+| Life_56 | 68.75 |
+| Life_57 | 10.1 |
+| Life_58 | 55.99 |
+| Life_59 | 55.12 |
+| Life_60 | 2.56 |
+| Life_61 | 30.11 |
+| Life_62 | 35.27 |
+| Life_63 | 3.28 |
+| Life_64 | 51.17 |
+| Life_mean | 38.98 |
+
+###### Prediction plots
+
+The plots are similar to the `Transformer` ones but with higher errors.

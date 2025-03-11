@@ -398,7 +398,7 @@ In this section we will report the results of the experiments using the `windowe
 
 ### `S4` Model Experiments 4️⃣ 🪟
 
-Using `model_summary` we can get the number of parameters of the model on this new approach.
+Using `model_summary` we can get the number of parameters of the model on this new approach. This is the parameter count for `d_model=128`.
 
 ```txt
 =========================================================================
@@ -416,7 +416,25 @@ Estimated Total Size (MB): 1.98
 =========================================================================
 ```
 
-The ones above are the parameters with `d_model=128` and in fact their number is not so big.
+With `d_model=512`:
+
+```txt
+==========================================================================================
+Total params: 3,300,353
+Trainable params: 3,300,353
+Non-trainable params: 0
+Total mult-adds (Units.MEGABYTES): 2.64
+==========================================================================================
+Input size (MB): 0.01
+Forward/backward pass size (MB): 14.62
+Params size (MB): 13.19
+Estimated Total Size (MB): 27.82
+==========================================================================================
+
+```
+
+The parameter count is the exact same as the one of the `padding` approach (in fact the model architecture did not change), buut the input size changes and thus the memory usage for the forward/backward pass are changes. In particular they are lower since now we are passing shorter sequences in input to the model.
+
 
 #### Dataset `FD001`
 
@@ -528,3 +546,283 @@ Name: Life mean Loss, dtype: float64
 ###### Prediction plots
 
 The prediction plots are surely better than the previous ones, since they are not constant and in same lifes they are almost overlapped to the true values but in some other (like `Life_55`) the predictions are quite bad.
+
+##### Experiment 3 `S4` `FD001` `windowed` 4️⃣ 1️⃣ 🪟
+
+Let's try to increase `d_model` to 512.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/0who1612?nw=nwuserfrizzodavide)
+
+In the `wandb` loss plots the trend is the usual one, however the model reaches new minimum values in `val_loss` and `test_loss` but the different in any case it's minimal so I do not expect huge improvements.
+
+###### Metrics Table
+
+In fact the results are worse.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   36.60
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 45.8 |
+| Life_51 | 21.22 |
+| Life_52 | 39.3 |
+| Life_53 | 28.61 |
+| Life_54 | 44.34 |
+| Life_55 | 34.83 |
+| Life_56 | 54.94 |
+| Life_57 | 35.93 |
+| Life_58 | 32.32 |
+| Life_59 | 46.28 |
+| Life_60 | 35.2 |
+| Life_61 | 33.91 |
+| Life_62 | 40.96 |
+| Life_63 | 39.82 |
+| Life_64 | 23.98 |
+| Life_mean | 37.16 |
+
+###### Prediction plots
+
+Also from the plots we can see that the results are worse than the previous experiment.
+
+##### Experiment 4 `S4` `FD001` `windowed` 4️⃣ 1️⃣ 🪟
+
+Looking back at the `SSM_PDM` project code I realized that in the `windowed` approach that I used back at the time in the Regression Head I used some sort of Global Average Pooling. We have already tried it out in the `padding` approach and it did not work out, let's try it here and see what happens.
+
+The difference in the code stays in the `forward` method of the models in the `decoder` part, so after the `SSM` block has extracted the features and we have a tensor of shape `(B,L,d_model)`. In the `padding` approach we simply decode the tensor with a `nn.Linear` layer to pass from `(B,L,d_model)` to `(B,L)`:
+
+```python
+x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
+```
+
+In the `gap` Regression Head instead we first remove the `L` dimension averaging over it (this is the Global Average Pooling step) and then we decoded it with a `fc` layer to pass from `(B,d_model)` to `(B,L)` 
+
+```python
+x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
+x = self.decoder(x)  # (B, d_model) -> (B, d_output)
+```
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/2bwpcjkw?nw=nwuserfrizzodavide)
+
+In the `wandb` loss plots the loss goes down at significantly lower values than all the `SSM` experiments. If previously the minimum values were around 24-25 now we are around 15.
+
+###### Metrics Table
+
+We have a new best run in terms of metrics.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   23.47
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 25.11 |
+| Life_51 | 6.03 |
+| Life_52 | 7.89 |
+| Life_53 | 19.71 |
+| Life_54 | 56.55 |
+| Life_55 | 9.67 |
+| Life_56 | 17.9 |
+| Life_57 | 2.05 |
+| Life_58 | 40.73 |
+| Life_59 | 22.99 |
+| Life_60 | 4.37 |
+| Life_61 | 12.59 |
+| Life_62 | 5.46 |
+| Life_63 | 6.98 |
+| Life_64 | 67.18 |
+| Life_mean | 20.35 |
+
+###### Prediction plots
+
+Now I think that we have got back to the results we obtained in the Deep Learning exam project. In that case the metric values were a little bit smaller but I think that is just becuase now we are using a different train,val,test split. We have the `RUL` signal that is a smooth decreasing line like the true `RUL` signal and, I checked, the predicted `RUL` ranges are not always the same as it happens in the `RNN` based models.
+
+### `S5` Model Experiments 5️⃣ 🪟
+
+Let's use `model_summary` to get the parameter count.
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S5` `FDOO1` `windowed` 5️⃣ 1️⃣ 🪟
+
+Let's start with the same configuration used for `S4`, so `sequence_length=170,dropout=0` and let's start with `d_model=128`.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ya5skbj3?nw=nwuserfrizzodavide)
+
+As it happened also in the `padding` approach the loss plots are very similar to the ones of the `S4` model, but the loss values are higher.
+
+###### Metrics Table
+
+However the metrics are very good 💪, the best ones seen so far.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   26.41
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 42.16 |
+| Life_51 | 12.15 |
+| Life_52 | 15.72 |
+| Life_53 | 12.99 |
+| Life_54 | 36.79 |
+| Life_55 | 32.6 |
+| Life_56 | 47.75 |
+| Life_57 | 8.5 |
+| Life_58 | 7.01 |
+| Life_59 | 34.92 |
+| Life_60 | 22.93 |
+| Life_61 | 42.64 |
+| Life_62 | 28.18 |
+| Life_63 | 19.27 |
+| Life_64 | 8.24 |
+| Life_mean | 24.79 |
+
+###### Prediction plots
+
+The loss plots are much better than the ones seen up to now, the `RUL` signals have a clear decreasing trend and not that oscillating trend we can see in the `S4` 🪟 experiments did up to now.
+
+##### Experiment 2 `S5` `FD001` `windowed` 5️⃣ 1️⃣ 🪟
+
+Let's use the same configuration used in `S4` for the `gap` approach.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/nlf0baho?nw=nwuserfrizzodavide)
+
+
+###### Metrics Table
+
+Disaster for `S5` with the `gap` layer.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   50.03
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 41.29 |
+| Life_51 | 10.97 |
+| Life_52 | 9.12 |
+| Life_53 | 36.84 |
+| Life_54 | 82.33 |
+| Life_55 | 44.34 |
+| Life_56 | 23.07 |
+| Life_57 | 1.53 |
+| Life_58 | 75.62 |
+| Life_59 | 29.58 |
+| Life_60 | 6.3 |
+| Life_61 | 11.82 |
+| Life_62 | 10.07 |
+| Life_63 | 12.13 |
+| Life_64 | 138.89 |
+| Life_mean | 35.59 |
+
+Actually comparing with the metrics table of `S4` we have several lifes where `S5` is significantly better: `Life_52,Life_57,Life_60`, and others (like `Life_64`) where it is extremely worse and this obviously make the `Life_mean` metric to go up.
+
+###### Prediction plots
+
+Following the observation did above we have some plots were the predicted `RUL` signal is essentially overlapped to the true one (i.e.`Life_52,Life_53,Life_58,Life_61,Life_62`) while there are others were the prediction is completely missed. The good thing is that at least it is an underestimation error, so the machine would be stopped before the actual failure.
+
+
+### `S4D` Model Experiments 4 D 🪟
+
+Let's use `model_summary` to get the parameter count.
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S4D` `FDOO1` `windowed` 5️⃣ 1️⃣ 🪟
+
+Let's start with the same configuration used for `S4`, so `sequence_length=170,dropout=0` and let's start with `d_model=128`.
+
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/cxqmdjom?nw=nwuserfrizzodavide)
+
+The training was really fast (in fact looking at the time plots in `wanbd` the `S4D` one is significantly lower than the other two) and in `val_loss` the values are lower than the ones of `S4,S5`.
+
+###### Metrics Table
+
+Also the metrics values are good, not as good as the ones of `S5` but still good.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   29.22
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 34.47 |
+| Life_51 | 18.75 |
+| Life_52 | 18.95 |
+| Life_53 | 24.4 |
+| Life_54 | 30.7 |
+| Life_55 | 29.94 |
+| Life_56 | 39.71 |
+| Life_57 | 22.52 |
+| Life_58 | 20.59 |
+| Life_59 | 28.57 |
+| Life_60 | 22.33 |
+| Life_61 | 35.75 |
+| Life_62 | 20.84 |
+| Life_63 | 42.98 |
+| Life_64 | 9.43 |
+| Life_mean | 26.66 |
+
+###### Prediction plots
+
+The plots are surely better than the `S4` ones but not as good as the `S5` ones.
+
+##### Experiment 2 `S4D` `FD001` `windowed` 5️⃣ 1️⃣ 🪟
+
+Let's use the `gap` configuration.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/asmjar78?nw=nwuserfrizzodavide)
+
+The loss plots are more oscillating than the ones of the other models but we reach lower minimum values in `val_loss,test_loss`.
+
+###### Metrics Table
+
+Like in `S5` the metrics are higher on average with the respect to `S4` because we have some very good lifes but also some very bad ones.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   41.91
+Name: Life mean Loss, dtype: float64
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 57.65 |
+| Life_51 | 3.72 |
+| Life_52 | 5.08 |
+| Life_53 | 70.16 |
+| Life_54 | 101.47 |
+| Life_55 | 23.06 |
+| Life_56 | 19.68 |
+| Life_57 | 4.01 |
+| Life_58 | 91.07 |
+| Life_59 | 38.44 |
+| Life_60 | 1.89 |
+| Life_61 | 12.29 |
+| Life_62 | 17.98 |
+| Life_63 | 6.94 |
+| Life_64 | 123.05 |
+| Life_mean | 38.43 |
+
+###### Prediction plots
+
+The plots are like the `S5` ones, some of them are overlapped with the true `RUL` signals, some other are really far from it.
