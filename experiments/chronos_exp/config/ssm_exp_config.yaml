@@ -41,11 +41,11 @@ weight_decay: 1.0e-4
 # model_name: RNN
 # model_name: LSTM
 # model_name: GRU
-model_name: S4
+# model_name: S4
 # model_name: S5
 # model_name: S4D
 # model_name: RULTransformer
-# model_name: RULInformer
+model_name: RULInformer
 output_attention: false
 model_summary: false
 model_summary_manual: false
@@ -63,6 +63,7 @@ approach: windowed
 batch_size: 100
 
 # test_script config
+# test_script: true
 test_script: false
 file_pos: 0
 save_outputs: true
