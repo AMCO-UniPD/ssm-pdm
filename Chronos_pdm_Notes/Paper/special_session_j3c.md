@@ -69,33 +69,33 @@ He is in collaboration with Maschio Gaspardo S.p.A., a global leader in the prod
 
 The limit here is half page.
 
+This is the long version of the description. I copy it here so that I can always past it back in the file in case I want to come back to this longer version.
+
 
 ```txt
-
-The increasing complexity and interconnectedness of modern systems demand sophisticated approaches for ensuring reliability, safety, and efficiency. Among diagnostics and prognositcs strategies, Anomaly detection and predictive maintenance are critical components in achieving these goals, enabling early identification of potential failures and proactive maintenance strategies. The aim of this Special Session is to explore innovative techniques for anomaly detection and predictive maintenance in various application domains.
+The increasing complexity and interconnectedness of modern systems demand sophisticated approaches for ensuring reliability, safety, and efficiency. Among diagnostic and prognostic strategies, Anomaly Detection (AD) and Predictive Maintenance (PdM) are critical components in achieving these goals, enabling early identification of potential failures and proactive maintenance strategies. The aim of this Special Session is to explore innovative techniques for Anomaly Detection and Predictive Maintenance in various application domains.
 
 We aim to bring together researchers and practitioners from both the machine learning and control communities to discuss novel methodologies and practical implementations. We seek contributions that leverage the strengths of both fields to develop robust, accurate, and efficient solutions for detecting anomalies, predicting future failures, and optimizing maintenance schedules.
 
 Topics of interest include, but are not limited to:
 
-    Machine learning techniques for anomaly detection in complex systems, including supervised, unsupervised, and semi-supervised methods.
-    Control-theoretic approaches for anomaly detection, such as fault detection and isolation (FDI) and change detection methods.
-    Hybrid approaches combining machine learning and control theory for enhanced anomaly detection and predictive maintenance.
-    Data driven Predictive Maintenance strategies based on Machine Learning and Deep Learning for Remaining Useful Life (RUL) prediction.
-    Model based Predictive Maintenance strategies for Remaining Useful Life (RUL) prediction.
-    Reinforcement Learning based approaches for optimal maintenance decision-making and schedulling.
-    Explainable AI (XAI) for anomaly detection and predictive maintenance, providing insights into the reasons behind predictions and facilitating trust in automated systems.
-    Robustness and uncertainty quantification in machine learning and control-based anomaly detection and predictive maintenance.
-    Data-driven methods for system identification and modeling for anomaly detection and predictive maintenance.
-    Real-time anomaly detection and predictive maintenance for dynamic systems.
+- Machine learning techniques for anomaly detection in complex systems, including supervised, unsupervised, and semi-supervised methods.
+- Control-theoretic approaches for anomaly detection, such as fault detection and isolation (FDI) and change detection methods.
+- Hybrid approaches combining machine learning and control theory for enhanced Anomaly Detection and Predictive Maintenance.
+- Data driven Predictive Maintenance strategies based on Machine Learning and Deep Learning for Remaining Useful Life (RUL) prediction.
+- Reinforcement Learning based approaches for optimal maintenance decision-making and scheduling.
+- Explainable AI (XAI) for Anomaly Detection and Predictive Maintenance
+- Robustness and uncertainty quantification in machine learning and control-based Anomaly Detection and predictive Maintenance.
+- Real-time anomaly detection and predictive maintenance for dynamic systems.
 
-We particularly encourage contributions that address the challenges of dealing with high-dimensional data, data scarcity, noisy measurements, and evolving system dynamics. Methodologies that incorporate domain knowledge and physics-based models are also of great interest. The session welcomes both theoretical advancements and practical case studies demonstrating the effectiveness of machine learning and control approaches in real-world anomaly detection and predictive maintenance applications. We are especially interested in works that show how the combination of these two fields can lead to more effective and reliable solutions than either field alone.
-
+We particularly encourage contributions that address the challenges of dealing with high-dimensional data, data scarcity, noisy measurements, and evolving system dynamics. Methodologies that incorporate domain knowledge and physics-based models are also of great interest. The session welcomes both theoretical advancements and practical case studies demonstrating the effectiveness of machine learning and control approaches in real-world anomaly detection and predictive maintenance applications. We are especially interested in works that show how the combination of these two fields can lead to more effective and reliable solutions than either field alone
 ```
 
 #### Shorter version
 
 Since Francesco told me that the submission platform for the Special Session proposal is very strict on the text length, it's better if I already try to create a new shorter version of the description to be prepared in case the one above is too long.
+
+##### `GPT-4.5`
 
 Here is a potential idea for a shorter version (proposed by `ChatGPT 4.5`)
 
@@ -105,17 +105,17 @@ The Special Session aims to explore innovative methodologies and practical appli
 We invite contributions from researchers and practitioners combining machine learning and control theory, including but not limited to:
 
 - Machine learning approaches (supervised, unsupervised, semi-supervised) for anomaly detection.
-- Control-theoretic methods such as fault detection and isolation (FDI) and change detection.
+- Control-theoretic methods such as fault detection, fault identification and fault isolation.
 - Hybrid methods integrating machine learning and control strategies for improved AD and PdM performance.
 - Data-driven and deep learning approaches for Predictive Maintenance and Remaining Useful Life (RUL) estimation.
 - Reinforcement Learning frameworks for optimal maintenance decisions and scheduling.
 - Real-time methodologies for anomaly detection and maintenance scheduling in dynamic environments.
-- Techniques addressing challenges like high-dimensional data, data scarcity, noisy measurements, and system dynamics.
 - Integration of domain expertise and physics-based models in anomaly detection and maintenance strategies.
 
 The session invites both theoretical advancements and practical case studies highlighting effective solutions and real-world implementations.
-
 ```
+
+##### `Claude 3.7 Sonnet`
 
 An here is another version from Claude 3.7 Sonnet:
 
@@ -124,7 +124,7 @@ The increasing complexity of modern systems demands sophisticated approaches for
 We seek contributions leveraging both fields to develop robust solutions for detecting anomalies, predicting failures, and optimizing maintenance schedules. Topics include:
 
 - Machine learning techniques for anomaly detection (supervised, unsupervised, semi-supervised)
-- Control-theoretic approaches (FDI, change detection)
+- Control-theoretic approaches (fault detection, fault identification and fault isolation)
 - Hybrid approaches combining machine learning and control theory
 - Data-driven PdM strategies for RUL prediction
 - Reinforcement Learning for maintenance decision-making
@@ -135,10 +135,12 @@ We seek contributions leveraging both fields to develop robust solutions for det
 We encourage works addressing high-dimensional data, data scarcity, and evolving system dynamics. Both theoretical advancements and practical case studies are welcome, especially those demonstrating how combining these fields leads to more effective solutions.
 ```
 
+##### `Gemini 2.0 Flash`
+
 Let's ask also Gemini 2.0 Flash:
 
 ```txt
-Modern systems require sophisticated reliability, safety, and efficiency strategies. Anomaly Detection (AD) and Predictive Maintenance (PdM) are crucial for early failure identification and proactive maintenance. This Special Session explores innovative AD and PdM techniques across various domains, uniting researchers and practitioners from machine learning and control.  We aim to foster discussion of novel methodologies and implementations leveraging both fields for robust, accurate, and efficient solutions.
+Modern systems require sophisticated reliability, safety, and efficiency strategies. Anomaly Detection (AD) and Predictive Maintenance (PdM) are crucial for early failure identification and proactive maintenance. This Special Session explores innovative AD and PdM techniques across various domains, uniting researchers and practitioners from machine learning and control. We aim to foster discussion of novel methodologies and implementations leveraging both fields for robust, accurate, and efficient solutions.
 
 Topics of interest include:
 
@@ -154,6 +156,12 @@ Topics of interest include:
 We encourage contributions addressing high-dimensional data, data scarcity, noisy measurements, and evolving system dynamics. Methodologies incorporating domain knowledge and physics-based models are of great interest. The session welcomes theoretical advancements and practical case studies demonstrating the effectiveness of these approaches in real-world applications, especially those combining machine learning and control for superior solutions.
 ```
 
+| Model | Words |
+|-----------|-------|
+| Current long version | 328 |
+| `ChatGPT 4.5` | 164 |
+| `Claude 3.7 Sonnet` | 149 |
+| `Gemini 2.0 Flash` | 197 |
 
 ## Potential Contributors to contact
 

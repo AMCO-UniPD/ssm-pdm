@@ -406,12 +406,26 @@ Name: Life mean Loss, dtype: float64
 
 The plots are similar to the ones we have already seen in the other `windowed` experiments, smooth decreasing lines that are overlapped with the real `RUL` signals in some lifes and in some others they are a bit far from the real ones.
 
+#### Dataset `FD002`
+
+##### Experiment 1 `Transformer` `FDOO2` `windowed` 🤖 1️⃣ 🪟
+
+Let's use the configuration used in the `SSM` and `RNN` experiments.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/go2r5g2o?nw=nwuserfrizzodavide)
+
+The loss plots are quite overlapped with the ones of `LSTM,RNN`, I hope that we do not get the exact same results because that would make no sense at all.
+
+Ok we are getting the same results as the `RNN` experiments on `FD002` which does not make sense.
+
 ### `Informer` Model Experiments 🧙‍♂️
 
 #### Dataset `FD001`
 
 ##### Experiment 1 `Informer` `FDOO1` `windowed` 🧙‍♂️ 1️⃣ 🪟
 
+Let's use the configuration used in the `SSM` and `RNN` experiments.
 
 >[!note]
 > [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/zj9566td?nw=nwuserfrizzodavide)
@@ -451,3 +465,18 @@ Mean eval loss over all the test lifes: Eval Loss   33.31
 ###### Prediction plots
 
 The plots are similar to the `Transformer` ones but with higher errors.
+
+#### Dataset `FD002`
+
+##### Experiment 1 `Informer` `FDOO2` `windowed` 🧙‍♂️ 1️⃣ 🪟
+
+Let's try to use the same configuration as the `RNN` based models.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/sjzdzz9v?nw=nwuserfrizzodavide)
+
+This is the last try: if we get the same results as the last `RNN,LSTM` and `RULTransformer` experiments then there is something stange going on.
+
+Here it seems that it is following the same trend as the `RULTransformer` model. In the first epochs the loss goes down differently than the `RNN` models but then it starts to exactly overlap with the `RNN` models.
+
+As expected same exact results as the `RNN` models.

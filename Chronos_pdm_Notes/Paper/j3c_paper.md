@@ -65,3 +65,55 @@ After having performed the experiments using the `windowed` approach I am convin
 - `SSM` based models → I was able to obtain similar results to the ones obtained in the Deep Learning exam projet adding the `gap` layer to the Regression Head. Now we are able to obtain smooth decreasing lines in the predicted `RUL` signal. The best model of all is `S4` because its metrics are quite stable across the different test set lifes that we use to evaluate the model performances. On the other hand `S4D,S5` are less stable in their metrics: there are some lifes in which the models are almost perfect in predicting the `RUL`, others in which they miss completely.
 - `RNN` based models → Here the situation is peculiar: for some reason the results of all these three models are almost exactly equal. Maybe it's better to insert just one of them in the paper. In any case also for this approach we have the problem that the models always predict the same range of `RUL` values across all the lifes.
 - `Transformer` based models → The `Transformer` is not bad at all, we can place it right below the `SSM` models in terms of performance, the `Informer` instead has similar performances to the `Transformer` but for some reason it is much slower.
+
+# Result Recap
+
+In this section I want to recap the numerical results obtained in the different experiments. I will use markdown tables that I will then convert into `latex` tables to insert them in the Overleaf project.
+
+For the moment I evaluated the models on the test lifes just using the `RMSE` evaluation metric. Maybe in the future I may think at some other metrics to add to the evaluation.
+
+The `RMSE` value inserted in the following tables is the mean `RMSE` over all the test lifes.
+
+## `FD001` Experiments `padding` Approach 🦜
+
+
+| Model | RMSE |
+|-------|------|
+| `RNN` | 31.58 |
+| `LSTM` | 31.3 |
+| `GRU` | 31.66 |
+| `Transformer` | 60.22 |
+| `Informer` | 31.31 |
+| `S4` | **28.58** |
+| `S4D` | 29.24 |
+| `S5` | 30.19 |
+
+## `FD001` Experiments `windowed` Approach 🪟
+
+>[!note]
+> Interestingly in these experiments `S5,S4D` performed much better without the `gap` layer in the Regression Head, differently from what happened with `S4`. For these two models I also report in `()` the `RMSE` value obtained with the `gap` layer.
+
+| Model | RMSE |
+|-------|------|
+| `RNN` | 28.56 |
+| `LSTM` | 28.56|
+| `GRU` | 28.56 |
+| `Transformer` | 25.7 |
+| `Informer` | 33.31 |
+| `S4` | **23.47**  |
+| `S4D` | 29.22 (41.91) |
+| `S5` | 26.41 (50.03)|
+
+
+## `FD002` Experiments `windowed` Approach 🪟
+
+| Model | RMSE |
+|-------|------|
+| `RNN` | ??.? |
+| `LSTM` | ??.? |
+| `GRU` | ??.? |
+| `Transformer` | ??.? |
+| `Informer` | ??.? |
+| `S4` | ??.? |
+| `S4D` | ??.? |
+| `S5` | ??.? |

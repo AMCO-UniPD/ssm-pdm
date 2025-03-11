@@ -354,6 +354,69 @@ Mean eval loss over all the test lifes: Eval Loss   28.56
 
 The plots look good but we can clearly see that the predicted `RUL` signal is essentially the same across all the lifes.
 
+#### Dataset `FD002`
+
+##### Experiment 1 `RNN` `FDOO2` `windowed` ♻️ 1️⃣ 🪟
+
+Let's use the same configuration used in the `SSM` experiments on `FD002`.
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `RNN` |
+| `cmapss_model` | `FD002` |
+| `val_idx` | `[0,131]` |
+| `test_idx` | `[131,259]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `mae` |
+| `eval_loss` | `mse` |
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/su3jle9w?nw=nwuserfrizzodavide)
+
+Usual behavior of an `RNN` based model, the loss quickly saturates at an higher value than in `SSM` so probably there will be worse results.
+
+###### Metrics Table
+
+The results are worse than the ones of the `SSM` based models and I also checked that the predictions are always in the same range of values.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   35.08
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_131 | 40.0 |
+| Life_132 | 15.13 |
+| Life_133 | 14.14 |
+| Life_134 | 86.0 |
+| Life_135 | 37.0 |
+| Life_136 | 85.78 |
+| Life_137 | 10.23 |
+| Life_138 | 34.0 |
+| Life_139 | 99.24 |
+| Life_140 | 23.0 |
+| Life_141 | 9.0 |
+| Life_142 | 78.85 |
+| Life_143 | 15.0 |
+| Life_144 | 39.0 |
+| Life_145 | 47.0 |
+| Life_mean | 42.22 |
+
 ### `LSTM` Model Experiments 🧠
 
 #### Dataset `FD001`
@@ -400,6 +463,47 @@ Name: Life mean Loss, dtype: float64
 
 Very similar to the `RNN` ones.
 
+#### Dataset `FD002`
+
+##### Experiment 1 `LSTM` `FDOO2` `windowed` 🧠 1️⃣ 🪟
+
+Let's use the same configuration used in `RNN`.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/2lzfp7j8?nw=nwuserfrizzodavide)
+
+The loss plots are essentially overlapped to the ones of the `RNN` experiment.
+
+###### Metrics Table
+
+The result it's exaclty equal to the one obtained with the `RNN` model, this is pretty strange, I have to investigate. It is pretty strange: in fact I tried to execute the script with `ipdb` with the `test_script` and `save_outputs` parameters set to `True` and I saw that the model indeeded changes its feature extraction backbone if I use `RNN` or `LSTM` in the `model_name`. I also checked the `state_dict` of the model and they are different. Now let's see what happens with the `GRU` model.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   35.08
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_131 | 40.0 |
+| Life_132 | 15.13 |
+| Life_133 | 14.14 |
+| Life_134 | 86.0 |
+| Life_135 | 37.0 |
+| Life_136 | 85.78 |
+| Life_137 | 10.23 |
+| Life_138 | 34.0 |
+| Life_139 | 99.24 |
+| Life_140 | 23.0 |
+| Life_141 | 9.0 |
+| Life_142 | 78.85 |
+| Life_143 | 15.0 |
+| Life_144 | 39.0 |
+| Life_145 | 47.0 |
+| Life_mean | 42.22 |
+
+
 ### `GRU` Model Experiments 🏗️
 
 #### Dataset `FD001`
@@ -445,3 +549,12 @@ Mean eval loss over all the test lifes: Eval Loss   28.56
 ###### Prediction plots
 
 Very similar to the `RNN,LSTM` ones.
+
+#### Dataset `FD002`
+
+##### Experiment 1 `GRU` `FDOO2` `windowed` 🏗️ 1️⃣ 🪟
+
+>[!note]
+> [Link to the `wandb` run]()
+
+Also here the same exact results as the other `RNN` models and `Transformer`.

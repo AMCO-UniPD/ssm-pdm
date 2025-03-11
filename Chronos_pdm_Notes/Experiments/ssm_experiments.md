@@ -643,6 +643,76 @@ Mean eval loss over all the test lifes: Eval Loss   23.47
 
 Now I think that we have got back to the results we obtained in the Deep Learning exam project. In that case the metric values were a little bit smaller but I think that is just becuase now we are using a different train,val,test split. We have the `RUL` signal that is a smooth decreasing line like the true `RUL` signal and, I checked, the predicted `RUL` ranges are not always the same as it happens in the `RNN` based models.
 
+#### Dataset `FD002`
+
+In this section we will report the results obtained on the `FD002` dataset. This dataset is more challenging then the `FD001` one because the engine is tested on 6 different operating conditions. There are 260 training trajectories and 259 test trajectories, so the experiments will take some more time to run. We will use the same kind of train,val,test split we used for the `FD001` dataset. So we will use all the training trajectories for training and then we will use the first 130 test trajectories for validation and the last 129 for testing.
+
+##### Experiment 1 `S4` `FD002` `windowed` 4️⃣ 1️⃣ 🪟
+
+Let's use the following configuration:
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `S4` |
+| `cmapss_model` | `FD002` |
+| `val_idx` | `[0,131]` |
+| `test_idx` | `[131,259]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `mae` |
+| `eval_loss` | `mse` |
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/hr2x9l6y?nw=nwuserfrizzodavide)
+
+The behavior of the loss plots it's peculiar. It starts decreasing and then it seems to saturate to a constant value, however at epoch 40 it start to go down again and it oscillates around more or less an error of 24-25.
+
+###### Metrics Table
+
+The results are not as bad as I thought considering that higher difficulty of the task with respect to the `FD001` dataset.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   31.51
+##################################################
+```
+| Life  | Eval Loss |
+| --- | --- |
+| Life_131 | 10.32 |
+| Life_132 | 1.86 |
+| Life_133 | 16.69 |
+| Life_134 | 106.01 |
+| Life_135 | 0.95 |
+| Life_136 | 27.07 |
+| Life_137 | 4.67 |
+| Life_138 | 9.82 |
+| Life_139 | 57.29 |
+| Life_140 | 69.61 |
+| Life_141 | 8.45 |
+| Life_142 | 24.06 |
+| Life_143 | 12.58 |
+| Life_144 | 19.64 |
+| Life_145 | 29.01 |
+| Life_mean | 26.54 |
+
+Here the `RMSE` values are quite low, the `Life_mean` is ruined by the very high values of `Life_134,Life_139` and `Life_140`.
+
+###### Prediction plots
+
+The plots are good, there are several lifes in which the predicted `RUL` is almost overlapped to the true one.
+
 ### `S5` Model Experiments 5️⃣ 🪟
 
 Let's use `model_summary` to get the parameter count.
@@ -734,6 +804,89 @@ Actually comparing with the metrics table of `S4` we have several lifes where `S
 
 Following the observation did above we have some plots were the predicted `RUL` signal is essentially overlapped to the true one (i.e.`Life_52,Life_53,Life_58,Life_61,Life_62`) while there are others were the prediction is completely missed. The good thing is that at least it is an underestimation error, so the machine would be stopped before the actual failure.
 
+#### Dataset `FD002`
+
+##### Experiment 1 `S5` `FD002` `windowed` 5️⃣ 1️⃣ 🪟
+
+Let's use the same configuration used for `S4` on the first experiment on `FD002`.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/dlxnvw3w?nw=nwuserfrizzodavide)
+
+In the loss plots the situation seems very good since the plots are almost always below the `S4` ones.
+
+###### Metrics Table
+
+The average results on the metrics are still worse than the ones obtained with `S4` always for the fact that there is an high variability in the `RMSE` across different lifes. We have also to consider that now we have 128 test lifes with the respect to the 50 of the `FD001` dataset, so the variability is more pronounced.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   40.52
+##################################################
+```
+| Life  | Eval Loss |
+| --- | --- |
+| Life_131 | 12.41 |
+| Life_132 | 42.41 |
+| Life_133 | 30.1 |
+| Life_134 | 72.15 |
+| Life_135 | 27.38 |
+| Life_136 | 20.69 |
+| Life_137 | 5.08 |
+| Life_138 | 3.99 |
+| Life_139 | 42.24 |
+| Life_140 | 87.81 |
+| Life_141 | 2.36 |
+| Life_142 | 27.35 |
+| Life_143 | 9.93 |
+| Life_144 | 30.72 |
+| Life_145 | 17.29 |
+| Life_mean | 28.79 |
+
+As in `S4` `Life_134,Life_139,Life_140` are the ones that ruin the `Life_mean` metric.
+
+###### Prediction plots
+
+The plots are similar to the ones of `S4`.
+
+##### Experiment 2 `S5` `FD002` `windowed` 5️⃣ 1️⃣ 🪟
+
+Since in the `FDOO1` dataset the best results in terms of metrics for `S5` were obtained without using the `gap` layer in the Regression Head let's try to use the same configuration here.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ml99d1fv?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+Ok the results are worse than the ones obtained with the `gap` layer but at least they are different from all the other experiments with the `RNN` based models.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   34.72
+##################################################
+```
+| Life  | Eval Loss |
+| --- | --- |
+| Life_131 | 33.03 |
+| Life_132 | 36.15 |
+| Life_133 | 35.3 |
+| Life_134 | 74.91 |
+| Life_135 | 23.04 |
+| Life_136 | 67.99 |
+| Life_137 | 24.89 |
+| Life_138 | 32.53 |
+| Life_139 | 81.91 |
+| Life_140 | 19.56 |
+| Life_141 | 13.02 |
+| Life_142 | 55.09 |
+| Life_143 | 26.73 |
+| Life_144 | 32.78 |
+| Life_145 | 46.62 |
+| Life_mean | 40.24 |
+
+###### Prediction plots
+
+The plots have the usual oscillating behavior typical of the non `gap` layers experiments.
 
 ### `S4D` Model Experiments 4 D 🪟
 
@@ -826,3 +979,91 @@ Name: Life mean Loss, dtype: float64
 ###### Prediction plots
 
 The plots are like the `S5` ones, some of them are overlapped with the true `RUL` signals, some other are really far from it.
+
+#### Dataset `FD002`
+
+##### Experiment 1 `S4D` `FD002` `windowed` 5️⃣ 1️⃣ 🪟
+
+Let's use the same configuration used for `S4,S5` on the first experiment on `FD002`.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/cnaqyzg3?nw=nwuserfrizzodavide)
+
+The trend here is simiar to the one of `S5` but the loss is always lower than the one of both `S4,S5`.
+
+###### Metrics Table
+
+Howewer there is still a high variability in the `RMSE` values across different lifes. That's probably why the `Life_mean` metric is so high if we consider all the test lifes.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   58.02
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_131 | 1.82 |
+| Life_132 | 6.45 |
+| Life_133 | 26.2 |
+| Life_134 | 117.74 |
+| Life_135 | 53.49 |
+| Life_136 | 19.87 |
+| Life_137 | 2.16 |
+| Life_138 | 6.66 |
+| Life_139 | 47.49 |
+| Life_140 | 131.91 |
+| Life_141 | 4.05 |
+| Life_142 | 15.17 |
+| Life_143 | 4.49 |
+| Life_144 | 39.08 |
+| Life_145 | 8.33 |
+| Life_mean | 32.33 |
+
+Here the main problem are `Life_134,Life_140` which have really high values.
+
+###### Prediction plots
+
+Similar to `S4,S5`.
+
+##### Experiment 2 `S4D` `FD002` `windowed` 5️⃣ 1️⃣ 🪟
+
+As for `S5` let's try to do an experiment also without the `gap` layer.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/nbnpauhk?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+
+A bit better than `S5` but still worse than the results obtained with the `gap` layer.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   35.28
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_131 | 33.3 |
+| Life_132 | 19.49 |
+| Life_133 | 14.31 |
+| Life_134 | 72.15 |
+| Life_135 | 31.22 |
+| Life_136 | 69.08 |
+| Life_137 | 13.96 |
+| Life_138 | 51.72 |
+| Life_139 | 86.46 |
+| Life_140 | 30.66 |
+| Life_141 | 12.92 |
+| Life_142 | 59.51 |
+| Life_143 | 10.93 |
+| Life_144 | 35.52 |
+| Life_145 | 33.56 |
+| Life_mean | 38.32 |
+
+
+###### Prediction plots
+
+Plots similar to the ones produced with the `S5` model.
