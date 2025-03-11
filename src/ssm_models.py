@@ -139,8 +139,8 @@ class Recurrent_PDM(nn.Module):
     def forward(self, x):
         
         out = self.recurrent(x) # (B, L, D) -> (B, L, H)
-        out = out[0].mean(dim=1) # (B, L, H) -> (B, H) out = self.fc(out) # (B, H) -> (B, L)
-        out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
+        out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
+        out = self.fc(out) # (B, H) -> (B, L)
         # out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
         return out
 
@@ -161,6 +161,7 @@ class S4Model(nn.Module):
         n_layers = config.n_layers
         dropout = config.dropout
         self.prenorm = config.prenorm
+        self.gap = config.gap
         activation = config.activation
         gate_act = config.gate_act
         mult_act = config.mult_act
@@ -219,6 +220,11 @@ class S4Model(nn.Module):
 
         x = x.transpose(-1, -2) # (B, d_model, L) -> (B, L, d_model)
 
+        if self.gap:
+            x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
+            x = self.decoder(x)  # (B, d_model) -> (B, d_output)
+            return x
+
         # Decode the outputs
         x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
         return x
@@ -239,6 +245,7 @@ class S4DModel(nn.Module):
         n_layers = config.n_layers
         dropout = config.dropout
         d_input = d_input
+        self.gap = config.gap
 
         self.encoder = nn.Linear(d_input, d_model)
 
@@ -283,6 +290,11 @@ class S4DModel(nn.Module):
 
         x = x.transpose(-1, -2)
 
+        if self.gap:
+            x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
+            x = self.decoder(x)  # (B, d_model) -> (B, d_output)
+            return x
+
         # Decode the outputs
         x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
         return x
@@ -305,6 +317,7 @@ class S5Model(nn.Module):
         d_model = config.d_model
         n_layers = config.n_layers
         bidir = config.bidir
+        self.gap = config.gap
 
         self.encoder = nn.Linear(d_input, d_model)
 
@@ -328,6 +341,11 @@ class S5Model(nn.Module):
             x = layer(x)
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
+
+        if self.gap:
+            x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
+            x = self.decoder(x)  # (B, d_model) -> (B, d_output)
+            return x
 
         # Decode the outputs
         x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
@@ -511,16 +529,16 @@ def load_ssm_model(
     if exp_config.model_name == "S4":
         model = S4Model(config=model_config,
                         d_input=d_input,
-                        d_output=1,
+                        d_output=1 if not model_config.gap else exp_config.sequence_length,
                         lr=exp_config.lr)
     elif exp_config.model_name == "S4D":
         model = S4DModel(config=model_config,
                          d_input=d_input,
-                         d_output=1)
+                         d_output=1 if not model_config.gap else exp_config.sequence_length)
     elif exp_config.model_name == "S5":
         model = S5Model(config=model_config,
                         d_input=d_input,
-                        d_output=1)
+                        d_output=1 if not model_config.gap else exp_config.sequence_length)
     elif exp_config.model_name in ["RNN","LSTM","GRU"]:
         model = Recurrent_PDM(config=model_config,
                               model_name=exp_config.model_name,
