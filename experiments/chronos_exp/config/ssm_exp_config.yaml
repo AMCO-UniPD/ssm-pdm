@@ -9,15 +9,23 @@ project_name: "chronos-rul"
 
 # Dataset configurations
 data_name: CMAPSS # CMAPSS, CMPASS-2
+# For FD001 dataset
 val_idx:
   - 0
-  - 131
+  - 50
 test_idx:
-  - 131
-  - 259
+  - 50
+  - 100
+# For FD002 dataset
+# val_idx:
+#   - 0
+#   - 131
+# test_idx:
+#   - 131
+#   - 259
 val_size: 0.3
-# cmapss_models: FD001
-cmapss_models: FD002
+cmapss_models: FD001
+# cmapss_models: FD002
 
 # Feature extraction configurations
 transformer_type: 1 # 1,2
@@ -44,19 +52,20 @@ weight_decay: 1.0e-4
 # model_name: GRU
 # model_name: S4
 # model_name: S5
-model_name: S4D
+# model_name: S4D
 # model_name: RULTransformer
-# model_name: RULInformer
+model_name: RULInformer
 output_attention: false
 model_summary: false
 model_summary_manual: false
 
 # Loss function to use for training
-loss: mae
+# loss: mae
+loss: pinball
 # Loss function to use for evaluation
 eval_loss: rmse
 # tau parameter for the quantile loss
-tau: 0.5
+tau: 0.7
 
 # approach config
 # approach: padding

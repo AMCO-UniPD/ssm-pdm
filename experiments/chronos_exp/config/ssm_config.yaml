@@ -6,7 +6,7 @@ random_init: true # SSM models are always randomly initialized
 d_model: 128
 n_layers: 5
 dropout: 0.0
-gap: false # Global Average Pooling in the Regression Head
+gap: true # Global Average Pooling in the Regression Head
 
 # S4 config
 lr: 1e-03
