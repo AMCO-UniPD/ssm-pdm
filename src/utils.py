@@ -73,6 +73,26 @@ def get_most_recent_file(dirpath: str, file_pos: int = 0) -> str:
     sorted_paths = sorted(paths, key=os.path.getmtime)[::-1]
     return sorted_paths[file_pos]
 
+def get_most_recent_dir(dirpath: str, file_pos: int = 0) -> str:
+    """
+    This function returns the most recent subdirectory inside a directory
+
+    Args:
+        dirpath: path of the directory
+        file_pos: position of the directory in the list of files in the directory sorted in order of creation time, default=0
+        (i.e. the most recent file is at position 0)
+
+    Returns:
+        The most recent subdirectory in the directory
+    """
+
+    assert os.path.isdir(dirpath), "The provided path  is not a directory"
+
+    dirs = [f for f in os.listdir(dirpath) if os.path.isdir(os.path.join(dirpath, f))]
+    paths = [os.path.join(dirpath, basename) for basename in dirs]
+    sorted_paths = sorted(paths, key=os.path.getmtime)[::-1]
+    return sorted_paths[file_pos]
+
 def open_element(
     file_path: str, filetype: str = "pickle"
 ) -> Union[np.ndarray, list, pd.DataFrame]:
