@@ -83,20 +83,20 @@ def lifes_metrics(
             metrics_df.at[f"Life_{i+config.test_idx[0]}","Eval Loss"]=round(eval_loss,2)
 
     # Add a row Life_mean with the mean of the metrics over all the columns
-    metrics_df.loc["Life mean Loss"]=metrics_df.mean(axis=0).round(2)
+    metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0).round(2)
+    # Add a row Life_std with the std of the metrics over all the columns
+    metrics_df.loc["Life_std"]=metrics_df.std(axis=0).round(2)
     # Add a column Sensor_mean with the mean of the metrics over all the rows
     if config.model_name.startswith("chronos"):
         metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
+        metrics_df["Sensor_std"]=metrics_df.std(axis=1).round(2)
 
     print('#'* 50)
-    print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life mean Loss']}")
+    print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life_mean']}")
+    print('#'* 50)
+    print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
     print('#'* 50)
 
-    if config.sub_lifes_metrics:
-        metrics_df = sub_lifes_metrics(
-            config=config,
-            metrics_df=metrics_df
-        )
 
     if config.save_metrics_df:
         save_element(
@@ -132,14 +132,16 @@ def sub_lifes_metrics(
         config.metrics_idx=np.arange(config.nrows*config.ncols)
     metrics_idx = [f"Life_{i+config.test_idx[0]}" for i in config.metrics_idx]
     if config.model_name.startswith("chronos"):
-        metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
+        sub_metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
     else:
-        metrics_df = metrics_df.loc[metrics_idx]
-    metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
+        sub_metrics_df = metrics_df.loc[metrics_idx]
+    sub_metrics_df.loc["Life_mean"] = sub_metrics_df.mean(axis=0).round(2)
+    sub_metrics_df.loc["Life_std"] = sub_metrics_df.std(axis=0).round(2)
     if len(config.metrics_cols)>1 and config.model_name.startswith("chronos"):
-        metrics_df["Sensor_mean"] = metrics_df.mean(axis=1).round(2)
+        sub_metrics_df["Sensor_mean"] = sub_metrics_df.mean(axis=1).round(2)
+        sub_metrics_df["Sensor_std"] = sub_metrics_df.std(axis=1).round(2)
 
-    return metrics_df
+    return sub_metrics_df
 
 
 # Function to render the data contained in a pd.DataFrame into a markdown table

@@ -45,7 +45,11 @@ from ssm_models import load_ssm_model
 
 from loss import load_loss_functions
 
-from perf import lifes_metrics, df_with_index_to_obsidian_table
+from perf import(
+    lifes_metrics,
+    sub_lifes_metrics,
+    df_with_index_to_obsidian_table
+)
 
 from plots import plot_predictions_grid
 
@@ -743,7 +747,12 @@ def wandb_run(
 
        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
        metrics_df = open_element(metrics_path)
-       print(df_with_index_to_obsidian_table(metrics_df))
+       if config.sub_lifes_metrics:
+            sub_metrics_df = sub_lifes_metrics(
+                config=config,
+                metrics_df=metrics_df
+            )
+       print(df_with_index_to_obsidian_table(sub_metrics_df))
 
     if config.plot_preds:
 

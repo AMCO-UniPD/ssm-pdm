@@ -40,6 +40,7 @@ from ssm_models import (
 from loss import load_loss_functions
 from perf import (
         lifes_metrics,
+        sub_lifes_metrics,
         df_with_index_to_obsidian_table,
 )
 from plots import plot_predictions_grid
@@ -132,7 +133,12 @@ if exp_config.test_script:
 
        metrics_path = get_most_recent_file(metrics_path, file_pos=exp_config.file_pos)
        metrics_df = open_element(metrics_path)
-       print(df_with_index_to_obsidian_table(metrics_df))
+       if exp_config.sub_lifes_metrics:
+            sub_metrics_df = sub_lifes_metrics(
+                config=exp_config,
+                metrics_df=metrics_df
+            )
+       print(df_with_index_to_obsidian_table(sub_metrics_df))
 
     if exp_config.plot_preds:
 
@@ -171,7 +177,11 @@ else:
     print(f"Dropout: {model_config.dropout}")
     print("#"*50)
 
-    run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}" if not model_config.gap else f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_gap"
+    run_name = f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_gap" if model_config.gap else f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}"
+
+    if exp_config.loss == "pinball":
+        run_name = f"{run_name}_pinball_{exp_config.tau}"
+
     setproctitle.setproctitle(run_name)
 
     model,model_info = wandb_run(
