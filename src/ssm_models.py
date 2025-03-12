@@ -157,11 +157,12 @@ class S4Model(nn.Module):
     ):
         super().__init__()
 
+        self.prenorm = config.prenorm
+        self.gap = config.gap
+        self.quantile_reg = config.quantile_reg
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
-        self.prenorm = config.prenorm
-        self.gap = config.gap
         activation = config.activation
         gate_act = config.gate_act
         mult_act = config.mult_act
@@ -189,10 +190,14 @@ class S4Model(nn.Module):
 
         self.decoder = nn.Linear(d_model, d_output)
 
-    def forward(self, x):
-        """
-        Input x is shape (B, L, d_input)
-        """
+    def forward(self, x, tau=None):
+
+        if self.quantile_reg:
+            assert tau is not None, "tau must be provided for quantile regression"
+            assert isinstance(tau, float), "tau must be a float"
+            # Concatenate the tau value to the inputs
+            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
         x = x.transpose(-1, -2)  # (B, L, d_model) -> (B, d_model, L)

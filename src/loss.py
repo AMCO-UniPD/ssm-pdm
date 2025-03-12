@@ -201,6 +201,42 @@ class SSMPinballLoss(nn.Module):
 
         return torch.mean(loss)
 
+class QuantileLoss(nn.Module):
+    def __init__(self):
+        super(QuantileLoss, self).__init__()
+
+    def forward(self,
+                y_pred:torch.Tensor,
+                y_true:torch.Tensor,
+                mask:torch.Tensor,
+                tau: float = 0.5
+    ) -> torch.Tensor:
+        """
+        Compute the Pinball loss between the predicted and the true values
+
+        Args:
+            y_pred (torch.Tensor): The predicted values
+            y_true (torch.Tensor): The true values
+            mask (torch.Tensor): The mask for the padded values
+            tau (float): The quantile level
+
+        Returns:
+            torch.Tensor: The Pinball loss
+        """
+
+        y_pred=y_pred[mask.bool()]
+        y_true=y_true[mask.bool()]
+        d = y_pred - y_true
+
+        loss = torch.where(
+            d>0,
+            (1-tau) * torch.abs(d), # Overestimation
+            tau *  torch.abs(d) # Underestimation
+        )
+
+        return torch.mean(loss)
+
+
 def load_loss_functions(loss_name:str,
                         model_name:str,
                         eval_loss_name:str,
@@ -236,6 +272,8 @@ def load_loss_functions(loss_name:str,
             criterion=PinballLoss(tau=tau)
         else:
             criterion=SSMPinballLoss(tau=tau)
+    elif loss_name=="quantile_reg":
+        criterion=QuantileLoss()
 
     if eval_loss_name=="mae":
         eval_loss=MAELoss()

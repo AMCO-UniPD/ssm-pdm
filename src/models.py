@@ -3,6 +3,7 @@ Python script containing utility functions for the models of the `chronos-pdm` p
 """
 
 # general imports
+from math import tau
 import os
 import sys
 from gluonts import model
@@ -31,6 +32,7 @@ sys.path.append(imports_path)
 
 # import from other modules
 from utils import(
+    sample_quantile,
     save_element,
     ExperimentConfig,
     generate_path,
@@ -196,12 +198,11 @@ def load_model_tokenizer(
 def train_loop(
         dataloader: DataLoader,
         model: nn.Module,
-        model_name: str,
+        config: ExperimentConfig,
         tokenizer: MeanScaleUniformBinsSensor,
         optimizer: optim.Optimizer,
         criterion: nn.Module,
         device: torch.device = torch.device("cpu"),
-        approach: str = "padding"
 ) -> float:
     """
     Train loop for one epoch
@@ -209,11 +210,10 @@ def train_loop(
     Args:
         dataloader (DataLoader): The DataLoader object
         model (torch.nn.Module): The model object
-        model_name (str): The name of the model
+        config (ExperimentConfig): The configuration object
         optimizer (torch.optim.Optimizer): The optimizer object
         criterion (torch.nn.Module): The loss function
         device (str): The device to use
-        approach (str): The approach to use, by default padding
 
     Returns:
         loss (float): The loss value
@@ -225,20 +225,25 @@ def train_loop(
     pbar=tqdm(enumerate(dataloader))
 
     for batch_idx, (life, rul, mask) in pbar:
-        life = life.to(device) if approach=="padding" else life.to(device).squeeze(-1)
+        life = life.to(device) if config.approach=="padding" else life.to(device).squeeze(-1)
         rul = rul.to(device).squeeze(-1)
-        mask = mask.to(device) if approach=="padding" else mask.to(device).squeeze(-1)
+        mask = mask.to(device) if config.approach=="padding" else mask.to(device).squeeze(-1)
+        tau = sample_quantile(
+            quantile_dist=config.quantile_dist,
+            bounds=config.bounds,
+            print_quantile=True
+        )
 
-        if model_name.startswith("chronos"):
+        if config.model_name.startswith("chronos"):
             input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
             output = model(input_ids=input_ids, attention_mask=attention_mask).logits
         else:
-            life = life.permute(2,0,1) if approach=="padding" else life
-            mask = mask.permute(1,0) if approach=="padding" else mask
-            rul = rul.unsqueeze(0) if approach=="padding" else rul
-            output = model(life)
+            life = life.permute(2,0,1) if config.approach=="padding" else life
+            mask = mask.permute(1,0) if config.approach=="padding" else mask
+            rul = rul.unsqueeze(0) if config.approach=="padding" else rul
+            output = model(life) if not config.quantile_reg else model(life,tau)
 
-        loss = criterion(output, rul, mask)
+        loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -254,14 +259,14 @@ def train_loop(
 def eval_loop(
         dataloader: DataLoader,
         model: nn.Module,
-        model_name: str,
+        config: ExperimentConfig,
         tokenizer: MeanScaleUniformBinsSensor,
         criterion: nn.Module,
         eval_criterion: nn.Module,
         mode: str = "Test",
         device: torch.device = torch.device("cpu"),
-        approach: str = "padding",
         use_tqdm: bool = True,
+        tau: float = 0.5,
 ) -> Tuple[float,float,np.ndarray,np.ndarray]:
     """
     Evaluation loop for one epoch
@@ -269,14 +274,14 @@ def eval_loop(
     Args:
         dataloader (DataLoader): The DataLoader object
         model (torch.nn.Module): The model object
-        model_name (str): The name of the model
+        config (ExperimentConfig): The configuration object
         tokenizer (MeanScaleUniformBinsSensor): The tokenizer object
         criterion (torch.nn.Module): The loss function
         eval_criterion (torch.nn.Module): The evaluation loss function
         mode (str): The mode of evaluation
         device (str): The device to use
-        approach (str): The approach to use, by default padding
         use_tqdm (bool): Whether to use tqdm or not
+        tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
         loss (float): The loss value
@@ -290,25 +295,25 @@ def eval_loop(
 
     with torch.no_grad():
         for life, rul, mask in pbar:
-            life = life.to(device) if approach=="padding" else life.to(device).squeeze(-1)
+            life = life.to(device) if config.approach=="padding" else life.to(device).squeeze(-1)
             rul = rul.to(device).squeeze(-1)
-            mask = mask.to(device) if approach=="padding" else mask.to(device).squeeze(-1)
+            mask = mask.to(device) if config.approach=="padding" else mask.to(device).squeeze(-1)
 
-            if model_name.startswith("chronos"):
+            if config.model_name.startswith("chronos"):
                 input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
                 output = model(input_ids=input_ids, attention_mask=attention_mask).logits
             else:
-                life = life.permute(2,0,1) if approach=="padding" else life
-                mask = mask.permute(1,0) if approach=="padding" else mask
-                rul = rul.unsqueeze(0) if approach=="padding" else rul
-                output = model(life)
+                life = life.permute(2,0,1) if config.approach=="padding" else life
+                mask = mask.permute(1,0) if config.approach=="padding" else mask
+                rul = rul.unsqueeze(0) if config.approach=="padding" else rul
+                output = model(life) if not config.quantile_reg else model(life,tau)
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
-            y_pred.append(batch_out) if approach=="padding" else y_pred.extend(batch_out)
-            y_true.append(batch_target) if approach=="padding" else y_true.extend(batch_target)
+            y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
+            y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
 
-            loss = criterion(output, rul, mask)
+            loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
             rmse_loss = eval_criterion(output, rul, mask)
             eval_loss += loss.item()
             eval_rmse_loss += rmse_loss.item()
@@ -361,6 +366,7 @@ def wandb_train_test(
         config: ExperimentConfig,
         device:torch.device=torch.device("cpu"),
         best_model_path:str = experiment_path,
+        tau:float=0.5
 ) -> dict:
     """
     Train and test the model on a wandb run and log the metrics
@@ -377,6 +383,7 @@ def wandb_train_test(
         exp_config (ExperimentConfig): The configuration object
         device (str): The device to use
         best_model_path (str): The path to save the best model
+        tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
         model_info (dict): The dictionary containing the model information
@@ -401,12 +408,11 @@ def wandb_train_test(
             train_loss = train_loop(
                 dataloader=train_loader,
                 model=model,
-                model_name=config.model_name,
+                config=config,
                 tokenizer=tokenizer,
                 optimizer=optimizer,
                 criterion=criterion,
                 device=device,
-                approach=config.approach,
             )
             train_time = time.time() - train_time
 
@@ -414,13 +420,13 @@ def wandb_train_test(
             val_loss,eval_val_loss,y_pred,y_true = eval_loop(
                 dataloader=val_loader,
                 model=model,
-                model_name=config.model_name,
+                config=config,
                 tokenizer=tokenizer,
                 criterion=criterion,
                 eval_criterion=eval_criterion,
                 mode="Val",
                 device=device,
-                approach=config.approach,
+                tau=tau
             )
             val_time = time.time() - val_time
 
@@ -428,13 +434,13 @@ def wandb_train_test(
             test_loss,eval_test_loss, y_pred, y_true = eval_loop(
                 dataloader=test_loader,
                 model=model,
-                model_name=config.model_name,
+                config=config,
                 tokenizer=tokenizer,
                 criterion=criterion,
                 eval_criterion=eval_criterion,
                 mode="Test",
                 device=device,
-                approach=config.approach,
+                tau=tau
             )
             test_time = time.time() - test_time
 
@@ -515,6 +521,7 @@ def best_model_perf(
     device: torch.device = torch.device("cpu"),
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
+    tau: float = 0.5
     ) -> Union[None,nn.Module]:
     """
     This function loads the best model according to the validation set and
@@ -584,13 +591,14 @@ def best_model_perf(
         _,_,y_pred,y_true = eval_loop(
             dataloader=test_loader,
             model=model,
-            model_name=config.model_name,
+            config=config,
             tokenizer=tokenizer,
             criterion=criterion,
             eval_criterion=eval_criterion,
             mode="Test",
             device=device,
             use_tqdm=False,
+            tau=tau,
         )
 
         outputs_dict = {
@@ -608,14 +616,14 @@ def best_model_perf(
             _,_,y_pred,y_true = eval_loop(
                 dataloader=test_loader,
                 model=model,
-                model_name=config.model_name,
+                config=config,
                 tokenizer=tokenizer,
                 criterion=criterion,
                 eval_criterion=eval_criterion,
                 mode="Test",
                 device=device,
                 use_tqdm=False,
-                approach=config.approach,
+                tau=tau,
             )
             combined_preds,combined_true_vals=combine_values(
                 predictions=y_pred,
@@ -650,6 +658,7 @@ def wandb_run(
     outputs_path:str=experiment_path,
     metrics_path:str=experiment_path,
     plot_path:str=experiment_path,
+    tau:float=0.5
 ) -> Tuple[nn.Module, dict]:
     """
     Function that implements a wandb run
@@ -663,6 +672,7 @@ def wandb_run(
         outputs_path (str): The path to save the outputs
         metrics_path (str): The path to save the metrics
         plot_path (str): The path to save the plots
+        tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
         model (nn.Module): The model object
@@ -685,7 +695,7 @@ def wandb_run(
             model,optimizer,scheduler=load_ssm_model(
                 model_config=model_config,
                 exp_config=config,
-                d_input=len(feature_names),
+                d_input=len(feature_names) if not config.quantile_reg else len(feature_names)+1
             )
             tokenizer=None
         model=model.to(device)
@@ -709,6 +719,7 @@ def wandb_run(
             config=config,
             device=device,
             best_model_path=best_model_path,
+            tau=tau
         )
 
     if config.save_outputs:
@@ -722,7 +733,8 @@ def wandb_run(
             model_config=model_config,
             device=device,
             best_model_path=best_model_path,
-            outputs_path=outputs_path
+            outputs_path=outputs_path,
+            tau=tau
         )
 
     if config.compute_metrics:

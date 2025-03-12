@@ -568,3 +568,44 @@ def get_feature_names(
     transformer.fit(train_data)
     feature_names = transformer.columns()
     return feature_names
+
+# Function to sample a quantile level for the quantile regression approach
+
+def sample_quantile(
+    quantile_dist: str = "uniform",
+    bounds: List[float] = [0.1, 0.9],
+    print_quantile: bool = False,
+) -> float:
+    """
+    Function to sample a quantile level for the quantile regression approach
+
+    Args:
+        quantile_dist: The distribution to sample the quantile level from, default='uniform'
+        bounds: The bounds of the distribution to sample the quantile level from. Interval [a, b] for uniform distribution and mean and standard deviation for normal distribution, default=[0.1, 0.9]
+        print_quantile: Boolean to indicate whether to print the sampled quantile level, default=False
+
+    Returns:
+        quantile: The sampled quantile level
+    """
+
+    assert quantile_dist in ["uniform", "normal"], "quantile_dist must be either 'uniform' or 'normal'"
+    assert len(bounds) == 2, "bounds must be a list of two elements"
+    if quantile_dist == "normal":
+        assert bounds[1] > 0, "The standard deviation must be positive"
+    if quantile_dist == "uniform":
+        assert bounds[0] < bounds[1], "The lower bound must be less than the upper bound"
+    
+    quantile=0.5
+
+    if quantile_dist == "uniform":
+        quantile = np.random.uniform(bounds[0], bounds[1])
+    elif quantile_dist == "normal":
+        quantile = np.random.normal(bounds[0], bounds[1])
+
+    if print_quantile:
+        if quantile_dist == "uniform":
+            print(f"Sampled quantile level from U[{bounds[0]}, {bounds[1]}]: {quantile}")
+        elif quantile_dist == "normal":
+            print(f"Sampled quantile level from N[{bounds[0]}, {bounds[1]}]: {quantile}")
+
+    return quantile
