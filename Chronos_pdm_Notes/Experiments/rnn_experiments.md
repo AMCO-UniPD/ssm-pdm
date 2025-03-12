@@ -439,6 +439,9 @@ The metriccs are almost exactly equal to the `RNN` ones.
 Mean eval loss over all the test lifes: Eval Loss   28.56
 Name: Life mean Loss, dtype: float64
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   23.16
+Name: Life_std, dtype: float64
+##################################################
 ```
 | Life  | Eval Loss |
 | --- | --- |
@@ -458,6 +461,9 @@ Name: Life mean Loss, dtype: float64
 | Life_63 | 3.38 |
 | Life_64 | 0.15 |
 | Life_mean | 28.94 |
+| Life_std | 22.02 |
+
+Here in terms of `Life_std` we are close to `S4`, so pretty stable but the `Life_mean` is sligthly higher.
 
 ###### Prediction plots
 
@@ -482,6 +488,8 @@ The result it's exaclty equal to the one obtained with the `RNN` model, this is 
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   35.08
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   24.03
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -502,6 +510,7 @@ Mean eval loss over all the test lifes: Eval Loss   35.08
 | Life_144 | 39.0 |
 | Life_145 | 47.0 |
 | Life_mean | 42.22 |
+| Life_std | 29.08 |
 
 
 ### `GRU` Model Experiments 🏗️
@@ -558,3 +567,71 @@ Very similar to the `RNN,LSTM` ones.
 > [Link to the `wandb` run]()
 
 Also here the same exact results as the other `RNN` models and `Transformer`.
+
+## `windowed` Approach Experiments with `Pinball Loss` 🪟 🎈
+
+Let's group here the experiments combining the `windowed` approach with the `Pinball Loss`.
+
+### `RNN` Model Experiments ♻️
+
+#### Dataset `FD001`
+
+##### Experiment 1 `RNN` `FDOO1` `windowed` `Pinball Loss` ♻️ 1️⃣ 🪟 🎈
+
+Let's use the same configuration of the `LSTM` experiment and let's see if also in this case we get exactly the same results or not.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/la2su4y3?nw=nwuserfrizzodavide)
+
+As expected, exactly equal results 😠
+
+### `LSTM` Model Experiments 🧠
+
+#### Dataset `FD001`
+
+##### Experiment 1 `LSTM` `FDOO1` `windowed` `Pinball Loss` 🧠 1️⃣ 🪟 🎈
+
+Let's use the configuration that is bringing the best results in the `SSM` models. I am trying this approach also to see weather I obtain the same exact results on all the `RNN` and `Transformer` models also in this case.
+
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `LSTM` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `pinball` |
+| `tau` | 0.7 |
+| `eval_loss` | `mse` |
+
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/n33god7n?nw=nwuserfrizzodavide)
+
+The `eval_loss` plots have the same shape as the ones obtained in the previous experiments but with a sligthly lower set of values.
+
+###### Metrics Table
+
+The results are better than in the previous experiment: the average `RMSE` loss drops from 42.22 to
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   31.42
+##################################################
+Std eval loss over all the test lifes: Eval Loss   20.10
+##################################################
+```

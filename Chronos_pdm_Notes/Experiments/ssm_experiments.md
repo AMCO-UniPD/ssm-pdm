@@ -618,6 +618,9 @@ We have a new best run in terms of metrics.
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   23.47
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   20.99
+Name: Life_std, dtype: float64
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -638,6 +641,7 @@ Mean eval loss over all the test lifes: Eval Loss   23.47
 | Life_63 | 6.98 |
 | Life_64 | 67.18 |
 | Life_mean | 20.35 |
+| Life_std | 19.11 |
 
 ###### Prediction plots
 
@@ -687,6 +691,8 @@ The results are not as bad as I thought considering that higher difficulty of th
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   31.51
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   30.79
+##################################################
 ```
 | Life  | Eval Loss |
 | --- | --- |
@@ -706,6 +712,7 @@ Mean eval loss over all the test lifes: Eval Loss   31.51
 | Life_144 | 19.64 |
 | Life_145 | 29.01 |
 | Life_mean | 26.54 |
+| Life_std | 28.38|
 
 Here the `RMSE` values are quite low, the `Life_mean` is ruined by the very high values of `Life_134,Life_139` and `Life_140`.
 
@@ -777,6 +784,9 @@ Disaster for `S5` with the `gap` layer.
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   50.03
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   51.56
+Name: Life_std, dtype: float64
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -797,8 +807,9 @@ Mean eval loss over all the test lifes: Eval Loss   50.03
 | Life_63 | 12.13 |
 | Life_64 | 138.89 |
 | Life_mean | 35.59 |
+| Life_std | 36.38 |
 
-Actually comparing with the metrics table of `S4` we have several lifes where `S5` is significantly better: `Life_52,Life_57,Life_60`, and others (like `Life_64`) where it is extremely worse and this obviously make the `Life_mean` metric to go up.
+Actually comparing with the metrics table of `S4` we have several lifes where `S5` is significantly better: `Life_52,Life_57,Life_60`, and others (like `Life_64`) where it is extremely worse (in fact `Life_std` is very high with the respect to `S4`) and this obviously make the `Life_mean` metric to go up.
 
 ###### Prediction plots
 
@@ -817,11 +828,13 @@ In the loss plots the situation seems very good since the plots are almost alway
 
 ###### Metrics Table
 
-The average results on the metrics are still worse than the ones obtained with `S4` always for the fact that there is an high variability in the `RMSE` across different lifes. We have also to consider that now we have 128 test lifes with the respect to the 50 of the `FD001` dataset, so the variability is more pronounced.
+The average results on the metrics are still worse than the ones obtained with `S4` always for the fact that there is an high variability in the `RMSE` across different lifes. We have also to consider that now we have 128 test lifes with the respect to the 50 of the `FD001` dataset, so the variability is more pronounced. However looking at the `std` value over all the test lifes below I expected it to be higher than 33.42 → it is still higher than the one observable in `S4` but not as high as I expected.
 
 ```txt
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   40.52
+##################################################
+Std eval loss over all the test lifes: Eval Loss   33.42
 ##################################################
 ```
 | Life  | Eval Loss |
@@ -842,6 +855,7 @@ Mean eval loss over all the test lifes: Eval Loss   40.52
 | Life_144 | 30.72 |
 | Life_145 | 17.29 |
 | Life_mean | 28.79 |
+| Life_std | 23.72 |
 
 As in `S4` `Life_134,Life_139,Life_140` are the ones that ruin the `Life_mean` metric.
 
@@ -912,6 +926,8 @@ Also the metrics values are good, not as good as the ones of `S5` but still good
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   29.22
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   15.56
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -932,6 +948,7 @@ Mean eval loss over all the test lifes: Eval Loss   29.22
 | Life_63 | 42.98 |
 | Life_64 | 9.43 |
 | Life_mean | 26.66 |
+| Life_std | 8.72 |
 
 ###### Prediction plots
 
@@ -955,6 +972,9 @@ Like in `S5` the metrics are higher on average with the respect to `S4` because 
 Mean eval loss over all the test lifes: Eval Loss   41.91
 Name: Life mean Loss, dtype: float64
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   39.71
+Name: Life_std, dtype: float64
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -975,6 +995,9 @@ Name: Life mean Loss, dtype: float64
 | Life_63 | 6.94 |
 | Life_64 | 123.05 |
 | Life_mean | 38.43 |
+| Life_std | 38.99 |
+
+As in `S5` we can see that there is a lot more variability in the `RMSE` values over the different test lifes. In fact the `Life_std` is passing from 19.11 to 38.99.
 
 ###### Prediction plots
 
@@ -999,6 +1022,8 @@ Howewer there is still a high variability in the `RMSE` values across different 
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   58.02
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   53.27
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -1019,8 +1044,9 @@ Mean eval loss over all the test lifes: Eval Loss   58.02
 | Life_144 | 39.08 |
 | Life_145 | 8.33 |
 | Life_mean | 32.33 |
+| Life_std | 39.78 |
 
-Here the main problem are `Life_134,Life_140` which have really high values.
+Here the main problem are `Life_134,Life_140` which have really high values. We can also see how the `Life_std` over all the test lifes it's much higher than the one obtained with the `S4` model.
 
 ###### Prediction plots
 
@@ -1067,3 +1093,229 @@ Mean eval loss over all the test lifes: Eval Loss   35.28
 ###### Prediction plots
 
 Plots similar to the ones produced with the `S5` model.
+
+## `windowed` Approach + Pinball Loss Experiments 🪟 🎈
+
+In this section I will group the results on the `windowed` approach using the `pinball` loss as the training loss function. I do not want to do a full Quantile Regression for the moment, I want just to use the Pinball loss with an $τ$ value that makes the model perfer underestimation over overestimation. For how I have implemented the Pinball loss we need to use $τ < 0.5$ to achieve that.
+
+We will continue to use the `RMSE` as the evaluation metric.
+
+>[!info]
+> For these kind of experiments we will add the 🎈 emoji to the 🪟 one.
+
+### `S4` Model Experiments 4️⃣ 🪟 🎈
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S4` `FDOO1` `windowed` 4️⃣ 1️⃣ 🪟 🎈
+
+We will start by weighting the `pinball` loss with $\tau=0.2$. So the initial configuration will be the following:
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `S4` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `pinball` |
+| `tau` | 0.2 |
+| `eval_loss` | `mse` |
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/nwn97ubo?nw=nwuserfrizzodavide)
+
+In the `wandb` loss plots the loss is always lower than the one we had in the last `FD001` `S4` experiment but we do not have to judge the experiment by that since now the loss function is different. In fact if we look at the `eval_val_loss` and `eval_test_loss` plots we are sligthly above.
+
+###### Metrics Table
+
+As expected the results are worse now:
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   30.64
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 41.31 |
+| Life_51 | 3.91 |
+| Life_52 | 3.71 |
+| Life_53 | 38.5 |
+| Life_54 | 74.92 |
+| Life_55 | 4.61 |
+| Life_56 | 21.71 |
+| Life_57 | 2.43 |
+| Life_58 | 64.76 |
+| Life_59 | 33.46 |
+| Life_60 | 0.77 |
+| Life_61 | 10.82 |
+| Life_62 | 9.65 |
+| Life_63 | 6.1 |
+| Life_64 | 84.7 |
+| Life_mean | 26.76 |
+
+
+###### Prediction plots
+
+The plots are quite similar to the one of the best `S4` run on `FD001`. However in `Life_55`, where there was a small overestimation of the `RUL`, now the plots shows how the model has learned to tend to underestimate and in fact the error here has dropped from 9.67 to 4.61 and in the plots the predicted and true `RUL` signals seems almost overlapped.
+
+##### Experiment 2 `S4` `FDOO1` `windowed` 4️⃣ 1️⃣ 🪟 🎈
+
+I think that the reason why the prediction were worse using the Pinball loss is because in all the experiments we have done up to now when the model makes mistakes in general it underestimates the `RUL` , so maybe to solve those errors we should make the model overestimate the `RUL` a little bit. So I want to try to use $\tau=0.7$ to see what happens.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ptb1zbag?nw=nwuserfrizzodavide)
+
+Now in the `wandb` loss plots the `eval_val_loss` and `eval_test_loss` charts show sligthly lower values in this experiment than in the one with $\tau=0.2$ and the one using simply the `mae` loss for training.
+
+###### Metrics Table
+
+In fact we have now a new best run in terms of performances 💪.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   19.87
+##################################################
+```
+
+| Life      | Eval Loss |
+| --------- | --------- |
+| Life_50   | 18.65     |
+| Life_51   | 2.17      |
+| Life_52   | 3.54      |
+| Life_53   | 21.27     |
+| Life_54   | 50.17     |
+| Life_55   | 13.01     |
+| Life_56   | 11.74     |
+| Life_57   | 3.63      |
+| Life_58   | 31.35     |
+| Life_59   | 8.38      |
+| Life_60   | 5.98      |
+| Life_61   | 11.85     |
+| Life_62   | 2.18      |
+| Life_63   | 8.74      |
+| Life_64   | 52.03     |
+| Life_mean | 16.31     |
+
+###### Prediction plots
+
+The plots seems still very similar to the ones obtained without using the Pinball loss (here there is also to say that I am comparing the plots looking them at the little preview window of `ghostty` and moreover they are all in little subplots inside the main plot so small differences are not very easy to spot). However looking at the `metrics_df` . However for example the `Life_55` I was considering in the [[ssm_experiments#Experiment 1 `S4` `FDOO1` `windowed` 4️⃣ 1️⃣ 🪟 🎈|previous experiment]] now has an higher loss → that's one drawback of this approach which is a bit risky because if we have close cases the model may still create an *unexpected break*.
+
+### `S5` Model Experiments 5️⃣ 🪟 🎈
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S5` `FDOO1` `windowed` 5️⃣ 1️⃣ 🪟 🎈
+
+Let's use the last configuration used for `S4`, so the Pinball loss with $\tau=0.7$.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/e39bjmns?nw=nwuserfrizzodavide)
+
+The `eval_val_loss` and `eval_test_loss` plots  in `wandb` become smaller than the ones of the previous `S5` experiment in the last 40 epochs more or less.
+
+###### Metrics Table
+
+The results improved a lot in this case, the `Life_mean` dropped from 50.03 to 34.31. Moreover the `Life_std` is not so high as in `S4D`.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   34.31
+Name: Life_mean, dtype: float64
+##################################################
+Std eval loss over all the test lifes: Eval Loss   29.70
+Name: Life_std, dtype: float64
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 31.93 |
+| Life_51 | 17.01 |
+| Life_52 | 26.1 |
+| Life_53 | 13.55 |
+| Life_54 | 57.59 |
+| Life_55 | 35.72 |
+| Life_56 | 14.13 |
+| Life_57 | 9.59 |
+| Life_58 | 48.01 |
+| Life_59 | 18.15 |
+| Life_60 | 19.98 |
+| Life_61 | 12.14 |
+| Life_62 | 3.13 |
+| Life_63 | 17.39 |
+| Life_64 | 83.32 |
+| Life_mean | 27.18 |
+| Life_std | 20.67 |
+
+
+
+###### Prediction plots
+
+Similar to the ones of the previous run, we can see how there is some overestimation in `Life_52`, where previously the predicted and true `RUL` signals were almost overlapped, and in fact the error is higher (passed from 9.12 to 26.1).
+
+### `S4D` Model Experiments 4 D 🪟 🎈
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S4D` `FDOO1` `windowed` 5️⃣ 1️⃣ 🪟 🎈
+
+Let's use the last configuration used for `S4`, so the Pinball loss with $\tau=0.7$.
+
+>[!note]
+> [Link to the `wandb` run]()
+
+In the `eval_val_loss,eval_test_loss` `wandb` charts we are getting a sligthly lower loss values. Moreover now that I am comparing just the plots of the two `S4D` run (with and without the Pinball loss) it's easier to realize how much the loss it's osicllating, when the `wandb` charts are considered together to the ones of the other models this is not so evident.
+
+###### Metrics Table
+
+The results does not change a lot with respect to the experiment without the Pinball Loss, we pass in fact from 41.91 to 42.86.
+
+```txt
+
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   42.86
+##################################################
+Std eval loss over all the test lifes: Eval Loss   40.05
+##################################################
+```
+
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 52.5 |
+| Life_51 | 1.57 |
+| Life_52 | 8.11 |
+| Life_53 | 69.82 |
+| Life_54 | 103.66 |
+| Life_55 | 26.04 |
+| Life_56 | 15.35 |
+| Life_57 | 4.65 |
+| Life_58 | 94.98 |
+| Life_59 | 32.39 |
+| Life_60 | 8.31 |
+| Life_61 | 8.48 |
+| Life_62 | 10.25 |
+| Life_63 | 8.93 |
+| Life_64 | 126.9 |
+| Life_mean | 38.13 |
+| Life_std | 40.06 |
+
+###### Prediction plots
+
+Similar to the ones of the previous experiment without the Pinball loss.

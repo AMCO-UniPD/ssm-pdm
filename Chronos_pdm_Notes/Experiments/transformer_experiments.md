@@ -381,6 +381,9 @@ The results are not bad at all but still slightly worse than the best run obtain
 Mean eval loss over all the test lifes: Eval Loss   25.70
 Name: Life mean Loss, dtype: float64
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   20.66
+Name: Life_std, dtype: float64
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -401,6 +404,7 @@ Name: Life mean Loss, dtype: float64
 | Life_63 | 15.15 |
 | Life_64 | 24.3 |
 | Life_mean | 26.29 |
+| Life_std | 18.77 |
 
 ###### Prediction plots
 
@@ -441,6 +445,8 @@ The results are not great, they are the worst ones after `S5,S4D` (however the s
 ##################################################
 Mean eval loss over all the test lifes: Eval Loss   33.31
 ##################################################
+Std eval loss over all the test lifes: Eval Loss   26.97
+##################################################
 ```
 
 | Life  | Eval Loss |
@@ -461,6 +467,7 @@ Mean eval loss over all the test lifes: Eval Loss   33.31
 | Life_63 | 3.28 |
 | Life_64 | 51.17 |
 | Life_mean | 38.98 |
+| Life_std | 28.55 |
 
 ###### Prediction plots
 
@@ -480,3 +487,95 @@ This is the last try: if we get the same results as the last `RNN,LSTM` and `RUL
 Here it seems that it is following the same trend as the `RULTransformer` model. In the first epochs the loss goes down differently than the `RNN` models but then it starts to exactly overlap with the `RNN` models.
 
 As expected same exact results as the `RNN` models.
+
+## `windowed` Approach + Pinball Loss Experiments 🪟 🎈
+
+In this section we will report the results obtained in the `windowed` approach with the `Pinball Loss` 🪟 🎈
+
+### `Transformer` Model Experiments 🤖
+
+#### Dataset `FD001`
+
+##### Experiment 1 `Transformer` `FDOO1` `windowed` `Pinball` 🤖 1️⃣ 🪟 🎈
+
+Same configuration used in the `RN` experiments. I am doing the experiment also here on `Transformer` to veriufy weather we are gettin the exact same results.
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `Transformer` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `pinball` |
+| `tau` | 0.7 |
+| `eval_loss` | `mse` |
+
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/lubq7qo2?nw=nwuserfrizzodavide)
+
+
+###### Metrics table
+
+Ok now at least we are able to obtain a different  result from the `RNN` models. Also in this case the performances are improving.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes: Eval Loss   26.89
+##################################################
+Std eval loss over all the test lifes: Eval Loss   16.67
+##################################################
+```
+
+| Life  | Eval Loss |
+| --- | --- |
+| Life_50 | 26.56 |
+| Life_51 | 60.69 |
+| Life_52 | 30.25 |
+| Life_53 | 30.84 |
+| Life_54 | 58.57 |
+| Life_55 | 34.93 |
+| Life_56 | 6.5 |
+| Life_57 | 19.95 |
+| Life_58 | 22.18 |
+| Life_59 | 39.73 |
+| Life_60 | 20.54 |
+| Life_61 | 13.32 |
+| Life_62 | 19.77 |
+| Life_63 | 28.71 |
+| Life_64 | 18.53 |
+| Life_mean | 28.74 |
+| Life_std | 14.57 |
+
+
+###### Prediction plots
+
+Looking at the plots the results are not bads at all , in most of the lifes the predicted `RUL` signals are very close to the true ones, however the problem is that there are several overestimation errors that may be quite dangerous.
+
+### `Informer` Model Experiments 🧙‍♂️
+
+#### Dataset `FD001`
+
+##### Experiment 1 `Informer` `FDOO1` `windowed` `Pinball` 🧙‍♂️ 1️⃣ 🪟 🎈
+
+Since with `Transformer` we obtain different results from `RNN` models, let's see what happens with the `Informer`.
+
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/jhglagaq?nw=nwuserfrizzodavide)
+
+

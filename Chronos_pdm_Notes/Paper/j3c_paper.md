@@ -66,6 +66,13 @@ After having performed the experiments using the `windowed` approach I am convin
 - `RNN` based models → Here the situation is peculiar: for some reason the results of all these three models are almost exactly equal. Maybe it's better to insert just one of them in the paper. In any case also for this approach we have the problem that the models always predict the same range of `RUL` values across all the lifes.
 - `Transformer` based models → The `Transformer` is not bad at all, we can place it right below the `SSM` models in terms of performance, the `Informer` instead has similar performances to the `Transformer` but for some reason it is much slower.
 
+## `FD002` Experiments `windowed` Approach 🪟
+
+I have now also performed experiments on `FD002` for the `windowed` approach. Here the results are in general slightly worse than in the `FD001` dataset because the `RUL` prediction task is harder considering the fact that we have multiple operating conditions of the engine in the different run to failure lifes contained in the dataset. Here are some conclusions:
+
+- `SSM` based models → These models are still the top ones in terms of performances. As usual `S4` is the best one because it's more stable in its metrics across the different test lifes. `S4D,S5` are less stable, having lifes where the model is extremely good (better than `S4`) and others in which it is extremely bad.
+- `RNN` and `Transformers` based models → Here it's were things start to become strange. For some reason the metrics table of all these models, even though I am pretty sure they are different models, are **exactly equal**. Obviously the result is worse than `SSM` models but the fact that the metrics are the same is strange. I will have to investigate this further.
+
 # Result Recap
 
 In this section I want to recap the numerical results obtained in the different experiments. I will use markdown tables that I will then convert into `latex` tables to insert them in the Overleaf project.
@@ -93,27 +100,30 @@ The `RMSE` value inserted in the following tables is the mean `RMSE` over all th
 >[!note]
 > Interestingly in these experiments `S5,S4D` performed much better without the `gap` layer in the Regression Head, differently from what happened with `S4`. For these two models I also report in `()` the `RMSE` value obtained with the `gap` layer.
 
-| Model | RMSE |
-|-------|------|
-| `RNN` | 28.56 |
-| `LSTM` | 28.56|
-| `GRU` | 28.56 |
-| `Transformer` | 25.7 |
-| `Informer` | 33.31 |
-| `S4` | **23.47**  |
-| `S4D` | 29.22 (41.91) |
-| `S5` | 26.41 (50.03)|
+| Model | Mean RMSE | Std RMSE |
+|-------|------| ---------|
+| `RNN` | 28.56 | 23.16 |
+| `LSTM` | 28.56| 23.16 |
+| `GRU` | 28.56 | 23.16 |
+| `Transformer` | 25.7 | 20.66 |
+| `Informer` | 33.31 | 26.97 |
+| `S4` | **23.47**  | 20.99 |
+| `S4D` | 29.22 (41.91) | 39.71 |
+| `S5` | 26.41 (50.03)| 51.56 |
 
 
 ## `FD002` Experiments `windowed` Approach 🪟
 
-| Model | RMSE |
-|-------|------|
-| `RNN` | ??.? |
-| `LSTM` | ??.? |
-| `GRU` | ??.? |
-| `Transformer` | ??.? |
-| `Informer` | ??.? |
-| `S4` | ??.? |
-| `S4D` | ??.? |
-| `S5` | ??.? |
+>[!warning]
+> In these experiments we have the strange behavior of the `RNN` and `Transformers` models that have exactly the same metrics. Hopefully I will be able to find what is going on and fix it.
+
+| Model | Mean RMSE | Std RMSE |
+|-------|------| ---------|
+| `RNN` | 35.08 | 24.03 |
+| `LSTM` | 35.08 | 24.03 |
+| `GRU` | 35.08 | 24.03 |
+| `Transformer` | 35.08 | 24.03 |
+| `Informer` | 35.08 | 24.03 |
+| `S4` | 31.51 | 30.79 |
+| `S4D` | 58.02 | 53.27 |
+| `S5` | 40.52 | 33.42 |
