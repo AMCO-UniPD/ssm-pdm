@@ -23,8 +23,7 @@ from utils import (
     get_most_recent_file,
     load_yaml_to_dict,
     open_element,
-    load_reg_data,
-    get_feature_names,
+    get_current_time
 )
 
 from models import (
@@ -55,6 +54,7 @@ exp_config=load_yaml_to_dict(args.exp_config_path)
 exp_config=ExperimentConfig(exp_config)
 model_config=load_yaml_to_dict(exp_config.model_config_path)
 model_config=ModelConfig(model_config)
+model_config.quantile_reg = exp_config.quantile_reg
 
 device = torch.device(f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu")
 
@@ -177,20 +177,62 @@ else:
     print(f"Dropout: {model_config.dropout}")
     print("#"*50)
 
-    run_name = f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_gap" if model_config.gap else f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}"
+    if exp_config.quantile_reg:
 
-    if exp_config.loss == "pinball":
-        run_name = f"{run_name}_pinball_{exp_config.tau}"
+        exp_time = get_current_time()
+        exp_name=f"{exp_time}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg"
 
-    setproctitle.setproctitle(run_name)
+        for quantile in exp_config.quantiles:
 
-    model,model_info = wandb_run(
-        run_name=run_name,
-        config=exp_config,
-        model_config=model_config,
-        device=device,
-        best_model_path=best_model_path,
-        outputs_path=outputs_path,
-        metrics_path=metrics_path,
-        plot_path=plot_path
-    )
+            print('#'* 50)
+            print(f"Starting experiment for quantile level: {quantile}")
+            print('#'* 50)
+
+            run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_{quantile}"
+            setproctitle.setproctitle(run_name)
+
+            quantile_reg_folders = [
+                "quantile_reg",
+                exp_name,
+                f"quantile_{quantile}"
+            ]
+            best_model_path = generate_path(basepath=best_model_path,
+                                            folders=quantile_reg_folders)
+            outputs_path = generate_path(basepath=outputs_path,
+                                            folders=quantile_reg_folders)
+            metrics_path = generate_path(basepath=metrics_path,
+                                            folders=quantile_reg_folders)
+            plot_path = generate_path(basepath=plot_path,
+                                        folders=quantile_reg_folders)
+
+            model,model_info = wandb_run(
+                run_name=run_name,
+                config=exp_config,
+                model_config=model_config,
+                device=device,
+                best_model_path=best_model_path,
+                outputs_path=outputs_path,
+                metrics_path=metrics_path,
+                plot_path=plot_path,
+                tau=quantile
+            )
+
+    else:
+
+        run_name = f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_gap" if model_config.gap else f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}"
+
+        if exp_config.loss == "pinball":
+            run_name = f"{run_name}_pinball_{exp_config.tau}"
+
+        setproctitle.setproctitle(run_name)
+
+        model,model_info = wandb_run(
+            run_name=run_name,
+            config=exp_config,
+            model_config=model_config,
+            device=device,
+            best_model_path=best_model_path,
+            outputs_path=outputs_path,
+            metrics_path=metrics_path,
+            plot_path=plot_path
+        )
