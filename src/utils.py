@@ -11,6 +11,7 @@ import pickle
 import ipdb
 import pandas as pd
 import numpy as np
+import random
 from typing import Tuple, List, Optional, Union
 from dataclasses import dataclass
 
@@ -629,3 +630,19 @@ def sample_quantile(
             print(f"Sampled quantile level from N[{bounds[0]}, {bounds[1]}]: {quantile}")
 
     return quantile
+
+# Function to set the seed for reproducibility
+
+def set_seed(seed):
+    random.seed(seed)  # For Python's random module
+    np.random.seed(seed)  # For NumPy
+    torch.manual_seed(seed)  # For PyTorch on CPU
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)  # For PyTorch on a single GPU
+        torch.cuda.manual_seed_all(seed)  # For PyTorch on all GPUs
+    torch.backends.cudnn.deterministic = (
+        True  # Ensures deterministic behavior for cuDNN
+    )
+    torch.backends.cudnn.benchmark = (
+        False  # Disables cuDNN auto-tuner for deterministic results
+    )
