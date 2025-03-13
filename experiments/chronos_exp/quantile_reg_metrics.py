@@ -20,6 +20,12 @@ from utils import (
     get_most_recent_file,
     get_most_recent_dir,
     open_element,
+    save_element,
+)
+
+from perf import(
+    sub_lifes_metrics,
+    df_with_index_to_obsidian_table
 )
 
 experiment_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"chronos_exp")
@@ -46,8 +52,7 @@ for quantile in config.quantiles:
                                   folders=[f"quantile_{quantile}"])
     quantile_filepath = get_most_recent_file(quantile_path,file_pos=config.file_pos)
     quantile_df = open_element(quantile_filepath)
-    metrics_df[f"quantile_{quantile}"] = quantile_df.values
-metrics_df.index = quantile_df.index
+    metrics_df[f"quantile_{quantile}"] = quantile_df["Eval Loss"]
 
 if config.save_metrics_df:
     filename=f"{config.model_name}_{config.cmapss_models}_{config.approach}_quantile_reg_global_metrics_df"
@@ -59,7 +64,14 @@ if config.save_metrics_df:
     )
 
 if config.obsidian_table:
-    obsidian_table = df_with_index_to_obsidian_table(metrics_df)
+    if config.sub_lifes_metrics:
+        sub_metrics_df = sub_lifes_metrics(
+            config=config,
+            metrics_df=metrics_df
+        )
+        obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
+    else:
+        obsidian_table = df_with_index_to_obsidian_table(metrics_df)
     print('#'* 50)
     print(obsidian_table)
     print('#'* 50)

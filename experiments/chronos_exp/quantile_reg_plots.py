@@ -7,6 +7,7 @@ mode for different quantile levels
 import os
 import sys
 import ipdb
+import numpy as np
 import matplotlib.pyplot as plt
 
 src_path = os.path.join(os.path.dirname(__file__),"..","..","src",
@@ -19,6 +20,7 @@ from utils import (
     ExperimentConfig,
     get_most_recent_file,
     get_most_recent_dir,
+    get_current_time,
     open_element,
 )
 
@@ -49,6 +51,11 @@ outputs_path = generate_path(basepath=experiment_path,
 outputs_dirpath = get_most_recent_dir(outputs_path,file_pos=config.file_pos)
 
 quantile_preds = {}
+
+if config.life_idx is None:
+    config.life_idx = np.arange(config.nrows*config.ncols)
+else:
+    assert config.nrows*config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
 
 for quantile in config.quantiles:
     quantile_path = generate_path(basepath=outputs_dirpath,
@@ -83,16 +90,16 @@ for i in range(config.nrows):
                     label=f'Quantile {quantile}'
                 )
             ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1}')
-            ax.set_xticks()
+            ax.set_xticks([])
             ax.set_ylabel('RUL')
             ax.legend()
 
 if config.save_plot:
 
     if config.full_life:
-        filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_quantile_reg_global_predictions_grid_full"
+        filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_quantile_reg_global_predictions_grid_full"
     else:
-        filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_quantile_reg_global_predictions_grid_pad"
+        filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_quantile_reg_global_predictions_grid_pad"
 
     life_idx_str="_".join(str(x) for x in config.life_idx)
     filename=f"{filename}_life_{life_idx_str}.pdf"

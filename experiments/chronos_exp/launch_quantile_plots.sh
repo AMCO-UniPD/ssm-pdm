@@ -3,7 +3,7 @@
 # Export the conda environment path to PATH
 export PATH="/home/davide_frizzo/anaconda3/envs/hf/bin/:$PATH"
 
-SCRIPT_PATH="quantile_reg_metrics.py"
+SCRIPT_PATH="quantile_reg_plots.py"
 
 echo "###########################################"
 echo "Executing $SCRIPT_PATH"

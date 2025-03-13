@@ -41,7 +41,7 @@ scaler_kwargs:
   high_limit: 1.0
 
 # Training parameters
-epochs: 100
+epochs: 3
 lr: 1.0e-3
 sequence_length: 170
 weight_decay: 1.0e-4
@@ -61,7 +61,7 @@ model_summary_manual: false
 
 # Loss function to use for training
 # loss: mae
-loss: pinball
+loss: quantile_reg
 # Loss function to use for evaluation
 eval_loss: rmse
 # tau parameter for the quantile loss
@@ -73,21 +73,25 @@ approach: windowed
 batch_size: 100
 
 # quantile_reg config
-quantile_reg: false
+# quantile_reg: false
+quantile_reg: true
 quantile_dist: uniform
 bounds: [0.1, 0.9]
 quantiles: [0.1,0.5,0.9]
+# quantiles: [0.5,0.9]
+set_exp_name: false
+exp_name: 13-03-2025_08-27-30_S4_FD001_windowed_quantile_reg
 
 # test_script config
-test_script: true
-# test_script: false
+# test_script: true
+test_script: false
 file_pos: 0
-save_outputs: false
+save_outputs: true
 compute_metrics: true
-sub_lifes_metrics: false
-save_metrics_df: false
-obsidian_table: false
-plot_preds: false
+save_metrics_df: true
+sub_lifes_metrics: true
+obsidian_table: true
+plot_preds: true
 
 # metrics_df experiment config
 metrics_idx: null
