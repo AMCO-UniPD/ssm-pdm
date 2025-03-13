@@ -23,7 +23,8 @@ from utils import (
     get_most_recent_file,
     load_yaml_to_dict,
     open_element,
-    get_current_time
+    get_current_time,
+    set_seed,
 )
 
 from models import (
@@ -220,7 +221,7 @@ if exp_config.test_script:
                     metrics_df=metrics_df
                 )
                 obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
-            else:
+           else:
                 obsidian_table = df_with_index_to_obsidian_table(metrics_df)
 
            print(obsidian_table)
@@ -302,44 +303,56 @@ else:
         print(f"Quantile distribution: {exp_config.quantile_dist}")
         print(f"Distribution parameters: {exp_config.bounds}")
         print(f"Quantile levels for evaluation: {exp_config.quantiles}")
+        print(f"Number of runs: {exp_config.n_runs}")
         print('#'* 50)
 
         assert exp_config.loss == "quantile_reg", "The loss function must be quantile for quantile regression"
+        assert exp_config.compute_metrics == False, "We do not compute the single metrics_df for each quantile and in each run"
+        assert exp_config.obsidian_table == False, "We do not produce the obsidian table for each quantile and in each run"
+        assert exp_config.plot_preds == False, "We do not plot the predictions for each quantile and in each run"
 
-        for quantile in exp_config.quantiles:
+        for run in range(exp_config.n_runs):
 
-            print('#'* 50)
-            print(f"Starting experiment for quantile level: {quantile}")
-            print('#'* 50)
+            print(f"Starting run: {run+1}")
+            print("#" * 50)
+            print(f"Setting the seed for this run to {run+1}")
+            set_seed(run)
 
-            run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_{quantile}"
-            setproctitle.setproctitle(run_name)
+            for quantile in exp_config.quantiles:
 
-            quantile_reg_folders = [
-                "quantile_reg",
-                exp_name,
-                f"quantile_{quantile}"
-            ]
-            quantile_best_model_path = generate_path(basepath=best_model_path,
-                                            folders=quantile_reg_folders)
-            quantile_outputs_path = generate_path(basepath=outputs_path,
-                                            folders=quantile_reg_folders)
-            quantile_metrics_path = generate_path(basepath=metrics_path,
-                                            folders=quantile_reg_folders)
-            quantile_plot_path = generate_path(basepath=plot_path,
-                                        folders=quantile_reg_folders)
+                print('#'* 50)
+                print(f"Starting experiment for quantile level: {quantile}")
+                print('#'* 50)
 
-            model,model_info = wandb_run(
-                run_name=run_name,
-                config=exp_config,
-                model_config=model_config,
-                device=device,
-                best_model_path=quantile_best_model_path,
-                outputs_path=quantile_outputs_path,
-                metrics_path=quantile_metrics_path,
-                plot_path=quantile_plot_path,
-                tau=quantile
-            )
+                run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_quantile_{quantile}"
+                setproctitle.setproctitle(run_name)
+
+                quantile_reg_folders = [
+                    "quantile_reg",
+                    exp_name,
+                    f"run_{run+1}",
+                    f"quantile_{quantile}"
+                ]
+                quantile_best_model_path = generate_path(basepath=best_model_path,
+                                                folders=quantile_reg_folders)
+                quantile_outputs_path = generate_path(basepath=outputs_path,
+                                                folders=quantile_reg_folders)
+                # quantile_metrics_path = generate_path(basepath=metrics_path,
+                #                                 folders=quantile_reg_folders)
+                # quantile_plot_path = generate_path(basepath=plot_path,
+                #                             folders=quantile_reg_folders)
+
+                model,model_info = wandb_run(
+                    run_name=run_name,
+                    config=exp_config,
+                    model_config=model_config,
+                    device=device,
+                    best_model_path=quantile_best_model_path,
+                    outputs_path=quantile_outputs_path,
+                    # metrics_path=quantile_metrics_path,
+                    # plot_path=quantile_plot_path,
+                    tau=quantile
+                )
 
     else:
 
