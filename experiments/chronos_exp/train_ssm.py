@@ -57,6 +57,7 @@ model_config=ModelConfig(model_config)
 model_config.quantile_reg = exp_config.quantile_reg
 
 device = torch.device(f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu")
+model_config.device = device
 
 print("#"*50)
 print(f"Using device: {device}")
@@ -98,59 +99,167 @@ if exp_config.test_script:
 
     if exp_config.save_outputs:
 
-        print("#"*50)
-        print("Saving outputs")
-        print("#"*50)
+        if exp_config.quantile_reg:
 
-        best_model_perf(
-            config=exp_config,
-            model_config=model_config,
-            device=device,
-            best_model_path=best_model_path,
-            outputs_path=outputs_path,
-        )
+            for quantile in exp_config.quantiles:
+
+                print("#"*50)
+                print(f"Saving outputs for quantile level: {quantile}")
+                print("#"*50)
+
+                quantile_reg_folders = [
+                    "quantile_reg",
+                    args.exp_name,
+                    f"quantile_{quantile}"
+                ]
+                quantile_outputs_path = generate_path(basepath=outputs_path,
+                                                folders=quantile_reg_folders)
+                quantile_best_model_path = generate_path(basepath=best_model_path,
+                                                folders=quantile_reg_folders)
+
+                best_model_perf(
+                    config=exp_config,
+                    model_config=model_config,
+                    device=device,
+                    best_model_path=quantile_best_model_path,
+                    outputs_path=quantile_outputs_path,
+                    tau=quantile)
+
+        else:
+
+            print("#"*50)
+            print("Saving outputs")
+            print("#"*50)
+
+            best_model_perf(
+                config=exp_config,
+                model_config=model_config,
+                device=device,
+                best_model_path=best_model_path,
+                outputs_path=outputs_path,
+            )
 
     if exp_config.compute_metrics:
 
-        print("#" * 50)
-        print("Computing metrics for each life and for each sensor in the test set")
-        print("#" * 50)
+        if exp_config.quantile_reg:
 
-        metrics_df = lifes_metrics(
-            config=exp_config,
-            outputs_path=outputs_path,
-            metrics_path=metrics_path
-        )
+            for quantile in exp_config.quantiles:
 
-        print("#" * 50)
-        print(f"metrics_df shape: {metrics_df.shape}")
+                print("#"*50)
+                print(f"Computing metrics for quantile level: {quantile}")
+                print("#"*50)
+
+                quantile_reg_folders = [
+                    "quantile_reg",
+                    args.exp_name,
+                    f"quantile_{quantile}"
+                ]
+                quantile_metrics_path = generate_path(basepath=metrics_path,
+                                                folders=quantile_reg_folders)
+                quantile_outputs_path = generate_path(basepath=outputs_path,
+                                                folders=quantile_reg_folders)
+
+                metrics_df = lifes_metrics(
+                    config=exp_config,
+                    outputs_path=quantile_outputs_path,
+                    metrics_path=quantile_metrics_path
+                )
+        else:
+            print("#" * 50)
+            print("Computing metrics for each life and for each sensor in the test set")
+            print("#" * 50)
+
+            metrics_df = lifes_metrics(
+                config=exp_config,
+                outputs_path=outputs_path,
+                metrics_path=metrics_path
+            )
 
     if exp_config.obsidian_table:
 
-       print("#" * 50)
-       print("Producing the obsidian table")
-       print("#" * 50)
+        if exp_config.quantile_reg:
 
-       metrics_path = get_most_recent_file(metrics_path, file_pos=exp_config.file_pos)
-       metrics_df = open_element(metrics_path)
-       if exp_config.sub_lifes_metrics:
-            sub_metrics_df = sub_lifes_metrics(
-                config=exp_config,
-                metrics_df=metrics_df
-            )
-       print(df_with_index_to_obsidian_table(sub_metrics_df))
+            for quantile in exp_config.quantiles:
+
+                print("#" * 50)
+                print(f"Producing the obsidian table for quantile level: {quantile}")
+                print("#" * 50)
+
+                quantile_reg_folders = [
+                    "quantile_reg",
+                    args.exp_name,
+                    f"quantile_{quantile}"
+                ]
+                quantile_metrics_path = generate_path(basepath=metrics_path,
+                                                folders=quantile_reg_folders)
+                metrics_df_path = get_most_recent_file(quantile_metrics_path,file_pos=exp_config.file_pos)
+                metrics_df = open_element(metrics_df_path)
+                print('#'* 50)
+                print(f"Obsidian table for quantile level: {quantile}")
+                print('#'* 50)
+                if exp_config.sub_lifes_metrics:
+                    sub_metrics_df = sub_lifes_metrics(
+                        config=exp_config,
+                        metrics_df=metrics_df
+                    )
+                    obsidian_table=df_with_index_to_obsidian_table(sub_metrics_df)
+                else:
+                    obsidian_table=df_with_index_to_obsidian_table(metrics_df)
+
+                print(obsidian_table)
+        else:
+           print("#" * 50)
+           print("Producing the obsidian table")
+           print("#" * 50)
+
+           metrics_path = get_most_recent_file(metrics_path, file_pos=exp_config.file_pos)
+           metrics_df = open_element(metrics_path)
+           if exp_config.sub_lifes_metrics:
+                sub_metrics_df = sub_lifes_metrics(
+                    config=exp_config,
+                    metrics_df=metrics_df
+                )
+                obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
+            else:
+                obsidian_table = df_with_index_to_obsidian_table(metrics_df)
+
+           print(obsidian_table)
 
     if exp_config.plot_preds:
 
-        print("#" * 50)
-        print("Producing grid plot of the predictions")
-        print("#" * 50)
+        if exp_config.quantile_reg:
 
-        plot_predictions_grid(
-            config=exp_config,
-            outputs_path=outputs_path,
-            plot_path=plot_path
-        )
+            for quantile in exp_config.quantiles:
+
+                print("#" * 50)
+                print(f"Producing grid plot of the predictions for quantile level: {quantile}")
+                print("#" * 50)
+
+                quantile_reg_folders = [
+                    "quantile_reg",
+                    args.exp_name,
+                    f"quantile_{quantile}"
+                ]
+                quantile_outputs_path = generate_path(basepath=outputs_path,
+                                                folders=quantile_reg_folders)
+                quantile_plot_path = generate_path(basepath=plot_path,
+                                            folders=quantile_reg_folders)
+
+                plot_predictions_grid(
+                    config=exp_config,
+                    outputs_path=quantile_outputs_path,
+                    plot_path=quantile_plot_path
+                )
+        else:
+            print("#" * 50)
+            print("Producing grid plot of the predictions")
+            print("#" * 50)
+
+            plot_predictions_grid(
+                config=exp_config,
+                outputs_path=outputs_path,
+                plot_path=plot_path
+            )
 
 else:
 
@@ -179,8 +288,23 @@ else:
 
     if exp_config.quantile_reg:
 
-        exp_time = get_current_time()
-        exp_name=f"{exp_time}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg"
+        if exp_config.set_exp_name:
+            exp_name=exp_config.exp_name
+            print('#'* 50)
+            print(f"Experiment name set to: {exp_name}")
+            print('#'* 50)
+        else:
+            exp_time = get_current_time()
+            exp_name=f"{exp_time}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg"
+
+        print('#'* 50)
+        print(f"Starting quantile regression experiment: {exp_name}") if not exp_config.set_exp_name else print(f"Continuing quantile regression experiment: {exp_name}")
+        print(f"Quantile distribution: {exp_config.quantile_dist}")
+        print(f"Distribution parameters: {exp_config.bounds}")
+        print(f"Quantile levels for evaluation: {exp_config.quantiles}")
+        print('#'* 50)
+
+        assert exp_config.loss == "quantile_reg", "The loss function must be quantile for quantile regression"
 
         for quantile in exp_config.quantiles:
 
@@ -196,13 +320,13 @@ else:
                 exp_name,
                 f"quantile_{quantile}"
             ]
-            best_model_path = generate_path(basepath=best_model_path,
+            quantile_best_model_path = generate_path(basepath=best_model_path,
                                             folders=quantile_reg_folders)
-            outputs_path = generate_path(basepath=outputs_path,
+            quantile_outputs_path = generate_path(basepath=outputs_path,
                                             folders=quantile_reg_folders)
-            metrics_path = generate_path(basepath=metrics_path,
+            quantile_metrics_path = generate_path(basepath=metrics_path,
                                             folders=quantile_reg_folders)
-            plot_path = generate_path(basepath=plot_path,
+            quantile_plot_path = generate_path(basepath=plot_path,
                                         folders=quantile_reg_folders)
 
             model,model_info = wandb_run(
@@ -210,10 +334,10 @@ else:
                 config=exp_config,
                 model_config=model_config,
                 device=device,
-                best_model_path=best_model_path,
-                outputs_path=outputs_path,
-                metrics_path=metrics_path,
-                plot_path=plot_path,
+                best_model_path=quantile_best_model_path,
+                outputs_path=quantile_outputs_path,
+                metrics_path=quantile_metrics_path,
+                plot_path=quantile_plot_path,
                 tau=quantile
             )
 

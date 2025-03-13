@@ -228,11 +228,12 @@ def train_loop(
         life = life.to(device) if config.approach=="padding" else life.to(device).squeeze(-1)
         rul = rul.to(device).squeeze(-1)
         mask = mask.to(device) if config.approach=="padding" else mask.to(device).squeeze(-1)
-        tau = sample_quantile(
-            quantile_dist=config.quantile_dist,
-            bounds=config.bounds,
-            print_quantile=True
-        )
+        if config.quantile_reg:
+            tau = sample_quantile(
+                quantile_dist=config.quantile_dist,
+                bounds=config.bounds,
+                print_quantile=True
+            )
 
         if config.model_name.startswith("chronos"):
             input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
@@ -564,7 +565,7 @@ def best_model_perf(
         model,_,_=load_ssm_model(
             model_config=model_config,
             exp_config=config,
-            d_input=len(feature_names),
+            d_input=len(feature_names) if not config.quantile_reg else len(feature_names)+1,
         )
         tokenizer=None
 
@@ -638,7 +639,6 @@ def best_model_perf(
             "y_true": true_vals
         }
 
-
     save_element(
         element=outputs_dict,
         dirpath=outputs_path,
@@ -706,6 +706,7 @@ def wandb_run(
             eval_loss_name=config.eval_loss,
             tau=config.tau
         )
+
         model_info = wandb_train_test(
             model=model,
             tokenizer=tokenizer,
@@ -759,12 +760,17 @@ def wandb_run(
 
        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
        metrics_df = open_element(metrics_path)
-       if config.sub_lifes_metrics:
+
+        if config.sub_lifes_metrics:
             sub_metrics_df = sub_lifes_metrics(
                 config=config,
                 metrics_df=metrics_df
             )
-       print(df_with_index_to_obsidian_table(sub_metrics_df))
+            obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
+        else:
+            obsidian_table = df_with_index_to_obsidian_table(metrics_df)
+
+       print(obsidian_table)
 
     if config.plot_preds:
 

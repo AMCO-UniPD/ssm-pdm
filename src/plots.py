@@ -145,16 +145,16 @@ def plot_predictions_grid(
                 ax=axs[i,j]
                 ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="blue",label='True RUL')
                 ax.plot(pred[i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL')
-                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1} {sensor_name}')
+                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1}')
                 ax.set_xticks([])
                 ax.set_ylabel('RUL')
                 ax.legend()
 
     if config.save_plot:
         if config.full_life:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid_full"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_full"
         else:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid_pad"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad"
         life_idx_str="_".join(str(x) for x in config.life_idx)
         filename=f"{filename}_life_{life_idx_str}.pdf"
         plot_path=os.path.join(plot_path,filename)

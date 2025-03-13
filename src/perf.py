@@ -97,7 +97,6 @@ def lifes_metrics(
     print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
     print('#'* 50)
 
-
     if config.save_metrics_df:
         save_element(
             element=metrics_df,
@@ -116,7 +115,6 @@ def sub_lifes_metrics(
     config: ExperimentConfig,
     metrics_df: pd.DataFrame,
 ):
-
     """
     Select a subset of the rows and a subset of the columns of a metrics_df
 

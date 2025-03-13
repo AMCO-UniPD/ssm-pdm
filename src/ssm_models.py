@@ -160,6 +160,7 @@ class S4Model(nn.Module):
         self.prenorm = config.prenorm
         self.gap = config.gap
         self.quantile_reg = config.quantile_reg
+        self.device = config.device
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
@@ -168,7 +169,6 @@ class S4Model(nn.Module):
         mult_act = config.mult_act
         final_act = config.final_act
 
-        # Linear encoder (d_input = 1 for grayscale and 3 for RGB)
         self.encoder = nn.Linear(d_input, d_model)
 
         # Stack S4 layers as residual blocks
@@ -195,6 +195,7 @@ class S4Model(nn.Module):
         if self.quantile_reg:
             assert tau is not None, "tau must be provided for quantile regression"
             assert isinstance(tau, float), "tau must be a float"
+            assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
