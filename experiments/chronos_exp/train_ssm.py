@@ -296,7 +296,10 @@ else:
             print('#'* 50)
         else:
             exp_time = get_current_time()
-            exp_name=f"{exp_time}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg"
+            if exp_config.n_runs > 1:
+                exp_name=f"multi_run_{exp_time}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg"
+            else:
+                exp_name=f"{exp_time}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg"
 
         print('#'* 50)
         print(f"Starting quantile regression experiment: {exp_name}") if not exp_config.set_exp_name else print(f"Continuing quantile regression experiment: {exp_name}")
@@ -333,6 +336,7 @@ else:
                     f"run_{run+1}",
                     f"quantile_{quantile}"
                 ]
+
                 quantile_best_model_path = generate_path(basepath=best_model_path,
                                                 folders=quantile_reg_folders)
                 quantile_outputs_path = generate_path(basepath=outputs_path,

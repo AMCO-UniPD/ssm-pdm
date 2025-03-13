@@ -37,8 +37,8 @@ plot_path = generate_path(basepath=experiment_path,
                                    config.model_name,
                                    config.cmapss_models,
                                    config.approach,
-                                    "quantile_reg"])
-plot_path = get_most_recent_dir(plot_path,file_pos=config.file_pos)
+                                   "quantile_reg",
+                                   config.exp_name])
 
 # Get the outputs directory of the most recent experiment
 outputs_path = generate_path(basepath=experiment_path,
@@ -51,10 +51,10 @@ outputs_path = generate_path(basepath=experiment_path,
                                 ])
 outputs_dirpath = get_most_recent_dir(outputs_path,file_pos=config.file_pos)
 
-for i in range(config.n_runs):
+for run in range(config.n_runs):
 
     run_outputs_path = generate_path(basepath=outputs_dirpath,
-                                     folders=[f"run_{i+1}"])
+                                     folders=[f"run_{run+1}"])
     quantile_preds = {}
 
     if config.life_idx is None:
@@ -79,7 +79,7 @@ for i in range(config.n_runs):
         
         quantile_preds[f"quantile_{quantile}"] = pred
 
-# Produce the plot
+    # Produce the plot
     colors = ["orange","green","red","purple","brown","pink","gray","olive","cyan"]
     fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(30,20))
     for i in range(config.nrows):
@@ -102,17 +102,17 @@ for i in range(config.n_runs):
     if config.save_plot:
 
         if config.full_life:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_quantile_reg_global_predictions_grid_full"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_quantile_reg_global_predictions_grid_full_run_{run+1}"
         else:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_quantile_reg_global_predictions_grid_pad"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_quantile_reg_global_predictions_grid_pad_run_{run+1}"
 
         life_idx_str="_".join(str(x) for x in config.life_idx)
         filename=f"{filename}_life_{life_idx_str}.pdf"
 
-        plot_path = generate_path(basepath=plot_path,
-                                  folders=[f"run_{i+1}"])
-        plot_path=os.path.join(plot_path,filename)
-        plt.savefig(plot_path,bbox_inches='tight')
+        run_plot_path = generate_path(basepath=plot_path,
+                                  folders=[f"run_{run+1}"])
+        run_plot_path=os.path.join(run_plot_path,filename)
+        plt.savefig(run_plot_path,bbox_inches='tight')
         print('#'*50)
-        print(f'Plot for run {i+1} saved at: {plot_path}')
+        print(f'Plot for run {run+1} saved at: {plot_path}')
         print('#'*50)

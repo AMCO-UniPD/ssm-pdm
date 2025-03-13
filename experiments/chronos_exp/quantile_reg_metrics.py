@@ -57,10 +57,9 @@ for i in range(config.n_runs):
     for quantile in config.quantiles:
         quantile_path = generate_path(basepath=run_quantile_path,
                                       folders=[f"quantile_{quantile}"])
-        quantile_filepath = get_most_recent_file(quantile_path,file_pos=config.file_pos)
         quantile_df = lifes_metrics(
             config=config,
-            outputs_path=quantile_filepath,
+            outputs_path=quantile_path,
             compute_stats=False
         )
         metrics_df[f"quantile_{quantile}"] = quantile_df["Eval Loss"]
@@ -68,13 +67,13 @@ for i in range(config.n_runs):
     metrics_dfs.append(metrics_df)
 
 # Create a new pd.DataFrame with the same shape of all the metrics_df which contains the mean of all the pd.DataFrames inside metrics_dfs
-mean_metrics_df = pd.concat(metrics_dfs).groupby(level=0).mean()
+mean_metrics_df=sum(metrics_dfs)/len(metrics_dfs)
 # Compute the mean, median and std of the metrics
 mean_metrics_df.loc["Life_mean"] = mean_metrics_df.mean(axis=0).round(2)
 mean_metrics_df.loc["Life_median"] = mean_metrics_df.median(axis=0).round(2)
 mean_metrics_df.loc["Life_std"] = mean_metrics_df.std(axis=0).round(2)
 
-if config.save_metrics_df:
+if config.save_mean_metrics_df:
     metrics_df_path = generate_path(basepath=experiment_path,
                                     folders=[
                                         "metrics",
@@ -82,8 +81,8 @@ if config.save_metrics_df:
                                         config.cmapss_models,
                                         config.approach,
                                         "quantile_reg",
+                                        config.exp_name
                                     ])
-    metrics_df_path = get_most_recent_dir(metrics_df_path,file_pos=config.file_pos)
     filename=f"{config.model_name}_{config.cmapss_models}_{config.approach}_quantile_reg_global_metrics_df"
     save_element(
         mean_metrics_df,
