@@ -97,13 +97,13 @@ def lifes_metrics(
             metrics_df["Sensor_median"]=metrics_df.median(axis=1).round(2)
             metrics_df["Sensor_std"]=metrics_df.std(axis=1).round(2)
 
-    print('#'* 50)
-    print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life_mean']}")
-    print('#'* 50)
-    print(f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}")
-    print('#'* 50)
-    print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
-    print('#'* 50)
+        print('#'* 50)
+        print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life_mean']}")
+        print('#'* 50)
+        print(f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}")
+        print('#'* 50)
+        print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
+        print('#'* 50)
 
     if config.save_metrics_df:
         save_element(

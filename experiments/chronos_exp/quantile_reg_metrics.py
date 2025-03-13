@@ -24,6 +24,7 @@ from utils import (
 )
 
 from perf import(
+    lifes_metrics,
     sub_lifes_metrics,
     df_with_index_to_obsidian_table
 )
@@ -34,30 +35,58 @@ config_path=os.path.join(experiment_path,"config","ssm_exp_config.yaml")
 config=load_yaml_to_dict(config_path)
 config=ExperimentConfig(config)
 
-# Get the metrics directory of the most recent experiment
-metrics_df_path = generate_path(basepath=experiment_path,
+# Get the outputs directory of the most recent experiment
+outputs_path = generate_path(basepath=experiment_path,
                                 folders=[
-                                    "metrics",
+                                    "outputs",
                                     config.model_name,
                                     config.cmapss_models,
                                     config.approach,
                                     "quantile_reg",
                                 ])
-metrics_df_path = get_most_recent_dir(metrics_df_path,file_pos=config.file_pos)
+outputs_dict_path = get_most_recent_dir(outputs_path,file_pos=config.file_pos)
 
-metrics_df = pd.DataFrame()
+metrics_dfs = []
 
-for quantile in config.quantiles:
-    quantile_path = generate_path(basepath=metrics_df_path,
-                                  folders=[f"quantile_{quantile}"])
-    quantile_filepath = get_most_recent_file(quantile_path,file_pos=config.file_pos)
-    quantile_df = open_element(quantile_filepath)
-    metrics_df[f"quantile_{quantile}"] = quantile_df["Eval Loss"]
+for i in range(config.n_runs):
+
+    metrics_df = pd.DataFrame()
+    run_quantile_path = generate_path(basepath=outputs_dict_path,
+                                      folders=[f"run_{i+1}"])
+
+    for quantile in config.quantiles:
+        quantile_path = generate_path(basepath=run_quantile_path,
+                                      folders=[f"quantile_{quantile}"])
+        quantile_filepath = get_most_recent_file(quantile_path,file_pos=config.file_pos)
+        quantile_df = lifes_metrics(
+            config=config,
+            outputs_path=quantile_filepath,
+            compute_stats=False
+        )
+        metrics_df[f"quantile_{quantile}"] = quantile_df["Eval Loss"]
+
+    metrics_dfs.append(metrics_df)
+
+# Create a new pd.DataFrame with the same shape of all the metrics_df which contains the mean of all the pd.DataFrames inside metrics_dfs
+mean_metrics_df = pd.concat(metrics_dfs).groupby(level=0).mean()
+# Compute the mean, median and std of the metrics
+mean_metrics_df.loc["Life_mean"] = mean_metrics_df.mean(axis=0).round(2)
+mean_metrics_df.loc["Life_median"] = mean_metrics_df.median(axis=0).round(2)
+mean_metrics_df.loc["Life_std"] = mean_metrics_df.std(axis=0).round(2)
 
 if config.save_metrics_df:
+    metrics_df_path = generate_path(basepath=experiment_path,
+                                    folders=[
+                                        "metrics",
+                                        config.model_name,
+                                        config.cmapss_models,
+                                        config.approach,
+                                        "quantile_reg",
+                                    ])
+    metrics_df_path = get_most_recent_dir(metrics_df_path,file_pos=config.file_pos)
     filename=f"{config.model_name}_{config.cmapss_models}_{config.approach}_quantile_reg_global_metrics_df"
     save_element(
-        metrics_df,
+        mean_metrics_df,
         dirpath=metrics_df_path,
         filename=filename,
         filetype="pickle",
@@ -67,11 +96,12 @@ if config.obsidian_table:
     if config.sub_lifes_metrics:
         sub_metrics_df = sub_lifes_metrics(
             config=config,
-            metrics_df=metrics_df
+            metrics_df=mean_metrics_df,
+            compute_stats=True
         )
         obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
     else:
-        obsidian_table = df_with_index_to_obsidian_table(metrics_df)
+        obsidian_table = df_with_index_to_obsidian_table(mean_metrics_df)
     print('#'* 50)
     print(obsidian_table)
     print('#'* 50)
