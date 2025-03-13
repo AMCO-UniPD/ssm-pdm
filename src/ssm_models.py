@@ -108,6 +108,9 @@ class Recurrent_PDM(nn.Module):
     ):
         super(Recurrent_PDM, self).__init__()
 
+        self.quantile_reg = config.quantile_reg
+        self.device = config.device
+
         if model_name == "LSTM":
             self.recurrent = nn.LSTM(
                 input_size=input_size,
@@ -136,8 +139,15 @@ class Recurrent_PDM(nn.Module):
 
         self.fc = nn.Linear(config.d_model, output_size)
     
-    def forward(self, x):
+    def forward(self, x, tau=None):
         
+        if self.quantile_reg:
+            assert tau is not None, "tau must be provided for quantile regression"
+            assert isinstance(tau, float), "tau must be a float"
+            assert 0 <= tau <= 1, "tau must be between 0 and 1"
+            # Concatenate the tau value to the inputs
+            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+
         out = self.recurrent(x) # (B, L, D) -> (B, L, H)
         out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
         out = self.fc(out) # (B, H) -> (B, L)
@@ -245,13 +255,15 @@ class S4DModel(nn.Module):
     ):
         super().__init__()
 
+        self.gap = config.gap
+        self.quantile_reg = config.quantile_reg
+        self.device = config.device
         d_state = config.d_state
         act = config.act
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
         d_input = d_input
-        self.gap = config.gap
 
         self.encoder = nn.Linear(d_input, d_model)
 
@@ -273,10 +285,15 @@ class S4DModel(nn.Module):
 
         self.decoder = nn.Linear(d_model, d_output)
 
-    def forward(self, x):
-        """
-        Input x is shape (B, L, d_input)
-        """
+    def forward(self, x, tau=None):
+
+        if self.quantile_reg:
+            assert tau is not None, "tau must be provided for quantile regression"
+            assert isinstance(tau, float), "tau must be a float"
+            assert 0 <= tau <= 1, "tau must be between 0 and 1"
+            # Concatenate the tau value to the inputs
+            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
         x = x.transpose(-1, -2)  # (B, L, d_model) -> (B, d_model, L)
@@ -314,16 +331,13 @@ class S5Model(nn.Module):
         d_output:int,
     ):
         super().__init__()
-        # d_output=1, # output dimension for the Regression task → 1
-        # d_model=32, # latent state dimension → P
-        # n_layers=4, # Number of layers 
-        # bidir=False,
-        # single_rul=False
 
+        self.gap = config.gap
+        self.quantile_reg = config.quantile_reg
+        self.device = config.device
         d_model = config.d_model
         n_layers = config.n_layers
         bidir = config.bidir
-        self.gap = config.gap
 
         self.encoder = nn.Linear(d_input, d_model)
 
@@ -338,10 +352,14 @@ class S5Model(nn.Module):
 
         self.decoder = nn.Linear(d_model, d_output)
 
-    def forward(self, x):
-        """
-        Input x is shape (B, L, d_input)
-        """
+    def forward(self, x, tau=None):
+
+        if self.quantile_reg:
+            assert tau is not None, "tau must be provided for quantile regression"
+            assert isinstance(tau, float), "tau must be a float"
+            assert 0 <= tau <= 1, "tau must be between 0 and 1"
+            # Concatenate the tau value to the inputs
+            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         for layer in self.s5_layers: # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
             x = layer(x)
@@ -368,6 +386,9 @@ class RULTransformer(nn.Module):
     ):
         super(RULTransformer, self).__init__()
 
+        self.quantile_reg = config.quantile_reg
+        self.device = config.device
+
         self.embedding = nn.Sequential(
             nn.Embedding(
                 num_embeddings=input_size,
@@ -393,9 +414,17 @@ class RULTransformer(nn.Module):
             out_features=output_size
         )
         
-    def forward(self, x, mask=None):
+    def forward(self, x, mask=None, tau=None):
+
         if mask is None:
             mask = torch.zeros(x.size(0),x.size(1)).to(x.device)
+
+        if self.quantile_reg:
+            assert tau is not None, "tau must be provided for quantile regression"
+            assert isinstance(tau, float), "tau must be a float"
+            assert 0 <= tau <= 1, "tau must be between 0 and 1"
+            # Concatenate the tau value to the inputs
+            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         x = x.argmax(dim=-1) # (B, L, d_input) -> (B, L)
         x = self.embedding(x) # (B, L) -> (B, L, d_model)
@@ -418,6 +447,8 @@ class RULInformer(nn.Module):
        ):
         super(RULInformer,self).__init__()
 
+        self.quantile_reg = config.quantile_reg
+        self.device = config.device
         self.output_attention = output_attention
 
         # Encoding
@@ -458,7 +489,14 @@ class RULInformer(nn.Module):
 
         self.projection = nn.Linear(config.d_model, d_output)
 
-    def forward(self, x_enc, output_attention=False, enc_self_mask=None):
+    def forward(self, x_enc, output_attention=False, enc_self_mask=None, tau=None):
+
+        if self.quantile_reg:
+            assert tau is not None, "tau must be provided for quantile regression"
+            assert isinstance(tau, float), "tau must be a float"
+            assert 0 <= tau <= 1, "tau must be between 0 and 1"
+            # Concatenate the tau value to the inputs
+            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         enc_out = self.enc_embedding(x_enc) # [B,L,D] -> [B,L,H]
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
