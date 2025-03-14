@@ -579,3 +579,44 @@ Since with `Transformer` we obtain different results from `RNN` models, let's se
 > [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/jhglagaq?nw=nwuserfrizzodavide)
 
 
+## `windowed` Approach Experiments + Quantile Regression 🪟 🌗
+
+In this section we group the results obtained in the `windowed` approach in the Quantile Regression mode,  the experiments will be performed [[ssm_experiments#`windowed` Approach + Quantile Regression Experiments 🪟 🌗|as explained here]].
+
+### `Transformer` Model Experiments 🤖 🌗
+
+#### Dataset `FD001`
+
+##### Experiment 1 `Transformer`` `FDOO1` `windowed` 🪟 🌗
+
+Let's use the same configuration used in the `SSM` and `RNN` experiments.
+
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `Transformer` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `quantile_reg` |
+| `eval_loss` | `mse` |
+| `quantile_dist` | `uniform` |
+| `bounds` | `[0.1,0.9]` |
+| `quantiles` | `[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]` |
+
+
+

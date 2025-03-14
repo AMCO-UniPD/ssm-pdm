@@ -635,3 +635,44 @@ Mean eval loss over all the test lifes: Eval Loss   31.42
 Std eval loss over all the test lifes: Eval Loss   20.10
 ##################################################
 ```
+
+## `windowed` Approach + Quantile Regression Experiments 🪟 🌗
+
+Here we will list the results of the `windowed` approach experiments using the models in the Quantile Regression mode. The experiments will be structured as explained [[ssm_experiments#`windowed` Approach + Quantile Regression Experiments 🪟 🌗|here]].
+
+Considering the fact that the results of the experiments performed on the `RNN` based models are always very similar we will do the experiments on `LSTM` for the moment.
+
+### `LSTM` Model Experiments 🪟 🌗
+
+Let's use the same configuration used in the `SSM` experiments
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `LSTM` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `quantile_reg` |
+| `eval_loss` | `mse` |
+| `quantile_dist` | `uniform` |
+| `bounds` | `[0.1,0.9]` |
+| `quantiles` | `[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]` |
+
+>[!note]
+> [Link to the first `wandb` run]()
+
+

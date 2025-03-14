@@ -41,6 +41,61 @@ Best regards,
 Davide Frizzo
 ```
 
+### Answer to prof. Chia-Yu Hsu
+
+
+```txt
+Dear Prof. Chia-Yu Hsu,
+
+Thank you very much for your positive reply and for agreeing to contribute a paper and co-organize our Special Session.
+
+To finalize the proposal for our Special Session, could you please kindly provide the following information as soon as possible (ideally within today, as the proposal submission deadline is today):
+
+- Title or tentative topic of the paper your team intends to submit.
+- A brief bio (approximately 100-150 words) about yourself to be included in the proposal, as you will be listed as a co-organizer.
+
+Thank you again for your contribution. See you in Padova!
+
+Best regards,
+Davide Frizzo
+```
+
+### Answer to Olga Fink
+
+Answer in case we acccept her as an organizer (knowing Gian this is the most probable outcome):
+
+```txt
+Dear Prof. Olga Fink,
+
+Thank you very much for your quick reply and for your availability to join the organizing team of our Special Session. It would be a great pleasure to have you on board!
+
+To finalize the Special Session Proposal, we would kindly ask you to provide a brief bio (approximately 100-150 words) that we can include in the submission document.
+
+As today is the last day to submit the proposal, it would be greatly appreciated if you could send us your bio as soon as possible.
+
+Thank you again for your availability and support. See you in Padova!
+
+Warm regards,
+Davide Frizzo
+```
+
+Answer in case we do not accept her as an organizer (knowing Gian this is the least probable outcome):
+
+```txt
+Dear Prof. Olga Fink,
+
+Thank you very much for your prompt and kind reply.
+
+We completely understand your commitments regarding conference attendances this year. Regarding your availability to join the organizing team, we have already finalized our organizing committee for this Special Session.
+
+However, we greatly appreciate your willingness to support, and we hope there will be future opportunities to collaborate!
+
+Thank you once again for your kind response.
+
+Best regards,
+Davide Frizzo
+```
+
 ## Proposal for the Special Session
 
 The Special Session proposal has to be submitted throgh a form whose template is contained on the conference website. It should contain some Bio about the organizer of the Special Session (me I suppose, maybe also Gian?) and then a description of the topics that will be covered. This is a proposal so it means that we should provide a list of possible topics that could be covered in the session, so that other researchers may decide to contribute with their own papers on those topics.
@@ -63,6 +118,18 @@ The limit here is 1000 characters.
 Affiliation: PhD Student, University of Padova
 Bio: Davide Frizzo is a Ph.D. candidate at the Department of Information Engineering (DEI), Univeristy of Padova. His research focuses on Machine Learning Approaches for Smart Agricolture, in particular on the field of Anomaly Detection and Predictive Maintenance. His work aims at developing novel algorithms to enchange productivity and sustainability in the agricolture sector.
 He is in collaboration with Maschio Gaspardo S.p.A., a global leader in the production of agricultural equipment, where he is developing a predictive maintenance system for agricultural machinery (i.e. Sprayer machines).
+```
+
+Current version of my Bio:
+
+```txt
+- Eng. Davide Frizzo
+
+- Affiliation: PhD Student, University of Padova
+
+- Bio: Davide Frizzo is a Ph.D. candidate at the Department of Information Engineering (DEI), University of Padova. His research focuses on Machine Learning Approaches for Smart Agriculture, focusing on the fields of Anomaly Detection and Predictive Maintenance. He is currently working with Maschio Gaspardo S.p.A., a global leader in the production of agricultural equipment, where he is developing a predictive maintenance system for agricultural machinery (i.e. Sprayer machines).
+
+- Contact: davide.frizzo.1@phd.unipd.it
 ```
 
 #### Brief description of the session
@@ -162,6 +229,26 @@ We encourage contributions addressing high-dimensional data, data scarcity, nois
 | `ChatGPT 4.5` | 164 |
 | `Claude 3.7 Sonnet` | 149 |
 | `Gemini 2.0 Flash` | 197 |
+
+##### Current shorter version
+
+This is the short version of the description (including also the addition by Lucas) that I removed from the Special Session Proposal document after Gian increased the page limit from 1 to 3 pages.
+
+```txt
+The Special Session aims to explore innovative methodologies and practical applications in Anomaly Detection (AD), Predictive Maintenance (PdM) and Prescriptive Maintenance (RxM) across various domains. AD, PdM and RxM are vital for ensuring system reliability, enabling early failure detection, and supporting proactive maintenance strategies.
+
+We invite contributions from researchers and practitioners combining machine learning and control theory, including but not limited to:
+
+- Machine learning approaches (supervised, unsupervised, semi-supervised) for anomaly detection.
+- Control-theoretic methods such as fault detection, fault identification and fault isolation.
+- Hybrid methods integrating machine learning and control strategies for improved AD, PdM and RxM performance.
+- Data-driven and deep learning approaches for Predictive Maintenance and Remaining Useful Life (RUL) estimation.
+- Reinforcement Learning frameworks for optimal maintenance decisions and scheduling.
+- Explainable AI (XAI) for AD, PdM and RxM.
+- Integration of domain expertise and physics-based models in anomaly detection and maintenance strategies.
+
+The session invites both theoretical advancements and practical case studies highlighting effective solutions and real-world implementations.
+```
 
 ## Potential Contributors to contact
 

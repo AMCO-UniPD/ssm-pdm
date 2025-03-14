@@ -1319,3 +1319,196 @@ Std eval loss over all the test lifes: Eval Loss   40.05
 ###### Prediction plots
 
 Similar to the ones of the previous experiment without the Pinball loss.
+
+## `windowed` Approach + Quantile Regression Experiments 🪟 🌗
+
+In this section we will report the results of the experiments performed with the `windowed` approach and with the Quantile Regression mode. The model is trained to learn all the quantiles of the distribution of the `RUL` signal. The model is tested on different pre decided quantile levels (for each quantile level we have a different `wandb` experiment,. and thus a different best model). In the evaluation part we will compare the performances on the different quantile levels to see which one is the best, taking also into account that we prefer underestimations of the `RUL` rather than overestimations. 
+
+>[!info]
+> For the Quantile Regression mode we will use the 🌗 emoji which represents a quarter of the moon, the word `quarter` somehow recalls the concept of quantile.
+
+### `S4` Model Experiments 4‍⃣ 🪟 🌗
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S4` `FD001` 4‍⃣ 🪟 🌗 
+
+Let's start with the following configuration:
+
+| Parameter | Value |
+|-----------|-------|
+| `model_type` | `S4` |
+| `cmapss_model` | `FD001` |
+| `val_idx` | `[0,50]` |
+| `test_idx` | `[50,100]` |
+| `transformer_type` | 1 (no feature extraction) |
+| `window_size` | 20 |
+| `scaler` | `MinMaxScaler(-1,1)` |
+| `epochs`  | 100    |
+| `lr` | 1e-3 |
+| `batch_size` | 100 |
+| `weight_decay` | 1e-4 |
+| `sequence_length` | 170 |
+| `n_layers` | 5 |
+| `dropout` | 0.0 |
+| `activation` | `relu` |
+| `final_act` | `glu` |
+| `hidden_size` | 128 |
+| `d_state` | 64 |
+| `loss` | `quantile_reg` |
+| `eval_loss` | `mse` |
+| `quantile_dist` | `uniform` |
+| `bounds` | `[0.1,0.9]` |
+| `quantiles` | `[0.1,0.5,0.9]` |
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/3x0z2rmk?nw=nwuserfrizzodavide)
+
+The loss plots in `wandb` seems to be going down quite well with `quantile_0.1` being the one with the lowest errors, followed by `quantile_0.5` and `quantile_0.9`.
+
+###### Metrics Table
+
+Wow man these `Life_mean` values are very good 💪. In particular  `quantile_0.9` seems to be the best one while `quantile_0.1` and `quantile_0.5` are similar. This result somehow confirms what we have observed in the [[ssm_experiments#`windowed` Approach + Pinball Loss Experiments 🪟 🎈|experiments with the Pinball Loss]]: since normally the model commits underestimation errors if we use an high quantile level (so we force the model to overestimate) the metrics are better. The only risk is that in the lifes where the model was making good predictions (i.e. predicted and true `RUL` signal almost overlapped) we may now pass to have an overestimation error which is not good.
+
+|  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| --- | --- | --- | --- |
+| Life_50 | 35.69 | 24.86 | 19.02 |
+| Life_51 | 4.47 | 0.46 | 1.19 |
+| Life_52 | 1.76 | 2.38 | 8.08 |
+| Life_53 | 25.79 | 27.29 | 20.05 |
+| Life_54 | 55.79 | 51.95 | 42.64 |
+| Life_55 | 7.92 | 10.27 | 4.52 |
+| Life_56 | 20.4 | 15.14 | 7.49 |
+| Life_57 | 4.15 | 0.91 | 3.55 |
+| Life_58 | 42.94 | 35.17 | 17.84 |
+| Life_59 | 22.12 | 17.75 | 20.13 |
+| Life_60 | 3.43 | 5.56 | 3.83 |
+| Life_61 | 12.84 | 7.96 | 10.3 |
+| Life_62 | 4.68 | 1.33 | 3.74 |
+| Life_63 | 5.42 | 9.06 | 9.88 |
+| Life_64 | 43.22 | 56.68 | 9.7 |
+| Life_mean | 19.37 | 17.78 | 12.13 |
+| Life_std | 17.07 | 17.51 | 10.26 |
+A pretty  clear example of how the predictions change when we change quantile is `Life_64` where the errors in the 0.1 and 0.5 quantiles are all over 40 while in quantile 0.9 the error is lower than 10 😱.
+
+###### Prediction Plots
+
+Ok the plot is not very clear from `yazi` (maybe I have to save it locally on my pc and visualize it full screen with a `PDF` viewer). In any case what we can see is the following:
+
+- In many lifes, where the predictions are good, all the 4 lines (i.e. the true `RUL` and the predicted `RUL` on the three quantiles) are essentially overlapped one over the other
+- In some lifes where the model normally commits high errors (e.g `Life_64` in particular) we can see how the closest prediction is the one obtained with quantile 0.9
+
+##### Experiment 1 bis `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Since the single experiments take about 2 mins to run let's try to complete this experiment doing the training and evaluation also for quantiles: `[0.2,0.3,0.4,0.6,0.7,0.8]`. I want to see weather there is a gradual improvement in the performances as we go towards overestimation. 
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/b8o1yvx5?nw=nwuserfrizzodavide)
+
+The `wandb` loss plots seems to follow the same trend as in the previous experiment. 
+
+###### Metrics Table
+
+|  | quantile_0.1 | quantile_0.2 | quantile_0.3 | quantile_0.4 | quantile_0.5 | quantile_0.6 | quantile_0.7 | quantile_0.8 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Life_50 | 35.69 | 31.94 | 21.63 | 34.39 | 24.86 | 26.79 | 29.94 | 31.49 | 19.02 |
+| Life_51 | 4.47 | 0.75 | 1.25 | 2.36 | 0.46 | 1.7 | 1.93 | 1.6 | 1.19 |
+| Life_52 | 1.76 | 3.2 | 1.35 | 1.77 | 2.38 | 0.88 | 6.25 | 1.97 | 8.08 |
+| Life_53 | 25.79 | 25.08 | 31.11 | 32.16 | 27.29 | 22.35 | 29.38 | 34.95 | 20.05 |
+| Life_54 | 55.79 | 55.34 | 57.97 | 55.4 | 51.95 | 51.73 | 46.68 | 45.4 | 42.64 |
+| Life_55 | 7.92 | 9.82 | 10.13 | 10.44 | 10.27 | 8.09 | 13.3 | 10.39 | 4.52 |
+| Life_56 | 20.4 | 16.38 | 13.98 | 14.72 | 15.14 | 16.19 | 9.92 | 19.25 | 7.49 |
+| Life_57 | 4.15 | 1.24 | 3.46 | 2.96 | 0.91 | 2.57 | 9.52 | 6.56 | 3.55 |
+| Life_58 | 42.94 | 40.13 | 40.48 | 38.81 | 35.17 | 41.21 | 32.44 | 10.56 | 17.84 |
+| Life_59 | 22.12 | 24.42 | 20.14 | 22.3 | 17.75 | 25.42 | 19.04 | 24.56 | 20.13 |
+| Life_60 | 3.43 | 5.15 | 1.86 | 8.87 | 5.56 | 4.82 | 8.04 | 4.05 | 3.83 |
+| Life_61 | 12.84 | 17.55 | 9.04 | 15.84 | 7.96 | 12.65 | 5.89 | 5.54 | 10.3 |
+| Life_62 | 4.68 | 7.68 | 2.45 | 10.54 | 1.33 | 6.84 | 4.04 | 3.6 | 3.74 |
+| Life_63 | 5.42 | 6.71 | 9.55 | 8.29 | 9.06 | 8.7 | 10.47 | 15.12 | 9.88 |
+| Life_64 | 43.22 | 43.31 | 40.32 | 44.6 | 56.68 | 41.01 | 45.21 | 2.19 | 9.7 |
+| Life_mean | 19.37 | 19.25 | 17.65 | 20.23 | 17.78 | 18.06 | 18.14 | 14.48 | 12.13 |
+| Life_std | 17.07 | 16.44 | 16.91 | 16.31 | 17.51 | 15.64 | 14.37 | 13.33 | 10.26 |
+
+As expected we can see how the `Life_mean` metric decreases as we go towards the highest quantiles. 
+
+In `Life_59` and `Life_63` we can see how the overestimation is probably too much and in fact on high quantile levels the error is increasing. Actually in these life the best predictions are obtained with low quantile levels. 
+
+###### Prediction Plots
+
+Ok now it is even more difficult to understand something in the plot, I surely have to visualize it full screen. From what I could see we have a similar effect to the previous experiment in `Life_64` as we can see also on then `metrics_df`. 
+
+##### Experiment 2 `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Considering the [[ssm_experiments#^7aa41a|small error committed here]], I now implemented the multi run approach, so let's execute an experiment with the same configuration but now 5 runs will be executed (each one with a different seed for the generation of the quantile levels in the `train_loop`) and then the `metrics_df` will average the `RMSE` metrics over all the runs in order to obtain more robust results and reduce the bias of lucky or unlucky runs.
+
+Since we have now added also the multiple runs we will reduce the number of evaluation quantiles to 3: `[0.1,0.5,0.9]`.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/cqu95cq5?nw=nwuserfrizzodavide)
+
+Now the time to execute all the experiments is multiplied by  `n_runs`, so , considering about 2 minutes per single experiment, this should take about 30 mins.
+
+### `S5` Model Experiments 5️⃣ 🪟 🌗
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S5` `FD001` 5️⃣ 🪟 🌗
+
+Let's use the same configuration used in the `S4` model. This time however we will start directly using all the 10 quantile levels from 0.1 to 0.9, so `quantiles=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]`.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/wd5tzu05?nw=nwuserfrizzodavide)
+
+The trend of the loss plots on `wandb` is similar to the one of the `S4` model, maybe the loss lines are less smooth than with `S4` but this is aligned with what we saw in the experiments on the other approaches where `S4D,S5` produce predictions with more variable errors across the different lifes.
+
+###### Metrics Table
+
+The metric values are a bit higher in this case with respect to the `S4` model. 
+
+|  | quantile_0.1 | quantile_0.2 | quantile_0.3 | quantile_0.4 | quantile_0.5 | quantile_0.6 | quantile_0.7 | quantile_0.8 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Life_50 | 48.44 | 49.33 | 32.55 | 23.66 | 33.79 | 31.49 | 15.87 | 15.56 | 17.96 |
+| Life_51 | 2.47 | 2.46 | 5.07 | 9.67 | 4.31 | 5.49 | 6.72 | 7.35 | 18.96 |
+| Life_52 | 5.21 | 6.01 | 15.08 | 10.5 | 9.05 | 11.53 | 20.75 | 14.64 | 21.23 |
+| Life_53 | 34.31 | 50.92 | 16.09 | 8.98 | 2.54 | 31.74 | 8.23 | 16.86 | 2.23 |
+| Life_54 | 68.19 | 81.57 | 39.0 | 22.0 | 34.41 | 49.04 | 8.43 | 49.63 | 13.13 |
+| Life_55 | 18.6 | 30.56 | 67.33 | 57.0 | 78.43 | 78.0 | 84.39 | 63.03 | 79.11 |
+| Life_56 | 27.36 | 34.01 | 0.75 | 22.2 | 3.07 | 13.21 | 15.81 | 12.14 | 17.32 |
+| Life_57 | 6.73 | 1.37 | 1.59 | 2.46 | 2.83 | 6.53 | 3.19 | 1.76 | 7.73 |
+| Life_58 | 64.62 | 86.43 | 17.58 | 14.91 | 36.15 | 27.84 | 43.79 | 43.04 | 17.05 |
+| Life_59 | 27.5 | 29.23 | 10.73 | 20.73 | 8.8 | 10.94 | 15.05 | 8.29 | 15.47 |
+| Life_60 | 4.38 | 8.68 | 23.13 | 18.95 | 24.94 | 18.36 | 32.28 | 17.65 | 30.77 |
+| Life_61 | 18.3 | 19.32 | 14.86 | 13.74 | 2.27 | 4.76 | 12.26 | 10.3 | 21.2 |
+| Life_62 | 9.35 | 11.3 | 16.83 | 9.55 | 24.16 | 23.01 | 35.4 | 4.84 | 36.37 |
+| Life_63 | 0.99 | 5.36 | 3.82 | 7.53 | 12.0 | 6.33 | 18.16 | 6.36 | 24.34 |
+| Life_64 | 90.14 | 137.17 | 28.29 | 55.31 | 52.16 | 7.79 | 28.87 | 61.63 | 23.73 |
+| Life_mean | 28.44 | 36.91 | 19.51 | 19.81 | 21.93 | 21.74 | 23.28 | 22.21 | 23.11 |
+| Life_std | 26.73 | 37.52 | 16.72 | 15.48 | 21.37 | 19.43 | 19.78 | 20.31 | 16.98 |
+
+The best quantile in terms of the `Life_mean` metric is `quantile_0.3` while `quantile_0.2` is the worst one. The `Life_std` is in general higher than the ones obtained with the `S4` model. This result is a bit surprising considering the considerations we made on the `S4` results and I think that I know the reason why.
+
+One thing to note is the incredible difference in performances there is in `Life_57` between the different quantiles. In `quantile_0.3` we have an almost null error of 0.75, a small error of 3.07 for `quantile_0.5` and then all the other quantiles have an error higher than 10 😱. This may also be the reason why at the end the `Life_mean` of `quantile_0.3` is so low, I need to also introduce a `Life_median` metric to see if this is the case.
+
+>[!error]
+> In these first two experiments with the Quantile Regression Approach I committed a small error, that however can be solved. In the training loop we are sampling at random the quantile level `tau` for each sample and this has an effect on the performances of the models in the evaluations. So in this case it may be that quantile levels 0.2 and 0.3 obtained better results just becuase during the training loop there was a majority of samples with those quantile levels. We are using the uniform distribution to extract the quantile levels so it's unlikely that in a certain run there is a majority of samples with a certain quantile level. However to be robust to the possibility of a skewed sampling we should perform multiple runs of this experiment with a different seed for each run and then average the metrics over all the runs.
+
+^7aa41a
+
+###### Prediction Plots
+
+I will give a more detailed analysis of the plots when I will transfer them locally on my pc where I can see tham better, but probably they will be quite similar to the ones produced in the `S4` experiment.
+
+### `S4D` Model Experiments 4 D 🪟 🌗
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S4D` `FD001` 4 D 🪟 🌗
+
+
+Let's use the same configuration used in the `S4` model. We will use all the 10 quantile levels from 0.1 to 0.9, so `quantiles=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]`.
+
+
+>[!note]
+> [Link to the first `wandb` run]()
