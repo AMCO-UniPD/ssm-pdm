@@ -1,11 +1,11 @@
 #!/bin/bash
 
-MODELS=('LSTM')
+MODELS=('RULTransformer')
 FOLDER=('plots')
 DATASET='FD001'
 APPROACH='windowed'
 N_RUNS=5
-EXP_NAME='multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg'
+EXP_NAME='multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg'
 FILE_NAME='13-03-2025_12-14-23_S4_FD001_quantile_reg_global_predictions_grid_pad_life_0_1_2_3_4_5_6_7_8_9_10_11_12_13_14.pdf'
 
 # Store the initial part of the path in acquario3
@@ -14,7 +14,7 @@ INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
 acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$EXP_NAME/"
 
 # cd into local path in my local machine
-cd ../../../ssm_pdm_paper/Img/rul_plots/LSTM/
+cd ../../../ssm_pdm_paper/Img/rul_plots/RULTransformer/
 
 # Iterate over the runs
 for i in $(seq 1 $N_RUNS); do
