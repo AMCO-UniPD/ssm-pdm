@@ -242,7 +242,7 @@ def train_loop(
             life = life.permute(2,0,1) if config.approach=="padding" else life
             mask = mask.permute(1,0) if config.approach=="padding" else mask
             rul = rul.unsqueeze(0) if config.approach=="padding" else rul
-            output = model(life) if not config.quantile_reg else model(life,tau)
+            output = model(life) if not config.quantile_reg else model(life,tau=tau)
 
         loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
         optimizer.zero_grad()
@@ -307,7 +307,7 @@ def eval_loop(
                 life = life.permute(2,0,1) if config.approach=="padding" else life
                 mask = mask.permute(1,0) if config.approach=="padding" else mask
                 rul = rul.unsqueeze(0) if config.approach=="padding" else rul
-                output = model(life) if not config.quantile_reg else model(life,tau)
+                output = model(life) if not config.quantile_reg else model(life,tau=tau)
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()

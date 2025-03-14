@@ -496,7 +496,7 @@ class RULInformer(nn.Module):
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
-            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+            x_enc = torch.cat([x_enc, torch.ones(x_enc.shape[0],x_enc.shape[1],1).to(self.device) * tau], dim=-1)
 
         enc_out = self.enc_embedding(x_enc) # [B,L,D] -> [B,L,H]
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
