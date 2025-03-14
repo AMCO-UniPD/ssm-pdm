@@ -67,11 +67,19 @@ for i in range(config.n_runs):
     metrics_dfs.append(metrics_df)
 
 # Create a new pd.DataFrame with the same shape of all the metrics_df which contains the mean of all the pd.DataFrames inside metrics_dfs
-mean_metrics_df=sum(metrics_dfs)/len(metrics_dfs)
+mean_metrics_df=(sum(metrics_dfs)/len(metrics_dfs)).round(2)
 # Compute the mean, median and std of the metrics
 mean_metrics_df.loc["Life_mean"] = mean_metrics_df.mean(axis=0).round(2)
 mean_metrics_df.loc["Life_median"] = mean_metrics_df.median(axis=0).round(2)
 mean_metrics_df.loc["Life_std"] = mean_metrics_df.std(axis=0).round(2)
+
+print('#'* 50)
+print(f"Mean eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_mean']}")
+print('#'* 50)
+print(f"Median eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_median']}")
+print('#'* 50)
+print(f"Std eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_std']}")
+print('#'* 50)
 
 if config.save_mean_metrics_df:
     metrics_df_path = generate_path(basepath=experiment_path,

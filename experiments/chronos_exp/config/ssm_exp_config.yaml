@@ -50,11 +50,11 @@ weight_decay: 1.0e-4
 # model_name: RNN
 # model_name: LSTM
 # model_name: GRU
-model_name: S4
+# model_name: S4
 # model_name: S5
 # model_name: S4D
 # model_name: RULTransformer
-# model_name: RULInformer
+model_name: RULInformer
 output_attention: false
 model_summary: false
 model_summary_manual: false
@@ -80,8 +80,16 @@ bounds: [0.1, 0.9]
 quantiles: [0.1,0.5,0.9]
 # quantiles: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 set_exp_name: false
-exp_name: multi_run_13-03-2025_17-30-31_S4_FD001_windowed_quantile_reg
+# exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
 n_runs: 5
+
+# Useful experiment names
+# exp_name: multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
+# exp_name: multi_run_14-03-2025_09-43-44_S5_FD001_windowed_quantile_reg
+# exp_name: multi_run_14-03-2025_10-56-41_S4D_FD001_windowed_quantile_reg
+# exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
+exp_name: multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
+# exp_name: RULInformer
 
 # test_script config
 # test_script: true
