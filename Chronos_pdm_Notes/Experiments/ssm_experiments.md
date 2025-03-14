@@ -1631,6 +1631,20 @@ quantile_0.9    20.67
 
 ###### Prediction Plots
 
+The general shape of the plots is similar to the one of the `S4` model.
+
+Below some general comments based on the plot of `run_1`:
+
+- In `Life_51,Life_54,Life_55,Life_59,Life_65` we have the prediction significantly far from the true values
+- `LIfe_56` is the only life with all overestimation errors. Interestingly in `run_2,run_3` quantile 0.1 is intersecting the true `RUL` signal, something rarely seen in these experiments, normally the predicted and true signals are always almost parallel lines.
+- The lifes where the predictions are good are: `Life_52,Life_53,Life_58,Life_61,Life_62`, like the ones observed in the `S4` model.
+- Differently from `S4` in some lifes we can see some small oscillations in some of the predicted `RUL` signals which are not perfectly smooth lines. I am referring to `Life_57,Life_59,Life_60,Life_63,Life_65`.
+
+Interesting things from the plots of other runs:
+
+- In `run_3` in `Life_55,Life_56` and `Life_59` all the 4 signals (the predictions from the three quantile levels and the true `RUL` signal) are all clearly separated one from each other, with quantile 0.9 being the closest to the true signal.
+
+
 
 ### `S4D` Model Experiments 4 D 🪟 🌗
 
@@ -1690,4 +1704,10 @@ quantile_0.9    35.70
 
 ###### Prediction Plots
 
+In the plots we can see a clear difference from the other `SSM` models, which is also a confirmation of the bad performances of `S4D`. The predicted signals are not at all smooth decreasing lines but show clear oscillations.
 
+General comments based on the plot of `run_1`:
+
+- As usual `Life_51,Life_54,Life_55,Life_59,Life_65` are the lifes with the worst predictions. In particular in `Life_55` and `Life_65` the error is very high (i.e. higher than 100 as we can see from the `metrics_df` above).
+- The lifes with the best predictions are the usual `Life_52,Life_53,Life_58,Life_61,Life_62`.
+- As in the other experiments `Life_56` has all overestimation errors the higher being the one of quantile 0.9.

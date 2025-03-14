@@ -621,3 +621,70 @@ Let's use the same configuration used in the `SSM` and `RNN` experiments and mul
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kf0b2sr7?nw=nwuserfrizzodavide)
+
+
+###### Metrics table
+
+Similar performances to `S5` but with a slightly higher `std` and in particular the best quantile here is 0.1 and 0.9 is the worse. So probably here the model tends more to overestimate the signal when it is wrong and so with some underestimation (as the one brought by quantile 0.1) we obtain better results.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1    29.95
+quantile_0.5    30.61
+quantile_0.9    37.66
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1    21.48
+quantile_0.5    28.09
+quantile_0.9    33.72
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1    25.33
+quantile_0.5    20.15
+quantile_0.9    21.94
+Name: Life_std, dtype: float64
+##################################################
+```
+
+| Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| --- | --- | --- | --- |
+| Life_51 | 26.55 | 27.0 | 26.25 |
+| Life_52 | 8.01 | 15.92 | 20.91 |
+| Life_53 | 4.97 | 39.95 | 41.56 |
+| Life_54 | 14.96 | 12.25 | 10.11 |
+| Life_55 | 25.73 | 24.2 | 17.88 |
+| Life_56 | 20.42 | 30.87 | 80.88 |
+| Life_57 | 69.45 | 42.76 | 31.44 |
+| Life_58 | 27.41 | 19.72 | 21.53 |
+| Life_59 | 8.44 | 8.06 | 24.26 |
+| Life_60 | 37.88 | 16.02 | 15.31 |
+| Life_61 | 1.01 | 29.11 | 51.87 |
+| Life_62 | 34.39 | 30.58 | 26.82 |
+| Life_63 | 42.94 | 19.5 | 4.81 |
+| Life_64 | 16.76 | 7.8 | 35.52 |
+| Life_65 | 14.56 | 10.15 | 33.72 |
+| Life_mean | 23.57 | 22.26 | 29.52 |
+| Life_median | 22.0 | 20.99 | 26.54 |
+| Life_std | 16.53 | 10.31 | 17.42 |
+
+###### Prediction plots
+
+These plots are a bit different from the ones oobserved up to now, which is expected considering that we are using a completely different architecture.
+
+- In `Life_53,Life_58,Life_61,Life_64` we have quantile 0.1 underestimating (or almost overlapping) the real signal and the other quantiles overestimating it. 
+- In `Life_62` the predictions do not form a straight line but rather a zig zagging line
+- There is not a life where the predictions are very good from all the quantiles, probably the life with the best metrics is `Life_52` followed by `Life_59`.
+
+### `Informer` Model Experiments 🧙‍♂️ 🌗
+
+#### Dataset `FD001`
+
+##### Experiment 1 `Informer` `FDOO1` `windowed` 🧙‍♂️ 🌗
+
+We will do a multi run experiment with the same configuration used in the other models.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gzwxyzir?nw=nwuserfrizzodavide)

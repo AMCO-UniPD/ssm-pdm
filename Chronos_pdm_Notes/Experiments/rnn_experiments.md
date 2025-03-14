@@ -722,4 +722,4 @@ quantile_0.9    22.94
 
 ###### Prediction plots
 
-
+As expected from the plots it is easy to see how the model always predictions the `RUL` in the same range of values. It also seems that the results are very similar (if not equal) across all the different runs, so there is not much to say about the plots.
