@@ -1430,13 +1430,21 @@ The `wandb` loss plots seems to follow the same trend as in the previous experim
 | Life_mean | 19.37 | 19.25 | 17.65 | 20.23 | 17.78 | 18.06 | 18.14 | 14.48 | 12.13 |
 | Life_std | 17.07 | 16.44 | 16.91 | 16.31 | 17.51 | 15.64 | 14.37 | 13.33 | 10.26 |
 
-As expected we can see how the `Life_mean` metric decreases as we go towards the highest quantiles. 
+As expected we can see how the `Life_mean` metric decreases as we go towards the highest quantiles.
 
-In `Life_59` and `Life_63` we can see how the overestimation is probably too much and in fact on high quantile levels the error is increasing. Actually in these life the best predictions are obtained with low quantile levels. 
+In `Life_63` we can see how the overestimation is probably too much and in fact on high quantile levels the error is increasing. Actually in this life the best predictions are obtained with low quantile levels.
 
 ###### Prediction Plots
 
-Ok now it is even more difficult to understand something in the plot, I surely have to visualize it full screen. From what I could see we have a similar effect to the previous experiment in `Life_64` as we can see also on then `metrics_df`. 
+Ok now it is even more difficult to understand something in the plot, I surely have to visualize it full screen.
+
+Now that I have a clear view of the plot from a `PDF` viewer we can make the following observations:
+
+- There are several lifes (e.g. `Life_51,Life_54,Life_55,Life_59`) in which all the predictions from the quantile levels are one next to the other and they are close to the true `RUL` signal but not overlapped to it. In all these cases the closest line to the true `RUL` is the light blue one of the 0.9 quantile. This confirms the results obtained in the `metrics_df`.
+- In `Life_59,Life_65` we have a similar effect but here there is a significant different between quantiles 0.8 and 0.9 which are much closer to the true `RUL` signal than the other quantiles.
+- In `Life_64` all the quantiles are overestimating the true `RUL` signal with quantile 0.8 and 0.9 being the furthest from it.
+
+From what I could see we have a similar effect to the previous experiment in `Life_64` as we can see also on then `metrics_df`.
 
 ##### Experiment 2 `S4` `FD001` 4‍⃣ 🪟 🌗
 
@@ -1448,6 +1456,52 @@ Since we have now added also the multiple runs we will reduce the number of eval
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/cqu95cq5?nw=nwuserfrizzodavide)
 
 Now the time to execute all the experiments is multiplied by  `n_runs`, so , considering about 2 minutes per single experiment, this should take about 30 mins.
+
+
+###### Metrics Table
+
+The results are following what we observed in the previous single run experiments. Quantile 0.9 is still the one with the best metric values. However now we do not have such big differences in the `Life_mean,Life_median` and `Life_std` metrics since we have averaged the results over all the runs.
+
+Another thing we can notice is that comparing the results of quantile 0.9 to the ones of quantile 0.5 (which correspons to no Quantile Regression, in fact with $\tau=0.5$ the `QuantileLoss` coincides with the `MAELoss`) we have an advantage when the loss in 0.5 is higher than 10-15 while quantile 0.9 is worse when the loss is lower than 10-15. This means that when the model is good in predicting the `RUL` (i.e. predicted and true `RUL` signals very close/overlapped in the plots) the overestimation brought by the high quantile levels is not good.
+
+More or less the opposite effect can be observed on quantile 0.1: when the loss in 0.5 is high it increases in 0.1 and it instead increses when the loss is quite low because of the underestimation effect brought by 0.1.
+
+| Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| --- | --- | --- | --- |
+| Life_51 | 29.15 | 26.44 | 23.94 |
+| Life_52 | 1.59 | 2.51 | 3.31 |
+| Life_53 | 1.75 | 3.95 | 5.55 |
+| Life_54 | 29.13 | 24.92 | 23.9 |
+| Life_55 | 54.37 | 48.88 | 47.15 |
+| Life_56 | 5.46 | 9.78 | 11.99 |
+| Life_57 | 15.21 | 14.24 | 6.89 |
+| Life_58 | 3.47 | 2.31 | 3.34 |
+| Life_59 | 36.74 | 30.87 | 28.23 |
+| Life_60 | 19.7 | 17.6 | 11.96 |
+| Life_61 | 4.62 | 4.44 | 8.33 |
+| Life_62 | 10.16 | 9.17 | 7.34 |
+| Life_63 | 9.37 | 8.22 | 3.62 |
+| Life_64 | 5.51 | 8.8 | 10.42 |
+| Life_65 | 39.78 | 28.35 | 30.02 |
+| Life_mean | 17.73 | 16.03 | 15.07 |
+| Life_median | 12.68 | 12.01 | 11.19 |
+| Life_std | 15.42 | 12.53 | 12.01 |
+
+###### Prediction Plots
+
+In this new kind of multi run experiments we have to consider the fact that we have multiple runs, the plots from the different runs are more or less similar to each other but there are some small differences. In any case now I am looking at the plot of `run_1` and we can see a similar behavior seen in the previous experiment.
+
+- We have some lifes in which there is some difference between the predicted and true signals and here the closest predictions are the ones of quantile 0.5 and quantile 0.9 → this happens in: `Life_51,Life_54,Life_55,Life_57,Life_60`
+- Peculiar is the situation of `Life_65` where there is some difference between the predictions and the true values but the best prediction it's the one of quantile 0.5, while quantile 0.9 is the worst one.
+- In `Life_56,Life_64` all the predictions are overestimating the true `RUL` signal and here quantile 0.9 and 0.5 have the highest errors as it can be observed also in the `metrics_df` above.
+- In some lifes the predictions are quite good with predicted and true `RUL` signals almost overlapped one to the other. I am referring to `Life_52,Life_53,Life_58,Life_61,Life_62`. If we look at the `metrics_df` in fact these are the lifes with the smallest errors.
+
+Looking at the plots obtained in the other runs they are quite similar except for the very peculiar `Life_65` where different things happen in all the runs:
+- `run_2`: Here quantile 0.1 is overlapped to the true signal, quantile 0.9 is the second one and quantile 0.5 the last one.
+- `run_3`: Now the best one is quantile 0.5 while the other two have similar performances.
+- `run_4`: Here all the quantile are quite far from the true value with 0.9 being the closest one.
+- `run_5`: Here quantile 0.9 is the best one but it is overestimating, while the other two are worse.
+
 
 ### `S5` Model Experiments 5️⃣ 🪟 🌗
 
@@ -1500,15 +1554,79 @@ One thing to note is the incredible difference in performances there is in `Life
 
 I will give a more detailed analysis of the plots when I will transfer them locally on my pc where I can see tham better, but probably they will be quite similar to the ones produced in the `S4` experiment.
 
+##### Experiment 2 `S5` `FD001` 5️⃣ 🪟 🌗
+
+Let's perform a multi run experiment with the same configuration used in `S4`.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/204g887h?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+The metrics values, as expected, are sligthly higher than the ones of `S4`. What is interesting is that in this case the best quantile is 0.5,however the difference with the respect to 0.9 is not so huge.
+
+| Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| --- | --- | --- | --- |
+| Life_51 | 39.3 | 30.4 | 18.13 |
+| Life_52 | 4.97 | 4.95 | 12.91 |
+| Life_53 | 8.44 | 12.69 | 17.96 |
+| Life_54 | 33.07 | 24.94 | 10.6 |
+| Life_55 | 58.71 | 56.17 | 41.36 |
+| Life_56 | 35.1 | 31.78 | 55.15 |
+| Life_57 | 30.0 | 15.98 | 12.72 |
+| Life_58 | 11.84 | 4.16 | 7.45 |
+| Life_59 | 43.18 | 48.37 | 36.46 |
+| Life_60 | 26.61 | 10.17 | 7.67 |
+| Life_61 | 12.76 | 13.19 | 19.88 |
+| Life_62 | 18.67 | 7.2 | 10.95 |
+| Life_63 | 8.57 | 7.44 | 12.91 |
+| Life_64 | 6.41 | 9.63 | 20.74 |
+| Life_65 | 76.97 | 81.05 | 75.64 |
+| Life_mean | 27.64 | 23.87 | 24.04 |
+| Life_median | 27.12 | 14.58 | 18.05 |
+| Life_std | 19.55 | 21.05 | 18.52 |
+
+###### Prediction Plots
+
+
 ### `S4D` Model Experiments 4 D 🪟 🌗
 
 #### Dataset `FD001`
 
 ##### Experiment 1 `S4D` `FD001` 4 D 🪟 🌗
 
-
-Let's use the same configuration used in the `S4` model. We will use all the 10 quantile levels from 0.1 to 0.9, so `quantiles=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]`.
+Let's perform a multi run experiment with the same configuration used in `S4`.
 
 
 >[!note]
-> [Link to the first `wandb` run]()
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/r99i7gfn?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+The high variability in the results that we have observed in the previous experiments for `S4D` is confirmed also in this case. The metrics values are worse than the ones obtained with `S4,S5`. The mean and median values among the different quantiles are quite similar and the best ones are quantile 0.5 and quantile 0.9.
+
+| Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| --- | --- | --- | --- |
+| Life_51 | 59.33 | 50.58 | 46.72 |
+| Life_52 | 8.21 | 2.89 | 2.95 |
+| Life_53 | 1.38 | 4.34 | 9.11 |
+| Life_54 | 62.63 | 64.94 | 63.64 |
+| Life_55 | 102.6 | 103.09 | 98.27 |
+| Life_56 | 18.47 | 36.51 | 46.97 |
+| Life_57 | 24.95 | 13.2 | 12.06 |
+| Life_58 | 1.48 | 3.67 | 10.52 |
+| Life_59 | 88.23 | 89.91 | 90.69 |
+| Life_60 | 42.07 | 35.07 | 30.68 |
+| Life_61 | 3.59 | 6.69 | 11.61 |
+| Life_62 | 18.16 | 10.23 | 4.55 |
+| Life_63 | 19.61 | 12.51 | 9.9 |
+| Life_64 | 1.64 | 7.03 | 10.56 |
+| Life_65 | 118.37 | 116.8 | 118.71 |
+| Life_mean | 38.05 | 37.16 | 37.8 |
+| Life_median | 22.28 | 24.14 | 21.37 |
+| Life_std | 36.93 | 36.83 | 36.14 |
+
+###### Prediction Plots
+
+
