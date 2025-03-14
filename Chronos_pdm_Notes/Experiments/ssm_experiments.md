@@ -1458,13 +1458,36 @@ Since we have now added also the multiple runs we will reduce the number of eval
 Now the time to execute all the experiments is multiplied by  `n_runs`, so , considering about 2 minutes per single experiment, this should take about 30 mins.
 
 
+There is an interesting thing to note regarding the `wandb` loss plots, that now I also noted in the experiments on the other models so I will insert it just here. If we consider the experiment over the different quantiles for a single run in `val_loss,test_loss` we can see a clear difference in the plots between the different quantiles → in particular 0.9 is the highest, 0.5 in the middle and 0.1 the lowest. On the other hand in `eval_val_loss,val_test_loss` the plots are almost overlapped one to the other. This is probably due to the different nature of the two loss that are used here, in fact in `val_loss,test_loss` we are using the `QuantileLoss` while in `eval_val_loss,eval_test_loss` we are using the `RMSELoss`. In any case the loss logged on the `wandb` runs should not be fully trusted because they are computed on the mini batches that, for how they are constructed, contain sampled from different lifes evaluated together. The metrics we have to look at are the ones contained in the `metrics_df` tables.
+
 ###### Metrics Table
 
 The results are following what we observed in the previous single run experiments. Quantile 0.9 is still the one with the best metric values. However now we do not have such big differences in the `Life_mean,Life_median` and `Life_std` metrics since we have averaged the results over all the runs.
 
-Another thing we can notice is that comparing the results of quantile 0.9 to the ones of quantile 0.5 (which correspons to no Quantile Regression, in fact with $\tau=0.5$ the `QuantileLoss` coincides with the `MAELoss`) we have an advantage when the loss in 0.5 is higher than 10-15 while quantile 0.9 is worse when the loss is lower than 10-15. This means that when the model is good in predicting the `RUL` (i.e. predicted and true `RUL` signals very close/overlapped in the plots) the overestimation brought by the high quantile levels is not good.
+Actually now looking at the results over all the test lifes the best quantile is 0.5, followed by 0.9 and 0.1.
+
+Another thing we can notice is that comparing the results of quantile 0.9 to the ones of quantile 0.5 (which corresponds to no Quantile Regression, in fact with $\tau=0.5$ the `QuantileLoss` coincides with the `MAELoss`) we have an advantage when the loss in 0.5 is higher than 10-15 while quantile 0.9 is worse when the loss is lower than 10-15. This means that when the model is good in predicting the `RUL` (i.e. predicted and true `RUL` signals very close/overlapped in the plots) the overestimation brought by the high quantile levels is not good.
 
 More or less the opposite effect can be observed on quantile 0.1: when the loss in 0.5 is high it increases in 0.1 and it instead increses when the loss is quite low because of the underestimation effect brought by 0.1.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1    19.49
+quantile_0.5    17.03
+quantile_0.9    18.22
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1    16.48
+quantile_0.5    11.30
+quantile_0.9    13.99
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1    16.33
+quantile_0.5    13.83
+quantile_0.9    13.24
+##################################################
+```
 
 | Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
 | --- | --- | --- | --- |
@@ -1566,6 +1589,25 @@ Let's perform a multi run experiment with the same configuration used in `S4`.
 
 The metrics values, as expected, are sligthly higher than the ones of `S4`. What is interesting is that in this case the best quantile is 0.5,however the difference with the respect to 0.9 is not so huge.
 
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1    32.44
+quantile_0.5    30.00
+quantile_0.9    31.28
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1    26.87
+quantile_0.5    23.76
+quantile_0.9    25.10
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1    20.64
+quantile_0.5    23.85
+quantile_0.9    20.67
+##################################################
+```
+
 | Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
 | --- | --- | --- | --- |
 | Life_51 | 39.3 | 30.4 | 18.13 |
@@ -1605,6 +1647,25 @@ Let's perform a multi run experiment with the same configuration used in `S4`.
 ###### Metrics Table
 
 The high variability in the results that we have observed in the previous experiments for `S4D` is confirmed also in this case. The metrics values are worse than the ones obtained with `S4,S5`. The mean and median values among the different quantiles are quite similar and the best ones are quantile 0.5 and quantile 0.9.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1    41.34
+quantile_0.5    39.95
+quantile_0.9    40.56
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1    26.14
+quantile_0.5    28.52
+quantile_0.9    28.34
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1    38.11
+quantile_0.5    36.59
+quantile_0.9    35.70
+##################################################
+```
 
 | Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
 | --- | --- | --- | --- |

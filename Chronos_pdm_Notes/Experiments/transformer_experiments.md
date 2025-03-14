@@ -589,7 +589,7 @@ In this section we group the results obtained in the `windowed` approach in the 
 
 ##### Experiment 1 `Transformer`` `FDOO1` `windowed` 🪟 🌗
 
-Let's use the same configuration used in the `SSM` and `RNN` experiments.
+Let's use the same configuration used in the `SSM` and `RNN` experiments and multi run experiments.
 
 
 | Parameter | Value |
@@ -619,4 +619,5 @@ Let's use the same configuration used in the `SSM` and `RNN` experiments.
 | `quantiles` | `[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]` |
 
 
-
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kf0b2sr7?nw=nwuserfrizzodavide)

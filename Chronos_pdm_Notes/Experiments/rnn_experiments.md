@@ -644,7 +644,7 @@ Considering the fact that the results of the experiments performed on the `RNN` 
 
 ### `LSTM` Model Experiments 🪟 🌗
 
-Let's use the same configuration used in the `SSM` experiments
+Let's use the same configuration used in the `SSM` experiments and let's start directly with the multi run experiments.
 
 | Parameter | Value |
 |-----------|-------|
@@ -673,6 +673,53 @@ Let's use the same configuration used in the `SSM` experiments
 | `quantiles` | `[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]` |
 
 >[!note]
-> [Link to the first `wandb` run]()
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ufv8pp47?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+Worse than `S4,S5`, better than `S4D` but only on `Life_mean`, `Life_median` is lower for `S4D`. Here the differences in the metrics between the different quantiles are minimal and that's probably because, as it always happens to the `RNN` based models, the predictions are always in the same range of values independently on the life, and also on the quantile in this case.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1    28.60
+quantile_0.5    28.63
+quantile_0.9    28.60
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1    23.46
+quantile_0.5    23.08
+quantile_0.9    23.50
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1    22.95
+quantile_0.5    23.05
+quantile_0.9    22.94
+##################################################
+```
+
+| Life  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| --- | --- | --- | --- |
+| Life_51 | 58.9 | 59.3 | 58.89 |
+| Life_52 | 9.86 | 10.24 | 9.85 |
+| Life_53 | 9.19 | 8.79 | 9.2 |
+| Life_54 | 19.0 | 19.41 | 18.98 |
+| Life_55 | 51.04 | 51.44 | 51.01 |
+| Life_56 | 48.08 | 47.67 | 48.09 |
+| Life_57 | 63.85 | 64.25 | 63.84 |
+| Life_58 | 10.88 | 11.28 | 10.87 |
+| Life_59 | 9.18 | 9.57 | 9.14 |
+| Life_60 | 47.89 | 48.3 | 47.88 |
+| Life_61 | 19.16 | 18.76 | 19.17 |
+| Life_62 | 57.62 | 58.0 | 57.61 |
+| Life_63 | 27.87 | 28.27 | 27.86 |
+| Life_64 | 3.24 | 2.84 | 3.24 |
+| Life_65 | 0.71 | 0.98 | 0.75 |
+| Life_mean | 29.1 | 29.27 | 29.09 |
+| Life_median | 23.52 | 23.84 | 23.52 |
+| Life_std | 21.37 | 21.46 | 21.36 |
+
+###### Prediction plots
 
 
