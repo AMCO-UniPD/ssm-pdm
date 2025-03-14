@@ -276,3 +276,23 @@ I started a ChatGPT Deep Research query to search for recent papers in Anomaly D
     - Topics: Computer Vision techniques for the identification of bearing fault modes
 - [Delia-Elena Dumitru](https://papers.phmsociety.org/index.php/phme/article/view/4054#:~:text=Published%20Jun%2027%2C%202024) → This paper is maybe less connected to the topic.
 
+
+# Current State of the Proposal
+
+Let's recap here the curren state of the proposal.
+
+- Co organizers:
+    - Davide Frizzo
+    - Lucas Brito
+    - Olga Fink
+    - Chia-Yu Hsu
+- Papers:
+    - Davide Frizzo, Francesco Borsatti
+
+
+>[!note]
+> We have removed the paper from prof. Riccardo Scattolini and Eva Masero since we start to a good number of papers and looking at the tile and topics of them we have realized that this one is a bit out of topic. In any case this paper will be used in another Special Session said Gian. I leave the title here for reference.
+
+```txt
+Eva Masero, Walter Zoff, Claudio Mantega, Riccardo Scattolini, Politecnico di Milano - Provisional title: “Data-driven modeling and optimization of the thermoforming heating phase”
+```
