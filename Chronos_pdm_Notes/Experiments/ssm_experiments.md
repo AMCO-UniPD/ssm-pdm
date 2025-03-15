@@ -1524,8 +1524,12 @@ Looking at the plots obtained in the other runs they are quite similar except fo
 - `run_3`: Now the best one is quantile 0.5 while the other two have similar performances.
 - `run_4`: Here all the quantile are quite far from the true value with 0.9 being the closest one.
 - `run_5`: Here quantile 0.9 is the best one but it is overestimating, while the other two are worse.
+##### Experiment 2  bis `S4` `FD001` 4‍⃣ 🪟 🌗
 
+Now that we have performer the multi run experiment on all the models and it was possible to notice how the best quantile was always 0.5 (so the one that is used when no Quantile Regression is employed and the `train_loss` coincides with the `MAELoss`) which is not very good if we want to exploit Quantile Regression to push the model to prefer overestimation or underestimation. One possible interpretation under these results is that the other two quantile levels used in the evaluation phase (i.e. quantile 0.1 and 0.9) are too high/extreme and thus bring too much underestimation/overestimation to produce an advantage in the metrics with the respect to quantile 0.5. So we can continue the experiment using other evaluation quantiles like for example 0.25 and 0.75. We will use the same configuration as in the previous experiment, we will just add 5 runs of training and evaluation with `quantiles=[0.25,0.75]`. 
 
+>[!note]
+> [Link to the first `wandb` run]()
 ### `S5` Model Experiments 5️⃣ 🪟 🌗
 
 #### Dataset `FD001`
@@ -1644,7 +1648,12 @@ Interesting things from the plots of other runs:
 
 - In `run_3` in `Life_55,Life_56` and `Life_59` all the 4 signals (the predictions from the three quantile levels and the true `RUL` signal) are all clearly separated one from each other, with quantile 0.9 being the closest to the true signal.
 
+##### Experiment 2 bis `S5` `FD001` 5️⃣ 🪟 🌗
 
+Continue the experiment adding `quantiles=[0.25,0.75]` as evaluation quantiles.
+
+>[!note]
+> [Link to the first `wandb` run]()
 
 ### `S4D` Model Experiments 4 D 🪟 🌗
 
@@ -1711,3 +1720,10 @@ General comments based on the plot of `run_1`:
 - As usual `Life_51,Life_54,Life_55,Life_59,Life_65` are the lifes with the worst predictions. In particular in `Life_55` and `Life_65` the error is very high (i.e. higher than 100 as we can see from the `metrics_df` above).
 - The lifes with the best predictions are the usual `Life_52,Life_53,Life_58,Life_61,Life_62`.
 - As in the other experiments `Life_56` has all overestimation errors the higher being the one of quantile 0.9.
+
+##### Experiment 2 bis `S4D` `FD001` 4‍⃣ D 🪟 🌗
+
+Continue the experiment adding `quantiles=[0.25,0.75]` as evaluation quantiles.
+
+>[!note]
+> [Link to the first `wandb` run]()

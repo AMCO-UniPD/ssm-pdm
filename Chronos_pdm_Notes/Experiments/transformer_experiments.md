@@ -688,3 +688,53 @@ We will do a multi run experiment with the same configuration used in the other 
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gzwxyzir?nw=nwuserfrizzodavide)
+
+
+###### Metrics table
+
+The results are better than the ones of the `Transformer` which is quite surprising considering the results of the previous experiments. On the other hand it's also a good result because the `Informer` is supposed to be an improvement of the `Transformer` for time series data so theoretically it should work better in this task. With the respect to the other models it is better than `S5,S4D` but still not as good as `S4`. In any case a point against the `Informer` is that it is much slower than the `SSM` models. As in most of the other models the best quantile is still quantile 0.5.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1    28.91
+quantile_0.5    25.86
+quantile_0.9    31.99
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1    25.52
+quantile_0.5    19.08
+quantile_0.9    29.16
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1    18.71
+quantile_0.5    18.03
+quantile_0.9    16.87
+Name: Life_std, dtype: float64
+##################################################
+```
+
+
+|  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| --- | --- | --- | --- |
+| Life_51 | 63.46 | 56.27 | 48.48 |
+| Life_52 | 10.39 | 16.99 | 21.51 |
+| Life_53 | 8.16 | 12.91 | 17.79 |
+| Life_54 | 25.43 | 28.42 | 18.71 |
+| Life_55 | 51.88 | 58.01 | 39.96 |
+| Life_56 | 38.05 | 36.55 | 51.32 |
+| Life_57 | 66.52 | 58.72 | 51.64 |
+| Life_58 | 7.77 | 15.86 | 13.15 |
+| Life_59 | 26.38 | 17.83 | 24.11 |
+| Life_60 | 55.15 | 51.05 | 42.67 |
+| Life_61 | 9.2 | 12.91 | 23.35 |
+| Life_62 | 29.5 | 27.93 | 28.47 |
+| Life_63 | 31.51 | 26.29 | 24.42 |
+| Life_64 | 7.07 | 7.7 | 20.7 |
+| Life_65 | 21.07 | 15.34 | 27.12 |
+| Life_mean | 30.1 | 29.52 | 30.23 |
+| Life_median | 27.94 | 27.11 | 25.77 |
+| Life_std | 19.47 | 17.0 | 12.2 |
+
