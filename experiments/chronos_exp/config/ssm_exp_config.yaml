@@ -88,8 +88,8 @@ n_runs: 5
 # exp_name: multi_run_14-03-2025_09-43-44_S5_FD001_windowed_quantile_reg
 # exp_name: multi_run_14-03-2025_10-56-41_S4D_FD001_windowed_quantile_reg
 # exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
-exp_name: multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
-# exp_name: RULInformer
+# exp_name: multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
+exp_name: multi_run_14-03-2025_16-37-39_RULInformer_FD001_windowed_quantile_reg
 
 # test_script config
 # test_script: true
@@ -99,8 +99,8 @@ save_outputs: true
 compute_metrics: false
 save_metrics_df: false
 save_mean_metrics_df: true
-sub_lifes_metrics: false
-obsidian_table: false
+sub_lifes_metrics: true
+obsidian_table: true
 plot_preds: false
 
 # metrics_df experiment config
