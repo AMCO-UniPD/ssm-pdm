@@ -2,7 +2,7 @@
 model_config_path: config/ssm_config.yaml
 
 # cuda config
-device_num: 1
+device_num: 0
 
 # wandb config
 project_name: "chronos-rul"
@@ -77,11 +77,12 @@ batch_size: 100
 quantile_reg: true
 quantile_dist: uniform
 bounds: [0.1, 0.9]
-quantiles: [0.1,0.5,0.9]
+# quantiles: [0.1,0.5,0.9]
+# quantiles: [0.25,0.75]
+quantiles: [0.1,0.25,0.5,0.75,0.9]
 # quantiles: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
-set_exp_name: false
-# exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
 n_runs: 5
+set_exp_name: true
 
 # Useful experiment names
 # exp_name: multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
