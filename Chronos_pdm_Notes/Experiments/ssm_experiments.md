@@ -1524,12 +1524,69 @@ Looking at the plots obtained in the other runs they are quite similar except fo
 - `run_3`: Now the best one is quantile 0.5 while the other two have similar performances.
 - `run_4`: Here all the quantile are quite far from the true value with 0.9 being the closest one.
 - `run_5`: Here quantile 0.9 is the best one but it is overestimating, while the other two are worse.
+
 ##### Experiment 2  bis `S4` `FD001` 4‍⃣ 🪟 🌗
 
-Now that we have performer the multi run experiment on all the models and it was possible to notice how the best quantile was always 0.5 (so the one that is used when no Quantile Regression is employed and the `train_loss` coincides with the `MAELoss`) which is not very good if we want to exploit Quantile Regression to push the model to prefer overestimation or underestimation. One possible interpretation under these results is that the other two quantile levels used in the evaluation phase (i.e. quantile 0.1 and 0.9) are too high/extreme and thus bring too much underestimation/overestimation to produce an advantage in the metrics with the respect to quantile 0.5. So we can continue the experiment using other evaluation quantiles like for example 0.25 and 0.75. We will use the same configuration as in the previous experiment, we will just add 5 runs of training and evaluation with `quantiles=[0.25,0.75]`. 
+Now that we have performed the multi run experiment on all the models it was possible to notice how the best quantile was always 0.5 (so the one that is used when no Quantile Regression is employed and the `train_loss` coincides with the `MAELoss`) which is not very good if we want to exploit Quantile Regression to push the model to prefer overestimation or underestimation. One possible interpretation under these results is that the other two quantile levels used in the evaluation phase (i.e. quantile 0.1 and 0.9) are too high/extreme and thus bring too much underestimation/overestimation to produce an advantage in the metrics with the respect to quantile 0.5. So we can continue the experiment using other evaluation quantiles like for example 0.25 and 0.75. We will use the same configuration as in the previous experiment, we will just add 5 runs of training and evaluation with `quantiles=[0.25,0.75]`. 
 
 >[!note]
-> [Link to the first `wandb` run]()
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/g3p06psz?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+Now we have a new best quantile, quantile 0.75 even though in `Life_median` quantile 0.5 is still the best one. Symmetrically quantile 0.25 is the second worst one after quantile 0.1.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     19.49
+quantile_0.25    18.85
+quantile_0.5     17.03
+quantile_0.75    16.26
+quantile_0.9     18.22
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     16.48
+quantile_0.25    15.46
+quantile_0.5     11.30
+quantile_0.75    11.90
+quantile_0.9     13.99
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     16.33
+quantile_0.25    15.66
+quantile_0.5     13.83
+quantile_0.75    12.78
+quantile_0.9     13.24
+##################################################
+```
+
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 29.15 | 27.32 | 26.44 | 25.07 | 23.94 |
+| Life_52 | 1.59 | 1.5 | 2.51 | 2.69 | 3.31 |
+| Life_53 | 1.75 | 2.4 | 3.95 | 5.12 | 5.55 |
+| Life_54 | 29.13 | 28.45 | 24.92 | 23.1 | 23.9 |
+| Life_55 | 54.37 | 53.27 | 48.88 | 46.75 | 47.15 |
+| Life_56 | 5.46 | 6.72 | 9.78 | 11.35 | 11.99 |
+| Life_57 | 15.21 | 13.85 | 14.24 | 11.9 | 6.89 |
+| Life_58 | 3.47 | 3.19 | 2.31 | 2.17 | 3.34 |
+| Life_59 | 36.74 | 35.17 | 30.87 | 27.31 | 28.23 |
+| Life_60 | 19.7 | 17.42 | 17.6 | 14.94 | 11.96 |
+| Life_61 | 4.62 | 5.22 | 4.44 | 5.92 | 8.33 |
+| Life_62 | 10.16 | 9.49 | 9.17 | 7.36 | 7.34 |
+| Life_63 | 9.37 | 8.49 | 8.22 | 6.31 | 3.62 |
+| Life_64 | 5.51 | 6.45 | 8.8 | 9.98 | 10.42 |
+| Life_65 | 39.78 | 38.04 | 28.35 | 22.81 | 30.02 |
+| Life_mean | 17.73 | 17.13 | 16.03 | 14.85 | 15.07 |
+| Life_median | 12.68 | 11.67 | 12.01 | 11.62 | 11.19 |
+| Life_std | 15.42 | 14.77 | 12.53 | 11.39 | 12.01 |
+
+###### Prediction Plots bis
+
+After looking a little bit at the plots it does not make a lot of sense to provide a detailed explanation/comment on them since the situation is similar to what I already described in the previous experiment. Probably it's better if I produce a plot with the quantiles 0.25,0.5 and 0.75 since they are better than 0.1 and 0.9 respectively → the difference however it's not enormous so the order in which the line will appear will be the same. So for example in `Life_51,Life_54,Life_55,Life_57,Life_60` if in the first set of plots we had quantile 0.5 and 0.9 as the closest ones to the true `RUL` if I produce the plot with quantile 0.25,0.5 and 0.75 the closest line to the true `RUL` will be the one of quantile 0.5 and quantile 0.75.
+
 ### `S5` Model Experiments 5️⃣ 🪟 🌗
 
 #### Dataset `FD001`
@@ -1653,7 +1710,65 @@ Interesting things from the plots of other runs:
 Continue the experiment adding `quantiles=[0.25,0.75]` as evaluation quantiles.
 
 >[!note]
-> [Link to the first `wandb` run]()
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/xjwfg67m?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+Also here now the best quantile is 0.75 and here it is also the best on `Life_median`. The `Life_std` metrics are higher than in `S4`.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     32.44
+quantile_0.25    30.78
+quantile_0.5     30.00
+quantile_0.75    29.01
+quantile_0.9     31.28
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     26.87
+quantile_0.25    29.05
+quantile_0.5     23.76
+quantile_0.75    21.84
+quantile_0.9     25.10
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     20.64
+quantile_0.25    19.88
+quantile_0.5     23.85
+quantile_0.75    21.14
+quantile_0.9     20.67
+##################################################
+```
+
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 39.3 | 33.98 | 30.4 | 21.84 | 18.13 |
+| Life_52 | 4.97 | 5.26 | 4.95 | 6.71 | 12.91 |
+| Life_53 | 8.44 | 9.94 | 12.69 | 17.81 | 17.96 |
+| Life_54 | 33.07 | 29.16 | 24.94 | 17.71 | 10.6 |
+| Life_55 | 58.71 | 53.45 | 56.17 | 48.49 | 41.36 |
+| Life_56 | 35.1 | 37.64 | 31.78 | 36.21 | 55.15 |
+| Life_57 | 30.0 | 25.83 | 15.98 | 10.57 | 12.72 |
+| Life_58 | 11.84 | 9.63 | 4.16 | 3.44 | 7.45 |
+| Life_59 | 43.18 | 40.36 | 48.37 | 42.15 | 36.46 |
+| Life_60 | 26.61 | 21.79 | 10.17 | 4.47 | 7.67 |
+| Life_61 | 12.76 | 13.89 | 13.19 | 17.6 | 19.88 |
+| Life_62 | 18.67 | 15.65 | 7.2 | 7.77 | 10.95 |
+| Life_63 | 8.57 | 8.52 | 7.44 | 12.35 | 12.91 |
+| Life_64 | 6.41 | 7.25 | 9.63 | 16.0 | 20.74 |
+| Life_65 | 76.97 | 74.92 | 81.05 | 75.63 | 75.64 |
+| Life_mean | 27.64 | 25.82 | 23.87 | 22.58 | 24.04 |
+| Life_median | 27.12 | 23.8 | 14.58 | 17.66 | 18.05 |
+| Life_std | 19.55 | 18.46 | 21.05 | 18.72 | 18.52 |
+
+###### Prediction Plots
+
+
+See [[ssm_experiments#Prediction Plots bis|here]]
+
 
 ### `S4D` Model Experiments 4 D 🪟 🌗
 
@@ -1726,4 +1841,59 @@ General comments based on the plot of `run_1`:
 Continue the experiment adding `quantiles=[0.25,0.75]` as evaluation quantiles.
 
 >[!note]
-> [Link to the first `wandb` run]()
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ldwnbeoc?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+The best quantile is 0.75 but strangely in `Life_median` the best one is quantile 0.25 → this is probably due to the high variability in the metrics we have in `S4D` which is the model with the highest values on the `Life_std` metric. 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     41.34
+quantile_0.25    40.19
+quantile_0.5     39.95
+quantile_0.75    38.53
+quantile_0.9     40.56
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     26.14
+quantile_0.25    24.04
+quantile_0.5     28.52
+quantile_0.75    26.29
+quantile_0.9     28.34
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.11
+quantile_0.25    37.28
+quantile_0.5     36.59
+quantile_0.75    34.72
+quantile_0.9     35.70
+##################################################
+```
+
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 59.33 | 57.0 | 50.58 | 46.32 | 46.72 |
+| Life_52 | 8.21 | 6.15 | 2.89 | 1.65 | 2.95 |
+| Life_53 | 1.38 | 2.02 | 4.34 | 7.61 | 9.11 |
+| Life_54 | 62.63 | 61.75 | 64.94 | 63.14 | 63.64 |
+| Life_55 | 102.6 | 101.24 | 103.09 | 100.13 | 98.27 |
+| Life_56 | 18.47 | 23.07 | 36.51 | 43.69 | 46.97 |
+| Life_57 | 24.95 | 22.17 | 13.2 | 8.59 | 12.06 |
+| Life_58 | 1.48 | 1.66 | 3.67 | 7.27 | 10.52 |
+| Life_59 | 88.23 | 87.31 | 89.91 | 87.81 | 90.69 |
+| Life_60 | 42.07 | 39.6 | 35.07 | 30.98 | 30.68 |
+| Life_61 | 3.59 | 5.24 | 6.69 | 9.86 | 11.61 |
+| Life_62 | 18.16 | 15.19 | 10.23 | 5.68 | 4.55 |
+| Life_63 | 19.61 | 17.35 | 12.51 | 8.92 | 9.9 |
+| Life_64 | 1.64 | 2.75 | 7.03 | 10.45 | 10.56 |
+| Life_65 | 118.37 | 117.3 | 116.8 | 112.65 | 118.71 |
+| Life_mean | 38.05 | 37.32 | 37.16 | 36.32 | 37.8 |
+| Life_median | 22.28 | 22.62 | 24.14 | 20.72 | 21.37 |
+| Life_std | 36.93 | 36.41 | 36.83 | 35.69 | 36.14 |
+
+###### Prediction Plots
+
+See [[ssm_experiments#Prediction Plots bis|here]]

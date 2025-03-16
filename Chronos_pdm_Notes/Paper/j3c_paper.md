@@ -127,3 +127,32 @@ The `RMSE` value inserted in the following tables is the mean `RMSE` over all th
 | `S4` | 31.51 | 30.79 |
 | `S4D` | 58.02 | 53.27 |
 | `S5` | 40.52 | 33.42 |
+
+## `FD001` Experiments `windowed` Approach + Quantle Regression 🪟 🌗
+
+This is the best approach up to now and it will be probably the one that will be presented and inserted in the paper, so that we have also the contribution of the quantile regression. In these experiments I also decided to use only the `LSTM` model among the `RNN` family since I am pretty sure that the `RNN` and `GRU` models will produce similar (if not equal) results.
+
+>[!note]
+> Here the results are obtained averaging the `RMSE` over different runs of the same model with different quantiles.
+
+| Model | quantile 0.25 | quantile 0.5 | quantile 0.75 |
+|-------|------| ---------| ---------|
+| `S4` | 18.85 | 17.03 | 16.26 |
+| `S5` | 30.78 | 30.00 | 29.01 |
+| `S4D` | 40.19 | 39.95 | 38.53 |
+| `LSTM` | 28.60 | 28.63 | 28.63 |
+| `Transformer` | 28.14 | 30.61 | 36.10 |
+| `Informer` | 29.94 | 25.86 | 27.16 |
+
+## `FD002` Experiments `windowed` Approach + Quantle Regression 🪟 🌗
+
+| Model | quantile 0.25 | quantile 0.5 | quantile 0.75 |
+|-------|------| ---------| ---------|
+| `S4` | ??.?? | ??.?? | ??.?? |
+| `S5` | ??.?? | ??.?? | ??.?? |
+| `S4D` | ??.?? | ??.?? | ??.?? |
+| `LSTM` | ??.?? | ??.?? | ??.?? |
+| `Transformer` | ??.?? | ??.?? | ??.?? |
+| `Informer` | ??.?? | ??.?? | ??.?? |
+
+

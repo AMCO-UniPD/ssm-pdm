@@ -672,11 +672,72 @@ Name: Life_std, dtype: float64
 
 ###### Prediction plots
 
-These plots are a bit different from the ones oobserved up to now, which is expected considering that we are using a completely different architecture.
+These plots are a bit different from the ones observed up to now, which is expected considering that we are using a completely different architecture.
 
-- In `Life_53,Life_58,Life_61,Life_64` we have quantile 0.1 underestimating (or almost overlapping) the real signal and the other quantiles overestimating it. 
+- In `Life_53,Life_58,Life_61,Life_64` we have quantile 0.1 underestimating (or almost overlapping) the real signal and the other quantiles overestimating it.
 - In `Life_62` the predictions do not form a straight line but rather a zig zagging line
 - There is not a life where the predictions are very good from all the quantiles, probably the life with the best metrics is `Life_52` followed by `Life_59`.
+
+##### Experiment 1 bis `Transformer` `FDOO1` `windowed` 🤖 2️⃣ 🌗
+
+Let's continue the experiment adding `quantiles=[0.25,0.75]` as done in the other models.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/2jb3hzrx?nw=nwuserfrizzodavide)
+
+###### Metrics table
+
+Following the results obtained in the first experiment now the best quantile is quantile 0.25 and the best one in terms of `Life_median` is quantile 0.1.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     29.95
+quantile_0.25    28.14
+quantile_0.5     30.61
+quantile_0.75    36.10
+quantile_0.9     37.66
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     21.48
+quantile_0.25    22.75
+quantile_0.5     28.09
+quantile_0.75    32.59
+quantile_0.9     33.72
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     25.33
+quantile_0.25    24.52
+quantile_0.5     20.15
+quantile_0.75    22.59
+quantile_0.9     21.94
+##################################################
+```
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 26.55 | 26.6 | 27.0 | 26.77 | 26.25 |
+| Life_52 | 8.01 | 8.38 | 15.92 | 10.6 | 20.91 |
+| Life_53 | 4.97 | 3.54 | 39.95 | 40.99 | 41.56 |
+| Life_54 | 14.96 | 14.96 | 12.25 | 5.2 | 10.11 |
+| Life_55 | 25.73 | 25.73 | 24.2 | 18.62 | 17.88 |
+| Life_56 | 20.42 | 23.55 | 30.87 | 80.33 | 80.88 |
+| Life_57 | 69.45 | 46.82 | 42.76 | 31.91 | 31.44 |
+| Life_58 | 27.41 | 15.9 | 19.72 | 21.17 | 21.53 |
+| Life_59 | 8.44 | 8.44 | 8.06 | 23.43 | 24.26 |
+| Life_60 | 37.88 | 33.93 | 16.02 | 15.81 | 15.31 |
+| Life_61 | 1.01 | 2.48 | 29.11 | 50.65 | 51.87 |
+| Life_62 | 34.39 | 35.12 | 30.58 | 27.23 | 26.82 |
+| Life_63 | 42.94 | 30.33 | 19.5 | 4.28 | 4.81 |
+| Life_64 | 16.76 | 12.31 | 7.8 | 34.84 | 35.52 |
+| Life_65 | 14.56 | 14.56 | 10.15 | 14.78 | 33.72 |
+| Life_mean | 23.57 | 20.18 | 22.26 | 27.11 | 29.52 |
+| Life_median | 22.0 | 18.04 | 20.99 | 25.1 | 26.54 |
+| Life_std | 16.53 | 12.04 | 10.31 | 18.27 | 17.42 |
+
+###### Prediction plots
+
+See [[ssm_experiments#Prediction Plots bis|here]]
 
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
@@ -717,24 +778,102 @@ Name: Life_std, dtype: float64
 ```
 
 
-|  | quantile_0.1 | quantile_0.5 | quantile_0.9 |
-| --- | --- | --- | --- |
-| Life_51 | 63.46 | 56.27 | 48.48 |
-| Life_52 | 10.39 | 16.99 | 21.51 |
-| Life_53 | 8.16 | 12.91 | 17.79 |
-| Life_54 | 25.43 | 28.42 | 18.71 |
-| Life_55 | 51.88 | 58.01 | 39.96 |
-| Life_56 | 38.05 | 36.55 | 51.32 |
-| Life_57 | 66.52 | 58.72 | 51.64 |
-| Life_58 | 7.77 | 15.86 | 13.15 |
-| Life_59 | 26.38 | 17.83 | 24.11 |
-| Life_60 | 55.15 | 51.05 | 42.67 |
-| Life_61 | 9.2 | 12.91 | 23.35 |
-| Life_62 | 29.5 | 27.93 | 28.47 |
-| Life_63 | 31.51 | 26.29 | 24.42 |
-| Life_64 | 7.07 | 7.7 | 20.7 |
-| Life_65 | 21.07 | 15.34 | 27.12 |
-| Life_mean | 30.1 | 29.52 | 30.23 |
-| Life_median | 27.94 | 27.11 | 25.77 |
-| Life_std | 19.47 | 17.0 | 12.2 |
+| Life        | quantile_0.1 | quantile_0.5 | quantile_0.9 |
+| ----------- | ------------ | ------------ | ------------ |
+| Life_51     | 63.46        | 56.27        | 48.48        |
+| Life_52     | 10.39        | 16.99        | 21.51        |
+| Life_53     | 8.16         | 12.91        | 17.79        |
+| Life_54     | 25.43        | 28.42        | 18.71        |
+| Life_55     | 51.88        | 58.01        | 39.96        |
+| Life_56     | 38.05        | 36.55        | 51.32        |
+| Life_57     | 66.52        | 58.72        | 51.64        |
+| Life_58     | 7.77         | 15.86        | 13.15        |
+| Life_59     | 26.38        | 17.83        | 24.11        |
+| Life_60     | 55.15        | 51.05        | 42.67        |
+| Life_61     | 9.2          | 12.91        | 23.35        |
+| Life_62     | 29.5         | 27.93        | 28.47        |
+| Life_63     | 31.51        | 26.29        | 24.42        |
+| Life_64     | 7.07         | 7.7          | 20.7         |
+| Life_65     | 21.07        | 15.34        | 27.12        |
+| Life_mean   | 30.1         | 29.52        | 30.23        |
+| Life_median | 27.94        | 27.11        | 25.77        |
+| Life_std    | 19.47        | 17.0         | 12.2         |
 
+###### Prediction plots
+
+Let's start with some general comments on the plots from `run_1` and then we will see if there is also something to note on the other runs.
+
+- In `Life_51,Life_54,Life_55,Life_57,Life_60` similarly  to `S4,S5` we have predictions a bit far from the true `RUL` signal with quantile 0.9 being the closest.
+- In `Life_53,Life_61,Life_64` differently from `Tranformer` we have a situation similar to `Life_51,Life_54,Life_55,Life_57,Life_60` but with quantile 0.1 being the closest one to the true `RUL` values. 
+- In `Life_58` instead it's quantile 0.5 to be almost overlapped to the true `RUL`, however the other two are not too far behind.  Another interesting thing to not in this life is that quantile 0.5 has a peculiar little zig zag shape at its very beginning and end. In `run_2` the shape of the `RUL` predicted signal is even weirder for quantile 0.9. 
+- As in `Transformer`, `Life_62` has a not perfectly smooth line prediction also here. 
+- We do not have lifes with all signals overlapped to the true values, probably the lifes with the best predictions are `Life_58,Life_64`.
+
+Things to note in other runs:
+
+- In `run_2` `Life_65` (which is known to contain overestimation errors normally) has all overestimation errors except for quantile 0.5
+- In `run_5` quantile 0.9 predictions are a bit noisy.
+
+##### Experiment 1 bis `Informer` `FDOO1` `windowed` 🧙‍♂️ 2️⃣ 🌗
+
+Let's continue the experiment adding `quantiles=[0.25,0.75]` as done in the other models.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/3etxg34y?nw=nwuserfrizzodavide)
+
+###### Metrics table
+
+In the `Informer` the best quantile remains 0.5 which is also significantly better than the others in the `Life_median` metric. 
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     28.91
+quantile_0.25    29.94
+quantile_0.5     25.86
+quantile_0.75    27.16
+quantile_0.9     31.99
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     25.52
+quantile_0.25    25.73
+quantile_0.5     19.08
+quantile_0.75    20.94
+quantile_0.9     29.16
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     18.71
+quantile_0.25    18.30
+quantile_0.5     18.03
+quantile_0.75    16.54
+quantile_0.9     16.87
+##################################################
+```
+
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 63.46 | 62.9 | 56.27 | 54.01 | 48.48 |
+| Life_52 | 10.39 | 11.89 | 16.99 | 17.49 | 21.51 |
+| Life_53 | 8.16 | 10.98 | 12.91 | 15.78 | 17.79 |
+| Life_54 | 25.43 | 23.23 | 28.42 | 25.29 | 18.71 |
+| Life_55 | 51.88 | 50.93 | 58.01 | 46.34 | 39.96 |
+| Life_56 | 38.05 | 45.03 | 36.55 | 38.82 | 51.32 |
+| Life_57 | 66.52 | 65.9 | 58.72 | 54.77 | 51.64 |
+| Life_58 | 7.77 | 10.02 | 15.86 | 14.03 | 13.15 |
+| Life_59 | 26.38 | 25.73 | 17.83 | 17.34 | 24.11 |
+| Life_60 | 55.15 | 54.41 | 51.05 | 38.94 | 42.67 |
+| Life_61 | 9.2 | 11.26 | 12.91 | 17.48 | 23.35 |
+| Life_62 | 29.5 | 28.62 | 27.93 | 27.93 | 28.47 |
+| Life_63 | 31.51 | 30.43 | 26.29 | 24.08 | 24.42 |
+| Life_64 | 7.07 | 10.35 | 7.7 | 5.47 | 20.7 |
+| Life_65 | 21.07 | 20.83 | 15.34 | 20.57 | 27.12 |
+| Life_mean | 30.1 | 30.83 | 29.52 | 27.89 | 30.23 |
+| Life_median | 27.94 | 27.18 | 27.11 | 24.68 | 25.77 |
+| Life_std | 19.47 | 18.72 | 17.0 | 14.23 | 12.2 |
+
+###### Prediction plots
+
+See [[ssm_experiments#Prediction Plots bis|here]]

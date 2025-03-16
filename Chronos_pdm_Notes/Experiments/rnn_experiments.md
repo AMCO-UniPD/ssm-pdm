@@ -644,6 +644,10 @@ Considering the fact that the results of the experiments performed on the `RNN` 
 
 ### `LSTM` Model Experiments 🪟 🌗
 
+#### Dataset `FD001`
+
+##### Experiment 1 `LSTM` `FDOO1` `windowed` `Quantile Regression` 🪟 1️⃣ 🌗
+
 Let's use the same configuration used in the `SSM` experiments and let's start directly with the multi run experiments.
 
 | Parameter | Value |
@@ -723,3 +727,66 @@ quantile_0.9    22.94
 ###### Prediction plots
 
 As expected from the plots it is easy to see how the model always predictions the `RUL` in the same range of values. It also seems that the results are very similar (if not equal) across all the different runs, so there is not much to say about the plots.
+
+##### Experiment 1 bis `LSTM` `FDOO1` `windowed` `Quantile Regression` 🧠 2️⃣ 🌗
+
+Let's continue the experiment adding the `quantiles=[0.25,0.75]` as done with the other models.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/nzwelbi0?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+As usual here the metrics are quite similar across the different quantiles. The best quantile is 0.25 but the difference with 0.5 and 0.75 is minimal.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     28.60
+quantile_0.25    28.60
+quantile_0.5     28.63
+quantile_0.75    28.63
+quantile_0.9     28.60
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     23.46
+quantile_0.25    23.46
+quantile_0.5     23.08
+quantile_0.75    23.08
+quantile_0.9     23.50
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     22.95
+quantile_0.25    22.95
+quantile_0.5     23.05
+quantile_0.75    23.05
+quantile_0.9     22.94
+##################################################
+```
+
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 58.9 | 58.9 | 59.3 | 59.3 | 58.89 |
+| Life_52 | 9.86 | 9.86 | 10.24 | 10.24 | 9.85 |
+| Life_53 | 9.19 | 9.19 | 8.79 | 8.79 | 9.2 |
+| Life_54 | 19.0 | 19.0 | 19.41 | 19.41 | 18.98 |
+| Life_55 | 51.04 | 51.04 | 51.44 | 51.44 | 51.01 |
+| Life_56 | 48.08 | 48.08 | 47.67 | 47.67 | 48.09 |
+| Life_57 | 63.85 | 63.85 | 64.25 | 64.25 | 63.84 |
+| Life_58 | 10.88 | 10.88 | 11.28 | 11.28 | 10.87 |
+| Life_59 | 9.18 | 9.18 | 9.57 | 9.57 | 9.14 |
+| Life_60 | 47.89 | 47.89 | 48.3 | 48.3 | 47.88 |
+| Life_61 | 19.16 | 19.16 | 18.76 | 18.76 | 19.17 |
+| Life_62 | 57.62 | 57.62 | 58.0 | 58.0 | 57.61 |
+| Life_63 | 27.87 | 27.87 | 28.27 | 28.27 | 27.86 |
+| Life_64 | 3.24 | 3.24 | 2.84 | 2.84 | 3.24 |
+| Life_65 | 0.71 | 0.71 | 0.98 | 0.98 | 0.75 |
+| Life_mean | 29.1 | 29.1 | 29.27 | 29.27 | 29.09 |
+| Life_median | 23.52 | 23.52 | 23.84 | 23.84 | 23.52 |
+| Life_std | 21.37 | 21.37 | 21.46 | 21.46 | 21.36 |
+
+###### Prediction plots
+
+See [[ssm_experiments#Prediction Plots bis|here]]
