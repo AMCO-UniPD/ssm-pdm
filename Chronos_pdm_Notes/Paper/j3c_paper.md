@@ -128,7 +128,7 @@ The `RMSE` value inserted in the following tables is the mean `RMSE` over all th
 | `S4D` | 58.02 | 53.27 |
 | `S5` | 40.52 | 33.42 |
 
-## `FD001` Experiments `windowed` Approach + Quantle Regression 🪟 🌗
+## `FD001` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
 This is the best approach up to now and it will be probably the one that will be presented and inserted in the paper, so that we have also the contribution of the quantile regression. In these experiments I also decided to use only the `LSTM` model among the `RNN` family since I am pretty sure that the `RNN` and `GRU` models will produce similar (if not equal) results.
 
@@ -144,7 +144,7 @@ This is the best approach up to now and it will be probably the one that will be
 | `Transformer` | 28.14 | 30.61 | 36.10 |
 | `Informer` | 29.94 | 25.86 | 27.16 |
 
-## `FD002` Experiments `windowed` Approach + Quantle Regression 🪟 🌗
+## `FD002` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
 | Model | quantile 0.25 | quantile 0.5 | quantile 0.75 |
 |-------|------| ---------| ---------|
