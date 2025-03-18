@@ -102,29 +102,36 @@ if exp_config.test_script:
 
         if exp_config.quantile_reg:
 
-            for quantile in exp_config.quantiles:
+            for run in range(exp_config.n_runs):
 
                 print("#"*50)
-                print(f"Saving outputs for quantile level: {quantile}")
+                print(f"Saving outputs for run: {run+1}")
                 print("#"*50)
 
-                quantile_reg_folders = [
-                    "quantile_reg",
-                    args.exp_name,
-                    f"quantile_{quantile}"
-                ]
-                quantile_outputs_path = generate_path(basepath=outputs_path,
-                                                folders=quantile_reg_folders)
-                quantile_best_model_path = generate_path(basepath=best_model_path,
-                                                folders=quantile_reg_folders)
+                for quantile in exp_config.quantiles:
 
-                best_model_perf(
-                    config=exp_config,
-                    model_config=model_config,
-                    device=device,
-                    best_model_path=quantile_best_model_path,
-                    outputs_path=quantile_outputs_path,
-                    tau=quantile)
+                    print("#"*50)
+                    print(f"Saving outputs for quantile level: {quantile}")
+                    print("#"*50)
+
+                    quantile_reg_folders = [
+                        "quantile_reg",
+                        exp_config.exp_name,
+                        f"run_{run+1}",
+                        f"quantile_{quantile}"
+                    ]
+                    quantile_outputs_path = generate_path(basepath=outputs_path,
+                                                    folders=quantile_reg_folders)
+                    quantile_best_model_path = generate_path(basepath=best_model_path,
+                                                    folders=quantile_reg_folders)
+
+                    best_model_perf(
+                        config=exp_config,
+                        model_config=model_config,
+                        device=device,
+                        best_model_path=quantile_best_model_path,
+                        outputs_path=quantile_outputs_path,
+                        tau=quantile)
 
         else:
 

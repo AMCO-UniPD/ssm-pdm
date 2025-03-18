@@ -2,7 +2,7 @@
 model_config_path: config/ssm_config.yaml
 
 # cuda config
-device_num: 0
+device_num: 1
 
 # wandb config
 project_name: "chronos-rul"
@@ -10,22 +10,22 @@ project_name: "chronos-rul"
 # Dataset configurations
 data_name: CMAPSS # CMAPSS, CMPASS-2
 # For FD001 dataset
-val_idx:
-  - 0
-  - 50
-test_idx:
-  - 50
-  - 100
-# For FD002 dataset
 # val_idx:
 #   - 0
-#   - 131
+#   - 50
 # test_idx:
-#   - 131
-#   - 259
+#   - 50
+#   - 100
+# For FD002 dataset
+val_idx:
+  - 0
+  - 131
+test_idx:
+  - 131
+  - 259
 val_size: 0.3
-cmapss_models: FD001
-# cmapss_models: FD002
+# cmapss_models: FD001
+cmapss_models: FD002
 
 # Feature extraction configurations
 transformer_type: 1 # 1,2
@@ -50,11 +50,11 @@ weight_decay: 1.0e-4
 # model_name: RNN
 # model_name: LSTM
 # model_name: GRU
-model_name: S4
+# model_name: S4
 # model_name: S5
 # model_name: S4D
 # model_name: RULTransformer
-# model_name: RULInformer
+model_name: RULInformer
 output_attention: false
 model_summary: false
 model_summary_manual: false
@@ -79,19 +79,25 @@ quantile_dist: uniform
 bounds: [0.1, 0.9]
 # quantiles: [0.1,0.5,0.9]
 # quantiles: [0.25,0.75]
-# quantiles: [0.1,0.25,0.5,0.75,0.9]
-quantiles: [0.1,0.25,0.75]
+# quantiles: [0.25,0.5,0.75]
+quantiles: [0.1,0.25,0.5,0.75,0.9]
 # quantiles: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+# quantiles: [0.1]
 n_runs: 5
-set_exp_name: true
+set_exp_name: false
 
-# Useful experiment names
-exp_name: multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
+# Experiment names - FD001 dataset
+# exp_name: multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
 # exp_name: multi_run_14-03-2025_09-43-44_S5_FD001_windowed_quantile_reg
 # exp_name: multi_run_14-03-2025_10-56-41_S4D_FD001_windowed_quantile_reg
 # exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
 # exp_name: multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
 # exp_name: multi_run_14-03-2025_16-37-39_RULInformer_FD001_windowed_quantile_reg
+
+# Experiment names - FD002 dataset
+# exp_name: multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
+# exp_name: multi_run_18-03-2025_10-58-34_S5_FD002_windowed_quantile_reg
+# exp_name: multi_run_18-03-2025_15-32-30_S4D_FD002_windowed_quantile_reg
 
 # test_script config
 # test_script: true
@@ -101,8 +107,8 @@ save_outputs: true
 compute_metrics: false
 save_metrics_df: false
 save_mean_metrics_df: true
-sub_lifes_metrics: true
-obsidian_table: true
+sub_lifes_metrics: false
+obsidian_table: false
 plot_preds: false
 
 # metrics_df experiment config
