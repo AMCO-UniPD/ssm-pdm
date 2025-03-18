@@ -139,10 +139,9 @@ class Recurrent_PDM(nn.Module):
 
         self.fc = nn.Linear(config.d_model, output_size)
     
-    def forward(self, x, tau=None):
+    def forward(self, x, tau=0.5):
         
         if self.quantile_reg:
-            assert tau is not None, "tau must be provided for quantile regression"
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
@@ -200,10 +199,9 @@ class S4Model(nn.Module):
 
         self.decoder = nn.Linear(d_model, d_output)
 
-    def forward(self, x, tau=None):
+    def forward(self, x, tau=0.5):
 
         if self.quantile_reg:
-            assert tau is not None, "tau must be provided for quantile regression"
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
@@ -285,10 +283,9 @@ class S4DModel(nn.Module):
 
         self.decoder = nn.Linear(d_model, d_output)
 
-    def forward(self, x, tau=None):
+    def forward(self, x, tau=0.5):
 
         if self.quantile_reg:
-            assert tau is not None, "tau must be provided for quantile regression"
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
@@ -352,10 +349,9 @@ class S5Model(nn.Module):
 
         self.decoder = nn.Linear(d_model, d_output)
 
-    def forward(self, x, tau=None):
+    def forward(self, x, tau=0.5):
 
         if self.quantile_reg:
-            assert tau is not None, "tau must be provided for quantile regression"
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
@@ -414,13 +410,12 @@ class RULTransformer(nn.Module):
             out_features=output_size
         )
         
-    def forward(self, x, mask=None, tau=None):
+    def forward(self, x, mask=None, tau=0.5):
 
         if mask is None:
             mask = torch.zeros(x.size(0),x.size(1)).to(x.device)
 
         if self.quantile_reg:
-            assert tau is not None, "tau must be provided for quantile regression"
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
@@ -489,10 +484,9 @@ class RULInformer(nn.Module):
 
         self.projection = nn.Linear(config.d_model, d_output)
 
-    def forward(self, x_enc, output_attention=False, enc_self_mask=None, tau=None):
+    def forward(self, x_enc, output_attention=False, enc_self_mask=None, tau=0.5):
 
         if self.quantile_reg:
-            assert tau is not None, "tau must be provided for quantile regression"
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
@@ -608,12 +602,17 @@ def load_ssm_model(
 
         # Obtain the model summary with torchsummary
         try:
-            model_summary=summary(model, input_size=(1, exp_config.sequence_length, d_input))
+            model_summary=summary(
+                model = model,
+                input_size = (1, exp_config.sequence_length, d_input) if not exp_config.quantile_reg else (1, exp_config.sequence_length, d_input-1),
+                device = model_config.device
+            )
 
             print('#'*50)
             print(f"Total params: {model_summary.total_params}")
             print(f"Total mult adds: {model_summary.total_mult_adds}")
             print('#'*50)
+
         except Exception as e:
             print('#'*50)
             print("torchinfo summary not working, let's use the manual computation")
