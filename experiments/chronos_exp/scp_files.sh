@@ -2,17 +2,20 @@
 
 MODELS=('S4')
 FOLDER=('plots')
-DATASET='FD001'
+DATASET='FD002'
 APPROACH='windowed'
 N_RUNS=5
 
-# Useful experiment names
-exp_name=multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
+# Experiment names FD001 dataset
+# exp_name=multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
 # exp_name=multi_run_14-03-2025_09-43-44_S5_FD001_windowed_quantile_reg
 # exp_name=multi_run_14-03-2025_10-56-41_S4D_FD001_windowed_quantile_reg
 # exp_name=multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
 # exp_name=multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
 # exp_name=multi_run_14-03-2025_16-37-39_RULInformer_FD001_windowed_quantile_reg
+
+# Experiment names FD002 dataset
+exp_name=multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
 
 # Store the initial part of the path in acquario3
 INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
@@ -20,12 +23,12 @@ INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
 acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$exp_name/"
 
 # cd into local path in my local machine
-cd ../../../ssm_pdm_paper/Img/rul_plots/$MODELS/
+cd ../../../ssm_pdm_paper/Img/rul_plots/$MODELS/$DATASET
 
 # Name to give to the RUL plots files when copied locally
 
 rul_plots_name="${MODELS}_${DATASET}_quantile_reg_run_"
-quantiles_names="quantiles_0_1_0_25_0_75"
+quantiles_names="quantiles_0_25_0_5_0_75"
 
 # Iterate over the runs
 for i in $(seq 1 $N_RUNS); do
