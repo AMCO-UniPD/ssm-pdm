@@ -739,6 +739,15 @@ quantile_0.9     21.94
 
 See [[ssm_experiments#Prediction Plots bis|here]]
 
+#### Dataset `FD002`
+
+##### Experiment 1 `Transformer` `FDOO2` `windowed` 🤖 1️⃣ 🌗
+
+Let's use the configuration used in the `SSM` and `RNN` experiments and multi run experiments.
+
+>[!note]
+> [Link to the first `wandb` run]()
+
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
 #### Dataset `FD001`
@@ -877,3 +886,14 @@ quantile_0.9     16.87
 ###### Prediction plots
 
 See [[ssm_experiments#Prediction Plots bis|here]]
+
+#### Dataset `FD002`
+
+##### Experiment 1 `Informer` `FDOO2` `windowed` 🧙‍♂️ 1️⃣ 🌗
+
+Let's use the same configuration of `Transformer`.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gyt1q3th?nw=nwuserfrizzodavide)
+
+

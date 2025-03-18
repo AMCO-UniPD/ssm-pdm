@@ -790,3 +790,12 @@ quantile_0.9     22.94
 ###### Prediction plots
 
 See [[ssm_experiments#Prediction Plots bis|here]]
+
+#### Dataset `FD002`
+
+##### Experiment 1 `LSTM` `FDOO2` `windowed` `Quantile Regression` 🪟 1️⃣ 🌗
+
+Let's use the same configuration used in the `SSM` experiments.
+
+>[!note]
+> [Link to the first `wandb` run]()

@@ -128,9 +128,33 @@ The `RMSE` value inserted in the following tables is the mean `RMSE` over all th
 | `S4D` | 58.02 | 53.27 |
 | `S5` | 40.52 | 33.42 |
 
-## `FD001` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
+## Quantile Regression Experiments 🌗
 
 This is the best approach up to now and it will be probably the one that will be presented and inserted in the paper, so that we have also the contribution of the quantile regression. In these experiments I also decided to use only the `LSTM` model among the `RNN` family since I am pretty sure that the `RNN` and `GRU` models will produce similar (if not equal) results.
+
+### Model Parameters
+
+Here I report a table (to be inserted in the paper) containing the model parameters for each model:
+
+| Model | Parameters | Mult-Adds |
+|-------|------------|-----------|
+| `S4` | 355498 | 190378 |
+| `S5` | 57808 | ??? |
+| `S4D` | 273578 | 28094378 |
+| `LSTM` | 624554 | 102468010 |
+| `Transformer` | 621610 | 519210 |
+| `Informer` | 724138 | 62937770 |
+
+>[!note]
+> For `S5` at the moment we have only the number of parameters because for some reason due to the implementation of the `S5` model (which is implemented in the `s5-pytorch` library) the `summary` method from `torchinfo` does not work.
+
+A quick comment that we can insert in the paper is the following:
+
+>[!todo] To insert in the paper
+> The `SSM` models are the simpler ones with less parameters and the lowest number of Mult Adds, this is probably due to their linear nature, moreover the number of Multiplication and addition is reduced with the respect to the other models because of the parallel computations that are performed during training thanks to the possibility of using the convolutional mode/view of the `SSM`. In particular the model with the lowest number of parameters (and thus also the lowest number of Mult Add operation) is `S5` that simplifies the architecture of both `S4` and `S4D` thanks to the parallelization of the multiple `SSM` block into a single matrix block.
+> On the other hand `LSTM,Transformer` and `Informer` are the heaviest model, in particular `LSTM,Informer` are characterized by a number of Mult Adds operations in the order of $10^{8}$.
+
+### `FD001` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
 >[!note]
 > Here the results are obtained averaging the `RMSE` over different runs of the same model with different quantiles.
@@ -144,12 +168,12 @@ This is the best approach up to now and it will be probably the one that will be
 | `Transformer` | 28.14 | 30.61 | 36.10 |
 | `Informer` | 29.94 | 25.86 | 27.16 |
 
-## `FD002` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
+### `FD002` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
 | Model | quantile 0.25 | quantile 0.5 | quantile 0.75 |
 |-------|------| ---------| ---------|
-| `S4` | ??.?? | ??.?? | ??.?? |
-| `S5` | ??.?? | ??.?? | ??.?? |
+| `S4` | 34.56 | 35.34 | 32.77 |
+| `S5` | 53.86 | 45.85 | 41.62 |
 | `S4D` | ??.?? | ??.?? | ??.?? |
 | `LSTM` | ??.?? | ??.?? | ??.?? |
 | `Transformer` | ??.?? | ??.?? | ??.?? |
