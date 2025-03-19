@@ -746,7 +746,9 @@ See [[ssm_experiments#Prediction Plots bis|here]]
 Let's use the configuration used in the `SSM` and `RNN` experiments and multi run experiments.
 
 >[!note]
-> [Link to the first `wandb` run]()
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/3r8nwzrx?nw=nwuserfrizzodavide)
+
+
 
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
@@ -896,4 +898,58 @@ Let's use the same configuration of `Transformer`.
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gyt1q3th?nw=nwuserfrizzodavide)
 
+After almost 20 hours 😱 (19h and 54 min according to the terminal) all the `RULInformer` experiments finished.
 
+###### Metrics table
+
+The metric values are similar across the different quantiles. The best one in terms of `Life_mean` is quantile 0.1 and 0.75 in terms of `Life_median`. Interestingly comparing the `RMSE` values with the ones produced by the other models they are pretty close to the ones of `S4` and this model is better than `S5,S4D`, its drawback its obviously the training time and parameter sizxe which are much higher than the ones of the two `SSM` models.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     34.83
+quantile_0.25    34.95
+quantile_0.5     35.08
+quantile_0.75    34.96
+quantile_0.9     36.23
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     30.56
+quantile_0.25    31.17
+quantile_0.5     31.08
+quantile_0.75    30.67
+quantile_0.9     31.54
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     22.76
+quantile_0.25    22.40
+quantile_0.5     23.90
+quantile_0.75    24.10
+quantile_0.9     25.04
+##################################################
+```
+
+|  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_132 | 43.52 | 44.52 | 40.09 | 39.68 | 31.54 |
+| Life_133 | 13.1 | 13.39 | 15.01 | 14.89 | 19.73 |
+| Life_134 | 17.23 | 18.4 | 14.27 | 14.35 | 11.54 |
+| Life_135 | 82.51 | 81.8 | 85.85 | 85.93 | 94.72 |
+| Life_136 | 41.01 | 36.23 | 37.15 | 36.84 | 27.55 |
+| Life_137 | 82.65 | 81.37 | 85.65 | 85.74 | 88.92 |
+| Life_138 | 13.12 | 14.33 | 10.37 | 10.39 | 11.69 |
+| Life_139 | 37.58 | 38.21 | 34.09 | 32.68 | 25.46 |
+| Life_140 | 96.03 | 95.25 | 99.13 | 99.9 | 102.82 |
+| Life_141 | 19.1 | 24.26 | 22.85 | 24.36 | 32.75 |
+| Life_142 | 8.99 | 9.43 | 8.9 | 8.75 | 16.91 |
+| Life_143 | 75.72 | 74.69 | 78.72 | 79.22 | 82.0 |
+| Life_144 | 18.34 | 19.18 | 15.09 | 13.21 | 12.23 |
+| Life_145 | 35.79 | 34.82 | 38.91 | 39.65 | 42.87 |
+| Life_146 | 50.31 | 51.47 | 47.15 | 47.26 | 39.05 |
+| Life_mean | 42.33 | 42.49 | 42.22 | 42.19 | 42.65 |
+| Life_median | 39.3 | 37.22 | 38.03 | 38.25 | 32.14 |
+| Life_std | 27.32 | 26.57 | 28.79 | 29.04 | 30.54 |
+
+###### Prediction plots
+
+See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_135,Life_141`.
