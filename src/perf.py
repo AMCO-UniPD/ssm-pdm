@@ -56,7 +56,9 @@ def lifes_metrics(
         file_path=outputs_path,
         filetype="pickle"
     )
+    print('#'* 50)
     print(f"Opened outputs_dict at path: {outputs_path}")
+    print('#'* 50)
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
 
     _,eval_criterion=load_loss_functions(
@@ -109,14 +111,14 @@ def lifes_metrics(
         save_element(
             element=metrics_df,
             dirpath=metrics_path,
-            filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}.pickle"
+            filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}.pickle"
         )
 
     pd.options.display.float_format = None
 
     return metrics_df
 
-# Function to select a subset of the rows and a subset of the columns 
+# Function to select a subset of the rows and a subset of the columns
 # of a metrics_df
 
 def sub_lifes_metrics(

@@ -36,15 +36,16 @@ config=load_yaml_to_dict(config_path)
 config=ExperimentConfig(config)
 
 # Get the outputs directory of the most recent experiment
-outputs_path = generate_path(basepath=experiment_path,
+outputs_dict_path = generate_path(basepath=experiment_path,
                                 folders=[
                                     "outputs",
                                     config.model_name,
                                     config.cmapss_models,
                                     config.approach,
                                     "quantile_reg",
+                                    config.exp_name
                                 ])
-outputs_dict_path = get_most_recent_dir(outputs_path,file_pos=config.file_pos)
+# outputs_dict_path = get_most_recent_dir(outputs_path,file_pos=config.file_pos)
 
 metrics_dfs = []
 
