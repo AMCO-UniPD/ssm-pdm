@@ -168,6 +168,14 @@ A quick comment that we can insert in the paper is the following:
 | `Transformer` | 28.14 | 30.61 | 36.10 |
 | `Informer` | 29.94 | 25.86 | 27.16 |
 
+An important conclusion/comment after having done the Experiments 3 and 4 on `S4` with different `bounds` in Quantile Regression → we can say that these are ablation study experiments.
+
+
+>[!todo] To insert in the paper
+> Experiments with different sampling intervals for the training quantiles some conclusions can be taken. In terms of the `RMSE` metric it is preferrable to overestimate the damage because in the test lifes in which the model commits the more significant errors these are underestimation errors. As a consequence having a model that tends to overestimate the `RUL` somehow balances these underestimation errors improving the test metrics. On the other hand if a life where the model provides good or overestimated predictions is considered the model will cause an augmented test error metric. Moreover since this will most likely be an overestimation error there is the issue of a potential unexpected break in a real world application.
+> Probably the reason why the metrics improve on quantiles higher than 0.5 is that the underestimation errors are higher in magnitude than the overestimation ones and so then this produces smaller errors in the test metrics in `Life_mean` and `Life_median`.
+> For the reasons explained above probably the `RMSE` metric is not the ideal evaluation metric to use for the evaluation of a `RUL` prediction model. In practical scenarios the evaluation of thes models is performed through business metrics (**cite paper by Luciano,DDP,Gian**) where specific costs are assigned by domain experts to underestimation and overestimation errors. In lack of the possibility of having a direct confrontation with domain experts on the `CMAPSS` dataset the Pinball Loss was employed in order to assign different weights to the underestimation and overestimation errors. Considering the higher economical cost of overestimation errors (i.e. being too optimistic in the `RUL` prediction may result in unexpected breaks of the equipment) the `tau` parameter of the Pinball Loss was set to 0.3. In this way the model is penalized more for underestimation errors than for overestimation errors while still keeping a non negliglible weight for underestimation so that there is still some penalty for extreme overestimation errors which may lead to unexploited lifetime and will result in a maintenance strategy that may result to be closer to Preventive Maintenance than to Predictive Maintenance.
+
 ### `FD002` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
 | Model | quantile 0.25 | quantile 0.5 | quantile 0.75 |
@@ -175,8 +183,8 @@ A quick comment that we can insert in the paper is the following:
 | `S4` | 34.56 | 35.34 | 32.77 |
 | `S5` | 53.86 | 45.85 | 41.62 |
 | `S4D` | 50.42 | 49.27 | 42.36 |
-| `LSTM` | 34.95 | 35.08 | 34.96 |
-| `Transformer` | ??.?? | ??.?? | ??.?? |
-| `Informer` | ??.?? | ??.?? | ??.?? |
+| `LSTM` | 35.47 | 35.18 | 35.13 |
+| `Transformer` | 35.08 | 35.08 | 35.09 |
+| `Informer` | 34.95 | 35.08 | 34.96 |
 
 

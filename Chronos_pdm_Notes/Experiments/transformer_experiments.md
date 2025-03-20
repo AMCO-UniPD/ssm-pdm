@@ -748,7 +748,62 @@ Let's use the configuration used in the `SSM` and `RNN` experiments and multi ru
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/3r8nwzrx?nw=nwuserfrizzodavide)
 
+This was faster than the `Informer`, it took about 4 hours and 20 minutes to complete all the 25 experiments.
 
+###### Metrics Table
+
+Not much difference between the different quantiles. The best ones in terms of `Life_mean` are quantile 0.25 and 0.5, while the best one in terms of `Life_median` is quantile 0.1. In terms of the `RMSE` values they are close to the `Informer` ones, so similar to `S4` (and better than `S5,S4D`) but, as for the `Informer`, this model is way less efficient than the `SSM` models.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     35.09
+quantile_0.25    35.08
+quantile_0.5     35.08
+quantile_0.75    35.09
+quantile_0.9     36.55
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     30.83
+quantile_0.25    31.25
+quantile_0.5     31.10
+quantile_0.75    30.89
+quantile_0.9     31.19
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     23.98
+quantile_0.25    23.86
+quantile_0.5     23.90
+quantile_0.75    23.97
+quantile_0.9     24.92
+##################################################
+```
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_132 | 39.82 | 40.26 | 40.1 | 39.88 | 40.17 |
+| Life_133 | 15.28 | 14.85 | 15.01 | 15.24 | 14.93 |
+| Life_134 | 14.01 | 14.44 | 14.28 | 14.05 | 14.35 |
+| Life_135 | 86.18 | 85.74 | 85.89 | 86.12 | 85.83 |
+| Life_136 | 36.82 | 37.25 | 37.1 | 36.87 | 37.16 |
+| Life_137 | 85.92 | 85.49 | 85.65 | 85.88 | 85.58 |
+| Life_138 | 10.13 | 10.53 | 10.37 | 10.17 | 10.44 |
+| Life_139 | 33.82 | 34.26 | 34.1 | 33.87 | 34.17 |
+| Life_140 | 99.39 | 98.99 | 99.14 | 99.35 | 99.07 |
+| Life_141 | 23.17 | 22.76 | 22.9 | 23.14 | 22.85 |
+| Life_142 | 9.16 | 8.72 | 8.89 | 9.11 | 8.8 |
+| Life_143 | 78.99 | 78.56 | 78.72 | 78.95 | 78.65 |
+| Life_144 | 14.83 | 15.26 | 15.1 | 14.88 | 15.18 |
+| Life_145 | 39.17 | 38.74 | 38.9 | 39.12 | 38.82 |
+| Life_146 | 46.83 | 47.26 | 47.1 | 46.88 | 47.18 |
+| Life_mean | 42.23 | 42.21 | 42.22 | 42.23 | 42.21 |
+| Life_median | 38.0 | 38.0 | 38.0 | 37.99 | 37.99 |
+| Life_std | 28.91 | 28.73 | 28.8 | 28.89 | 28.77 |
+
+###### Prediction plots
+
+See [[ssm_experiments#Prediction Plots `FD002`|here]]. As for the `Informer` the worst lifes are `Life_135,Life_140`, also here `Life_141` is not bad as in the `SSM` models.
 
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
@@ -952,4 +1007,4 @@ quantile_0.9     25.04
 
 ###### Prediction plots
 
-See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_135,Life_141`.
+See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_141` while `Life_135` is much better than in the `SSM` models but we have `Life_140` which has significantly highe loss values now.

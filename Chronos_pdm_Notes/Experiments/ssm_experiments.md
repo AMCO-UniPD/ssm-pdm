@@ -1322,7 +1322,7 @@ Similar to the ones of the previous experiment without the Pinball loss.
 
 ## `windowed` Approach + Quantile Regression Experiments 🪟 🌗
 
-In this section we will report the results of the experiments performed with the `windowed` approach and with the Quantile Regression mode. The model is trained to learn all the quantiles of the distribution of the `RUL` signal. The model is tested on different pre decided quantile levels (for each quantile level we have a different `wandb` experiment,. and thus a different best model). In the evaluation part we will compare the performances on the different quantile levels to see which one is the best, taking also into account that we prefer underestimations of the `RUL` rather than overestimations. 
+In this section we will report the results of the experiments performed with the `windowed` approach and with the Quantile Regression mode. The model is trained to learn all the quantiles of the distribution of the `RUL` signal. The model is tested on different pre decided quantile levels (for each quantile level we have a different `wandb` experiment, and thus a different best model). In the evaluation part we will compare the performances on the different quantile levels to see which one is the best, taking also into account that we prefer underestimations of the `RUL` rather than overestimations. 
 
 >[!info]
 > For the Quantile Regression mode we will use the 🌗 emoji which represents a quarter of the moon, the word `quarter` somehow recalls the concept of quantile.
@@ -1335,31 +1335,31 @@ In this section we will report the results of the experiments performed with the
 
 Let's start with the following configuration:
 
-| Parameter | Value |
-|-----------|-------|
-| `model_type` | `S4` |
-| `cmapss_model` | `FD001` |
-| `val_idx` | `[0,50]` |
-| `test_idx` | `[50,100]` |
+| Parameter          | Value                     |
+| ------------------ | ------------------------- |
+| `model_type`       | `S4`                      |
+| `cmapss_model`     | `FD001`                   |
+| `val_idx`          | `[0,50]`                  |
+| `test_idx`         | `[50,100]`                |
 | `transformer_type` | 1 (no feature extraction) |
-| `window_size` | 20 |
-| `scaler` | `MinMaxScaler(-1,1)` |
-| `epochs`  | 100    |
-| `lr` | 1e-3 |
-| `batch_size` | 100 |
-| `weight_decay` | 1e-4 |
-| `sequence_length` | 170 |
-| `n_layers` | 5 |
-| `dropout` | 0.0 |
-| `activation` | `relu` |
-| `final_act` | `glu` |
-| `hidden_size` | 128 |
-| `d_state` | 64 |
-| `loss` | `quantile_reg` |
-| `eval_loss` | `mse` |
-| `quantile_dist` | `uniform` |
-| `bounds` | `[0.1,0.9]` |
-| `quantiles` | `[0.1,0.5,0.9]` |
+| `window_size`      | 20                        |
+| `scaler`           | `MinMaxScaler(-1,1)`      |
+| `epochs`           | 100                       |
+| `lr`               | 1e-3                      |
+| `batch_size`       | 100                       |
+| `weight_decay`     | 1e-4                      |
+| `sequence_length`  | 170                       |
+| `n_layers`         | 5                         |
+| `dropout`          | 0.0                       |
+| `activation`       | `relu`                    |
+| `final_act`        | `glu`                     |
+| `hidden_size`      | 128                       |
+| `d_state`          | 64                        |
+| `loss`             | `quantile_reg`            |
+| `eval_loss`        | `mse`                     |
+| `quantile_dist`    | `uniform`                 |
+| `bounds`           | `[0.1,0.9]`               |
+| `quantiles`        | `[0.1,0.5,0.9]`           |
 
 
 >[!note]
@@ -1583,9 +1583,310 @@ quantile_0.9     13.24
 | Life_median | 12.68 | 11.67 | 12.01 | 11.62 | 11.19 |
 | Life_std | 15.42 | 14.77 | 12.53 | 11.39 | 12.01 |
 
+
+###### Metrics Table Pinball Loss
+
+I realized that probably the `RMSE` is not the ideal metric for evaluating the models since we want a model that prefers underestimation over overestimation. So here I will produce the usual `metrics_df` but using the `Pinball` loss with $\tau=0.3$ instead of the `RMSE` loss.
+
+Now quantile 0.5 is the better one but we can start to see how the quantile 0.1 and 0.25 are the second and third best ones differently from the previous evaluation.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     6.68
+quantile_0.25    6.68
+quantile_0.5     6.35
+quantile_0.75    6.48
+quantile_0.9     7.98
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     5.21
+quantile_0.25    5.42
+quantile_0.5     5.21
+quantile_0.75    5.43
+quantile_0.9     7.08
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     4.86
+quantile_0.25    4.83
+quantile_0.5     4.52
+quantile_0.75    4.63
+quantile_0.9     6.17
+##################################################
+```
+
 ###### Prediction Plots bis
 
 After looking a little bit at the plots it does not make a lot of sense to provide a detailed explanation/comment on them since the situation is similar to what I already described in the previous experiment. Probably it's better if I produce a plot with the quantiles 0.25,0.5 and 0.75 since they are better than 0.1 and 0.9 respectively → the difference however it's not enormous so the order in which the line will appear will be the same. So for example in `Life_51,Life_54,Life_55,Life_57,Life_60` if in the first set of plots we had quantile 0.5 and 0.9 as the closest ones to the true `RUL` if I produce the plot with quantile 0.25,0.5 and 0.75 the closest line to the true `RUL` will be the one of quantile 0.5 and quantile 0.75.
+
+##### Experiment 3 `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Let's try to reduce the bounds of the quantile sampling distribution to `bounds=[0.1,0.5]`. In this way we should force the model to prefer underestimation rather than overestimation. We will use the usual evaluation quantiles `[0.1,0.25,0.5,0.75,0.9]`. Theoretically now we should see a clear difference in the evaluations with quantiles 0.1,0.25 and 0.5 → then we will see how that affects the `RUL` predictions. The fear I have is that, since when the model commits big errors these are always underestimation errors, the model will be pushed to commit even bigger errors.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/oc9of0gt?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+Apparently restricting the bounds still makes the quantile 0.75 as the best one. Probably because, as written above, the errors are mainly in underestimation and thus the model needs to overestimate a little bit to get fairly close to the true `RUL` signal.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     24.92
+quantile_0.25    21.23
+quantile_0.5     22.44
+quantile_0.75    18.55
+quantile_0.9     22.80
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     16.42
+quantile_0.25    15.84
+quantile_0.5     17.31
+quantile_0.75    13.03
+quantile_0.9     15.79
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     21.95
+quantile_0.25    18.59
+quantile_0.5     19.64
+quantile_0.75    15.53
+quantile_0.9     18.51
+##################################################
+```
+
+###### Metrics Table Pinball Loss
+
+Now using the Pinball Loss with $\tau=0.3$ should produce an improvement in the test metrics with the respect to Experiment 2.
+
+Now the best quantile is 0.25 followed by 0.75. This makes sense because since we are using a Pinball loss with $\tau=0.3$ the underestimations brought by quantile 0.1 are too extreme. However comparing the magnitude of the errors these are higher than the ones obtained in Experiment 2.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     7.76
+quantile_0.25    6.80
+quantile_0.5     7.41
+quantile_0.75    7.11
+quantile_0.9     8.32
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     5.70
+quantile_0.25    6.00
+quantile_0.5     5.28
+quantile_0.75    6.20
+quantile_0.9     7.44
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     6.33
+quantile_0.25    5.32
+quantile_0.5     5.61
+quantile_0.75    5.74
+quantile_0.9     5.38
+##################################################
+```
+
+##### Experiment 4 `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Considering the results of the previous experiment let's try to see what happens with `bounds=[0.5,0.99]` → in this way we should force the model to prefer overestimation rather than underestimation and this may hopefully balance the high underestimation errors in the most challenging lifes → for example I want to see what happens with `Life_55,Life_65` that normally have high errors.
+
+>[!note]
+> Up to now we never used quantiles lower than 0.1 or higher than 0.9. Now in this experiment with 0.99 let's see what happens.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/5t997kv0?nw=nwuserfrizzodavide)
+###### Metrics Table
+
+As I expected the results are now better → as usual the best quantile is 0.75 in both `Life_mean` and `Life_median`.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     18.60
+quantile_0.25    17.98
+quantile_0.5     17.57
+quantile_0.75    15.91
+quantile_0.9     16.11
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     16.95
+quantile_0.25    13.65
+quantile_0.5     14.17
+quantile_0.75    12.91
+quantile_0.9     14.70
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     14.38
+quantile_0.25    14.04
+quantile_0.5     13.28
+quantile_0.75    11.41
+quantile_0.9     10.06
+##################################################
+```
+
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 29.29 | 24.23 | 23.17 | 15.77 | 16.43 |
+| Life_52 | 2.65 | 3.06 | 2.58 | 3.13 | 5.72 |
+| Life_53 | 2.5 | 3.38 | 3.9 | 6.39 | 8.51 |
+| Life_54 | 24.48 | 22.97 | 24.27 | 22.1 | 18.13 |
+| Life_55 | 49.85 | 49.01 | 46.14 | 42.17 | 38.77 |
+| Life_56 | 9.87 | 10.81 | 10.61 | 16.92 | 15.37 |
+| Life_57 | 17.03 | 12.84 | 8.3 | 4.71 | 2.78 |
+| Life_58 | 5.12 | 2.97 | 2.94 | 6.28 | 4.4 |
+| Life_59 | 30.87 | 31.93 | 30.4 | 26.58 | 19.79 |
+| Life_60 | 21.25 | 17.47 | 13.39 | 9.68 | 10.33 |
+| Life_61 | 5.97 | 5.23 | 7.19 | 9.32 | 10.01 |
+| Life_62 | 15.2 | 12.88 | 14.72 | 9.56 | 7.13 |
+| Life_63 | 8.58 | 6.12 | 3.46 | 4.69 | 7.25 |
+| Life_64 | 6.2 | 7.53 | 10.63 | 14.22 | 17.1 |
+| Life_65 | 37.54 | 38.67 | 39.75 | 24.13 | 31.49 |
+| Life_mean | 17.76 | 16.61 | 16.1 | 14.38 | 14.21 |
+| Life_median | 16.12 | 12.86 | 12.01 | 11.95 | 12.27 |
+| Life_std | 13.31 | 13.26 | 12.92 | 10.01 | 9.45 |
+
+>[!todo] Things to look at in the results
+> - [x] Compare the performances of `Life_55,Life_59,Life_65` → these are lifes that in Experiment 2 had high underestimation errors. I want to see here if the errors decrease in the high quantiles (i.e. 0.75,0.9)
+
+- `Life_55` → In quantiles 0.75 and 0.9 of Experiment 2 we had `RMSE` values of 46.75 and 47.15 respectively. Now we have 42.17 and 38.77, so we have surely improved.
+- `Life_59` → In quantiles 0.75 and 0.9 of Experiment 2 we had `RMSE` values of 27.31 and 28.23 respectively. Now we have 26.58 and 19.79, so we have improved.
+- `Life_65` → In quantiles 0.75 and 0.9 of Experiment 2 we had `RMSE` values of 22.81 and 30.02 respectively. Now we have 24.13 and 31.49, so we have worsened. On the other hand the performances have improved in quantile 0.1 and 0.25.
+
+>[!todo]
+> - [x] Compare the performances in `Life_56,Life_64`: these are lifes that in Experiment 2 are overestimated → in this experiment where we are pushing overestimation there is the risk of increase the error in that direction.
+
+- `Life_56` → In Experiment 2 quantile 0.75 and 0.9 had `RMSE` values of 11.35 and 11.99 respectively. Now we have 16.92 and 15.37, so we have worsened.
+- `Life_64` → In Experiment 2 quantile 0.75 and 0.9 had `RMSE` values of 9.98 and 10.42 respectively. Now we have 14.22 and 17.1, so we have worsened.
+
+So in this point we have verified the risk to prefer overestimation → the errors in which the model already overestimates the damage the error increases.
+
+>[!todo]
+> - [x] See what happens in `Life_52,Life_53,Life_58,Life_61,Life_62` → these lifes had predictions almost overlapped to the true `RUL` in Experiment 2, now there may be the risk of a small overestimation.
+
+- `Life_52` → In Experiment 2 quantile 0.75 and 0.9 had `RMSE` values of 2.69 and 3.31 respectively. Now we have 3.13 and 5.72, so we have not worsened.
+- `Life_53` → In Experiment 2 quantile 0.75 and 0.9 had `RMSE` values of 5.12 and 5.55 respectively. Now we have 6.39 and 8.51, so we have worsened.
+- `Life_58` → In Experiment 2 quantile 0.75 and 0.9 had `RMSE` values of 2.17 and 3.34 respectively. Now we have 6.28 and 4.4, so we have worsened.
+- `Life_61` → In Experiment 2 quantile 0.75 and 0.9 had `RMSE` values of 5.92 and 8.33 respectively. Now we have 9.32 and 10.01, so we have worsened.
+- `Life_62` → In Experiment 2 quantile 0.75 and 0.9 had `RMSE` values of 7.36 and 7.34 respectively. Now we have 9.56 and 7.13, so we have worsened.
+
+The main conclusion after a careful analysis of the results of these experiments:
+
+>[!note] We have to use another evaluation metric other than `RMSE`
+I can use the Pinball Loss with a low `tau` so that underestimatinos are more penalized than overestimations, or one of the famous business metrics typically used in `PdM` (that in any case are similar to the Pinball Loss with the difference that the costs for overestimations and underestimations are normally defined according to some business rules which depend on the specific application and data). Moreover probably the costs for overestimations and underestimations are not symmetric as it is in the Pinball Loss
+
+###### Metrics Table Pinball Loss
+
+Let's evaluate the model using the Pinball Loss with $\tau=0.3$.
+
+Now quantiles 0.25 and 0.1 are the best ones and with smaller errors than the ones obtained in Experiment 2. This result is a bit strange.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     6.29
+quantile_0.25    6.25
+quantile_0.5     6.42
+quantile_0.75    6.99
+quantile_0.9     6.92
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     5.87
+quantile_0.25    5.63
+quantile_0.5     6.10
+quantile_0.75    6.28
+quantile_0.9     6.55
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     4.11
+quantile_0.25    3.98
+quantile_0.5     3.77
+quantile_0.75    4.93
+quantile_0.9     3.80
+##################################################
+```
+
+##### Experiment 5 `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Up to now we have sampled the quantiles from a uniform distribution. Now let's try to sample them from a normal distribution: in this way we are more likely to sample quantiles close to the mean of the distribution and we can sample from a small interval of values. Since the best quantile in the previous experiments was 0.75 I want to try to sample around this value.
+
+Doing some computation exploiting the properties of the Gaussian distribution we will use a `N(mean=0.75,std=0.0048)` that will produce values in `[0.6,0.9]` with a probability close to 100% (i.e. this is the $3\sigma$ interval) but most likely the values will be in `[0.7,0.8]` which is the $σ$ interval.
+
+Since looking at the sampled quantiles, that are logged in the terminal during training, it seemed to me that the model wa always sampling values too close to 0.75 I changed the distribution to `N(mean=0.75,std=0.01)`.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ltspysjd?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+The metrics are a bit worse than the previous experiment, only quantile 0.5 slighlty improved. The metrics are better than the ones of Experiment 2 expect for quantile 0.75 but the difference is minimal (16.63 versus 16.26).
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     18.80
+quantile_0.25    18.08
+quantile_0.5     16.86
+quantile_0.75    16.63
+quantile_0.9     17.94
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     16.08
+quantile_0.25    15.81
+quantile_0.5     12.90
+quantile_0.75    13.67
+quantile_0.9     14.60
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     14.09
+quantile_0.25    13.30
+quantile_0.5     12.28
+quantile_0.75    12.13
+quantile_0.9     12.97
+##################################################
+```
+
+###### Metrics Table Pinball Loss
+
+Let's see what happens here with the Pinball Loss as the evaluation metric. Now this one makes slightly more sense, in fact the best quantile is not more one of the two small quantiles 0.25 or 0.1 but the one in the middle 0.5. This is probably due to the fact that in this experiment we have sampled quantile values around 0.75, which is a quantile that is more focused on overestimation than underestimation. The metric values are in any case slightly smaller than the ones obtained in Experiment 2.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     6.33
+quantile_0.25    6.48
+quantile_0.5     6.29
+quantile_0.75    6.61
+quantile_0.9     6.76
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     6.06
+quantile_0.25    5.53
+quantile_0.5     5.93
+quantile_0.75    6.46
+quantile_0.9     6.76
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     3.90
+quantile_0.25    3.83
+quantile_0.5     3.46
+quantile_0.75    3.99
+quantile_0.9     3.60
+##################################################
+```
+
+##### Experiment 6 `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Let's try to do an experiment which is the opposite of experiment 5, so we will use a normal distribution sampling quantiles around 0.25. We will use `N(mean=0.25,std=0.01)`.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/z2klzvl3?nw=nwuserfrizzodavide)
+
+
 
 #### Dataset `FD002`
 
@@ -2129,3 +2430,78 @@ quantile_0.9     42.39
 ###### Prediction Plots
 
 See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_135,Life_141`.
+
+## `windowed` Approach + Quantile Regression + Feature Extraction 🌗 🤺
+
+In this section we will describe the experiments performed with the same exact setting as the [[ssm_experiments#`windowed` Approach + Quantile Regression Experiments 🪟 🌗|Quantile Regression experiments]] but we are using Feature Extraction as an additional pre processing step on the input lifes. The Feature Extraction is applied using the `RollingStatistics` transformation from `CeRULeO` which computes the chosen summary statistics on rolling windows of the signal. This new pre processing method increases a lot the number of input features since for each statistic computed a new feature is created. So if we extract 4 features, the number of input features will be quadrupled.
+
+### ### `S4` Model Experiments 4‍⃣ 🪟 🌗 🤺
+
+#### Dataset `FD001`
+
+##### Experiment 1 `S4` `FD001` 4‍⃣ 🪟 🌗  🤺
+
+Let's start with the following configuration:
+
+| Parameter          | Value                        |
+| ------------------ | ---------------------------- |
+| `model_type`       | `S4`                         |
+| `cmapss_model`     | `FD001`                      |
+| `val_idx`          | `[0,50]`                     |
+| `test_idx`         | `[50,100]`                   |
+| `transformer_type` | 2                            |
+| `window_size`      | 20                           |
+| `features`         | `kurtosis,skewness,mean,rms` |
+| `window_size`      | 20                           |
+| `scaler`           | `MinMaxScaler(-1,1)`         |
+| `epochs`           | 100                          |
+| `lr`               | 1e-3                         |
+| `batch_size`       | 100                          |
+| `weight_decay`     | 1e-4                         |
+| `sequence_length`  | 170                          |
+| `n_layers`         | 5                            |
+| `dropout`          | 0.0                          |
+| `activation`       | `relu`                       |
+| `final_act`        | `glu`                        |
+| `hidden_size`      | 128                          |
+| `d_state`          | 64                           |
+| `loss`             | `quantile_reg`               |
+| `eval_loss`        | `mse`                        |
+| `quantile_dist`    | `uniform`                    |
+| `bounds`           | `[0.1,0.9]`                  |
+| `quantiles`        | `[0.1,0.25,0.5,0.75,0.9]`    |
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/nmhd7xxc?nw=nwuserfrizzodavide)
+
+The experiments took about 1 hours and 20 minutes, so essentially the same time taken by the `S4` model without the feature extraction. Comparing the `val_loss` plots of experiments with and without feature extraction on the same run and quantile it seems that with feature extraction that loss saturates at about 80 epochs while without feature extraction after 80 epochs it still decreases a bit in the following epochs.
+
+###### Metrics Table
+
+The results are a bit worse than the ones obtained without feature extraction, however the order of the best quantiles is the same, so the best quantile is 0.75 in both `Life_mean` and `Life_median`. The `Life_std` values are a bit higher than the ones obtained without feature extraction.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     28.01
+quantile_0.25    27.60
+quantile_0.5     24.00
+quantile_0.75    21.90
+quantile_0.9     23.27
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     21.93
+quantile_0.25    19.54
+quantile_0.5     16.98
+quantile_0.75    13.84
+quantile_0.9     17.37
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     22.04
+quantile_0.25    22.00
+quantile_0.5     19.12
+quantile_0.75    17.06
+quantile_0.9     16.96
+##################################################
+```

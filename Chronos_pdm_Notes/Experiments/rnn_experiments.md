@@ -799,3 +799,60 @@ Let's use the same configuration used in the `SSM` experiments.
 
 >[!note]
 > [Link to the first `wandb` run]()
+
+The `LSTM` was pretty fast, it took only 1 hours and 30 minutes, according to the terminal.
+
+###### Metrics Table
+
+The `RMSE` values are in a similar range to the one saw in the `Transformer` and `Informer` experiments but with sligthly more differences across the different quantiles evne though these differences are still not very high. The best quantile in `Life_mean` is 0.9 and 0.5 for `Life_median`.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     36.05
+quantile_0.25    35.47
+quantile_0.5     35.18
+quantile_0.75    35.13
+quantile_0.9     35.09
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     30.99
+quantile_0.25    31.89
+quantile_0.5     31.81
+quantile_0.75    31.97
+quantile_0.9     31.85
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     25.63
+quantile_0.25    25.10
+quantile_0.5     24.12
+quantile_0.75    23.71
+quantile_0.9     23.74
+##################################################
+```
+
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_132 | 38.11 | 40.97 | 40.78 | 41.13 | 40.83 |
+| Life_133 | 21.52 | 18.33 | 15.12 | 14.31 | 14.46 |
+| Life_134 | 12.19 | 12.96 | 14.57 | 15.11 | 14.88 |
+| Life_135 | 91.1 | 85.02 | 85.22 | 84.87 | 85.16 |
+| Life_136 | 30.99 | 38.08 | 37.87 | 38.28 | 37.92 |
+| Life_137 | 92.27 | 87.25 | 85.15 | 84.77 | 85.02 |
+| Life_138 | 10.43 | 10.63 | 10.79 | 11.08 | 10.88 |
+| Life_139 | 30.58 | 34.99 | 34.79 | 35.15 | 34.84 |
+| Life_140 | 102.84 | 100.25 | 98.92 | 98.31 | 98.51 |
+| Life_141 | 25.02 | 21.9 | 22.11 | 21.69 | 22.07 |
+| Life_142 | 10.23 | 8.12 | 8.3 | 7.98 | 8.23 |
+| Life_143 | 84.15 | 80.41 | 78.79 | 77.98 | 78.14 |
+| Life_144 | 13.07 | 15.92 | 15.73 | 16.07 | 15.81 |
+| Life_145 | 42.58 | 38.08 | 38.27 | 37.93 | 38.19 |
+| Life_146 | 45.14 | 47.92 | 47.73 | 48.07 | 47.79 |
+| Life_mean | 43.35 | 42.72 | 42.28 | 42.18 | 42.18 |
+| Life_median | 34.55 | 38.08 | 38.07 | 38.11 | 38.06 |
+| Life_std | 30.8 | 29.06 | 28.64 | 28.45 | 28.54 |
+
+###### Prediction plots
+
+See [[ssm_experiments#Prediction Plots `FD002`|here]]. Similarly to the `Transformer` based models the worst lifes are `Life_135,Life_140`.
