@@ -27,6 +27,7 @@ from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
 from ceruleo.dataset.catalog.CMAPSS import sensor_indices
 from ceruleo.transformation import Transformer
 from ceruleo.transformation.features.selection import ByNameFeatureSelector, PandasVarianceThreshold
+from ceruleo.transformation.features.extraction import RollingStatistics
 from ceruleo.transformation.functional.pipeline.pipeline import make_pipeline
 from ceruleo.transformation.features.scalers import MinMaxScaler,RobustMinMaxScaler,StandardScaler,RobustStandardScaler
 from ceruleo.transformation.features.imputers import MeanImputer
@@ -443,13 +444,13 @@ def get_transformer(config:ExperimentConfig,df:CMAPSSDataset) -> Tuple[Transform
     elif config.transformer_type == 2:
         transformer = Transformer(
             pipelineX=make_pipeline(
-                ByNameFeatureSelector(features=FEATURES), 
+                ByNameFeatureSelector(features=FEATURES),
                 RollingStatistics(window=config.window_size,
                                   to_compute=config.features),
                 MeanImputer(),
-                # PandasVarianceThreshold(min_variance=min_variance),
+                # PandasVarianceThreshold(min_variance=config.min_variance),
                 scaler
-            ), 
+            ),
             pipelineY=make_pipeline(
                 ByNameFeatureSelector(features=['RUL']),
             )

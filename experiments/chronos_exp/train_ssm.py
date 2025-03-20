@@ -308,6 +308,9 @@ else:
             else:
                 exp_name=f"{exp_time}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg"
 
+            if exp_config.transformer_type == 2:
+                exp_name=f"{exp_name}_feat_extraction"
+
         print('#'* 50)
         print(f"Starting quantile regression experiment: {exp_name}") if not exp_config.set_exp_name else print(f"Continuing quantile regression experiment: {exp_name}")
         print(f"Quantile distribution: {exp_config.quantile_dist}")
@@ -334,7 +337,11 @@ else:
                 print(f"Starting experiment for quantile level: {quantile}")
                 print('#'* 50)
 
-                run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_quantile_{quantile}"
+                run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_quantile_{quantile}_bounds_{exp_config.bounds[0]}_{exp_config.bounds[1]}"
+
+                if exp_config.transformer_type == 2:
+                    run_name=f"{run_name}_feat_extraction"
+
                 setproctitle.setproctitle(run_name)
 
                 quantile_reg_folders = [
@@ -348,10 +355,6 @@ else:
                                                 folders=quantile_reg_folders)
                 quantile_outputs_path = generate_path(basepath=outputs_path,
                                                 folders=quantile_reg_folders)
-                # quantile_metrics_path = generate_path(basepath=metrics_path,
-                #                                 folders=quantile_reg_folders)
-                # quantile_plot_path = generate_path(basepath=plot_path,
-                #                             folders=quantile_reg_folders)
 
                 model,model_info = wandb_run(
                     run_name=run_name,
@@ -360,14 +363,18 @@ else:
                     device=device,
                     best_model_path=quantile_best_model_path,
                     outputs_path=quantile_outputs_path,
-                    # metrics_path=quantile_metrics_path,
-                    # plot_path=quantile_plot_path,
                     tau=quantile
                 )
 
     else:
 
-        run_name = f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_gap" if model_config.gap else f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}"
+        if model_config.gap:
+            run_name = f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_gap"
+        else:
+             run_name = f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}"
+
+        if exp_config.transformer_type == 2:
+            run_name = f"{run_name}_feat_extraction"
 
         if exp_config.loss == "pinball":
             run_name = f"{run_name}_pinball_{exp_config.tau}"
