@@ -787,6 +787,35 @@ quantile_0.9     22.94
 | Life_median | 23.52 | 23.52 | 23.84 | 23.84 | 23.52 |
 | Life_std | 21.37 | 21.37 | 21.46 | 21.46 | 21.36 |
 
+###### Metrics Table Pinball Loss
+
+As usual here we have very similar `RMSE` values across all the different quantiles.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     12.49
+quantile_0.25    12.49
+quantile_0.5     12.43
+quantile_0.75    12.43
+quantile_0.9     12.50
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     12.28
+quantile_0.25    12.28
+quantile_0.5     12.36
+quantile_0.75    12.36
+quantile_0.9     12.28
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     9.29
+quantile_0.25    9.29
+quantile_0.5     9.23
+quantile_0.75    9.23
+quantile_0.9     9.29
+##################################################
+```
+
 ###### Prediction plots
 
 See [[ssm_experiments#Prediction Plots bis|here]]
@@ -852,6 +881,35 @@ quantile_0.9     23.74
 | Life_mean | 43.35 | 42.72 | 42.28 | 42.18 | 42.18 |
 | Life_median | 34.55 | 38.08 | 38.07 | 38.11 | 38.06 |
 | Life_std | 30.8 | 29.06 | 28.64 | 28.45 | 28.54 |
+
+###### Metrics Table Pinball Loss
+
+As usual very similar values between the different quantiles.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     15.27
+quantile_0.25    15.60
+quantile_0.5     15.86
+quantile_0.75    16.02
+quantile_0.9     15.95
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     12.70
+quantile_0.25    12.29
+quantile_0.5     12.89
+quantile_0.75    12.75
+quantile_0.9     12.83
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.92
+quantile_0.25    10.66
+quantile_0.5     10.77
+quantile_0.75    10.81
+quantile_0.9     10.76
+##################################################
+```
 
 ###### Prediction plots
 

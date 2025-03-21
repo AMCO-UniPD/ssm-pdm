@@ -1886,6 +1886,37 @@ Let's try to do an experiment which is the opposite of experiment 5, so we will 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/z2klzvl3?nw=nwuserfrizzodavide)
 
+###### Metrics Table Pinball Loss
+
+In this experiment I used directly the Pinball Loss to evaluate the models. 
+
+Ok the results start to be strange again, since the best quantile is quantile 0.75, in any case there is a slight difference with the respect to quantile 0.5 and 0.25. The worst quantile is 0.1 which makes sense because 0.1 is a quantile associated with a too high underestimation with the respect to what we want.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     9.76
+quantile_0.25    7.92
+quantile_0.5     7.77
+quantile_0.75    7.62
+quantile_0.9     8.42
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     6.40
+quantile_0.25    6.13
+quantile_0.5     5.90
+quantile_0.75    5.67
+quantile_0.9     6.44
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     8.53
+quantile_0.25    6.26
+quantile_0.5     6.07
+quantile_0.75    5.83
+quantile_0.9     6.08
+##################################################
+```
+
 
 
 #### Dataset `FD002`
@@ -1928,7 +1959,7 @@ The first run took 5 minutes, with 25 runs it will take 2 hours to finish 😱. 
 
 ###### Metrics Table
 
-The metric values are higher than in `FD001` because of the increased difficulty of the `RUL` prediction task on the `FD002` datyaset. For what converns the comparison between the different quantiles, the best one in `Life_mean` is quantile 0.9 while in `Life_median` quantile 0.75 it's on top. Moreover here the improvement in perfomance of quantiles 0.75 and 0.9 with the respect to quantile 0.5 is more significant.
+The metric values are higher than in `FD001` because of the increased difficulty of the `RUL` prediction task on the `FD002` dataset. For what concerns the comparison between the different quantiles, the best one in `Life_mean` is quantile 0.9 while in `Life_median` quantile 0.75 it's on top. Moreover here the improvement in perfomance of quantiles 0.75 and 0.9 with the respect to quantile 0.5 is more significant.
 
 ```txt
 ##################################################
@@ -1977,6 +2008,34 @@ quantile_0.9     25.58
 | Life_median | 18.52 | 17.33 | 17.05 | 14.34 | 20.8 |
 | Life_std | 30.89 | 27.2 | 26.52 | 24.53 | 22.17 |
 
+###### Metrics Table Pinball Loss
+
+The best quantiles are 0.25 and 0.75 with a minimal differences. Comparing the results with the `metrics_df` computed using the `RMSE` I think that this result is due to the fact that with `RMSE` there was a significant gap between quantiles 0.75 and 0.9 so the Pinball Loss with $\tau=0.3$ as not able to completely invert the trend. This is probably happening because in this more difficult dataset we have higher underestimation errors (so the overestimation brought by 0.75 and 0.9 is beneficial if we want to be as close as possible to the true `RUL`).
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     13.26
+quantile_0.25    11.69
+quantile_0.5     12.46
+quantile_0.75    11.70
+quantile_0.9     12.31
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     10.74
+quantile_0.25     8.55
+quantile_0.5     10.50
+quantile_0.75     9.20
+quantile_0.9      9.76
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     10.90
+quantile_0.25     9.27
+quantile_0.5      8.96
+quantile_0.75     9.03
+quantile_0.9      8.11
+##################################################
+```
 
 ###### Prediction Plots `FD002`
 
@@ -2166,6 +2225,35 @@ quantile_0.9     20.67
 | Life_median | 27.12 | 23.8 | 14.58 | 17.66 | 18.05 |
 | Life_std | 19.55 | 18.46 | 21.05 | 18.72 | 18.52 |
 
+###### Metrics Table Pinball Loss
+
+The metric values are much higher than the `S4` ones but also in this case we can see better metrics in quantile 0.25 and 0.5 than in the others, so we prefer underestimating models.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     11.59
+quantile_0.25    11.49
+quantile_0.5     11.16
+quantile_0.75    11.90
+quantile_0.9     13.75
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     11.59
+quantile_0.25    11.47
+quantile_0.5      9.35
+quantile_0.75    12.22
+quantile_0.9     12.22
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     6.70
+quantile_0.25    6.91
+quantile_0.5     7.12
+quantile_0.75    7.04
+quantile_0.9     8.72
+##################################################
+```
+
 ###### Prediction Plots
 
 See [[ssm_experiments#Prediction Plots bis|here]]
@@ -2231,6 +2319,35 @@ quantile_0.9     25.01
 | Life_mean | 36.23 | 38.78 | 39.14 | 32.64 | 33.6 |
 | Life_median | 27.54 | 33.01 | 37.34 | 27.46 | 33.68 |
 | Life_std | 26.46 | 26.06 | 22.76 | 24.85 | 19.94 |
+
+###### Metrics Table Pinball Loss
+
+Here with `RMSE` the gap between 0.75-0.9 is even higher than the one seen in `S4` so here still 0.75 and 0.9 are the best quantiles but the gap is reduced.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     21.07
+quantile_0.25    24.12
+quantile_0.5     24.11
+quantile_0.75    20.35
+quantile_0.9     20.47
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     19.83
+quantile_0.25    23.81
+quantile_0.5     24.11
+quantile_0.75    17.52
+quantile_0.9     19.83
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     13.48
+quantile_0.25    16.09
+quantile_0.5     15.18
+quantile_0.75    15.26
+quantile_0.9     12.83
+##################################################
+```
 
 ###### Prediction Plots
 
@@ -2360,6 +2477,36 @@ quantile_0.9     35.70
 | Life_median | 22.28 | 22.62 | 24.14 | 20.72 | 21.37 |
 | Life_std | 36.93 | 36.41 | 36.83 | 35.69 | 36.14 |
 
+
+###### Metrics Table Pinball Loss
+
+Similarly to `S5` higher errors than `S4` but also in this case the best quantiles are 0.25 and 0.5.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     13.02
+quantile_0.25    12.97
+quantile_0.5     13.50
+quantile_0.75    13.66
+quantile_0.9     14.56
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     11.18
+quantile_0.25    10.59
+quantile_0.5     10.92
+quantile_0.75    11.09
+quantile_0.9     12.59
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     11.01
+quantile_0.25    10.66
+quantile_0.5     10.51
+quantile_0.75    10.11
+quantile_0.9     10.36
+##################################################
+```
+
 ###### Prediction Plots
 
 See [[ssm_experiments#Prediction Plots bis|here]]
@@ -2426,6 +2573,34 @@ quantile_0.9     42.39
 | Life_median | 21.22 | 16.66 | 18.08 | 17.3 | 17.88 |
 | Life_std | 36.9 | 37.24 | 35.59 | 32.85 | 34.74 |
 
+###### Metrics Table Pinball Loss
+
+The results are closer between different quantiles. The best one in `Life_mean` is quantile 0.75 but quantile 0.25 is the best one in `Life_median`.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     16.85
+quantile_0.25    15.95
+quantile_0.5     16.09
+quantile_0.75    14.78
+quantile_0.9     16.63
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     13.60
+quantile_0.25    11.97
+quantile_0.5     13.15
+quantile_0.75    12.32
+quantile_0.9     13.62
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     13.07
+quantile_0.25    12.83
+quantile_0.5     12.20
+quantile_0.75    10.37
+quantile_0.9     11.91
+##################################################
+```
 
 ###### Prediction Plots
 

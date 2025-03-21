@@ -735,6 +735,35 @@ quantile_0.9     21.94
 | Life_median | 22.0 | 18.04 | 20.99 | 25.1 | 26.54 |
 | Life_std | 16.53 | 12.04 | 10.31 | 18.27 | 17.42 |
 
+###### Metrics table Pinball Loss
+
+Here there is a significant difference between the best quantiles (i.e. 0.1,0.25) and the others. This is probably because already using the `RMSE` we had better errors with quantiles 0.1 and 0.25 and now with Pinball Loss this difference is enlarged.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     14.28
+quantile_0.25    14.08
+quantile_0.5     17.60
+quantile_0.75    22.46
+quantile_0.9     23.64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1      9.99
+quantile_0.25     9.06
+quantile_0.5     13.00
+quantile_0.75    21.48
+quantile_0.9     23.23
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     13.72
+quantile_0.25    14.22
+quantile_0.5     13.58
+quantile_0.75    16.23
+quantile_0.9     15.93
+##################################################
+```
+
 ###### Prediction plots
 
 See [[ssm_experiments#Prediction Plots bis|here]]
@@ -800,6 +829,35 @@ quantile_0.9     24.92
 | Life_mean | 42.23 | 42.21 | 42.22 | 42.23 | 42.21 |
 | Life_median | 38.0 | 38.0 | 38.0 | 37.99 | 37.99 |
 | Life_std | 28.91 | 28.73 | 28.8 | 28.89 | 28.77 |
+
+###### Metrics Table Pinball Loss
+
+Here there were similar results among the different quantiles in `RMSE` and also here they remain quite similar with a slight advantage for 0.1 and 0.75.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     15.76
+quantile_0.25    15.85
+quantile_0.5     15.82
+quantile_0.75    15.77
+quantile_0.9     16.15
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     13.09
+quantile_0.25    12.96
+quantile_0.5     13.01
+quantile_0.75    13.08
+quantile_0.9     13.15
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     10.60
+quantile_0.25    10.66
+quantile_0.5     10.64
+quantile_0.75    10.60
+quantile_0.9     10.90
+##################################################
+```
 
 ###### Prediction plots
 
@@ -1004,6 +1062,64 @@ quantile_0.9     25.04
 | Life_mean | 42.33 | 42.49 | 42.22 | 42.19 | 42.65 |
 | Life_median | 39.3 | 37.22 | 38.03 | 38.25 | 32.14 |
 | Life_std | 27.32 | 26.57 | 28.79 | 29.04 | 30.54 |
+
+###### Metrics Table Pinball Loss
+
+The best quantile is 0.5 followed by 0.75 and 0.1, so here it not exactly following the expectations.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     12.81
+quantile_0.25    13.83
+quantile_0.5     10.95
+quantile_0.75    12.69
+quantile_0.9     16.77
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     11.03
+quantile_0.25    11.22
+quantile_0.5      8.69
+quantile_0.75    10.94
+quantile_0.9     14.52
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      8.06
+quantile_0.25     8.59
+quantile_0.5      6.20
+quantile_0.75     6.97
+quantile_0.9     10.05
+##################################################
+```
+
+###### Metrics table Pinball Loss
+
+With `Informer` is always a bit strange: similar results across quantiles in `RMSE` and here (with an evaluation loss that should improve the underestimating quantiles) the best quantile is 0.9, however on `Life_median` the best one is 0.1.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     16.15
+quantile_0.25    16.27
+quantile_0.5     15.81
+quantile_0.75    15.60
+quantile_0.9     14.74
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     12.80
+quantile_0.25    13.44
+quantile_0.5     13.00
+quantile_0.75    12.75
+quantile_0.9     12.86
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     10.74
+quantile_0.25    10.59
+quantile_0.5     10.64
+quantile_0.75    10.49
+quantile_0.9      8.88
+##################################################
+```
 
 ###### Prediction plots
 
