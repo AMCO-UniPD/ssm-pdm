@@ -1615,10 +1615,127 @@ quantile_0.9     6.17
 ##################################################
 ```
 
+###### Statistical test results
+
+Since the `RMSE` metrics are quite similar among the different quantiles in several models I want to try to perform some simple statistical tests to see weather, when there are some differences, these differences are statistically significant or are just due to random noise. In other words in this way we can see weather these different quantiles have an impact or not on the model predictions or not, otherwise these experiments are a bit useless → in this case we may just return back to the experiments with the Pinball Loss so that at least we push the model to prefer underestimation over overestimation.
+
+We start with the comparison between quantile 0.1 and 0.9, which are the ones with the highest difference in `Life_mean`.
+
+```txt
+##################################################
+Independent T-test results between quantiles 0.1 and 0.9
+t-statistic: -2.3302
+p-value: 0.0481
+##################################################
+```
+
+Here the `p_value` is lower than 0.05 so the difference is statistically significant.
+
+Quantile 0.25 and 0.75:
+
+```txt
+##################################################
+Independent T-test results between quantiles 0.25 and 0.75
+t-statistic: 0.7102
+p-value: 0.4977
+##################################################
+```
+
+Here there is not more statistical significance, no good 😢.
+
+Quantile 0.5 and 0.25:
+
+```txt
+##################################################
+Independent T-test results between quantiles 0.25 and 0.5
+t-statistic: 1.6434
+p-value: 0.1389
+##################################################
+```
+
+Now we are still not significant but with a smaller `p_value`.
+
+Quantile 0.1 and 0.25. Here the `Life_mean` values are equal (at least if we consider the first 2 decimal digits) so I do not have high hopes:
+
+```txt
+##################################################
+Independent T-test results between quantiles 0.1 and 0.25
+t-statistic: -0.0093
+p-value: 0.9928
+##################################################
+```
+
+As expected the `p_value` is almost 1, so no statistical significance.
+
 ###### Prediction Plots bis
 
 After looking a little bit at the plots it does not make a lot of sense to provide a detailed explanation/comment on them since the situation is similar to what I already described in the previous experiment. Probably it's better if I produce a plot with the quantiles 0.25,0.5 and 0.75 since they are better than 0.1 and 0.9 respectively → the difference however it's not enormous so the order in which the line will appear will be the same. So for example in `Life_51,Life_54,Life_55,Life_57,Life_60` if in the first set of plots we had quantile 0.5 and 0.9 as the closest ones to the true `RUL` if I produce the plot with quantile 0.25,0.5 and 0.75 the closest line to the true `RUL` will be the one of quantile 0.5 and quantile 0.75.
 
+##### Experiment 2 tris `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Considering the not very exciting results obtained in the statistical tests of the previous experiment let's try to add 5 more runs to it, these will be run 6 to 10, having an higher sample size may help to obtain more statistically significant results.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ex5fz7vn?nw=nwuserfrizzodavide)
+
+###### Metrics Table
+
+Adding more runs the trend showed in the previous experiment is confirmed. Quantile 0.75 is still the best quantile followed by 0.25. This is due as usual by the fact that the `RMSE` metric care about having the closest possible prediction to the target (independently on weather we have an under or overestimation) and thus overestimation are better because the biggest errors committed by the model are underestimation errors.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     20.49
+quantile_0.25    19.14
+quantile_0.5     17.54
+quantile_0.75    16.82
+quantile_0.9     18.20
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     16.81
+quantile_0.25    16.05
+quantile_0.5     13.38
+quantile_0.75    12.32
+quantile_0.9     13.68
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     16.62
+quantile_0.25    16.05
+quantile_0.5     13.88
+quantile_0.75    13.19
+quantile_0.9     13.41
+##################################################
+```
+
+###### Metrics Table Pinball Loss
+
+Looking at the Pinball Loss we expect to have better performances in the lower quantiles. In terms of `Life_mean` the best quantile is still 0.75 but with a small advantage on quantile 0.25, while in `Life_median` the best quantile is clearly 0.25. However here I don't know weather these differences are statistically significant.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     6.99
+quantile_0.25    6.63
+quantile_0.5     6.53
+quantile_0.75    6.57
+quantile_0.9     8.06
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     5.65
+quantile_0.25    5.44
+quantile_0.5     5.55
+quantile_0.75    5.61
+quantile_0.9     6.92
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     4.88
+quantile_0.25    4.81
+quantile_0.5     4.49
+quantile_0.75    4.65
+quantile_0.9     6.46
+##################################################
+```
 ##### Experiment 3 `S4` `FD001` 4‍⃣ 🪟 🌗
 
 Let's try to reduce the bounds of the quantile sampling distribution to `bounds=[0.1,0.5]`. In this way we should force the model to prefer underestimation rather than overestimation. We will use the usual evaluation quantiles `[0.1,0.25,0.5,0.75,0.9]`. Theoretically now we should see a clear difference in the evaluations with quantiles 0.1,0.25 and 0.5 → then we will see how that affects the `RUL` predictions. The fear I have is that, since when the model commits big errors these are always underestimation errors, the model will be pushed to commit even bigger errors.
@@ -1916,6 +2033,53 @@ quantile_0.75    5.83
 quantile_0.9     6.08
 ##################################################
 ```
+
+##### Experiment 7 `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Let's add a multiplication by $\tau$ at the end of the `forward` method of `S4Model` as an additional effect of the quantile other than the concatenation in the input signal.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/2ceixitk?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+Now the best quantile is 0.25 (as it should be) both in `Life_mean` and `Life_median`. However probably the difference with the respect to the other quantiles is still not very significant, so probably it's worth trying to extend the experiment with an additional set of 5 runs to see if the results are confirmed.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     6.68
+quantile_0.25    6.30
+quantile_0.5     7.26
+quantile_0.75    6.84
+quantile_0.9     7.50
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     5.21
+quantile_0.25    5.19
+quantile_0.5     6.43
+quantile_0.75    6.24
+quantile_0.9     7.18
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     4.86
+quantile_0.25    4.58
+quantile_0.5     5.37
+quantile_0.75    5.46
+quantile_0.9     5.08
+Name: Life_std, dtype: float64
+##################################################
+```
+
+##### Experiment 7 bis `S4` `FD001` 4‍⃣ 🪟 🌗
+
+Let's extend experiment 7 with 5 additional runs to see weather the results are confirmed.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kjfjt9mz?nw=nwuserfrizzodavide)
 
 
 
