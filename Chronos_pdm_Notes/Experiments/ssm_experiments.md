@@ -1322,10 +1322,48 @@ Similar to the ones of the previous experiment without the Pinball loss.
 
 ## `windowed` Approach + Quantile Regression Experiments 🪟 🌗
 
-In this section we will report the results of the experiments performed with the `windowed` approach and with the Quantile Regression mode. The model is trained to learn all the quantiles of the distribution of the `RUL` signal. The model is tested on different pre decided quantile levels (for each quantile level we have a different `wandb` experiment, and thus a different best model). In the evaluation part we will compare the performances on the different quantile levels to see which one is the best, taking also into account that we prefer underestimations of the `RUL` rather than overestimations. 
+In this section we will report the results of the experiments performed with the `windowed` approach and with the Quantile Regression mode. The model is trained to learn all the quantiles of the distribution of the `RUL` signal. The model is tested on different pre decided quantile levels (for each quantile level we have a different `wandb` experiment, and thus a different best model). In the evaluation part we will compare the performances on the different quantile levels to see which one is the best, taking also into account that we prefer underestimations of the `RUL` rather than overestimations.
 
 >[!info]
 > For the Quantile Regression mode we will use the 🌗 emoji which represents a quarter of the moon, the word `quarter` somehow recalls the concept of quantile.
+
+### Experiments Names
+
+Here I report all the `exp_name` strings that contain the name of the folders associated to the different experiments performed.
+
+```txt
+# Experiment names - FD001 dataset
+exp_name: multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
+exp_name: multi_run_14-03-2025_09-43-44_S5_FD001_windowed_quantile_reg
+exp_name: multi_run_14-03-2025_10-56-41_S4D_FD001_windowed_quantile_reg
+exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
+exp_name: multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
+exp_name: multi_run_14-03-2025_16-37-39_RULInformer_FD001_windowed_quantile_reg
+
+# S4 bounds=[0.1,0.5]
+exp_name: multi_run_20-03-2025_12-00-49_S4_FD001_windowed_quantile_reg
+# S4 bounds=[0.5,0.99]
+exp_name: multi_run_20-03-2025_14-05-21_S4_FD001_windowed_quantile_reg
+# S4 bounds=[0.75,0.01] normal distribution
+exp_name: multi_run_20-03-2025_15-56-11_S4_FD001_windowed_quantile_reg
+# S4 bounds=[0.25,0.01] normal distribution
+exp_name: multi_run_20-03-2025_18-22-48_S4_FD001_windowed_quantile_reg
+# S4 with tau multiplication at the end
+exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
+# S5 with tau multiplication at the end
+exp_name: multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
+
+# Experiment names - FD002 dataset
+exp_name: multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
+exp_name: multi_run_18-03-2025_10-58-34_S5_FD002_windowed_quantile_reg
+exp_name: multi_run_18-03-2025_15-32-30_S4D_FD002_windowed_quantile_reg
+exp_name: multi_run_18-03-2025_18-13-05_RULInformer_FD002_windowed_quantile_reg
+exp_name: multi_run_19-03-2025_15-00-46_RULTransformer_FD002_windowed_quantile_reg
+exp_name: multi_run_19-03-2025_21-27-39_LSTM_FD002_windowed_quantile_reg
+
+# Experiment names - FD001 Feature Extraction
+exp_name: multi_run_20-03-2025_10-24-54_S4_FD001_windowed_quantile_reg_feat_extraction 
+```
 
 ### `S4` Model Experiments 4‍⃣ 🪟 🌗
 
@@ -2082,6 +2120,50 @@ Let's extend experiment 7 with 5 additional runs to see weather the results are 
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kjfjt9mz?nw=nwuserfrizzodavide)
 
 
+###### Metrics Table Pinball Loss
+
+By mistake I set `n_runs: 10` so I added 10 additional runs, which is better actually. Looking at the results however we have a confirmation of the order of the quantiles in the evaluation metrics, but the differences in performances remain more or less the same. In any case quantile 0.25 is still the best one in `Life_mean` while in terms of `Life_median` the best one is quantile 0.1.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     6.93
+quantile_0.25    6.51
+quantile_0.5     7.08
+quantile_0.75    7.07
+quantile_0.9     7.52
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     5.10
+quantile_0.25    5.61
+quantile_0.5     6.34
+quantile_0.75    6.36
+quantile_0.9     6.95
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     4.90
+quantile_0.25    4.68
+quantile_0.5     4.99
+quantile_0.75    5.16
+quantile_0.9     5.43
+##################################################
+```
+
+###### Statistical Test Results
+
+Now the difference in `Life_mean` between quantile 0.25 and 0.75 is also statistically significant 💪.
+
+
+```txt
+##################################################
+Independent T-test results between quantiles 0.25 and 0.75
+t-statistic: -2.2610
+p-value: 0.0317
+##################################################
+```
+
+Also the other pairs of quantiles have statistically significant differences except for 0.1 and 0.75 and 0.5 and 0.75.
+
 
 #### Dataset `FD002`
 
@@ -2422,11 +2504,25 @@ quantile_0.9     8.72
 
 See [[ssm_experiments#Prediction Plots bis|here]]
 
+##### Experiment 3 `S5` `FD001` 5️⃣ 🪟 🌗
+
+Seen the good results of `S4` on [[ssm_experiments#Experiment 7 bis `S4` `FD001` 4‍⃣ 🪟 🌗|experiment 7]] with the addition of $\tau$ as a multiplicative factor on the final model output I added it also in `S5` and let's see what happens here. We will start with a 5 run experiment just to see what kind of metrics we get, then we may decide to extend the experiment to 15 runs as it was done for `S4`.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/m2qzw29x?nw=nwuserfrizzodavide)
+
+Looking at the `metrics_df` after 5 runs the results were quite promising: quantile 0.1 is the best one with a significant margin on 0.1 and 0.75. The closer quantile to 0.25 is 0.5. Given these results I decided to expand the experiment with 10 additional runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/as9vfo4a?nw=nwuserfrizzodavide)
+
+
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `S5` `FD002` 5️⃣ 🪟 🌗
 
-Let's use the same configuration as in the first `FD002` experiment for `S4`. 
+Let's use the same configuration as in the first `FD002` experiment for `S4`.
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/efvz46dd?nw=nwuserfrizzodavide)
