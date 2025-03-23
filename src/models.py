@@ -639,12 +639,13 @@ def best_model_perf(
             "y_true": true_vals
         }
 
-    save_element(
-        element=outputs_dict,
-        dirpath=outputs_path,
-        filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
-        filetype="pickle",
-    )
+    if config.save_outputs:
+        save_element(
+            element=outputs_dict,
+            dirpath=outputs_path,
+            filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
+            filetype="pickle",
+        )
 
 
 # Function that implements a wandb run
