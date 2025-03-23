@@ -141,7 +141,7 @@ def load_yaml_to_dict(file_path:str) -> dict:
         return None
 
 def save_element(
-    element: Union[dict, nn.Module, pd.DataFrame],
+    element: Union[dict, nn.Module, pd.DataFrame, List],
     dirpath: str,
     filename: str = "",
     filetype: str = "pickle",

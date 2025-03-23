@@ -77,56 +77,27 @@ mean_metrics_df.loc["Life_mean"] = mean_metrics_df.mean(axis=0).round(2)
 mean_metrics_df.loc["Life_median"] = mean_metrics_df.median(axis=0).round(2)
 mean_metrics_df.loc["Life_std"] = mean_metrics_df.std(axis=0).round(2)
 
-if config.stat_test:
-    metrics_df_run=[]
-    runs=[]
-    for i,metrics_df in enumerate(metrics_dfs):
-        metrics_df_run.append(metrics_df.mean(axis=0))
-        runs.append(f"run_{i+1}")
-
-    metrics_df_runs=pd.concat(metrics_df_run,axis=1)
-    metrics_df_runs.columns=runs
-    q1=metrics_df_runs.loc[f"quantile_{config.quantile_to_test[0]}"]
-    q2=metrics_df_runs.loc[f"quantile_{config.quantile_to_test[1]}"]
-    t_stat,p_val=stats.ttest_ind(q1,q2)
+if config.print_summary_metrics:
     print('#'* 50)
-    print(f"Independent T-test results between quantiles {config.quantile_to_test[0]} and {config.quantile_to_test[1]}")
-    print(f"t-statistic: {t_stat:.4f}")
-    print(f"p-value: {p_val:.4f}")
+    print(f"Mean eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_mean']}")
+    print('#'* 50)
+    print(f"Median eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_median']}")
+    print('#'* 50)
+    print(f"Std eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_std']}")
     print('#'* 50)
 
-    if config.power_analysis:
-        effect_size=abs(q1.mean()-q2.mean())/np.std(np.concatenate([q1,q2]))
-        analysis=TTestIndPower()
-        sample_size=analysis.solve_power(
-                                         effect_size=effect_size,
-                                         alpha=0.05,
-                                         power=0.8,
-                                         alternative='two-sided'
-                                         )
-        print('#'* 50)
-        print(f"Power analysis between quantiles {config.quantile_to_test[0]} and {config.quantile_to_test[1]}")
-        print(f"Suggested sample size: {sample_size}")
-        print('#'* 50)
-
-print('#'* 50)
-print(f"Mean eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_mean']}")
-print('#'* 50)
-print(f"Median eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_median']}")
-print('#'* 50)
-print(f"Std eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_std']}")
-print('#'* 50)
+metrics_df_path = generate_path(basepath=experiment_path,
+                                folders=[
+                                    "metrics",
+                                    config.model_name,
+                                    config.cmapss_models,
+                                    config.approach,
+                                    "quantile_reg",
+                                    config.exp_name
+                                ])
 
 if config.save_mean_metrics_df:
-    metrics_df_path = generate_path(basepath=experiment_path,
-                                    folders=[
-                                        "metrics",
-                                        config.model_name,
-                                        config.cmapss_models,
-                                        config.approach,
-                                        "quantile_reg",
-                                        config.exp_name
-                                    ])
+
     filename=f"{config.model_name}_{config.cmapss_models}_{config.approach}_quantile_reg_global_metrics_df"
     save_element(
         mean_metrics_df,
@@ -134,6 +105,18 @@ if config.save_mean_metrics_df:
         filename=filename,
         filetype="pickle",
     )
+
+if config.save_metrics_df_runs:
+
+    metrics_df_run_path=generate_path(basepath=metrics_df_path,folders=["metrics_df_runs"])
+    filename=f"{config.model_name}_{config.cmapss_models}_{config.approach}_quantile_reg_metrics_df_runs"
+    save_element(
+        metrics_dfs,
+        dirpath=metrics_df_run_path,
+        filename=filename,
+        filetype="pickle",
+    )
+
 
 if config.obsidian_table:
     if config.sub_lifes_metrics:
