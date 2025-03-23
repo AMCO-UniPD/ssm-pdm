@@ -2808,6 +2808,15 @@ quantile_0.9     10.36
 
 See [[ssm_experiments#Prediction Plots bis|here]]
 
+##### Experiment 3 `S4D` `FD001` 4 D 🪟 🌗
+
+Let's do a 15 runs experiment with the new method of using $\tau$ as a multiplicative factor on the model output, ad done for `S4,S5`.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/4bqk2jzt?nw=nwuserfrizzodavide)
+
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `S4D` `FD002` 4 D 🪟 🌗
