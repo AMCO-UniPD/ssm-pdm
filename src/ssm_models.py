@@ -149,7 +149,7 @@ class Recurrent_PDM(nn.Module):
 
         out = self.recurrent(x) # (B, L, D) -> (B, L, H)
         out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
-        out = self.fc(out) # (B, H) -> (B, L)
+        out = self.fc(out) * tau # (B, H) -> (B, L)
         # out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
         return out
 
@@ -316,7 +316,7 @@ class S4DModel(nn.Module):
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
         return x
 
 class S5Model(nn.Module):
@@ -368,7 +368,7 @@ class S5Model(nn.Module):
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
         return x
 
 # Transformer based models
@@ -425,7 +425,7 @@ class RULTransformer(nn.Module):
         x = self.embedding(x) # (B, L) -> (B, L, d_model)
         x = self.encoder(x, mask) # (B, L, d_model) -> (B, L, d_model)
         x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-        x = self.decoder(x) # (B, d_model) -> (B, d_output)
+        x = self.decoder(x) * tau # (B, d_model) -> (B, d_output)
         # x = self.decoder(x).squeeze(-1) # (B, L, d_model) -> (B, L)
         return x
         
@@ -496,7 +496,7 @@ class RULInformer(nn.Module):
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
 
         enc_out = enc_out.mean(dim=1) # [B,L,H] -> [B,H]
-        dec_out = self.projection(enc_out) # [B,L,H] -> [B,L]
+        dec_out = self.projection(enc_out) * tau # [B,L,H] -> [B,L]
 
         if output_attention:
             return dec_out, attns
