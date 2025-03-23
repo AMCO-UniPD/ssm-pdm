@@ -523,7 +523,7 @@ def best_model_perf(
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
     tau: float = 0.5
-    ) -> Union[None,nn.Module]:
+    ) -> Union[None,nn.Module,dict]:
     """
     This function loads the best model according to the validation set and
     computes the performance on the test set
@@ -538,8 +538,9 @@ def best_model_perf(
         metrics_path (str): The path to save the test metrics
 
     Returns:
-        Union[None,nn.Module]: The function saves the plots and the metrics and does not return anything
+        Union[None,nn.Module,dict]: The function saves the plots and the metrics and does not return anything
             If model_summary is set to True the function returns the model object, but it will not save the outputs
+            If return_outputs is set to True the function returns the outputs dictionary, but it will not save the outputs
 
     """
 
@@ -606,6 +607,9 @@ def best_model_perf(
                     "y_pred": y_pred,
                     "y_true": y_true
                 }
+
+        if config.return_outputs:
+            return outputs_dict
     else:
 
         preds,true_vals = [],[]
@@ -638,6 +642,9 @@ def best_model_perf(
             "y_pred": preds,
             "y_true": true_vals
         }
+
+        if config.return_outputs:
+            return outputs_dict
 
     save_element(
         element=outputs_dict,

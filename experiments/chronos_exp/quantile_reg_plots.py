@@ -38,7 +38,8 @@ plot_path = generate_path(basepath=experiment_path,
                                    config.cmapss_models,
                                    config.approach,
                                    "quantile_reg",
-                                   config.exp_name])
+                                   config.exp_name,
+                                    "grid"])
 
 # Get the outputs directory of the most recent experiment
 outputs_path = generate_path(basepath=experiment_path,
@@ -48,8 +49,7 @@ outputs_path = generate_path(basepath=experiment_path,
                                     config.cmapss_models,
                                     config.approach,
                                     "quantile_reg",
-                                ])
-outputs_dirpath = get_most_recent_dir(outputs_path,file_pos=config.file_pos)
+                                    config.exp_name])
 
 for run in range(config.n_runs):
 

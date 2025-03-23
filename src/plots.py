@@ -221,22 +221,29 @@ def plot_prediction_interval(
         for j in range(config.ncols):
             if i*config.ncols+j<(config.nrows*config.ncols):
 
-                ax=axs[i,j]
+                if config.nrows==1 and config.ncols==1:
+                    ax=axs
+                elif config.nrows==1:
+                    ax=axs[j]
+                elif config.ncols==1:
+                    ax=axs[i]
+                else:
+                    ax=axs[i,j] 
 
                 # True RUL as a solid blue line
-                ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="blue",label='True RUL')
+                ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="#00008B",label='True RUL')
                 # Predicted RUL with quantile 0.5 as a solid orange line
                 ax.plot(outputs_dict["quantile_0.5"][i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL 0.5')
                 # Predicted RUL with quantile 0.25 and 0.75 as dashed orange lines
-                ax.plot(outputs_dict["quantile_0.25"][i*config.ncols+j][mask[i*config.ncols+j]],color="orange",linestyle="--",label='Predicted RUL 0.25')
-                ax.plot(outputs_dict["quantile_0.75"][i*config.ncols+j][mask[i*config.ncols+j]],color="orange",linestyle="**",label='Predicted RUL 0.75')
+                ax.plot(outputs_dict["quantile_0.25"][i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="--",label='Predicted RUL 0.25')
+                ax.plot(outputs_dict["quantile_0.75"][i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="-.",label='Predicted RUL 0.75')
                 # Use plt.fill_between to create the prediction interval using predictions on quantile 0.1 and 0.9
                 ax.fill_between(
                     np.arange(len(true[i*config.ncols+j][mask[i*config.ncols+j]])),
                     outputs_dict["quantile_0.1"][i*config.ncols+j][mask[i*config.ncols+j]],
                     outputs_dict["quantile_0.9"][i*config.ncols+j][mask[i*config.ncols+j]],
-                    color="orange",
-                    alpha=0.3,
+                    color="#ADD8E6",
+                    alpha=0.5,
                     label='Prediction Interval 0.1-0.9'
                 )
 
