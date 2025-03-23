@@ -240,7 +240,7 @@ class S4Model(nn.Module):
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1)  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
         return x
 
 class S4DModel(nn.Module):
