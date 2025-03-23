@@ -175,7 +175,7 @@ if exp_config.test_script:
 
                             quantile_output_dict = open_element(quantile_output_dict_path)
                             y_pred,y_true = quantile_output_dict["y_pred"],quantile_output_dict["y_true"]
-                            run_outputs_dict["true"] = y_true if i==0
+                            run_outputs_dict["y_true"] = y_true if i==0
                             run_outputs_dict[f"quantile_{quantile}"] = y_pred
 
                         run_outputs_dict_path = generate_path(basepath=run_outputs_path,

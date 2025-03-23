@@ -165,4 +165,97 @@ def plot_predictions_grid(
 
     return fig
 
+# Plot function to plot the prediction intervals of the model using the 
+# predictions from different quantile levels
 
+def plot_prediction_interval(
+        config:ExperimentConfig,
+        outputs_path:str=experiment_path,
+        plot_path:str=experiment_path,
+) -> plt.figure:
+
+    """
+    Function to plot in a grid the `RUL` predictions of each life compared to the true `RUL`,M
+    The prediction on different quantiles will be used to create some prediction intervals.
+    
+    Parameters:
+    -----------
+    config: ExperimentConfig
+        Experiment configuration object
+    outputs_path: str
+        Path to the outputs dictionary
+    plot_path: str
+        Path to save the plot
+
+    Returns:
+    --------
+    fig: plt.figure 
+        Figure containing the plot
+    """
+
+    if config.life_idx is None:
+        config.life_idx = np.arange(config.nrows*config.ncols)
+    else:
+        assert config.nrows*config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
+
+    # Get the outputs dictionary
+    outputs_path = get_most_recent_file(outputs_path,file_pos=config.file_pos)
+    outputs_dict = open_element(
+        file_path=outputs_path,
+        filetype="pickle"
+    )
+
+    assert config.approach == "windowed", "The Quantile Regression experiments were don only on the windowed approach"
+    
+    y_true = outputs_dict["y_true"]
+    true = [y_true[i] for i in config.life_idx]
+    
+    if not config.full_life:
+        mask = [true[i]!=0 for i in range(len(true))]
+    else:
+        np.ones(true.shape,dtype=int)
+
+    # Produce the plot
+    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(30,20))
+    for i in range(config.nrows):
+        for j in range(config.ncols):
+            if i*config.ncols+j<(config.nrows*config.ncols):
+
+                ax=axs[i,j]
+
+                # True RUL as a solid blue line
+                ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="blue",label='True RUL')
+                # Predicted RUL with quantile 0.5 as a solid orange line
+                ax.plot(outputs_dict["quantile_0.5"][i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL 0.5')
+                # Predicted RUL with quantile 0.25 and 0.75 as dashed orange lines
+                ax.plot(outputs_dict["quantile_0.25"][i*config.ncols+j][mask[i*config.ncols+j]],color="orange",linestyle="--",label='Predicted RUL 0.25')
+                ax.plot(outputs_dict["quantile_0.75"][i*config.ncols+j][mask[i*config.ncols+j]],color="orange",linestyle="**",label='Predicted RUL 0.75')
+                # Use plt.fill_between to create the prediction interval using predictions on quantile 0.1 and 0.9
+                ax.fill_between(
+                    np.arange(len(true[i*config.ncols+j][mask[i*config.ncols+j]])),
+                    outputs_dict["quantile_0.1"][i*config.ncols+j][mask[i*config.ncols+j]],
+                    outputs_dict["quantile_0.9"][i*config.ncols+j][mask[i*config.ncols+j]],
+                    color="orange",
+                    alpha=0.3,
+                    label='Prediction Interval 0.1-0.9'
+                )
+
+                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1}')
+                ax.set_xticks([])
+                ax.set_ylabel('RUL')
+                ax.legend()
+
+    if config.save_plot:
+        if config.full_life:
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_interval_full"
+        else:
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_interval_pad"
+        life_idx_str="_".join(str(x) for x in config.life_idx)
+        filename=f"{filename}_life_{life_idx_str}.pdf"
+        plot_path=os.path.join(plot_path,filename)
+        plt.savefig(plot_path,bbox_inches='tight')
+        print('#'*50)
+        print(f'Plot saved at: {plot_path}')
+        print('#'*50)
+
+    return fig
