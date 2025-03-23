@@ -2,7 +2,7 @@
 model_config_path: config/ssm_config.yaml
 
 # cuda config
-device_num: 0
+device_num: 1
 
 # wandb config
 project_name: "chronos-rul"
@@ -50,8 +50,8 @@ weight_decay: 1.0e-4
 # model_name: RNN
 # model_name: LSTM
 # model_name: GRU
-model_name: S4
-# model_name: S5
+# model_name: S4
+model_name: S5
 # model_name: S4D
 # model_name: RULTransformer
 # model_name: RULInformer
@@ -91,35 +91,8 @@ start_run_id: 5
 n_runs: 10
 set_exp_name: true
 
-# Experiment names - FD001 dataset
-# exp_name: multi_run_14-03-2025_08-20-13_S4_FD001_windowed_quantile_reg
-# exp_name: multi_run_14-03-2025_09-43-44_S5_FD001_windowed_quantile_reg
-# exp_name: multi_run_14-03-2025_10-56-41_S4D_FD001_windowed_quantile_reg
-# exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
-# exp_name: multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
-# exp_name: multi_run_14-03-2025_16-37-39_RULInformer_FD001_windowed_quantile_reg
-
-# S4 bounds=[0.1,0.5]
-# exp_name: multi_run_20-03-2025_12-00-49_S4_FD001_windowed_quantile_reg
-# S4 bounds=[0.5,0.99]
-# exp_name: multi_run_20-03-2025_14-05-21_S4_FD001_windowed_quantile_reg
-# S4 bounds=[0.75,0.01] normal distribution
-# exp_name: multi_run_20-03-2025_15-56-11_S4_FD001_windowed_quantile_reg
-# S4 bounds=[0.25,0.01] normal distribution
-# exp_name: multi_run_20-03-2025_18-22-48_S4_FD001_windowed_quantile_reg
-# S4 with tau multiplication at the end
-exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
-
-# Experiment names - FD002 dataset
-# exp_name: multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
-# exp_name: multi_run_18-03-2025_10-58-34_S5_FD002_windowed_quantile_reg
-# exp_name: multi_run_18-03-2025_15-32-30_S4D_FD002_windowed_quantile_reg
-# exp_name: multi_run_18-03-2025_18-13-05_RULInformer_FD002_windowed_quantile_reg
-# exp_name: multi_run_19-03-2025_15-00-46_RULTransformer_FD002_windowed_quantile_reg
-# exp_name: multi_run_19-03-2025_21-27-39_LSTM_FD002_windowed_quantile_reg
-
-# Experiment names - FD001 Feature Extraction
-# exp_name: multi_run_20-03-2025_10-24-54_S4_FD001_windowed_quantile_reg_feat_extraction 
+# Experiment name
+exp_name: multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
 
 # test_script config
 # test_script: true
@@ -129,14 +102,16 @@ save_outputs: true
 compute_metrics: false
 save_metrics_df: false
 save_mean_metrics_df: true
+print_summary_metrics: true
+save_metrics_df_runs: true
 sub_lifes_metrics: false
 obsidian_table: false
 plot_preds: false
 
 # statistical stuff
-stat_test: false
+stat_test: true
 power_analysis: false
-quantile_to_test: [0.25,0.75]
+quantile_to_test: [0.25,0.9]
 
 # metrics_df experiment config
 metrics_idx: null
