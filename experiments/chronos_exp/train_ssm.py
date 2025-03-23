@@ -317,6 +317,7 @@ else:
         print(f"Distribution parameters: {exp_config.bounds}")
         print(f"Quantile levels for evaluation: {exp_config.quantiles}")
         print(f"Number of runs: {exp_config.n_runs}")
+        print(f"Start run id: {exp_config.start_run_id}")
         print('#'* 50)
 
         assert exp_config.loss == "quantile_reg", "The loss function must be quantile for quantile regression"
@@ -324,7 +325,7 @@ else:
         assert exp_config.obsidian_table == False, "We do not produce the obsidian table for each quantile and in each run"
         assert exp_config.plot_preds == False, "We do not plot the predictions for each quantile and in each run"
 
-        for run in range(exp_config.n_runs):
+        for run in range(exp_config.start_run_id,exp_config.start_run_id+exp_config.n_runs):
 
             print(f"Starting run: {run+1}")
             print("#" * 50)
