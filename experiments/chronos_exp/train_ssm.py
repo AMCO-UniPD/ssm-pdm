@@ -24,6 +24,7 @@ from utils import (
     load_yaml_to_dict,
     open_element,
     get_current_time,
+    save_element,
     set_seed,
 )
 
@@ -102,36 +103,90 @@ if exp_config.test_script:
 
         if exp_config.quantile_reg:
 
-            for run in range(exp_config.n_runs):
+            if exp_config.save_outputs_quantile:
 
                 print("#"*50)
-                print(f"Saving outputs for run: {run+1}")
+                print("Saving outputs for each quantile level separately")
                 print("#"*50)
 
-                for quantile in exp_config.quantiles:
+                for run in range(exp_config.n_runs):
 
                     print("#"*50)
-                    print(f"Saving outputs for quantile level: {quantile}")
+                    print(f"Saving outputs for run: {run+1}")
                     print("#"*50)
 
-                    quantile_reg_folders = [
-                        "quantile_reg",
-                        exp_config.exp_name,
-                        f"run_{run+1}",
-                        f"quantile_{quantile}"
-                    ]
-                    quantile_outputs_path = generate_path(basepath=outputs_path,
-                                                    folders=quantile_reg_folders)
-                    quantile_best_model_path = generate_path(basepath=best_model_path,
-                                                    folders=quantile_reg_folders)
+                    for quantile in exp_config.quantiles:
 
-                    best_model_perf(
-                        config=exp_config,
-                        model_config=model_config,
-                        device=device,
-                        best_model_path=quantile_best_model_path,
-                        outputs_path=quantile_outputs_path,
-                        tau=quantile)
+                        print("#"*50)
+                        print(f"Saving outputs for quantile level: {quantile}")
+                        print("#"*50)
+
+                        quantile_reg_folders = [
+                            "quantile_reg",
+                            exp_config.exp_name,
+                            f"run_{run+1}",
+                            f"quantile_{quantile}"
+                        ]
+                        quantile_outputs_path = generate_path(basepath=outputs_path,
+                                                        folders=quantile_reg_folders)
+                        quantile_best_model_path = generate_path(basepath=best_model_path,
+                                                        folders=quantile_reg_folders)
+
+                        best_model_perf(
+                            config=exp_config,
+                            model_config=model_config,
+                            device=device,
+                            best_model_path=quantile_best_model_path,
+                            outputs_path=quantile_outputs_path,
+                            tau=quantile)
+                
+                if exp_config.save_outputs_run:
+
+                    print('#'* 50)
+                    print("Save the prediction on the different quantiles of the same run together")
+                    print('#'* 50)
+
+                    for run in range(exp_config.n_runs):
+
+                        print("#"*50)
+                        print(f"Saving outputs for run: {run+1}")
+                        print("#"*50)
+
+                        run_folders = [
+                            "quantile_reg",
+                            exp_config.exp_name,
+                            f"run_{run+1}"
+                        ]
+                        run_outputs_path = generate_path(basepath=outputs_path,
+                                                        folders=run_folders)
+                        
+                        run_outputs_dict = {}
+
+                        for i,quantile in enumerate(exp_config.quantiles):
+                            
+                            quantile_output_path = generate_path(basepath=run_outputs_path,
+                                                        folders=[f"quantile_{quantile}"])
+
+                            try:
+                                quantile_output_dict_path = get_most_recent_file(quantile_output_path,file_pos=exp_config.file_pos)
+                            except:
+                                print(f"No outputs file found for quantile level {quantile} in run {run+1}, run with save_outputs_quantile set to True")
+                                quit()
+
+                            quantile_output_dict = open_element(quantile_output_dict_path)
+                            y_pred,y_true = quantile_output_dict["y_pred"],quantile_output_dict["y_true"]
+                            run_outputs_dict["true"] = y_true if i==0
+                            run_outputs_dict[f"quantile_{quantile}"] = y_pred
+
+                        run_outputs_dict_path = generate_path(basepath=run_outputs_path,
+                                                              folders=[f"outputs_run_{run+1}"])
+
+                        save_element(
+                            element=run_outputs_dict,
+                            dirpath=run_outputs_dict_path,
+                            filename=f"{get_current_time()}_{exp_config.model_type}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs",
+                            filetype="pickle"
+                        )
 
         else:
 
