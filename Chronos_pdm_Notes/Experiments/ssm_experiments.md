@@ -2516,7 +2516,44 @@ Looking at the `metrics_df` after 5 runs the results were quite promising: quant
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/as9vfo4a?nw=nwuserfrizzodavide)
 
+###### Metrics Table Pinball Loss
 
+The results are confirming the ones obtained with the first 5 runs. The best quantile is 0.25 followed by 0.1.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     11.90
+quantile_0.25    11.09
+quantile_0.5     12.34
+quantile_0.75    12.88
+quantile_0.9     13.12
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     11.12
+quantile_0.25    11.03
+quantile_0.5     11.14
+quantile_0.75    12.30
+quantile_0.9     12.62
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     7.89
+quantile_0.25    6.85
+quantile_0.5     7.73
+quantile_0.75    7.49
+quantile_0.9     7.15
+##################################################
+```
+
+Doing the T-test on quantile 0.25 and 0.75 we have a super small p-value, lower than $10^{-4}$ meaning that there is a super statistical significance in this difference.
+
+```txt
+##################################################
+Independent T-test results between quantiles 0.25 and 0.75
+t-statistic: -5.3361
+p-value: 0.0000
+##################################################
+```
 
 #### Dataset `FD002`
 
