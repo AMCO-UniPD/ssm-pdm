@@ -139,7 +139,7 @@ def sub_lifes_metrics(
     """
 
     if config.metrics_idx is None:
-        config.metrics_idx=np.arange(config.nrows*config.ncols)
+        config.metrics_idx=np.arange(config.n_metrics_lifes)
     metrics_idx = [f"Life_{i+config.test_idx[0]+1}" for i in config.metrics_idx]
     if config.model_name.startswith("chronos"):
         sub_metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]

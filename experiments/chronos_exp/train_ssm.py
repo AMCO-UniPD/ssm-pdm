@@ -256,7 +256,7 @@ if exp_config.test_script:
 
                 quantile_reg_folders = [
                     "quantile_reg",
-                    args.exp_name,
+                    exp_config.exp_name,
                     f"quantile_{quantile}"
                 ]
                 quantile_metrics_path = generate_path(basepath=metrics_path,

@@ -62,4 +62,5 @@ for run in range(config.n_runs):
         config=config,
         outputs_path=run_outputs_path,
         plot_path=plot_path,
+        run=run,
     )

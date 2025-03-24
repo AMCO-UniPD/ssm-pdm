@@ -172,6 +172,7 @@ def plot_prediction_interval(
         config:ExperimentConfig,
         outputs_path:str=experiment_path,
         plot_path:str=experiment_path,
+        run:int=1,
 ) -> plt.figure:
 
     """
@@ -186,10 +187,12 @@ def plot_prediction_interval(
         Path to the outputs dictionary
     plot_path: str
         Path to save the plot
+    run: int
+        Run number to plot
 
     Returns:
     --------
-    fig: plt.figure 
+    fig: plt.figure
         Figure containing the plot
     """
 
@@ -209,6 +212,11 @@ def plot_prediction_interval(
     
     y_true = outputs_dict["y_true"]
     true = [y_true[i] for i in config.life_idx]
+    quantile_0_5 = [outputs_dict["quantile_0.5"][i] for i in config.life_idx]
+    quantile_0_25 = [outputs_dict["quantile_0.25"][i] for i in config.life_idx]
+    quantile_0_75 = [outputs_dict["quantile_0.75"][i] for i in config.life_idx]
+    quantile_0_1 = [outputs_dict["quantile_0.1"][i] for i in config.life_idx]
+    quantile_0_9 = [outputs_dict["quantile_0.9"][i] for i in config.life_idx]
     
     if not config.full_life:
         mask = [true[i]!=0 for i in range(len(true))]
@@ -216,7 +224,7 @@ def plot_prediction_interval(
         np.ones(true.shape,dtype=int)
 
     # Produce the plot
-    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(30,20))
+    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(50,20))
     for i in range(config.nrows):
         for j in range(config.ncols):
             if i*config.ncols+j<(config.nrows*config.ncols):
@@ -228,20 +236,20 @@ def plot_prediction_interval(
                 elif config.ncols==1:
                     ax=axs[i]
                 else:
-                    ax=axs[i,j] 
+                    ax=axs[i,j]
 
                 # True RUL as a solid blue line
                 ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="#00008B",label='True RUL')
                 # Predicted RUL with quantile 0.5 as a solid orange line
-                ax.plot(outputs_dict["quantile_0.5"][i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL 0.5')
+                ax.plot(quantile_0_5[i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL 0.5')
                 # Predicted RUL with quantile 0.25 and 0.75 as dashed orange lines
-                ax.plot(outputs_dict["quantile_0.25"][i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="--",label='Predicted RUL 0.25')
-                ax.plot(outputs_dict["quantile_0.75"][i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="-.",label='Predicted RUL 0.75')
+                ax.plot(quantile_0_25[i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="--",label='Predicted RUL 0.25')
+                ax.plot(quantile_0_75[i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="-.",label='Predicted RUL 0.75')
                 # Use plt.fill_between to create the prediction interval using predictions on quantile 0.1 and 0.9
                 ax.fill_between(
                     np.arange(len(true[i*config.ncols+j][mask[i*config.ncols+j]])),
-                    outputs_dict["quantile_0.1"][i*config.ncols+j][mask[i*config.ncols+j]],
-                    outputs_dict["quantile_0.9"][i*config.ncols+j][mask[i*config.ncols+j]],
+                    quantile_0_1[i*config.ncols+j][mask[i*config.ncols+j]],
+                    quantile_0_9[i*config.ncols+j][mask[i*config.ncols+j]],
                     color="#ADD8E6",
                     alpha=0.5,
                     label='Prediction Interval 0.1-0.9'
@@ -254,10 +262,10 @@ def plot_prediction_interval(
 
     if config.save_plot:
         if config.full_life:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_interval_full"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_predictions_interval_full"
         else:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_interval_pad"
-        life_idx_str="_".join(str(x) for x in config.life_idx)
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_predictions_interval_pad"
+        life_idx_str="_".join(str(x+config.test_idx[0]+1) for x in config.life_idx)
         filename=f"{filename}_life_{life_idx_str}.pdf"
         plot_path=os.path.join(plot_path,filename)
         plt.savefig(plot_path,bbox_inches='tight')
