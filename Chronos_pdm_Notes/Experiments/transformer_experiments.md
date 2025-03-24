@@ -768,6 +768,16 @@ quantile_0.9     15.93
 
 See [[ssm_experiments#Prediction Plots bis|here]]
 
+##### Experiment 2 `Transformer` `FDOO1` `windowed` 🤖 2️⃣ 🌗
+
+Let's perform the 15 run experiment with $\tau$ as a multiplicative factor.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/yfl26xuq?nw=nwuserfrizzodavide)
+
+>[!warning]
+> Comparing the `wandb` loss plots with the ones obtained in [[rnn_experiments#Experiment 2 `LSTM` `FDOO1` `windowed` `Quantile Regression` 🪟 3️⃣ 🌗|the `LSTM` experiment]] they are not so dissimilar, `Transformer` has a lower loss but there is the risk of having the same logarithmic-shaped predictions, probably because also in this model the multiplication by $\tau$. 
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `Transformer` `FDOO2` `windowed` 🤖 1️⃣ 🌗
@@ -998,9 +1008,10 @@ quantile_0.9     16.87
 | Life_median | 27.94 | 27.18 | 27.11 | 24.68 | 25.77 |
 | Life_std | 19.47 | 18.72 | 17.0 | 14.23 | 12.2 |
 
-###### Prediction plots
+###### Prediction Interval Plots
 
-See [[ssm_experiments#Prediction Plots bis|here]]
+Here we have the usual high variance in the prediction interval that distinguishes the non `SSM` based models from the `SSM` ones. Here in `Life_52` if we consider quantiles 0.9 and 0.75 they are really close to the true prediction while quantile 0.1 and 0.25 are significantly overestimating. This is a problem because the model has an high uncertainty in its predictions and thus on a general use case it is not very easy to select the correct quantile to use for the predictions since we may be lucky and select the correct one or not. On the other hand with `SSM`s the model uncertainty is much lower and so the predictions are more reliable independently on the quantile chosen.
+
 
 #### Dataset `FD002`
 

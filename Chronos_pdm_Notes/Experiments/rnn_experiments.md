@@ -820,6 +820,53 @@ quantile_0.9     9.29
 
 See [[ssm_experiments#Prediction Plots bis|here]]
 
+##### Experiment 2 `LSTM` `FDOO1` `windowed` `Quantile Regression` 🪟 3️⃣ 🌗
+
+Experiment with 15 runs and with the quantile level $\tau$ as the multiplicative factor.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/67iugrtp?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+The results do not make a lot of sense, since the bestr quantile is, with a significant margin, quantile 0.75 while quantile 0.25 and 0.1 are the worst ones.
+
+Comparing the loss plots of `LSTM` with the ones of the `SSM` models on equivalent runs (i.e. same run and same quantile) we can see that the loss values of `LSTM` are much higher than the ones of the other models both on `RMSE` and Pinball Loss so maybe that's the reason why we have this strange behavior. In any case the `LSTM` model has always been quite a strange model since it usually produces more or less the same predictions independently on the life.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     37.28
+quantile_0.25    29.07
+quantile_0.5     16.97
+quantile_0.75    14.90
+quantile_0.9     23.58
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     37.98
+quantile_0.25    29.07
+quantile_0.5     14.43
+quantile_0.75    14.21
+quantile_0.9     22.32
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.89
+quantile_0.25     9.69
+quantile_0.5      7.88
+quantile_0.75     8.04
+quantile_0.9     14.15
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Producing the Prediction Interval plots makes us understand this strange metric values. In fact the plot is completely different from what we have seen in the `SSM`s. The predicted `RUL` signals are not a smooth straight decreasing line at all but have the shape of a logarithmic function with the 0.75 and 0.9 quantile predictions that are the closest to the true `RUL` signal and actually they are intersecting it at some point, so at the beginning they underestimate it and then they overestimate it.
+
+If we consider the predictions just in the final time steps of the test life these model may also have better results than the `SSM` but this is not what we are looking for.
+
+After having produced the Prediction Interval plot of the experiment withot $\tau$ multiplicating the outputs I would say that in this case this addition is not very good because the predictions of experiment 1 at least were more or less straight lines so the model correctly guessed the shape of the target signal. Here for example in `Life_56` the prediction do not make a lot of sense.
+
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `LSTM` `FDOO2` `windowed` `Quantile Regression` 🪟 1️⃣ 🌗
@@ -914,3 +961,5 @@ quantile_0.9     10.76
 ###### Prediction plots
 
 See [[ssm_experiments#Prediction Plots `FD002`|here]]. Similarly to the `Transformer` based models the worst lifes are `Life_135,Life_140`.
+
+

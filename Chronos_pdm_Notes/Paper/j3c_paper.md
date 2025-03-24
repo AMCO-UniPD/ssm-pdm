@@ -212,4 +212,24 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 | `Transformer` | ??.?? | ??.?? | ??.?? |
 | `Informer` | ??.?? | ??.?? | ??.?? |
 
+### `FDOO1` Experiments `windowed` Approach + Quantile Regression 🪟 🌗 + $\tau$ multiplicative factor
 
+This is the last set of experiments I will perform (probably). Differently from the previous Quantile Regression experiments the quantile level $\tau$ is used in the `forward` passage of the model both as a constant signal to concatenate to the input features and also as a multiplicative factor to the final model prediction → so the final sequence of predicted `RUL` values (obtained after the final `FFN` layer and the `gap` layer) is multiplied by $\tau$. In these experiments I used the usual Quantile Regression loss function to train the model and then I used the Pinball loss with $\tau=0.3$ to evaluate the different models (and the different quantiles) on the test lifes. With this new approach it seems that the quantiles we are most interesting in (quantile 0.25 and 0.1) show a visible improvement in the test metrics over the others when evaluated with the Pinball Loss.
+
+| Model         | quantile 0.25 | quantile 0.5 | quantile 0.75 |
+| ------------- | ------------- | ------------ | ------------- |
+| `S4` | 6.51 | 7.08 | 7.07 |
+| `S5` | 11.09 | 12.34 | 12.88 |
+| `S4D` | 13.40 | 13.57 | 14.07 |
+| `LSTM` | ??.?? | ??.?? | ??.?? |
+| `Transformer` | ??.?? | ??.?? | ??.?? |
+| `Informer` | ??.?? | ??.?? | ??.?? |
+
+
+
+## Difference between `SSM` models and others
+
+Important observation to insert in the paper when comment the results of the different models. In particular it is possible to notice a clear difference in the shapes of the Prediction Interval plots between the `SSM` and the other models.
+
+>[!important] To insert in the paper
+> I produced the Prediction Interval plot for `RULTransformer` obtained in the previous set of experiments (i.e. 5 runs and without $\tau$ multiplicating the output) and they are quite similar → I didn't notice this difference because I never produced the prediction plots other than for `S4` because I thought they would be all similar. Actually this is a good result for my thesis of demonstrating the `SSM` are better than the other models. In fact in this `RULTransformer` plot the predicted `RUL` signals are not exactly logarithmic (they have a shape similar to the one of a straight line) but there is much more variability on the different quantiles so for example in `Life_52` (where the model underestimates the `RUL`) the higher quantiles are close to the `RUL` in the last samples. On the other hand the advantage of `SSM` is that they are much more stable across the different quantiles and the different runs and the error stays more or less at the same distance fromo the true `RUL` across all the time steps → this is probably due to the better capabilities of `SSM` to model long term dependencies → so they are able to remember the linear shape of the `RUL` target all along the test life.

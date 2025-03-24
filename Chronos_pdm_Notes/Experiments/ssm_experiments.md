@@ -1340,6 +1340,13 @@ exp_name: multi_run_14-03-2025_11-52-58_LSTM_FD001_windowed_quantile_reg
 exp_name: multi_run_14-03-2025_15-09-39_RULTransformer_FD001_windowed_quantile_reg
 exp_name: multi_run_14-03-2025_16-37-39_RULInformer_FD001_windowed_quantile_reg
 
+# FD001 Experiment, tau multiplicative factor
+exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
+exp_name: multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
+exp_name: multi_run_23-03-2025_16-52-06_S4D_FD001_windowed_quantile_reg
+exp_name: multi_run_24-03-2025_08-12-23_LSTM_FD001_windowed_quantile_reg
+
+# FD001 Experiments with changes on the quantile sampling distribution
 # S4 bounds=[0.1,0.5]
 exp_name: multi_run_20-03-2025_12-00-49_S4_FD001_windowed_quantile_reg
 # S4 bounds=[0.5,0.99]
@@ -1348,10 +1355,6 @@ exp_name: multi_run_20-03-2025_14-05-21_S4_FD001_windowed_quantile_reg
 exp_name: multi_run_20-03-2025_15-56-11_S4_FD001_windowed_quantile_reg
 # S4 bounds=[0.25,0.01] normal distribution
 exp_name: multi_run_20-03-2025_18-22-48_S4_FD001_windowed_quantile_reg
-# S4 with tau multiplication at the end
-exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
-# S5 with tau multiplication at the end
-exp_name: multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
 
 # Experiment names - FD002 dataset
 exp_name: multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
@@ -2119,7 +2122,6 @@ Let's extend experiment 7 with 5 additional runs to see weather the results are 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kjfjt9mz?nw=nwuserfrizzodavide)
 
-
 ###### Metrics Table Pinball Loss
 
 By mistake I set `n_runs: 10` so I added 10 additional runs, which is better actually. Looking at the results however we have a confirmation of the order of the quantiles in the evaluation metrics, but the differences in performances remain more or less the same. In any case quantile 0.25 is still the best one in `Life_mean` while in terms of `Life_median` the best one is quantile 0.1.
@@ -2149,6 +2151,32 @@ quantile_0.9     5.43
 ##################################################
 ```
 
+Let's look at the metrics in the first 15 lifes to get an idea on a potential set of 3 lifes to use for the plots. In particular it would be interesting to select:
+- A life where the model overestimates the `RUL` → `Life_56`
+- A life where the model underestimates the `RUL` → `Life_54`
+- A life where the model produces a good `RUL` prediction, so almost overlapped to the true `RUL` signal → `Life_52`
+
+| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| --- | --- | --- | --- | --- | --- |
+| Life_51 | 9.17 | 8.51 | 7.86 | 6.85 | 6.95 |
+| Life_52 | 0.99 | 0.94 | 1.26 | 1.01 | 1.23 |
+| Life_53 | 1.67 | 1.82 | 1.95 | 3.0 | 3.35 |
+| Life_54 | 8.64 | 8.31 | 7.79 | 7.9 | 6.23 |
+| Life_55 | 16.15 | 16.23 | 14.95 | 14.88 | 13.63 |
+| Life_56 | 3.72 | 3.94 | 6.2 | 6.29 | 6.95 |
+| Life_57 | 4.74 | 5.17 | 3.75 | 3.95 | 3.28 |
+| Life_58 | 1.86 | 1.1 | 1.01 | 1.82 | 2.41 |
+| Life_59 | 10.87 | 11.05 | 9.31 | 8.88 | 8.73 |
+| Life_60 | 6.15 | 5.98 | 5.57 | 4.28 | 4.32 |
+| Life_61 | 3.48 | 2.0 | 3.7 | 5.02 | 4.27 |
+| Life_62 | 3.23 | 3.15 | 3.02 | 2.55 | 1.98 |
+| Life_63 | 3.32 | 2.23 | 1.89 | 1.22 | 1.51 |
+| Life_64 | 3.82 | 4.44 | 5.13 | 6.52 | 7.9 |
+| Life_65 | 13.02 | 11.7 | 10.33 | 10.1 | 10.68 |
+| Life_mean | 6.06 | 5.77 | 5.58 | 5.62 | 5.56 |
+| Life_median | 4.28 | 4.8 | 5.35 | 5.32 | 4.94 |
+| Life_std | 4.26 | 4.24 | 3.66 | 3.54 | 3.38 |
+
 ###### Statistical Test Results
 
 Now the difference in `Life_mean` between quantile 0.25 and 0.75 is also statistically significant 💪.
@@ -2164,6 +2192,9 @@ p-value: 0.0317
 
 Also the other pairs of quantiles have statistically significant differences except for 0.1 and 0.75 and 0.5 and 0.75.
 
+###### Prediction Interval Plots
+
+The plots are not much different than the ones obtained without the $\tau$ multiplicing the outputs. This is a confirmation of the stability in the outputs produced by this model and the fact that the level of uncertainty in the predictions is controlled.
 
 #### Dataset `FD002`
 
@@ -2555,6 +2586,10 @@ p-value: 0.0000
 ##################################################
 ```
 
+###### Prediction Interval Plots
+
+The shape of the `RUL` predicted signals is similar to the one obtained with `S4` but we have an higher variance, an higher difference betweeen the different quantile predctions. This is a confirmation of the highe metric values.
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `S5` `FD002` 5️⃣ 🪟 🌗
@@ -2816,6 +2851,38 @@ Let's do a 15 runs experiment with the new method of using $\tau$ as a multiplic
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/4bqk2jzt?nw=nwuserfrizzodavide)
 
+###### Metrics Table Pinball Loss
+
+As usual quantile 0.25 is the best on in terms of `Life_mean` and `Life_median`.  The `p_value` of the statistical test for the difference between 0.25 and 0.75 is 0.0598, so we are slightly over the significant threshold value. Then as usual the `Life_std` statistic is significantly higher than the one of the fellow `S4,S5` models.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     13.53
+quantile_0.25    13.40
+quantile_0.5     13.57
+quantile_0.75    14.07
+quantile_0.9     13.80
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     11.28
+quantile_0.25    10.31
+quantile_0.5     11.39
+quantile_0.75    11.28
+quantile_0.9     11.73
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     11.36
+quantile_0.25    11.14
+quantile_0.5     10.54
+quantile_0.75    10.09
+quantile_0.9      9.54
+##################################################
+```
+
+###### Prediction Interval Plots
+
+In `S4D` the predicted signals are much more oscillating than in `S4,S5` but they still maintain the shape of a linearly decreasing line. Also here there is not much difference between using $\tau$ as a multiplication factor and not.
 
 #### Dataset `FD002`
 
