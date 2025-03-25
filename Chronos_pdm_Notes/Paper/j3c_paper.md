@@ -150,10 +150,6 @@ Here I report a table (to be inserted in the paper) containing the model paramet
 
 A quick comment that we can insert in the paper is the following:
 
->[!todo] To insert in the paper
-> The `SSM` models are the simpler ones with less parameters and the lowest number of Mult Adds, this is probably due to their linear nature, moreover the number of Multiplication and addition is reduced with the respect to the other models because of the parallel computations that are performed during training thanks to the possibility of using the convolutional mode/view of the `SSM`. In particular the model with the lowest number of parameters (and thus also the lowest number of Mult Add operation) is `S5` that simplifies the architecture of both `S4` and `S4D` thanks to the parallelization of the multiple `SSM` block into a single matrix block.
-> On the other hand `LSTM,Transformer` and `Informer` are the heaviest model, in particular `LSTM,Informer` are characterized by a number of Mult Adds operations in the order of $10^{8}$.
-
 ### `FD001` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
 >[!note]
@@ -170,11 +166,6 @@ A quick comment that we can insert in the paper is the following:
 
 An important conclusion/comment after having done the Experiments 3 and 4 on `S4` with different `bounds` in Quantile Regression → we can say that these are ablation study experiments.
 
-
->[!todo] To insert in the paper
-> The results of experiments performed with different sampling intervals for the training quantiles lead to some conclusions. In terms of the `RMSE` metric it is preferrable to overestimate the damage because in the test lifes in which the model commits the more significant errors these are underestimation errors. As a consequence having a model that tends to overestimate the `RUL` somehow balances these underestimation errors improving the test metrics. On the other hand if a life where the model provides good or overestimated predictions is considered the model will cause an augmented test error metric. Moreover since this will most likely be an overestimation error there is the issue of a potential unexpected break in a real world application.
-> Probably the reason why the metrics improve on quantiles higher than 0.5 is that the underestimation errors are higher in magnitude than the overestimation ones and so then this produces smaller errors in the test metrics in `Life_mean` and `Life_median`.
-> For the reasons explained above probably the `RMSE` metric is not the ideal evaluation metric to use for the evaluation of a `RUL` prediction model. In practical scenarios the evaluation of these models is performed through business metrics (**cite paper by Luciano,DDP,Gian**) where specific costs are assigned by domain experts to underestimation and overestimation errors. In lack of the possibility of having a direct confrontation with domain experts on the `CMAPSS` dataset the Pinball Loss was employed in order to assign different weights to the underestimation and overestimation errors. Considering the higher economical cost of overestimation errors (i.e. being too optimistic in the `RUL` prediction may result in unexpected breaks of the equipment) the `tau` parameter of the Pinball Loss was set to 0.3. In this way the model is penalized more for underestimation errors than for overestimation errors while still keeping a non negliglible weight for underestimation so that there is still some penalty for extreme overestimation errors which may lead to unexploited lifetime and will result in a maintenance strategy that may result to be closer to Preventive Maintenance than to Predictive Maintenance.
 
 #### Pinball Loss Evaluation
 
@@ -221,15 +212,42 @@ This is the last set of experiments I will perform (probably). Differently from 
 | `S4` | 6.51 | 7.08 | 7.07 |
 | `S5` | 11.09 | 12.34 | 12.88 |
 | `S4D` | 13.40 | 13.57 | 14.07 |
-| `LSTM` | ??.?? | ??.?? | ??.?? |
-| `Transformer` | ??.?? | ??.?? | ??.?? |
+| `LSTM` | 29.07 | 16.97 | 14.90 |
+| `Transformer` | 21.08 | 11.81 | 29.42 |
 | `Informer` | ??.?? | ??.?? | ??.?? |
 
 
+# Text to insert in the paper
 
-## Difference between `SSM` models and others
+In this section I will keep snippets of text containing important observations I make while analysing the experiment results that can be inserted in the paper, after having been written in a more formal way.
+
+## Model parameters comparison
+
+
+>[!todo] To insert in the paper
+> The `SSM` models are the simpler ones with less parameters and the lowest number of Mult Adds, this is probably due to their linear nature, moreover the number of Multiplication and addition is reduced with the respect to the other models because of the parallel computations that are performed during training thanks to the possibility of using the convolutional mode/view of the `SSM`. In particular the model with the lowest number of parameters (and thus also the lowest number of Mult Add operation) is `S5` that simplifies the architecture of both `S4` and `S4D` thanks to the parallelization of the multiple `SSM` block into a single matrix block.
+> On the other hand `LSTM,Transformer` and `Informer` are the heaviest model, in particular `LSTM,Informer` are characterized by a number of Mult Adds operations in the order of $10^{8}$.
+
+>[!success]
+> Already inserted below the model parameters table
+
+## Why Pinball Loss as the be used as the `eval_loss`
+
+
+>[!todo] To insert in the paper
+> The results of experiments performed with different sampling intervals for the training quantiles lead to some conclusions. In terms of the `RMSE` metric it is preferrable to overestimate the damage because in the test lifes in which the model commits the more significant errors these are underestimation errors. As a consequence having a model that tends to overestimate the `RUL` somehow balances these underestimation errors improving the test metrics. On the other hand if a life where the model provides good or overestimated predictions is considered the model will cause an augmented test error metric. Moreover since this will most likely be an overestimation error there is the issue of a potential unexpected break in a real world application.
+> Probably the reason why the metrics improve on quantiles higher than 0.5 is that the underestimation errors are higher in magnitude than the overestimation ones and so then this produces smaller errors in the test metrics in `Life_mean` and `Life_median`.
+> For the reasons explained above probably the `RMSE` metric is not the ideal evaluation metric to use for the evaluation of a `RUL` prediction model. In practical scenarios the evaluation of these models is performed through business metrics (**cite paper by Luciano,DDP,Gian**) where specific costs are assigned by domain experts to underestimation and overestimation errors. In lack of the possibility of having a direct confrontation with domain experts on the `CMAPSS` dataset the Pinball Loss was employed in order to assign different weights to the underestimation and overestimation errors. Considering the higher economical cost of overestimation errors (i.e. being too optimistic in the `RUL` prediction may result in unexpected breaks of the equipment) the `tau` parameter of the Pinball Loss was set to 0.3. In this way the model is penalized more for underestimation errors than for overestimation errors while still keeping a non negliglible weight for underestimation so that there is still some penalty for extreme overestimation errors which may lead to unexploited lifetime and will result in a maintenance strategy that may result to be closer to Preventive Maintenance than to Predictive Maintenance.
+
+
+## Difference between `SSM` models and others in the plots
 
 Important observation to insert in the paper when comment the results of the different models. In particular it is possible to notice a clear difference in the shapes of the Prediction Interval plots between the `SSM` and the other models.
 
 >[!important] To insert in the paper
 > I produced the Prediction Interval plot for `RULTransformer` obtained in the previous set of experiments (i.e. 5 runs and without $\tau$ multiplicating the output) and they are quite similar → I didn't notice this difference because I never produced the prediction plots other than for `S4` because I thought they would be all similar. Actually this is a good result for my thesis of demonstrating the `SSM` are better than the other models. In fact in this `RULTransformer` plot the predicted `RUL` signals are not exactly logarithmic (they have a shape similar to the one of a straight line) but there is much more variability on the different quantiles so for example in `Life_52` (where the model underestimates the `RUL`) the higher quantiles are close to the `RUL` in the last samples. On the other hand the advantage of `SSM` is that they are much more stable across the different quantiles and the different runs and the error stays more or less at the same distance fromo the true `RUL` across all the time steps → this is probably due to the better capabilities of `SSM` to model long term dependencies → so they are able to remember the linear shape of the `RUL` target all along the test life.
+
+This is a comment I copied from the `Prediction Interval Plots` section of experiment 1 of `Informer` model. There is a good observation on the difference with `SSM` models plots and why I think the results on `SSM` are better than the others.
+
+>[!important] To insert in the paper
+> Here we have the usual high variance in the prediction interval that distinguishes the non `SSM` based models from the `SSM` ones. Here in `Life_52` if we consider quantiles 0.9 and 0.75 they are really close to the true prediction while quantile 0.1 and 0.25 are significantly overestimating. This is a problem because the model has an high uncertainty in its predictions and thus on a general use case it is not very easy to select the correct quantile to use for the predictions since we may be lucky and select the correct one or not. On the other hand with `SSM`s the model uncertainty is much lower and so the predictions are more reliable independently on the quantile chosen.

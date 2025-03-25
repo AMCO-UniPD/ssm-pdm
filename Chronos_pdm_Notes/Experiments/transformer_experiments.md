@@ -775,8 +775,41 @@ Let's perform the 15 run experiment with $\tau$ as a multiplicative factor.
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/yfl26xuq?nw=nwuserfrizzodavide)
 
->[!warning]
-> Comparing the `wandb` loss plots with the ones obtained in [[rnn_experiments#Experiment 2 `LSTM` `FDOO1` `windowed` `Quantile Regression` 🪟 3️⃣ 🌗|the `LSTM` experiment]] they are not so dissimilar, `Transformer` has a lower loss but there is the risk of having the same logarithmic-shaped predictions, probably because also in this model the multiplication by $\tau$. 
+###### Metrics table Pinball Loss
+
+In this case the strange behavior observed in `LSTM` is even more pronounced. The best quantile is by far quantile 0.5 and then the others are somehow symmetric: the further from 0.5 the higher the error with quantile 0.9 which reaches an error rate of 50. This in any case is perfectly aligned with the $\tau=0.3$ Pinball Loss we are using. I know expect to have high separation between the different quantile predictions in the Prediction Interval Plots.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     33.98
+quantile_0.25    21.08
+quantile_0.5     11.81
+quantile_0.75    29.42
+quantile_0.9     50.63
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     33.98
+quantile_0.25    19.47
+quantile_0.5     11.04
+quantile_0.75    28.19
+quantile_0.9     51.01
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.81
+quantile_0.25     9.46
+quantile_0.5      8.32
+quantile_0.75    18.59
+quantile_0.9     24.28
+##################################################
+```
+
+
+###### Prediction Interval Plots
+
+Considering the fact that quantile 0.5 is much better than quantile 0.25 I decided to produce the Prediction Interval plots for both these test quantiles. The plots present prediction signals that are more straight then the ones produced by the `LSTM` model. In `Life_52,Life_54` quantile 0.5 is very close to the target `RUL`, in `Life_54` these prediction would even be better than the on produced by the `SSM` models. Obviously all the other quantile predictions are much worse and much far from the 0.5 one. As in `LSTM` the predictions on `Life_56` are pretty bad. 
+
+For what concerns the difference between the two plots, looking at the them more closely from Overleaf, there is some difference but not significant. In any case quantile 0.5 and 0.25 are the ones with the lowest error so maybe to see some differences I should look at the plot produced by the quantile 0.9 model which is the one with the highest error. I produced also the plot for quantile 0.9 and the result do not change much but we have to consider that the test metrics in the `metrics_df` reported above are the average metrics over all lifes and all runs so looking just at 3 of them and always on `run_1` is probably not the best way of judging the differences in performance.
 
 #### Dataset `FD002`
 
@@ -1012,6 +1045,15 @@ quantile_0.9     16.87
 
 Here we have the usual high variance in the prediction interval that distinguishes the non `SSM` based models from the `SSM` ones. Here in `Life_52` if we consider quantiles 0.9 and 0.75 they are really close to the true prediction while quantile 0.1 and 0.25 are significantly overestimating. This is a problem because the model has an high uncertainty in its predictions and thus on a general use case it is not very easy to select the correct quantile to use for the predictions since we may be lucky and select the correct one or not. On the other hand with `SSM`s the model uncertainty is much lower and so the predictions are more reliable independently on the quantile chosen.
 
+##### Experiment 2 `Informer` `FDOO1` `windowed` 🧙‍♂️ 2️⃣ 🌗
+
+Let's start the usual 15 run experiment with $\tau$ as multiplicative factor. 
+
+>[!warning]
+> The `Informer` was the model that by far took the larges amount of time in [[transformer_experiments#Experiment 1 bis `Informer` `FDOO1` `windowed` 🧙‍♂️ 2️⃣ 🌗|the previous set of experiments]]. Now I launched it for 15 runs but in case I realized that it is taking too much time I can stop it after 5 runs or so. 
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ofjso0j1?nw=nwuserfrizzodavide)
 
 #### Dataset `FD002`
 
