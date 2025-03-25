@@ -99,7 +99,7 @@ if exp_config.test_script:
 
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script")
 
-    if exp_config.save_outputs:
+    if exp_config.save_outputs or exp_config.return_outputs:
 
         if exp_config.quantile_reg:
 

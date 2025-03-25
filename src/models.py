@@ -590,6 +590,9 @@ def best_model_perf(
 
     if config.approach == "padding" or config.model_name.startswith("chronos"):
 
+        print("#" * 50)
+        print(f"Testing on life {i+1+config.test_idx[0]}")
+        print("#" * 50)
         _,_,y_pred,y_true = eval_loop(
             dataloader=test_loader,
             model=model,
@@ -608,6 +611,14 @@ def best_model_perf(
                     "y_true": y_true
                 }
 
+        if config.save_outputs:
+            save_element(
+                element=outputs_dict,
+                dirpath=outputs_path,
+                filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
+                filetype="pickle",
+            )
+
         if config.return_outputs:
             return outputs_dict
     else:
@@ -616,7 +627,7 @@ def best_model_perf(
 
         for i,test_loader in enumerate(test_loaders):
             print("#" * 50)
-            print(f"Testing on life {i+1}")
+            print(f"Testing on life {i+1+config.test_idx[0]}")
             print("#" * 50)
             _,_,y_pred,y_true = eval_loop(
                 dataloader=test_loader,
@@ -643,15 +654,17 @@ def best_model_perf(
             "y_true": true_vals
         }
 
+        if config.save_outputs:
+            save_element(
+                element=outputs_dict,
+                dirpath=outputs_path,
+                filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
+                filetype="pickle",
+            )
+
         if config.return_outputs:
             return outputs_dict
 
-    save_element(
-        element=outputs_dict,
-        dirpath=outputs_path,
-        filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
-        filetype="pickle",
-    )
 
 
 # Function that implements a wandb run
@@ -730,7 +743,7 @@ def wandb_run(
             tau=tau
         )
 
-    if config.save_outputs:
+    if config.return_outputs or config.save_outputs:
 
         print("#"*50)
         print("Saving outputs")
