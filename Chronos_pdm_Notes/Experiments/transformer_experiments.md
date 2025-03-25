@@ -991,7 +991,7 @@ Let's continue the experiment adding `quantiles=[0.25,0.75]` as done in the othe
 
 ###### Metrics table
 
-In the `Informer` the best quantile remains 0.5 which is also significantly better than the others in the `Life_median` metric. 
+In the `Informer` the best quantile remains 0.5 which is also significantly better than the others in the `Life_median` metric.
 
 
 ```txt

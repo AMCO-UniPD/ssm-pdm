@@ -183,38 +183,42 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 
 ### `FD002` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
-| Model | quantile 0.25 | quantile 0.5 | quantile 0.75 |
-|-------|------| ---------| ---------|
-| `S4` | 34.56 | 35.34 | 32.77 |
-| `S5` | 53.86 | 45.85 | 41.62 |
-| `S4D` | 50.42 | 49.27 | 42.36 |
-| `LSTM` | 35.47 | 35.18 | 35.13 |
-| `Transformer` | 35.08 | 35.08 | 35.09 |
-| `Informer` | 34.95 | 35.08 | 34.96 |
 
-#### Pinbal Loss Evaluation
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
+| `S4` | ??.?? | 34.56 | 35.34 | 32.77 | ??.?? |
+| `S5` | ??.?? | 53.86 | 45.85 | 41.62 | ??.?? |
+| `S4D` | ??.?? | 50.42 | 49.27 | 42.36 | ??.?? |
+| `LSTM` | ??.?? | 35.47 | 35.18 | 35.13 | ??.?? |
+| `Transformer` | ??.?? | 35.08 | 35.08 | 35.09 | ??.?? |
+| `Informer` | ??.?? | 34.95 | 35.08 | 34.96 | ??.?? |
 
-| Model         | quantile 0.25 | quantile 0.5 | quantile 0.75 |
-| ------------- | ------------- | ------------ | ------------- |
-| `S4` | ??.?? | ??.?? | ??.?? |
-| `S5` | ??.?? | ??.?? | ??.?? |
-| `S4D` | ??.?? | ??.?? | ??.?? |
-| `LSTM` | ??.?? | ??.?? | ??.?? |
-| `Transformer` | ??.?? | ??.?? | ??.?? |
-| `Informer` | ??.?? | ??.?? | ??.?? |
+#### Pinball Loss Evaluation
+
+>[!note]
+> The metric values need to be updated when the new experiments with the $\tau$ multiplicative factor are executed.
+
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
+| `S4` | 13.26 | 11.69 | 12.46 | 11.70 | 12.31 |
+| `S5` | 21.07 | 24.12 | 24.11 | 20.35 | 20.47 |
+| `S4D` | 16.85 | 15.95 | 16.09 | 14.78 | 16.63 |
+| `LSTM` | 15.27 | 15.60 | 15.86 | 16.02 | 15.95 |
+| `Transformer` | 15.76 | 15.85 | 15.82 | 15.77 | 16.15 |
+| `Informer` | 16.15 | 16.27 | 15.81 | 15.60 | 14.74 |
 
 ### `FDOO1` Experiments `windowed` Approach + Quantile Regression 🪟 🌗 + $\tau$ multiplicative factor
 
 This is the last set of experiments I will perform (probably). Differently from the previous Quantile Regression experiments the quantile level $\tau$ is used in the `forward` passage of the model both as a constant signal to concatenate to the input features and also as a multiplicative factor to the final model prediction → so the final sequence of predicted `RUL` values (obtained after the final `FFN` layer and the `gap` layer) is multiplied by $\tau$. In these experiments I used the usual Quantile Regression loss function to train the model and then I used the Pinball loss with $\tau=0.3$ to evaluate the different models (and the different quantiles) on the test lifes. With this new approach it seems that the quantiles we are most interesting in (quantile 0.25 and 0.1) show a visible improvement in the test metrics over the others when evaluated with the Pinball Loss.
 
-| Model         | quantile 0.25 | quantile 0.5 | quantile 0.75 |
-| ------------- | ------------- | ------------ | ------------- |
-| `S4` | 6.51 | 7.08 | 7.07 |
-| `S5` | 11.09 | 12.34 | 12.88 |
-| `S4D` | 13.40 | 13.57 | 14.07 |
-| `LSTM` | 29.07 | 16.97 | 14.90 |
-| `Transformer` | 21.08 | 11.81 | 29.42 |
-| `Informer` | ??.?? | ??.?? | ??.?? |
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
+| `S4` | 6.93 | 6.51 | 7.08 | 7.07 | 7.52 |
+| `S5` | 11.90 | 11.09 | 12.34 | 12.88 | 13.12 |
+| `S4D` | 13.53 | 13.40 | 13.57 | 14.07 | 13.80 |
+| `LSTM` | 37.28 | 29.07 | 16.97 | 14.90 | 23.58 |
+| `Transformer` | 33.98 | 21.08 | 11.81 | 29.42 | 50.63 |
+| `Informer` | 28.91 | 29.94 | 25.86 | 27.16 | 31.99 |
 
 
 # Text to insert in the paper
@@ -239,15 +243,49 @@ In this section I will keep snippets of text containing important observations I
 > Probably the reason why the metrics improve on quantiles higher than 0.5 is that the underestimation errors are higher in magnitude than the overestimation ones and so then this produces smaller errors in the test metrics in `Life_mean` and `Life_median`.
 > For the reasons explained above probably the `RMSE` metric is not the ideal evaluation metric to use for the evaluation of a `RUL` prediction model. In practical scenarios the evaluation of these models is performed through business metrics (**cite paper by Luciano,DDP,Gian**) where specific costs are assigned by domain experts to underestimation and overestimation errors. In lack of the possibility of having a direct confrontation with domain experts on the `CMAPSS` dataset the Pinball Loss was employed in order to assign different weights to the underestimation and overestimation errors. Considering the higher economical cost of overestimation errors (i.e. being too optimistic in the `RUL` prediction may result in unexpected breaks of the equipment) the `tau` parameter of the Pinball Loss was set to 0.3. In this way the model is penalized more for underestimation errors than for overestimation errors while still keeping a non negliglible weight for underestimation so that there is still some penalty for extreme overestimation errors which may lead to unexploited lifetime and will result in a maintenance strategy that may result to be closer to Preventive Maintenance than to Predictive Maintenance.
 
+>[!success]
+> Added in the `Experiment Results` section
+
 
 ## Difference between `SSM` models and others in the plots
 
 Important observation to insert in the paper when comment the results of the different models. In particular it is possible to notice a clear difference in the shapes of the Prediction Interval plots between the `SSM` and the other models.
 
 >[!important] To insert in the paper
-> I produced the Prediction Interval plot for `RULTransformer` obtained in the previous set of experiments (i.e. 5 runs and without $\tau$ multiplicating the output) and they are quite similar → I didn't notice this difference because I never produced the prediction plots other than for `S4` because I thought they would be all similar. Actually this is a good result for my thesis of demonstrating the `SSM` are better than the other models. In fact in this `RULTransformer` plot the predicted `RUL` signals are not exactly logarithmic (they have a shape similar to the one of a straight line) but there is much more variability on the different quantiles so for example in `Life_52` (where the model underestimates the `RUL`) the higher quantiles are close to the `RUL` in the last samples. On the other hand the advantage of `SSM` is that they are much more stable across the different quantiles and the different runs and the error stays more or less at the same distance fromo the true `RUL` across all the time steps → this is probably due to the better capabilities of `SSM` to model long term dependencies → so they are able to remember the linear shape of the `RUL` target all along the test life.
+> I produced the Prediction Interval plot for `RULTransformer` obtained in the previous set of experiments (i.e. 5 runs and without $\tau$ multiplicating the output) and they are quite similar → I didn't notice this difference because I never produced the prediction plots other than for `S4` because I thought they would be all similar. Actually this is a good result for my thesis of demonstrating the `SSM` are better than the other models. In fact in this `RULTransformer` plot the predicted `RUL` signals are not exactly logarithmic (they have a shape similar to the one of a straight line) but there is much more variability on the different quantiles so for example in `Life_52` (where the model underestimates the `RUL`) the higher quantiles are close to the `RUL` in the last samples. On the other hand the advantage of `SSM` is that they are much more stable across the different quantiles and the different runs and the error stays more or less at the same distance from the true `RUL` across all the time steps → this is probably due to the better capabilities of `SSM` to model long term dependencies → so they are able to remember the linear shape of the `RUL` target all along the test life.
 
 This is a comment I copied from the `Prediction Interval Plots` section of experiment 1 of `Informer` model. There is a good observation on the difference with `SSM` models plots and why I think the results on `SSM` are better than the others.
 
 >[!important] To insert in the paper
 > Here we have the usual high variance in the prediction interval that distinguishes the non `SSM` based models from the `SSM` ones. Here in `Life_52` if we consider quantiles 0.9 and 0.75 they are really close to the true prediction while quantile 0.1 and 0.25 are significantly overestimating. This is a problem because the model has an high uncertainty in its predictions and thus on a general use case it is not very easy to select the correct quantile to use for the predictions since we may be lucky and select the correct one or not. On the other hand with `SSM`s the model uncertainty is much lower and so the predictions are more reliable independently on the quantile chosen.
+
+>[!success]
+> Added in the `Experiment Results` section
+
+# Text removed from the paper
+
+In this section I will report some pieces of text removed from the paper to make it 6 pages long.
+
+## Model Parameters
+
+The table with the models parameters and Mult-Adds can be sacrificed since it is not so fundamental at the moment (I think).
+
+
+```tex
+In Table \ref{tab:model_params} the number of parameters and Mult-Adds operations for each model are reported.
+These served as useful information to understand the computational complexity of the models and thus
+their applicability in real-world scenarios.
+
+\input{tables/model_params}
+
+
+State Space Models exhibit lower parameter counts and reduced computational complexity, as evidenced by their Mult-Adds values,
+likely due to their inherent linear structure.  Furthermore, the convolutional mode of operation in \ac{SSM} facilitates parallel
+computations during training, contributing to a reduction in the number of multiplication and addition operations 
+compared to alternative models. Among the \ac{SSM} variants considered, \texttt{S5} achieves the lowest parameter count (57,808)
+and, consequently, the minimal Mult-Adds value. This efficiency stems from its architectural simplification,
+which consolidates multiple \ac{SSM} blocks into a single, parallelizable matrix block, streamlining the designs of both \texttt{S4} and \texttt{S4D}.
+In contrast, \texttt{LSTM}, \texttt{Transformer}, and \texttt{Informer} represent more computationally intensive models, with Mult-Adds values
+reaching the order of $10^8$, this stems from the quadratic complexity of the self-attention mechanism in the \texttt{Transformer} and \texttt{Informer} models,
+which is one of the main limitations of attention based architectures and consequently one of the main reasons for the development of the \ac{SSM} models.
+```

@@ -2194,7 +2194,9 @@ Also the other pairs of quantiles have statistically significant differences exc
 
 ###### Prediction Interval Plots
 
-The plots are not much different than the ones obtained without the $\tau$ multiplicing the outputs. This is a confirmation of the stability in the outputs produced by this model and the fact that the level of uncertainty in the predictions is controlled.
+The plots are not much different than the ones obtained without the $\tau$ multiplying the outputs. This is a confirmation of the stability in the outputs produced by this model and the fact that the level of uncertainty in the predictions is controlled.
+
+In both this experiment and [[ssm_experiments#Experiment 2 bis `S4` `FD001` 4‍⃣ 🪟 🌗|experiment 2]] the Prediction Interval plots the prediction interval 0.1-0.9 is not very wide meaning that the distribution of the target variable estimated by the model is pretty stable and not varying a lot. Moreover, looking at the magnitude of the evaluation loss values, which is significantly smaller with the respect to the other models,  with these model we are quite sure of producing a viable prediction of the `RUL` of equipment whatever quantile level is attached to the input data.  
 
 #### Dataset `FD002`
 
