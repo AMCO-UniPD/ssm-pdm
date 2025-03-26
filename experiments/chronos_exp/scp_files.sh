@@ -1,8 +1,8 @@
 #!/bin/bash
 
-MODELS=('RULInformer')
+MODELS=('S4D')
 FOLDER=('plots')
-DATASET='FD001'
+DATASET='FD002'
 APPROACH='windowed'
 N_RUNS=1
 
@@ -20,11 +20,20 @@ N_RUNS=1
 # exp_name=multi_run_23-03-2025_16-52-06_S4D_FD001_windowed_quantile_reg
 # exp_name=multi_run_24-03-2025_08-12-23_LSTM_FD001_windowed_quantile_reg
 # exp_name=multi_run_24-03-2025_17-00-56_RULTransformer_FD001_windowed_quantile_reg
-exp_name=multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
+# exp_name=multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
 
 
-# Experiment names FD002 dataset
+# Experiment names - FD002 dataset
 # exp_name=multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
+# exp_name=multi_run_18-03-2025_10-58-34_S5_FD002_windowed_quantile_reg
+exp_name=multi_run_18-03-2025_15-32-30_S4D_FD002_windowed_quantile_reg
+# exp_name=multi_run_18-03-2025_18-13-05_RULInformer_FD002_windowed_quantile_reg
+# exp_name=multi_run_19-03-2025_15-00-46_RULTransformer_FD002_windowed_quantile_reg
+# exp_name=multi_run_19-03-2025_21-27-39_LSTM_FD002_windowed_quantile_reg
+
+# Experiment names FD002 dataset tau multiplicative
+# exp_name=multi_run_26-03-2025_07-53-59_S4_FD002_windowed_quantile_reg
+# exp_name=multi_run_26-03-2025_10-49-12_S5_FD002_windowed_quantile_reg
 
 # Store the initial part of the path in acquario3
 INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
@@ -35,7 +44,7 @@ acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$ex
 
 # cd into local path in my local machine
 # cd ../../../ssm_pdm_paper/Img/rul_plots/$MODELS/$DATASET/
-cd ../../../ssm_pdm_paper/Img/interval_plots
+cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET
 
 # if folder interval does not exist create it and cd into it
 # subfolder="interval"
@@ -53,8 +62,8 @@ cd ../../../ssm_pdm_paper/Img/interval_plots
 # rul_plots_name="${MODELS}_${DATASET}_quantile_reg_run_"
 # quantiles_names="quantiles_0_25_0_5_0_75"
 
-file_pos=(1 2)
-# file_pos=(1)
+# file_pos=(1 2)
+file_pos=(1)
 
 # Iterate over the runs
 for pos in "${file_pos[@]}"; do
