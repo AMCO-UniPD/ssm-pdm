@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODELS=('RULTransformer')
+MODELS=('RULInformer')
 FOLDER=('plots')
 DATASET='FD001'
 APPROACH='windowed'
@@ -19,8 +19,8 @@ N_RUNS=1
 # exp_name=multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
 # exp_name=multi_run_23-03-2025_16-52-06_S4D_FD001_windowed_quantile_reg
 # exp_name=multi_run_24-03-2025_08-12-23_LSTM_FD001_windowed_quantile_reg
-exp_name=multi_run_24-03-2025_17-00-56_RULTransformer_FD001_windowed_quantile_reg
-# exp_name=multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
+# exp_name=multi_run_24-03-2025_17-00-56_RULTransformer_FD001_windowed_quantile_reg
+exp_name=multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
 
 
 # Experiment names FD002 dataset
@@ -50,11 +50,11 @@ cd ../../../ssm_pdm_paper/Img/interval_plots
 
 # Name to give to the RUL plots files when copied locally
 
-rul_plots_name="${MODELS}_${DATASET}_quantile_reg_run_"
+# rul_plots_name="${MODELS}_${DATASET}_quantile_reg_run_"
 # quantiles_names="quantiles_0_25_0_5_0_75"
 
-# file_pos=(1 2)
-file_pos=(1)
+file_pos=(1 2)
+# file_pos=(1)
 
 # Iterate over the runs
 for pos in "${file_pos[@]}"; do
