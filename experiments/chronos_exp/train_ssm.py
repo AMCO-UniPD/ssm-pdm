@@ -372,6 +372,9 @@ else:
             if exp_config.transformer_type == 2:
                 exp_name=f"{exp_name}_feat_extraction"
 
+            if model_config.tau_mult:
+                exp_name=f"{exp_name}_tau_mult"
+
         print('#'* 50)
         print(f"Starting quantile regression experiment: {exp_name}") if not exp_config.set_exp_name else print(f"Continuing quantile regression experiment: {exp_name}")
         print(f"Quantile distribution: {exp_config.quantile_dist}")
@@ -403,6 +406,9 @@ else:
 
                 if exp_config.transformer_type == 2:
                     run_name=f"{run_name}_feat_extraction"
+
+                if model_config.tau_mult:
+                    run_name=f"{run_name}_tau_mult"
 
                 setproctitle.setproctitle(run_name)
 
