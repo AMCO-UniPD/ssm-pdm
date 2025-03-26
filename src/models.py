@@ -546,16 +546,16 @@ def best_model_perf(
 
     #NOTE: Removed the `if config.zero_shot` block because it is not used in the `ssm_pdm` part
 
-    # Load the best model
+    loaders_dict=load_reg_data(config)
+    train_loader,test_loaders=loaders_dict["train_loader"],loaders_dict["test_loaders"]
 
+    # Load the best model
     best_model_filepath = get_most_recent_file(dirpath=best_model_path,
                                                file_pos=config.file_pos)
 
     best_model_state_dict = open_element(best_model_filepath,
                                          filetype="pickle")
 
-    loaders_dict=load_reg_data(config)
-    train_loader,test_loaders=loaders_dict["train_loader"],loaders_dict["test_loaders"]
 
     if config.model_name.startswith("chronos"):
         model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,

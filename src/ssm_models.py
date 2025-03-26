@@ -168,6 +168,7 @@ class S4Model(nn.Module):
 
         self.prenorm = config.prenorm
         self.gap = config.gap
+        self.tau_mult = config.tau_mult
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         d_model = config.d_model
@@ -236,11 +237,11 @@ class S4Model(nn.Module):
 
         if self.gap:
             x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-            x = self.decoder(x)  # (B, d_model) -> (B, d_output)
+            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x) # (B, d_model) -> (B, d_output)
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x) # (B,L,d_model) -> (B,L)
         return x
 
 class S4DModel(nn.Module):
@@ -254,6 +255,7 @@ class S4DModel(nn.Module):
         super().__init__()
 
         self.gap = config.gap
+        self.tau_mult = config.tau_mult
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         d_state = config.d_state
@@ -312,11 +314,12 @@ class S4DModel(nn.Module):
 
         if self.gap:
             x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-            x = self.decoder(x)  # (B, d_model) -> (B, d_output)
+            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x) # (B, d_model) -> (B, d_output)
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
+        # x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x).squeeze(-1) if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
         return x
 
 class S5Model(nn.Module):
@@ -330,6 +333,7 @@ class S5Model(nn.Module):
         super().__init__()
 
         self.gap = config.gap
+        self.tau_mult = config.tau_mult
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         d_model = config.d_model
@@ -364,11 +368,11 @@ class S5Model(nn.Module):
 
         if self.gap:
             x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-            x = self.decoder(x)  # (B, d_model) -> (B, d_output)
+            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)   # (B, d_model) -> (B, d_output)
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
         return x
 
 # Transformer based models

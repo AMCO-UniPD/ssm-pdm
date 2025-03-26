@@ -60,6 +60,7 @@ def lifes_metrics(
     print(f"Opened outputs_dict at path: {outputs_path}")
     print('#'* 50)
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
+    ipdb.set_trace()
 
     _,eval_criterion=load_loss_functions(
         loss_name=config.loss,
