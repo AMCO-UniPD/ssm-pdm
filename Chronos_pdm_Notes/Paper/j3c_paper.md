@@ -4,7 +4,6 @@ aliases: []
 tags:
   - paper
 ---
-
 # Paper for `J3C` Conference
 
 In this note  I want to write down the things to do to produce the paper for the `J3C` Conference. In particular I have to get back to the `SSM_PDM` project (since it's a long time I am not touching it) and see what results we can keep for the paper and what additional things we can do.
@@ -200,7 +199,7 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
-| `S4` | 13.26 | 11.69 | 12.46 | 11.70 | 12.31 |
+| `S4` | 11.91 | 10.70 | 10.45 | 12.25 | 11.76 |
 | `S5` | 21.07 | 24.12 | 24.11 | 20.35 | 20.47 |
 | `S4D` | 16.85 | 15.95 | 16.09 | 14.78 | 16.63 |
 | `LSTM` | 15.27 | 15.60 | 15.86 | 16.02 | 15.95 |
@@ -218,7 +217,7 @@ This is the last set of experiments I will perform (probably). Differently from 
 | `S4D` | 13.53 | 13.40 | 13.57 | 14.07 | 13.80 |
 | `LSTM` | 37.28 | 29.07 | 16.97 | 14.90 | 23.58 |
 | `Transformer` | 33.98 | 21.08 | 11.81 | 29.42 | 50.63 |
-| `Informer` | 28.91 | 29.94 | 25.86 | 27.16 | 31.99 |
+| `Informer` | 34.69 | 23.33 | 11.40 | 30.95 | 50.91 |
 
 
 # Text to insert in the paper

@@ -807,7 +807,7 @@ quantile_0.9     24.28
 
 ###### Prediction Interval Plots
 
-Considering the fact that quantile 0.5 is much better than quantile 0.25 I decided to produce the Prediction Interval plots for both these test quantiles. The plots present prediction signals that are more straight then the ones produced by the `LSTM` model. In `Life_52,Life_54` quantile 0.5 is very close to the target `RUL`, in `Life_54` these prediction would even be better than the on produced by the `SSM` models. Obviously all the other quantile predictions are much worse and much far from the 0.5 one. As in `LSTM` the predictions on `Life_56` are pretty bad. 
+Considering the fact that quantile 0.5 is much better than quantile 0.25 I decided to produce the Prediction Interval plots for both these test quantiles. The plots present prediction signals that are more straight then the ones produced by the `LSTM` model. In `Life_52,Life_54` quantile 0.5 is very close to the target `RUL`, in `Life_54` these prediction would even be better than the ones produced by the `SSM` models. Obviously all the other quantile predictions are much worse and much far from the 0.5 one. As in `LSTM` the predictions on `Life_56` are pretty bad. 
 
 For what concerns the difference between the two plots, looking at the them more closely from Overleaf, there is some difference but not significant. In any case quantile 0.5 and 0.25 are the ones with the lowest error so maybe to see some differences I should look at the plot produced by the quantile 0.9 model which is the one with the highest error. I produced also the plot for quantile 0.9 and the result do not change much but we have to consider that the test metrics in the `metrics_df` reported above are the average metrics over all lifes and all runs so looking just at 3 of them and always on `run_1` is probably not the best way of judging the differences in performance.
 
@@ -1054,6 +1054,41 @@ Let's start the usual 15 run experiment with $\tau$ as multiplicative factor.
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ofjso0j1?nw=nwuserfrizzodavide)
+
+The entire set of experiments took more than 20 hours to run 😱. So it is pretty clear that we cannot afford to perform 15 runs on `FD002`. 
+
+###### Metrics Table Pinball Loss
+
+The metric values are very similar to the ones observed in the [[transformer_experiments#Experiment 2 `Transformer` `FDOO1` `windowed` 🤖 2️⃣ 🌗|`Transformer` experiment]], quantile 0.5 has slightly lower values but the global behavior remains the same so I also expect similar results in the plots. 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     34.69
+quantile_0.25    23.33
+quantile_0.5     11.40
+quantile_0.75    30.95
+quantile_0.9     50.91
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     34.69
+quantile_0.25    22.94
+quantile_0.5      9.85
+quantile_0.75    31.86
+quantile_0.9     53.71
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.75
+quantile_0.25     9.33
+quantile_0.5      6.38
+quantile_0.75    14.03
+quantile_0.9     20.09
+##################################################
+```
+
+###### Prediction Interval Plots
+
+As expected the plots are very similar to the ones obtained with the `Transformer`.
 
 #### Dataset `FD002`
 

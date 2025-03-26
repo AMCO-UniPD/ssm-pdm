@@ -2082,6 +2082,11 @@ Let's add a multiplication by $\tau$ at the end of the `forward` method of `S4Mo
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/2ceixitk?nw=nwuserfrizzodavide)
 
+>[!error] Gigantic Error
+> I realized, after having performer all the 15 runs experiments on `SSM`, that I was actually not multiplying by $\tau$ the output because of a big error in the code where I added the `* tau` outside of the `if config.gap` block which is the one used in all the experiments. So these experiments, which can still be kept since the results are good (so not time was wasted), are just using the trick of appending $\tau$ as an additional input feature to implement the Quantile Regression. 
+
+^335e5a
+
 ###### Metrics Table Pinball Loss
 
 Now the best quantile is 0.25 (as it should be) both in `Life_mean` and `Life_median`. However probably the difference with the respect to the other quantiles is still not very significant, so probably it's worth trying to extend the experiment with an additional set of 5 runs to see if the results are confirmed.
@@ -2121,6 +2126,9 @@ Let's extend experiment 7 with 5 additional runs to see weather the results are 
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kjfjt9mz?nw=nwuserfrizzodavide)
+
+>[!warning]
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
 
 ###### Metrics Table Pinball Loss
 
@@ -2197,6 +2205,13 @@ Also the other pairs of quantiles have statistically significant differences exc
 The plots are not much different than the ones obtained without the $\tau$ multiplying the outputs. This is a confirmation of the stability in the outputs produced by this model and the fact that the level of uncertainty in the predictions is controlled.
 
 In both this experiment and [[ssm_experiments#Experiment 2 bis `S4` `FD001` 4‍⃣ 🪟 🌗|experiment 2]] the Prediction Interval plots the prediction interval 0.1-0.9 is not very wide meaning that the distribution of the target variable estimated by the model is pretty stable and not varying a lot. Moreover, looking at the magnitude of the evaluation loss values, which is significantly smaller with the respect to the other models,  with these model we are quite sure of producing a viable prediction of the `RUL` of equipment whatever quantile level is attached to the input data.  
+
+##### Experiment 8 `S4` `FD001` 4‍⃣ 🪟 🌗
+
+After the [[ssm_experiments#^335e5a|gigantic error]] let's perform an experiment with 5 runs where the multiplication by $\tau$ approach is actually used. Looking at the results obtained with the non `SSM` model, whose performances were worsened by this approach, I do not have very high hopes. I want to do this experiment just to have a confirmation that it produces worst results also in `SSM` models.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/7gus7uua?nw=nwuserfrizzodavide)
 
 #### Dataset `FD002`
 
@@ -2326,6 +2341,57 @@ I will provide a detailed description of the plots only for `S4` since it is pro
 - We have then some lifes in which the predictions are good for all quantiles: `Life_138,Life_142,Life_145`.
 - `Life_134,Life_144,Life_146` → all overestimating the target, which 0.75 with the highest error obviously.
 - `Life_140,Life_143` → here the predicted `RUL` signals are not properly straight across all the time samples.
+
+##### Experiment 2 `S4` `FD002` 4‍⃣ 🪟 🌗
+
+Let's perform a multi run experiment for the new model version with the quantile level $\tau$ multiplying the output. Since this dataset is much bigger than `FD001` we will start by doing 5 runs, then we will see weather to do 15 runs depending on how much time it takes for the first 5.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/y4prv8yf?nw=nwuserfrizzodavide)
+
+>[!warning]
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
+
+The experiment did not take so much time (about 2h and 30 min) so probably it is not impossible to get to 15 runs. In any case at the moment I think it's better to do at least 1 set of 5 runs experiment for all the models so at least we have a set of results for each model and then if there is time we can extend the experiments with 10 additional runs.
+
+###### Metrics Table Pinball Loss
+
+The results follow the trend observed in `FD001` with higher magnitude error values. The errors are more different between different quantiles probably because we have done just 5 runs and so there is an higher chance of having obtained some lucky or unlucky runs which are messing a little bit with the statistics. In any case the best quantile in `Life_mean` is 0.5 (close to 0.25 though) and 0.25 is the best one in terms of `Life_median`.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     11.91
+quantile_0.25    10.70
+quantile_0.5     10.45
+quantile_0.75    12.25
+quantile_0.9     11.76
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1      7.97
+quantile_0.25     7.56
+quantile_0.5      8.65
+quantile_0.75     9.76
+quantile_0.9     10.37
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     10.77
+quantile_0.25     9.72
+quantile_0.5      8.53
+quantile_0.75    10.01
+quantile_0.9      8.64
+##################################################
+```
+
+###### Prediction Interval Plots
+
+In this new dataset we have to choose a different triplet of lifes to plot:
+
+- `Life_135` → underestimating
+- `Life_138` → good predictions
+- `Life_134` → overestimating
+
+In `Life_135`, where there is a clear underestimation of the target, the different lines are well separated and distinguishable although not as much as in the non `SSM` model's plots on `FD001`, they are still quite close together to represent a stable model. On the other hand in `Life_134`, where there is a model overestimation, the predictions on the different quantiles are much closer one to the other, which is good because even if we choose the highest quantile we are not increasing a lot the overestimation error. Finally also in `Life_138` the predictions, which are almost overlapped to the true values, are quite close together.
 
 ### `S5` Model Experiments 5️⃣ 🪟 🌗
 
@@ -2544,6 +2610,9 @@ Seen the good results of `S4` on [[ssm_experiments#Experiment 7 bis `S4` `FD001`
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/m2qzw29x?nw=nwuserfrizzodavide)
 
+>[!warning]
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
+
 Looking at the `metrics_df` after 5 runs the results were quite promising: quantile 0.1 is the best one with a significant margin on 0.1 and 0.75. The closer quantile to 0.25 is 0.5. Given these results I decided to expand the experiment with 10 additional runs.
 
 >[!note]
@@ -2686,6 +2755,56 @@ quantile_0.9     12.83
 ###### Prediction Plots
 
 See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also in this case `Life_141,Life_135` are clearly the ones where the models perform the worst.
+
+##### Experiment 2 `S5` `FD002` 5️⃣ 🪟 🌗
+
+Experiment with $\tau$ as multiplicative factor, 5 runs for the moment
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/oupp62lk?nw=nwuserfrizzodavide)
+
+>[!warning]
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
+
+###### Metrics Table Pinball Loss
+
+The `metrics_df` is **exactly equal** to the one of [[ssm_experiments#Experiment 1 `S5` `FD002` 5️⃣ 🪟 🌗|experiment 1]]. I check the `outputs` file and also I compared the loss plots in the `wandb` runs and it seems that we have obtained exactly equal runs. I am pretty sure that the model is changed with the respect to the previous experiment so I don't know why this is happening. 
+
+>[!note]
+> The results are exactly equal because of the [[ssm_experiments#^335e5a|gigantic error] ]
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     21.07
+quantile_0.25    24.12
+quantile_0.5     24.11
+quantile_0.75    20.35
+quantile_0.9     20.47
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     19.83
+quantile_0.25    23.81
+quantile_0.5     24.11
+quantile_0.75    17.52
+quantile_0.9     19.83
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     13.48
+quantile_0.25    16.09
+quantile_0.5     15.18
+quantile_0.75    15.26
+quantile_0.9     12.83
+##################################################
+```
+
+Let me try to launch a single `wandb` run with quantile 0.1 removing the multiplication by $\tau$  from `S5Model` and I will compare in real time the `wandb` loss plot with the one obtained from `run_1_quantile_0.1` in the current set of `wandb` runs to have the confirmation that they are exactly equal. 
+
+It seems indeed that they are exactly equal → it is a bit strange, something similar happened between `RNN` and `Transformer` based models. In any case we will keep these results which are not bad. I hope we do not get identical results also in `S4D`.
+
+###### Prediction Interval Plots
+
+The plots are very similar to the `S4` ones with the difference of having, as it happened also in `FD001`, a slightly more variable distribution, i.e there is a wider prediction interval.
 
 ### `S4D` Model Experiments 4 D 🪟 🌗
 
@@ -2853,6 +2972,9 @@ Let's do a 15 runs experiment with the new method of using $\tau$ as a multiplic
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/4bqk2jzt?nw=nwuserfrizzodavide)
 
+>[!warning]
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
+
 ###### Metrics Table Pinball Loss
 
 As usual quantile 0.25 is the best on in terms of `Life_mean` and `Life_median`.  The `p_value` of the statistical test for the difference between 0.25 and 0.75 is 0.0598, so we are slightly over the significant threshold value. Then as usual the `Life_std` statistic is significantly higher than the one of the fellow `S4,S5` models.
@@ -2981,11 +3103,27 @@ quantile_0.9     11.91
 
 See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_135,Life_141`.
 
+##### Experiment 2 `S4D` `FD002` 4 D 🪟 🌗
+
+Let's perform also here a multi run experiment (5 runs) with $\tau$ as a multiplicative factor. 
+
+>[!note]
+> Because of what happened in [[ssm_experiments#Experiment 2 `S5` `FD002` 5️⃣ 🪟 🌗|the `S5` experiment]] we will start with a single run experiment solely on quantile 0.1 just to see weather it produces a run exactly equal to the corresponding run in [[ssm_experiments#Experiment 1 `S4D` `FD002` 4 D 🪟 🌗|experiment 1]] before starting the real experiment.
+
+Unfortunately also in this case it seems that the `wandb` run is exactly equal to the one 
+
+>[!warning]
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
+
+>[!note]
+> The results are exactly equal because of the [[ssm_experiments#^335e5a|gigantic error]]
+
+
 ## `windowed` Approach + Quantile Regression + Feature Extraction 🌗 🤺
 
 In this section we will describe the experiments performed with the same exact setting as the [[ssm_experiments#`windowed` Approach + Quantile Regression Experiments 🪟 🌗|Quantile Regression experiments]] but we are using Feature Extraction as an additional pre processing step on the input lifes. The Feature Extraction is applied using the `RollingStatistics` transformation from `CeRULeO` which computes the chosen summary statistics on rolling windows of the signal. This new pre processing method increases a lot the number of input features since for each statistic computed a new feature is created. So if we extract 4 features, the number of input features will be quadrupled.
 
-### ### `S4` Model Experiments 4‍⃣ 🪟 🌗 🤺
+### `S4` Model Experiments 4‍⃣ 🪟 🌗 🤺
 
 #### Dataset `FD001`
 

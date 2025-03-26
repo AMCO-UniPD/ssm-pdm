@@ -296,3 +296,15 @@ Let's recap here the curren state of the proposal.
 ```txt
 Eva Masero, Walter Zoff, Claudio Mantega, Riccardo Scattolini, Politecnico di Milano - Provisional title: “Data-driven modeling and optimization of the thermoforming heating phase”
 ```
+
+# Submission of the Special Session
+
+Apparently we need to have a `PIN` (Personal Identification Number) for each paper inside the proposal. Some of the authors already have their `PIN`. I put here a to do list for the authors of which I have to generate the `PIN`:
+
+- [x] Davide Frizzo → 179991
+- [x] Gian Antonio Susto → 72486
+- [x] Francesco Borsatti → 179146
+- [ ] Lucas Brito → to create
+- [x] Alessio Arcudi → 179994
+- [x] Davide Sartor → 179922
+- [x] Chia-Yu Hsu → 116694
