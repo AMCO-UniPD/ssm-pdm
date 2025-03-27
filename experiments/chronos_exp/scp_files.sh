@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODELS=('S4')
+MODELS=('S5')
 FOLDER=('plots')
 DATASET='FD001'
 APPROACH='windowed'
@@ -24,7 +24,9 @@ N_RUNS=1
 # exp_name=multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
 
 # Experiment names FD001 real tau multiplicative
-exp_name=multi_run_26-03-2025_17-48-45_S4_FD001_windowed_quantile_reg_tau_mult
+# exp_name=multi_run_26-03-2025_17-48-45_S4_FD001_windowed_quantile_reg_tau_mult
+exp_name=multi_run_27-03-2025_14-23-46_S5_FD001_windowed_quantile_reg_tau_mult
+# exp_name=multi_run_27-03-2025_17-30-47_S4D_FD001_windowed_quantile_reg_tau_mult
 
 # Experiment names - FD002 dataset
 # exp_name=multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
