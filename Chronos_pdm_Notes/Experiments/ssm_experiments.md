@@ -2208,9 +2208,12 @@ The plots are not much different than the ones obtained without the $\tau$ multi
 
 In both this experiment and [[ssm_experiments#Experiment 2 bis `S4` `FD001` 4‍⃣ 🪟 🌗|experiment 2]] the Prediction Interval plots the prediction interval 0.1-0.9 is not very wide meaning that the distribution of the target variable estimated by the model is pretty stable and not varying a lot. Moreover, looking at the magnitude of the evaluation loss values, which is significantly smaller with the respect to the other models,  with these model we are quite sure of producing a viable prediction of the `RUL` of equipment whatever quantile level is attached to the input data.  
 
-##### Experiment 8 `S4` `FD001` 4‍⃣ 🪟 🌗
+##### Experiment 8 `S4` `FD001` `tau_mult` 4‍⃣ 🪟 🌗 ✖️
 
 After the [[ssm_experiments#^335e5a|gigantic error]] let's perform an experiment with 5 runs where the multiplication by $\tau$ approach is actually used. Looking at the results obtained with the non `SSM` model, whose performances were worsened by this approach, I do not have very high hopes. I want to do this experiment just to have a confirmation that it produces worst results also in `SSM` models.
+
+>[!note]
+> Let's use the ✖️ emoji to indicat that we are using the `tau_mult` approach.
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/7gus7uua?nw=nwuserfrizzodavide)
@@ -2218,7 +2221,9 @@ After the [[ssm_experiments#^335e5a|gigantic error]] let's perform an experiment
 ###### Metrics Table Pinball Loss
 
 The results here are obviously worse but there is an interesting thing to consider. Now I can in fact realize why we had these big differences between the different quantiles in the non `SSM` experiments → that's because those experiments **were the only one done with the $\tau$ multiplicative approach** (in fact if we look at the [[j3c_paper#^a2c187|updated `FD002` result table]] the error metrics look similar across the quantiles also for the non `SSM` models). Now we can see this variability across different quantiles also here and that is probably given by the addition of the multiplication by $\tau$ at the end which forces the prediction to be lower for low quantiles and higher for high quantiles. 
- 
+
+It is interesting to see what happens in the Prediction Interval plots here → in fact it probably makes more sense if there is some difference between the different quantiles (and so the prediction interval is larger) also for the `SSM`  models. In fact the very small prediction interval we get without the $\tau$ multiplicative approach may also be due just to random noise and not be statistically significant. In other words even if the results are worse metric wise they make more sense with this approach and they better show the effect of Quantile Regression → in any case the metric values here in `S4` are still better than the ones of the other models so the thesis that `SSM` are better still holds. 
+  
 ```txt
 ##################################################
 Mean eval loss over all the test lifes:
@@ -2243,6 +2248,12 @@ quantile_0.75     4.36
 quantile_0.9      6.25
 ##################################################
 ```
+
+###### Prediction Interval Plots
+
+The plot look very interesting now. We do not have anymore all the predictions close to each other but there is an estimated distribution which can be considered as *left skewed* ? In the sense that, as it is also possible to see from the metric values, we have a very high error in quantile 0.1 (whose prediction is very far from the other) while the predictions on the other quantile are much closer between one another and also closer to the true `RUL`. Moreover in `Life_56` there is not more just overestimation but we have a prediction signal (for example the 0.5 one) that intersects the true `RUL` more or less at half the life and so we have firstly an underestimation and then an overestimation. 
+
+Differently in the `Transformer` model (of which we have both the `tau_mult` and the non `tau_mult` plots) the predictions over the different quantiles are separated also in quantiles higher than 0.5 creating probably a wider prediction interval. In any case the single prediction signals are further from the true `RUL` than in `S4`. 
 
 #### Dataset `FD002`
 
@@ -2692,6 +2703,46 @@ p-value: 0.0000
 
 The shape of the `RUL` predicted signals is similar to the one obtained with `S4` but we have an higher variance, an higher difference betweeen the different quantile predctions. This is a confirmation of the highe metric values.
 
+##### Experiment 4 `S5` `FD001` `tau_mult` 5️⃣ 🪟 🌗 ✖️
+
+Let's do a proper `tau_mult` experiment for `S5` to see if the differences seen in `S4` when applying this approach can be seen also here, we will start with a 5 runs experiment.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/slych1kz?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+The results are similar to the [[ssm_experiments#Experiment 8 `S4` `FD001` `tau_mult` 4‍⃣ 🪟 🌗 ✖️|`S4` ones]] with  `S5` that has even better metric values than `S4` on quantile 0.1 and 0.25.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     23.54
+quantile_0.25    10.89
+quantile_0.5      9.88
+quantile_0.75    11.24
+quantile_0.9     14.89
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     23.74
+quantile_0.25     8.70
+quantile_0.5      8.10
+quantile_0.75     9.72
+quantile_0.9     12.08
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     10.05
+quantile_0.25     6.62
+quantile_0.5      6.78
+quantile_0.75     7.20
+quantile_0.9     12.17
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Prediction Interval plots similar to the `S4` ones, the prediction interval are slightly narrower and that's probably because of the smaller errors on quantile 0.1 and 0.25.
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `S5` `FD002` 5️⃣ 🪟 🌗
@@ -3038,6 +3089,14 @@ quantile_0.9      9.54
 ###### Prediction Interval Plots
 
 In `S4D` the predicted signals are much more oscillating than in `S4,S5` but they still maintain the shape of a linearly decreasing line. Also here there is not much difference between using $\tau$ as a multiplication factor and not.
+
+##### Experiment 4 `S4D` `FD001` `tau_mult` 4 D 🪟 🌗 ✖️
+
+Experiment with the `tau_mult` approach for 5 runs.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/g900af55?nw=nwuserfrizzodavide)
 
 #### Dataset `FD002`
 

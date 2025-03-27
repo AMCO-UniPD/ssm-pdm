@@ -301,10 +301,16 @@ Eva Masero, Walter Zoff, Claudio Mantega, Riccardo Scattolini, Politecnico di Mi
 
 Apparently we need to have a `PIN` (Personal Identification Number) for each paper inside the proposal. Some of the authors already have their `PIN`. I put here a to do list for the authors of which I have to generate the `PIN`:
 
+## Special Session Organizer
+
 - [x] Davide Frizzo → 179991
+- [x] Olga Fink → 138664 and 146315
+- [x] Lucas Brito → 180077
+- [x] Chia-Yu Hsu → 116694
+
+## Paper Authors
+
 - [x] Gian Antonio Susto → 72486
-- [x] Francesco Borsatti → 179146
-- [ ] Lucas Brito → to create
 - [x] Alessio Arcudi → 179994
 - [x] Davide Sartor → 179922
-- [x] Chia-Yu Hsu → 116694
+- [x] Francesco Borsatti → 179146

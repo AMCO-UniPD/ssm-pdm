@@ -226,9 +226,9 @@ Name: Life mean Loss, dtype: float64
 
 ###### Prediction plots
 
-The plors are similar to the ones of the previous experiments.
+The plots are similar to the ones of the previous experiments.
 
-### `Informer` Model Experiments 🧙‍♂️
+## `Informer` Model Experiments 🧙‍♂️
 
 Let's use the `model_summary` parameter to get the size of the `Informer` model. Here we had to use the manual computation of `model_summary` because `torchinfo` was not able to compute the number of parameters of the model.
 
@@ -487,7 +487,7 @@ Here it seems that it is following the same trend as the `RULTransformer` model.
 
 As expected same exact results as the `RNN` models.
 
-## `windowed` Approach + Pinball Loss Experiments 🪟 🎈
+### `windowed` Approach + Pinball Loss Experiments 🪟 🎈
 
 In this section we will report the results obtained in the `windowed` approach with the `Pinball Loss` 🪟 🎈
 
@@ -1040,6 +1040,32 @@ quantile_0.9     16.87
 | Life_median | 27.94 | 27.18 | 27.11 | 24.68 | 25.77 |
 | Life_std | 19.47 | 18.72 | 17.0 | 14.23 | 12.2 |
 
+###### Metrics Table Pinball Loss 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     12.69
+quantile_0.25    13.68
+quantile_0.5     10.81
+quantile_0.75    12.54
+quantile_0.9     16.60
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     11.03
+quantile_0.25    11.22
+quantile_0.5      8.69
+quantile_0.75    10.94
+quantile_0.9     14.52
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      8.01
+quantile_0.25     8.54
+quantile_0.5      6.18
+quantile_0.75     6.95
+quantile_0.9     10.00
+##################################################
+```
 ###### Prediction Interval Plots
 
 Here we have the usual high variance in the prediction interval that distinguishes the non `SSM` based models from the `SSM` ones. Here in `Life_52` if we consider quantiles 0.9 and 0.75 they are really close to the true prediction while quantile 0.1 and 0.25 are significantly overestimating. This is a problem because the model has an high uncertainty in its predictions and thus on a general use case it is not very easy to select the correct quantile to use for the predictions since we may be lucky and select the correct one or not. On the other hand with `SSM`s the model uncertainty is much lower and so the predictions are more reliable independently on the quantile chosen.

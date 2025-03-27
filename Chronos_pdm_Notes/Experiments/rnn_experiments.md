@@ -828,7 +828,7 @@ Experiment with 15 runs and with the quantile level $\tau$ as the multiplicative
 
 ###### Metrics Table Pinball Loss
 
-The results do not make a lot of sense, since the bestr quantile is, with a significant margin, quantile 0.75 while quantile 0.25 and 0.1 are the worst ones.
+The results do not make a lot of sense, since the best quantile is, with a significant margin, quantile 0.75 while quantile 0.25 and 0.1 are the worst ones.
 
 Comparing the loss plots of `LSTM` with the ones of the `SSM` models on equivalent runs (i.e. same run and same quantile) we can see that the loss values of `LSTM` are much higher than the ones of the other models both on `RMSE` and Pinball Loss so maybe that's the reason why we have this strange behavior. In any case the `LSTM` model has always been quite a strange model since it usually produces more or less the same predictions independently on the life.
 

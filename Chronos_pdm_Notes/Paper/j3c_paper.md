@@ -154,14 +154,14 @@ A quick comment that we can insert in the paper is the following:
 >[!note]
 > Here the results are obtained averaging the `RMSE` over different runs of the same model with different quantiles.
 
-| Model | quantile 0.25 | quantile 0.5 | quantile 0.75 |
-|-------|------| ---------| ---------|
-| `S4` | 18.85 | 17.03 | 16.26 |
-| `S5` | 30.78 | 30.00 | 29.01 |
-| `S4D` | 40.19 | 39.95 | 38.53 |
-| `LSTM` | 28.60 | 28.63 | 28.63 |
-| `Transformer` | 28.14 | 30.61 | 36.10 |
-| `Informer` | 29.94 | 25.86 | 27.16 |
+| Model         | quantile 0.25 | quantile 0.5 | quantile 0.75 |
+| ------------- | ------------- | ------------ | ------------- |
+| `S4`          | 18.85         | 17.03        | 16.26         |
+| `S5`          | 30.78         | 30.00        | 29.01         |
+| `S4D`         | 40.19         | 39.95        | 38.53         |
+| `LSTM`        | 28.60         | 28.63        | 28.63         |
+| `Transformer` | 28.14         | 30.61        | 36.10         |
+| `Informer`    | 29.94         | 25.86        | 27.16         |
 
 An important conclusion/comment after having done the Experiments 3 and 4 on `S4` with different `bounds` in Quantile Regression → we can say that these are ablation study experiments.
 
@@ -169,27 +169,29 @@ An important conclusion/comment after having done the Experiments 3 and 4 on `S4
 
 Below we report the table of results obtained using the Pinball Loss as the evaluation metric.
 
-| Model         | quantile 0.25 | quantile 0.5 | quantile 0.75 |
-| ------------- | ------------- | ------------ | ------------- |
-| `S4`          | 6.68          | 6.35         | 6.48          |
-| `S5`          | 11.49         | 11.16        | 11.90         |
-| `S4D`         | 12.97         | 13.50        | 13.66         |
-| `LSTM`        | 12.49         | 12.43        | 12.43          |
-| `Transformer` | 14.08         | 17.60        | 22.46         |
-| `Informer`    | 13.83         | 10.95        | 12.69         |
+>[!warning]
+> In these results there is a bit of disparity since the `SSM` models are evaluated on 15 runs while the others are evaluated only on 5 runs.  
 
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4`          | 6.93         | 6.51          | 7.08         | 7.07          | 7.52         |
+| `S5`          | 11.90        | 11.09         | 12.34        | 12.88         | 13.12        |
+| `S4D`         | 13.53        | 13.40         | 13.57        | 14.07         | 13.80        |
+| `LSTM`        | 12.49        | 12.49         | 12.43        | 12.43         | 12.50        |
+| `Transformer` | 14.28        | 14.08         | 17.60        | 22.46         | 23.64        |
+| `Informer`    | 12.69        | 13.68         | 10.81        | 12.54         | 16.60        |
 
 ### `FD002` Experiments `windowed` Approach + Quantile Regression 🪟 🌗
 
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
-| ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
-| `S4` | ??.?? | 34.56 | 35.34 | 32.77 | ??.?? |
-| `S5` | ??.?? | 53.86 | 45.85 | 41.62 | ??.?? |
-| `S4D` | ??.?? | 50.42 | 49.27 | 42.36 | ??.?? |
-| `LSTM` | ??.?? | 35.47 | 35.18 | 35.13 | ??.?? |
-| `Transformer` | ??.?? | 35.08 | 35.08 | 35.09 | ??.?? |
-| `Informer` | ??.?? | 34.95 | 35.08 | 34.96 | ??.?? |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4`          | ??.??        | 34.56         | 35.34        | 32.77         | ??.??        |
+| `S5`          | ??.??        | 53.86         | 45.85        | 41.62         | ??.??        |
+| `S4D`         | ??.??        | 50.42         | 49.27        | 42.36         | ??.??        |
+| `LSTM`        | ??.??        | 35.47         | 35.18        | 35.13         | ??.??        |
+| `Transformer` | ??.??        | 35.08         | 35.08        | 35.09         | ??.??        |
+| `Informer`    | ??.??        | 34.95         | 35.08        | 34.96         | ??.??        |
 
 #### Pinball Loss Evaluation
 
@@ -199,13 +201,13 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 ^a2c187
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
-| ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
-| `S4` | 11.91 | 10.70 | 10.45 | 12.25 | 11.76 |
-| `S5` | 21.07 | 24.12 | 24.11 | 20.35 | 20.47 |
-| `S4D` | 16.85 | 15.95 | 16.09 | 14.78 | 16.63 |
-| `LSTM` | 15.27 | 15.60 | 15.86 | 16.02 | 15.95 |
-| `Transformer` | 15.76 | 15.85 | 15.82 | 15.77 | 16.15 |
-| `Informer` | 16.15 | 16.27 | 15.81 | 15.60 | 14.74 |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4`          | 13.26        | 11.69         | 12.46        | 11.70         | 12.31        |
+| `S5`          | 21.07        | 24.12         | 24.11        | 20.35         | 20.47        |
+| `S4D`         | 16.85        | 15.95         | 16.09        | 14.78         | 16.63        |
+| `LSTM`        | 15.27        | 15.60         | 15.86        | 16.02         | 15.95        |
+| `Transformer` | 15.76        | 15.85         | 15.82        | 15.77         | 16.15        |
+| `Informer`    | 16.15        | 16.27         | 15.81        | 15.60         | 14.74        |
 
 ### `FDOO1` Experiments `windowed` Approach + Quantile Regression 🪟 🌗 + $\tau$ multiplicative factor
 
@@ -216,15 +218,27 @@ This is the last set of experiments I will perform (probably). Differently from 
 > The $\tau$ multiplicative approach is used only on the non `SSM` models and it is worsening the results in terms of metrics. In any case the observations [[j3c_paper#^e78771|I did up to now]] are still valid: there is higher variability in the predictions on different quantiles made by `LSTM` and `Transformer` based models. 
 > In the plots we have the high variability between diffferent quantiles also in the non $\tau$ multiplication experiments, here we have these big differences also on the metric values.
 
+>[!note]
+> The results in *italic* are the ones where the  `tau_mult` approach is actually used.
+
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
-| `S4`          | 6.93         | 6.51          | 7.08         | 7.07          | 7.52         |
+| `S4`          | *31.70*      | *18.25*       | *8.36*       | *7.77*        | *10.63*      |
 | `S5`          | 11.90        | 11.09         | 12.34        | 12.88         | 13.12        |
 | `S4D`         | 13.53        | 13.40         | 13.57        | 14.07         | 13.80        |
-| `LSTM`        | 37.28        | 29.07         | 16.97        | 14.90         | 23.58        |
-| `Transformer` | 33.98        | 21.08         | 11.81        | 29.42         | 50.63        |
-| `Informer`    | 34.69        | 23.33         | 11.40        | 30.95         | 50.91        |
+| `LSTM`        | *37.28*      | *29.07*       | *16.97*      | *14.90*       | *23.58*      |
+| `Transformer` | *33.98*      | *21.08*       | *11.81*      | *29.42*       | *50.63*      |
+| `Informer`    | *34.69*      | *23.33*       | *11.40*      | *30.95*       | *50.91*      |
+### `FDOO2` Experiments `windowed` Approach + Quantile Regression 🪟 🌗 + $\tau$ multiplicative factor
 
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4`          |              |               |              |               |              |
+| `S5`          |              |               |              |               |              |
+| `S4D`         |              |               |              |               |              |
+| `LSTM`        |              |               |              |               |              |
+| `Transformer` |              |               |              |               |              |
+| `Informer`    |              |               |              |               |              |
 
 # Text to insert in the paper
 
@@ -269,6 +283,11 @@ This is a comment I copied from the `Prediction Interval Plots` section of exper
 >[!success]
 > Added in the `Experiment Results` section
 
+Comment from `Prediction Interval Plots` section of [[ssm_experiments#Experiment 8 `S4` `FD001` 4‍⃣ 🪟 🌗|the first `S4` experiment where `tau_mult` was really used]], we may have to substitute the observation done above with this one if we end up inserting the `tau_mult` approach.
+
+>[!important] To insert in the paper
+>The plot look very interesting now. We do not have anymore all the predictions close to each other but there is an estimated distribution which can be considered as *left skewed* ? In the sense that, as it is also possible to see from the metric values, we have a very high error in quantile 0.1 (whose prediction is very far from the other) while the predictions on the other quantile are much closer between one another and also closer to the true `RUL`. Moreover in `Life_56` there is not more just overestimation but we have a prediction signal (for example the 0.5 one) that intersects the true `RUL` more or less at half the life and so we have firstly an underestimation and then an overestimation. 
+>Differently in the `Transformer` model (of which we have both the `tau_mult` and the non `tau_mult` plots) the predictions over the different quantiles are separated also in quantiles higher than 0.5 creating probably a wider prediction interval. In any case the single prediction signals are further from the true `RUL` than in `S4`. 
 ### Future predictions 
 
 >[!important] To insert in the paper
@@ -301,3 +320,35 @@ In contrast, \texttt{LSTM}, \texttt{Transformer}, and \texttt{Informer} represen
 reaching the order of $10^8$, this stems from the quadratic complexity of the self-attention mechanism in the \texttt{Transformer} and \texttt{Informer} models,
 which is one of the main limitations of attention based architectures and consequently one of the main reasons for the development of the \ac{SSM} models.
 ```
+
+## Old version of Abstract
+
+Old version of the Abstract that I had to remove to respect the limit of 100 words.
+
+```tex
+%NOTE: Original abstract → 124 words
+
+\ac{PdM} is increasingly pivotal within Industry 4.0 and 5.0 contexts, offering a proactive strategy to enhance efficiency by
+forecasting equipment \ac{RUL}. Accurate \ac{RUL} prediction optimizes maintenance scheduling,
+minimizing both unexpected failures and premature interventions. This paper introduces a novel \ac{RUL} estimation approach
+leveraging \ac{SSM} to efficiently capture long-term sequence dependencies. To robustly manage uncertainty inherent in \ac{RUL} estimation,
+\ac{SQR} is integrated into the \ac{SSM} architecture, enabling estimation of multiple quantiles of the target distribution.
+The effectiveness of the proposed methodology is evaluated against state of the art sequence modeling techniques 
+(\ac{LSTM,} Transformer, and Informer) using the widely recognized \ac{C-MAPSS} benchmark dataset.
+Results highlight superior predictive accuracy and improved uncertainty quantification of \ac{SSM} models,
+which demonstrates significant promise for practical deployment in high-stakes industrial environments.
+
+%NOTE: Shorter version → 116 words
+
+\ac{PdM} is increasingly pivotal within Industry 4.0 and 5.0 contexts, offering a proactive strategy to enhance efficiency by
+forecasting equipment \ac{RUL}. Accurate \ac{RUL} prediction optimizes maintenance scheduling,
+minimizing unexpected failures and premature interventions. This paper introduces a novel \ac{RUL} estimation approach
+leveraging \ac{SSM} to efficiently capture long-term sequence dependencies. To manage model uncertainty in \ac{RUL} estimation,
+\ac{SQR} is integrated into the \ac{SSM} architecture, enabling estimation of multiple quantiles of the target distribution.
+The effectiveness of the proposed methodology is evaluated against traditional sequence modeling techniques
+(\ac{LSTM}, Transformer, and Informer) using the \ac{C-MAPSS} benchmark dataset.
+Results highlight superior predictive accuracy and improved uncertainty quantification of \ac{SSM} models,
+demonstrating significant promise for practical deployment in high-stakes industrial environments.
+```
+
+
