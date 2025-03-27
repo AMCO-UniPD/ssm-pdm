@@ -28,6 +28,7 @@ from utils import (
 
 from perf import(
     lifes_metrics,
+    print_summary_metrics,
     sub_lifes_metrics,
     df_with_index_to_obsidian_table
 )
@@ -72,19 +73,9 @@ for i in range(config.n_runs):
 
 # Create a new pd.DataFrame with the same shape of all the metrics_df which contains the mean of all the pd.DataFrames inside metrics_dfs
 mean_metrics_df=(sum(metrics_dfs)/len(metrics_dfs)).round(2)
-# Compute the mean, median and std of the metrics
-mean_metrics_df.loc["Life_mean"] = mean_metrics_df.mean(axis=0).round(2)
-mean_metrics_df.loc["Life_median"] = mean_metrics_df.median(axis=0).round(2)
-mean_metrics_df.loc["Life_std"] = mean_metrics_df.std(axis=0).round(2)
 
 if config.print_summary_metrics:
-    print('#'* 50)
-    print(f"Mean eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_mean']}")
-    print('#'* 50)
-    print(f"Median eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_median']}")
-    print('#'* 50)
-    print(f"Std eval loss over all the test lifes:\n{mean_metrics_df.loc['Life_std']}")
-    print('#'* 50)
+    print_summary_metrics(metrics_df=mean_metrics_df)
 
 metrics_df_path = generate_path(basepath=experiment_path,
                                 folders=[

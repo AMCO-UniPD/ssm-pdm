@@ -60,7 +60,6 @@ def lifes_metrics(
     print(f"Opened outputs_dict at path: {outputs_path}")
     print('#'* 50)
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
-    ipdb.set_trace()
 
     _,eval_criterion=load_loss_functions(
         loss_name=config.loss,
@@ -178,4 +177,30 @@ def df_with_index_to_obsidian_table(df):
         lines.append("| " + " | ".join([str(idx)] + list(map(str, row))) + " |")
     return "\n".join(lines)
 
+# Function to print the summary metrics of a metrics_df dataframe
 
+def print_summary_metrics(
+        metrics_df: pd.DataFrame,
+    ) -> None:
+    """
+    Print the summary metrics of a metrics_df dataframe
+
+    Args:
+        metrics_df:pd.DataFrame Metrics DataFrame
+
+    Returns:
+        None: The function computes and prints the summary metrics and does not return anything
+    """
+
+    # Compute the mean, median and std of the metrics
+    metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
+    metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
+    metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
+
+    print('#'* 50)
+    print(f"Mean eval loss over all the test lifes:\n{metrics_df.loc['Life_mean']}")
+    print('#'* 50)
+    print(f"Median eval loss over all the test lifes:\n{metrics_df.loc['Life_median']}")
+    print('#'* 50)
+    print(f"Std eval loss over all the test lifes:\n{metrics_df.loc['Life_std']}")
+    print('#'* 50)

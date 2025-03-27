@@ -24,6 +24,8 @@ from utils import (
     open_element,
 )
 
+from perf import print_summary_metrics
+
 experiment_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"chronos_exp")
 
 config_path=os.path.join(experiment_path,"config","ssm_exp_config.yaml")
@@ -39,17 +41,27 @@ metrics_df_dirpath = generate_path(basepath=experiment_path,
                                     config.approach,
                                     "quantile_reg",
                                     config.exp_name,
-                                    "metrics_df_runs"
                                 ])
-metrics_df_path = get_most_recent_file(metrics_df_dirpath,file_pos=config.file_pos)
 
-print('#'* 50)
-print(f"Opening metrics_df from {metrics_df_path}")
-print('#'* 50)
+if config.print_summary_metrics:
 
-metrics_dfs = open_element(metrics_df_path)
+    metrics_df_path = get_most_recent_file(metrics_df_dirpath,file_pos=config.file_pos)
+    print('#'* 50)
+    print(f"Opening metrics_df from {metrics_df_path}")
+    print('#'* 50)
+
+    metrics_df = open_element(metrics_df_path)
+    print_summary_metrics(metrics_df)
 
 if config.stat_test:
+
+    metrics_df_runs_dirpath = generate_path(basepath=metrics_df_dirpath,folders=["metrics_df_runs"])
+    metrics_df_runs_path = get_most_recent_file(metrics_df_runs_dirpath,file_pos=config.file_pos)
+    print('#'* 50)
+    print(f"Opening metrics_df from {metrics_df_runs_path}")
+    print('#'* 50)
+
+    metrics_dfs = open_element(metrics_df_runs_path)
 
     print('#'* 50)
     print(f"Executing independent T test on quantiles: {config.quantile_to_test[0]} and {config.quantile_to_test[1]}")
