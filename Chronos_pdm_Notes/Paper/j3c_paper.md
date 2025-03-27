@@ -13,13 +13,13 @@ In this note  I want to write down the things to do to produce the paper for the
 Looking at the presentation me and Francesco did for the `Elements of Deep Learning` exam there are some things that can be kept:
 
 - Results of `Windowed Anti-Causal` approach for mode `FD001,FD002` of `CMAPSS`
-    - [ ] Write down the table (Slide 41 for `FD001`, slide 43 for `FD002`) in `latex` format and insert it into the Overleaf project
+    - [x] Write down the table (Slide 41 for `FD001`, slide 43 for `FD002`) in `latex` format and insert it into the Overleaf project
 - Prediction plots for `FD001,FD002`
-    - [ ] Find out where the plots are contained (probably inside `acquario3`) and insert some of them in the Overleaf project
+    - [x] Find out where the plots are contained (probably inside `acquario3`) and insert some of them in the Overleaf project
 - Table with analysis of parameter size and number of operations of each model
-    - [ ] Write the table of Slide 52 in `latex` format and add it to the Overleaf project
+    - [x] Write the table of Slide 52 in `latex` format and add it to the Overleaf project
 - Blob plot representing the results of the table
-    - [ ] Find out where the blob plot is contained and insert it in the Overleaf project. Here I have to decide weather to include the plot or the table, since they represent the same thing → maybe the plot is more intuitive.
+    - [x] Find out where the blob plot is contained and insert it in the Overleaf project. Here I have to decide weather to include the plot or the table, since they represent the same thing → maybe the plot is more intuitive.
 
 ### Images to add
 
@@ -43,7 +43,7 @@ All the images to add should be contained in the folder `PredMainAnomaDet/notebo
 - Perform experiments on `FD003,FD004` of `CMAPSS` dataset
     - [ ] Here I need to do the Code Refactoring and I also need to be able to reproduce the experiments on `FD001` and `FD002` so that I am sure that they are done with the same settings.
 - Try to use the Pinball Loss (instead of the `PDM_Loss` I wrote in the presentation) to try to deal with the underestimation/overestimation trade-off.
-    - [ ] Maybe if this works fine we can do all the experiments with it instead of reporting the results obtained up to now (which did not use this kind of loss).
+    - [x] Maybe if this works fine we can do all the experiments with it instead of reporting the results obtained up to now (which did not use this kind of loss).
 
 # Results Analysis
 
@@ -165,7 +165,6 @@ A quick comment that we can insert in the paper is the following:
 
 An important conclusion/comment after having done the Experiments 3 and 4 on `S4` with different `bounds` in Quantile Regression → we can say that these are ablation study experiments.
 
-
 #### Pinball Loss Evaluation
 
 Below we report the table of results obtained using the Pinball Loss as the evaluation metric.
@@ -194,8 +193,10 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 
 #### Pinball Loss Evaluation
 
->[!note]
-> The metric values need to be updated when the new experiments with the $\tau$ multiplicative factor are executed.
+>[!warning]
+> These are the results obtained without the $\tau$ multiplicative approach, that's why also the non `SSM` model metrics look so good and so similar across different quantiles.
+
+^a2c187
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
@@ -210,14 +211,19 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 
 This is the last set of experiments I will perform (probably). Differently from the previous Quantile Regression experiments the quantile level $\tau$ is used in the `forward` passage of the model both as a constant signal to concatenate to the input features and also as a multiplicative factor to the final model prediction → so the final sequence of predicted `RUL` values (obtained after the final `FFN` layer and the `gap` layer) is multiplied by $\tau$. In these experiments I used the usual Quantile Regression loss function to train the model and then I used the Pinball loss with $\tau=0.3$ to evaluate the different models (and the different quantiles) on the test lifes. With this new approach it seems that the quantiles we are most interesting in (quantile 0.25 and 0.1) show a visible improvement in the test metrics over the others when evaluated with the Pinball Loss.
 
+>[!warning]
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
+> The $\tau$ multiplicative approach is used only on the non `SSM` models and it is worsening the results in terms of metrics. In any case the observations [[j3c_paper#^e78771|I did up to now]] are still valid: there is higher variability in the predictions on different quantiles made by `LSTM` and `Transformer` based models. 
+> In the plots we have the high variability between diffferent quantiles also in the non $\tau$ multiplication experiments, here we have these big differences also on the metric values.
+
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
-| ------------- | -------------- | ------------ | ------------ | ------------- | ------------- |
-| `S4` | 6.93 | 6.51 | 7.08 | 7.07 | 7.52 |
-| `S5` | 11.90 | 11.09 | 12.34 | 12.88 | 13.12 |
-| `S4D` | 13.53 | 13.40 | 13.57 | 14.07 | 13.80 |
-| `LSTM` | 37.28 | 29.07 | 16.97 | 14.90 | 23.58 |
-| `Transformer` | 33.98 | 21.08 | 11.81 | 29.42 | 50.63 |
-| `Informer` | 34.69 | 23.33 | 11.40 | 30.95 | 50.91 |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4`          | 6.93         | 6.51          | 7.08         | 7.07          | 7.52         |
+| `S5`          | 11.90        | 11.09         | 12.34        | 12.88         | 13.12        |
+| `S4D`         | 13.53        | 13.40         | 13.57        | 14.07         | 13.80        |
+| `LSTM`        | 37.28        | 29.07         | 16.97        | 14.90         | 23.58        |
+| `Transformer` | 33.98        | 21.08         | 11.81        | 29.42         | 50.63        |
+| `Informer`    | 34.69        | 23.33         | 11.40        | 30.95         | 50.91        |
 
 
 # Text to insert in the paper
@@ -253,6 +259,8 @@ Important observation to insert in the paper when comment the results of the dif
 >[!important] To insert in the paper
 > I produced the Prediction Interval plot for `RULTransformer` obtained in the previous set of experiments (i.e. 5 runs and without $\tau$ multiplicating the output) and they are quite similar → I didn't notice this difference because I never produced the prediction plots other than for `S4` because I thought they would be all similar. Actually this is a good result for my thesis of demonstrating the `SSM` are better than the other models. In fact in this `RULTransformer` plot the predicted `RUL` signals are not exactly logarithmic (they have a shape similar to the one of a straight line) but there is much more variability on the different quantiles so for example in `Life_52` (where the model underestimates the `RUL`) the higher quantiles are close to the `RUL` in the last samples. On the other hand the advantage of `SSM` is that they are much more stable across the different quantiles and the different runs and the error stays more or less at the same distance from the true `RUL` across all the time steps → this is probably due to the better capabilities of `SSM` to model long term dependencies → so they are able to remember the linear shape of the `RUL` target all along the test life.
 
+^e78771
+
 This is a comment I copied from the `Prediction Interval Plots` section of experiment 1 of `Informer` model. There is a good observation on the difference with `SSM` models plots and why I think the results on `SSM` are better than the others.
 
 >[!important] To insert in the paper
@@ -260,6 +268,11 @@ This is a comment I copied from the `Prediction Interval Plots` section of exper
 
 >[!success]
 > Added in the `Experiment Results` section
+
+### Future predictions 
+
+>[!important] To insert in the paper
+> Another point in favor of `SSM` models is the fact that the produced predicted `RUL` signals are much closer in shape to the true `RUL` signal and, since the test lifes are truncated, in case we try to extend the prediction on future time steps (for which however there is no availability of the input data on which to perform predictions) the predictions would be much more reliable than the ones produced by non `SSM` models. 
 
 # Text removed from the paper
 

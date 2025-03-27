@@ -5,7 +5,6 @@ tags:
   - experiments
   - ssm_pdm
 ---
-
 # `SSM` `PdM` Experiments
 
 In this note I will report the results of the experiments performed with the `SSM` based models (i.e. `S4,S5,S4D`). 
@@ -1346,6 +1345,9 @@ exp_name: multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
 exp_name: multi_run_23-03-2025_16-52-06_S4D_FD001_windowed_quantile_reg
 exp_name: multi_run_24-03-2025_08-12-23_LSTM_FD001_windowed_quantile_reg
 
+# FD001, real tau multiplicative factor
+exp_name: multi_run_26-03-2025_17-48-45_S4_FD001_windowed_quantile_reg_tau_mult
+
 # FD001 Experiments with changes on the quantile sampling distribution
 # S4 bounds=[0.1,0.5]
 exp_name: multi_run_20-03-2025_12-00-49_S4_FD001_windowed_quantile_reg
@@ -2212,6 +2214,35 @@ After the [[ssm_experiments#^335e5a|gigantic error]] let's perform an experiment
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/7gus7uua?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+The results here are obviously worse but there is an interesting thing to consider. Now I can in fact realize why we had these big differences between the different quantiles in the non `SSM` experiments → that's because those experiments **were the only one done with the $\tau$ multiplicative approach** (in fact if we look at the [[j3c_paper#^a2c187|updated `FD002` result table]] the error metrics look similar across the quantiles also for the non `SSM` models). Now we can see this variability across different quantiles also here and that is probably given by the addition of the multiplication by $\tau$ at the end which forces the prediction to be lower for low quantiles and higher for high quantiles. 
+ 
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     31.70
+quantile_0.25    18.25
+quantile_0.5      8.36
+quantile_0.75     7.77
+quantile_0.9     10.63
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     31.58
+quantile_0.25    18.25
+quantile_0.5      7.83
+quantile_0.75     6.53
+quantile_0.9      9.80
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     10.05
+quantile_0.25     9.66
+quantile_0.5      4.88
+quantile_0.75     4.36
+quantile_0.9      6.25
+##################################################
+```
 
 #### Dataset `FD002`
 

@@ -5,7 +5,6 @@ tags:
   - experiments
   - ssm_pdm
 ---
-
 # `Transformer` `PdM` Experiments
 
 In this note I will report the results obtained with the `Transformer` based models (i.e. `Transformer`, `Informer`).

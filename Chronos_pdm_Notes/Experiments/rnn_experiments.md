@@ -5,7 +5,6 @@ tags:
   - experiments
   - ssm_pdm
 ---
-
 # `RNN` `PdM` Experiments
 
 In this note I will report the results obtained with the `RNN` base models (i.e. `RNN,LSTM,GRU`).
