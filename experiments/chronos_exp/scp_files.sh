@@ -1,8 +1,8 @@
 #!/bin/bash
 
-MODELS=('S4D')
+MODELS=('S4')
 FOLDER=('plots')
-DATASET='FD002'
+DATASET='FD001'
 APPROACH='windowed'
 N_RUNS=1
 
@@ -15,6 +15,7 @@ N_RUNS=1
 # exp_name=multi_run_14-03-2025_16-37-39_RULInformer_FD001_windowed_quantile_reg
 #
 # Experiment names FD001 tau multiplicative
+#
 # exp_name=multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
 # exp_name=multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
 # exp_name=multi_run_23-03-2025_16-52-06_S4D_FD001_windowed_quantile_reg
@@ -22,11 +23,13 @@ N_RUNS=1
 # exp_name=multi_run_24-03-2025_17-00-56_RULTransformer_FD001_windowed_quantile_reg
 # exp_name=multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
 
+# Experiment names FD001 real tau multiplicative
+exp_name=multi_run_26-03-2025_17-48-45_S4_FD001_windowed_quantile_reg_tau_mult
 
 # Experiment names - FD002 dataset
 # exp_name=multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
 # exp_name=multi_run_18-03-2025_10-58-34_S5_FD002_windowed_quantile_reg
-exp_name=multi_run_18-03-2025_15-32-30_S4D_FD002_windowed_quantile_reg
+# exp_name=multi_run_18-03-2025_15-32-30_S4D_FD002_windowed_quantile_reg
 # exp_name=multi_run_18-03-2025_18-13-05_RULInformer_FD002_windowed_quantile_reg
 # exp_name=multi_run_19-03-2025_15-00-46_RULTransformer_FD002_windowed_quantile_reg
 # exp_name=multi_run_19-03-2025_21-27-39_LSTM_FD002_windowed_quantile_reg
@@ -67,9 +70,6 @@ file_pos=(1)
 
 # Iterate over the runs
 for pos in "${file_pos[@]}"; do
-  # echo "############################################"
-  # echo "Copying the file for pos $pos"
-  # echo "############################################"
   # run='run_'$i
   # acquario3_path_run="$acquario3_path$run"
 
@@ -79,17 +79,15 @@ for pos in "${file_pos[@]}"; do
   echo "############################################"
   scp acquario3:$latest_file .
  
-  acquario3_path_files=$(ssh acquario3 "cd $acquario3_path && ls")
+  # acquario3_path_files=$(ssh acquario3 "cd $acquario3_path && ls")
+  # echo "############################################"
+  # echo "Files in acquario3 path: $acquario3_path_files"
+  # echo "############################################"
   # scp -r acquario3:$acquario3_path .
 
   # rul_plots_name_run="$rul_plots_name${i}_${quantiles_names}.pdf"
   # mv $(basename $latest_file) $rul_plots_name_run
 
-  # echo "############################################"
-  # echo "basename: $(basename $latest_file)"
-  # echo "############################################"
-  # echo "############################################"
-  # echo "Files in acquario3 path: $acquario3_path_files"
 done
 
 # cd to_rename
