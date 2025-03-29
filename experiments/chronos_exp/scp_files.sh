@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODELS=('S5')
+MODELS=('S4')
 FOLDER=('plots')
 DATASET='FD001'
 APPROACH='windowed'
@@ -25,8 +25,11 @@ N_RUNS=1
 
 # Experiment names FD001 real tau multiplicative
 # exp_name=multi_run_26-03-2025_17-48-45_S4_FD001_windowed_quantile_reg_tau_mult
-exp_name=multi_run_27-03-2025_14-23-46_S5_FD001_windowed_quantile_reg_tau_mult
+# exp_name=multi_run_27-03-2025_14-23-46_S5_FD001_windowed_quantile_reg_tau_mult
 # exp_name=multi_run_27-03-2025_17-30-47_S4D_FD001_windowed_quantile_reg_tau_mult
+
+# Experiment names FD001 real tau multiplicative + no_tau_float
+exp_name=29-03-2025_10-07-53_S4_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 
 # Experiment names - FD002 dataset
 # exp_name=multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
@@ -36,9 +39,10 @@ exp_name=multi_run_27-03-2025_14-23-46_S5_FD001_windowed_quantile_reg_tau_mult
 # exp_name=multi_run_19-03-2025_15-00-46_RULTransformer_FD002_windowed_quantile_reg
 # exp_name=multi_run_19-03-2025_21-27-39_LSTM_FD002_windowed_quantile_reg
 
-# Experiment names FD002 dataset tau multiplicative
-# exp_name=multi_run_26-03-2025_07-53-59_S4_FD002_windowed_quantile_reg
-# exp_name=multi_run_26-03-2025_10-49-12_S5_FD002_windowed_quantile_reg
+# Experiment names FD002 dataset real tau multiplicative
+# exp_name=multi_run_28-03-2025_08-57-13_S4_FD002_windowed_quantile_reg_tau_mult
+# exp_name=multi_run_28-03-2025_12-35-12_S5_FD002_windowed_quantile_reg_tau_mult
+# exp_name=multi_run_29-03-2025_07-30-40_S4D_FD002_windowed_quantile_reg_tau_mult
 
 # Store the initial part of the path in acquario3
 INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
@@ -47,12 +51,18 @@ INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
 # Path for Prediction Interval plots
 acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$exp_name/interval/"
 
+# blob plot path
+# blob_plot_path="$INITIAL_DIR/$FOLDER/blob_plot/$DATASET/"
+
 # cd into local path in my local machine
 # cd ../../../ssm_pdm_paper/Img/rul_plots/$MODELS/$DATASET/
+# path for prediction interval plots
 cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET
+# path for blob plots
+# cd ../../../ssm_pdm_paper/Img
 
 # if folder interval does not exist create it and cd into it
-# subfolder="interval"
+# subfolder="blob_plots"
 #
 # if [ ! -d $subfolder ]; then
 #   echo "Creating the folder $subfolder"
@@ -75,7 +85,16 @@ for pos in "${file_pos[@]}"; do
   # run='run_'$i
   # acquario3_path_run="$acquario3_path$run"
 
+  # latest_file=$(ssh acquario3 "find $acquario3_path -name '*.pdf' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
+  # echo "############################################"
+  # echo "Copying file: $latest_file"
+  # echo "############################################"
+  # scp acquario3:$latest_file .
+
+  # prediction interval plots
   latest_file=$(ssh acquario3 "find $acquario3_path -name '*.pdf' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
+  # blob plots
+  # latest_file=$(ssh acquario3 "find $blob_plot_path -name '*.png' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
   echo "############################################"
   echo "Copying file: $latest_file"
   echo "############################################"
