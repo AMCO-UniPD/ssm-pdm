@@ -15,57 +15,43 @@ Let's consider also here the `padding` approach first.
 
 ### `Transformer` Model Experiments 🤖
 
-Let's use the `model_summary` parameter to get the size of the `Transformer` model.
-
->[!note]
-> Here I reduced the `d_model` parameter from 512 to 128 because otherwise the model was too big (more than `19M` parameters) and since I know that `Transformer` models tend to fall into a `CUDAOutOfMemory` error I decided to reduce the size of the model. Maybe I will do the same also on the `RNN` based models.
+### Model Summary
 
 ```txt
-=========================================================================
-==========================================
-Total params: 3,624,692
-Trainable params: 3,624,692
-Non-trainable params: 0
-Total mult-adds (Units.MEGABYTES): 3.03
-=========================================================================
-==========================================
-Input size (MB): 0.03
-Forward/backward pass size (MB): 59.91
-Params size (MB): 12.13
-Estimated Total Size (MB): 72.06
-=========================================================================
-==========================================
+##################################################
+RULTransformer model summary with calflops:
+FLOPS: 242.409 MFLOPS
+mult_adds: 120.572 MMACs
+Params: 621.61 K
+##################################################
 ```
-
-The number of parameters it's really high. To have an idead of how high it is let's consider that `S4` has `3.3M` parameters with `d_model=512` and here we are already higher than that with `d_model=128`.
-
 #### Dataset `FD001`
 
 ##### Experiment 1 `Transformer` `FDOO1` `padding` 🤖 1️⃣ 🦜
 
 A part from the `d_model` parameter we have more or less the same configuration of the `S4` model.
-
-| Parameter | Value |
-|-----------|-------|
-| `model_type` | `Transformer` |
-| `cmapss_model` | `FD001` |
-| `val_idx` | `[0,50]` |
-| `test_idx` | `[50,100]` |
+   
+| Parameter          | Value                     |
+| ------------------ | ------------------------- |
+| `model_type`       | `Transformer`             |
+| `cmapss_model`     | `FD001`                   |
+| `val_idx`          | `[0,50]`                  |
+| `test_idx`         | `[50,100]`                |
 | `transformer_type` | 1 (no feature extraction) |
-| `window_size` | 20 |
-| `scaler` | `MinMaxScaler(-1,1)` |
-| `epochs`  | 100    |
-| `lr` | 1e-3 |
-| `weight_decay` | 1e-4 |
-| `sequence_length` | 500 |
-| `n_layers` | 5 |
-| `activation` | `relu` |
-| `final_act` | `glu` |
-| `hidden_size` | 128 |
-| `d_ff` | 2048 |
-| `n_heads` | 8 |
-| `loss` | `mae` |
-| `eval_loss` | `mse` |
+| `window_size`      | 20                        |
+| `scaler`           | `MinMaxScaler(-1,1)`      |
+| `epochs`           | 100                       |
+| `lr`               | 1e-3                      |
+| `weight_decay`     | 1e-4                      |
+| `sequence_length`  | 500                       |
+| `n_layers`         | 5                         |
+| `activation`       | `relu`                    |
+| `final_act`        | `glu`                     |
+| `hidden_size`      | 128                       |
+| `d_ff`             | 2048                      |
+| `n_heads`          | 8                         |
+| `loss`             | `mae`                     |
+| `eval_loss`        | `mse`                     |
 
 >[!warning]
 > Remember to change `d_model` from 512 to 128 in `ssm_config.yaml` before starting the experiment.
@@ -906,6 +892,17 @@ quantile_0.9     10.90
 See [[ssm_experiments#Prediction Plots `FD002`|here]]. As for the `Informer` the worst lifes are `Life_135,Life_140`, also here `Life_141` is not bad as in the `SSM` models.
 
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
+
+### Model Summary
+
+```txt
+##################################################
+RULInformer model summary with calflops:
+FLOPS: 257.421 MFLOPS
+mult_adds: 127.775 MMACs
+Params: 724.138 K
+##################################################
+```
 
 #### Dataset `FD001`
 

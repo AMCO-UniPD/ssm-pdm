@@ -214,21 +214,19 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 This is the last set of experiments I will perform (probably). Differently from the previous Quantile Regression experiments the quantile level $\tau$ is used in the `forward` passage of the model both as a constant signal to concatenate to the input features and also as a multiplicative factor to the final model prediction → so the final sequence of predicted `RUL` values (obtained after the final `FFN` layer and the `gap` layer) is multiplied by $\tau$. In these experiments I used the usual Quantile Regression loss function to train the model and then I used the Pinball loss with $\tau=0.3$ to evaluate the different models (and the different quantiles) on the test lifes. With this new approach it seems that the quantiles we are most interesting in (quantile 0.25 and 0.1) show a visible improvement in the test metrics over the others when evaluated with the Pinball Loss.
 
 >[!warning]
-> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
+> Results affected by the [[ssm_experiments#^335e5a|gigantic error]].
 > The $\tau$ multiplicative approach is used only on the non `SSM` models and it is worsening the results in terms of metrics. In any case the observations [[j3c_paper#^e78771|I did up to now]] are still valid: there is higher variability in the predictions on different quantiles made by `LSTM` and `Transformer` based models. 
 > In the plots we have the high variability between diffferent quantiles also in the non $\tau$ multiplication experiments, here we have these big differences also on the metric values.
 
->[!note]
-> The results in *italic* are the ones where the  `tau_mult` approach is actually used.
-
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
-| `S4`          | *31.70*      | *18.25*       | *8.36*       | *7.77*        | *10.63*      |
-| `S5`          | 11.90        | 11.09         | 12.34        | 12.88         | 13.12        |
-| `S4D`         | 13.53        | 13.40         | 13.57        | 14.07         | 13.80        |
+| `S4`          | **31.70**      | **18.25**       | **8.36**       | **7.77**        | **10.63**      |
+| `S5`          | 23.54        | 10.89         | 9.88        | 11.24         | 14.89        |
+| `S4D`         | 21.77        | 12.91         | 14.12        | 14.37         | 14.54        |
 | `LSTM`        | *37.28*      | *29.07*       | *16.97*      | *14.90*       | *23.58*      |
 | `Transformer` | *33.98*      | *21.08*       | *11.81*      | *29.42*       | *50.63*      |
 | `Informer`    | *34.69*      | *23.33*       | *11.40*      | *30.95*       | *50.91*      |
+
 ### `FDOO2` Experiments `windowed` Approach + Quantile Regression 🪟 🌗 + $\tau$ multiplicative factor
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
@@ -288,10 +286,29 @@ Comment from `Prediction Interval Plots` section of [[ssm_experiments#Experiment
 >[!important] To insert in the paper
 >The plot look very interesting now. We do not have anymore all the predictions close to each other but there is an estimated distribution which can be considered as *left skewed* ? In the sense that, as it is also possible to see from the metric values, we have a very high error in quantile 0.1 (whose prediction is very far from the other) while the predictions on the other quantile are much closer between one another and also closer to the true `RUL`. Moreover in `Life_56` there is not more just overestimation but we have a prediction signal (for example the 0.5 one) that intersects the true `RUL` more or less at half the life and so we have firstly an underestimation and then an overestimation. 
 >Differently in the `Transformer` model (of which we have both the `tau_mult` and the non `tau_mult` plots) the predictions over the different quantiles are separated also in quantiles higher than 0.5 creating probably a wider prediction interval. In any case the single prediction signals are further from the true `RUL` than in `S4`. 
-### Future predictions 
+
+### Future predictions
 
 >[!important] To insert in the paper
 > Another point in favor of `SSM` models is the fact that the produced predicted `RUL` signals are much closer in shape to the true `RUL` signal and, since the test lifes are truncated, in case we try to extend the prediction on future time steps (for which however there is no availability of the input data on which to perform predictions) the predictions would be much more reliable than the ones produced by non `SSM` models. 
+
+## Prediction Interval plots comparison after `tau_mult` approach
+
+After having produced the prediction interval plots obtained with the `tau_mult` approach for `SSM` models the discussion of the results should be changed. In fact now we have some well visible differences between predictions produced by different quantiles also in the `SSM` models.
+
+>[!important] To insert in the paper
+> `SSM` based model outperform the rest of the considered architecture in the majority of the evaluation quantiles.
+> In the prediction interval plots produced by the `S4` models the most significant errors are produced for quantiles lower than 0.5 which results in significant underestimations of the `RUL` target. On the other hand predictions on higher quantile values, which correspond to an overestimation of the machine's useful life, are similar across different quantiles making them more stable and makes it more unlikely to produce high overestimation errors which are very dangerous since they may cause unexpected breaks. Moreover the shape of the predicte `RUL` signal closely ensembles the one of the target `RUL` making the model potentially robust and reliable in the predictions for the remaning time steps of the test life which is truncated.
+> On the other hand, predictions produced by the `Transformer` model are associated with wider prediction intervals, translating to an higher model uncertainty which may potentially produce pronounced errors in the predictions making the model less robust and reliable to future time steps predictions considering also the shape of the predicted `RUL` signals which is not so close to the true `RUL` signal.
+
+## Blob Plot Description
+
+After having produced a good version of the blob plot we can get some conclusions from it to insert in the paper.
+
+From the `FD001` blob plot we may change the opinion on what is our best model → from `S4` to `S5`. iN fact `S5` is clearly the most efficient model both in terms of parameters and test metric. It is follwed by the other two `SSM` models, which have less parameters than the `Transformer` based ones (even though `S4D` has worse performances). The `Transformer` based model have acceptable performances but their size is in terms of number of parameters and `MAC`s is huge with the respect to the other models (they are in fact all to the right in the x axis ans their blobs are huge). Finally the worst model of all is `LSTM` which is placed on the top right part of the plot, however it does not have a lot of parameters but its test metric errors are too high.
+
+>[!note] `S5` vs `S4`
+> I have always considered `S4` as the best model but with the `tau_mult` approach it has lost a little bit its power producing very high errors on extreme quantiles. `S4D,S5` have more stable errors across the different quantiles. Now in this plot I used the 0.5 quantile model but `S5` is still good enough also in the other quantiles. Moreover also the Prediction Interval plots of `S5` are nice so I can also consider to insert them in the paper instead of the `S4` ones.
 
 # Text removed from the paper
 
@@ -351,4 +368,44 @@ Results highlight superior predictive accuracy and improved uncertainty quantifi
 demonstrating significant promise for practical deployment in high-stakes industrial environments.
 ```
 
+# Code removed
 
+Code to compute the model summary with `torchinfo`:
+
+
+```python
+print('#'* 50)
+print(f"Model summary computation with torchinfo:")
+print('#'* 50)
+input_size=(1, exp_config.sequence_length, d_input) if not exp_config.quantile_reg else (1, exp_config.sequence_length, d_input-1)            
+model_summary=summary(
+    model = model,
+    input_size = input_size,
+    device = model_config.device
+)
+params = model_summary.total_params
+mult_adds = model_summary.total_mult_adds
+
+print('#'*50)
+print(f"Total params: {params}")
+print(f"Total mult adds: {mult_adds}")
+print('#'*50)
+```
+
+`matplotlib` version of the blob plot.
+
+```python
+# Normalize Mult-Adds to determine the radius of the blobs
+max_mult_adds = np.max(plot_dict["mult_adds_float"])
+blob_radii = plot_dict["mult_adds_float"] / max_mult_adds * 20  # Scale radii for better visualization
+
+# Create the scatter plot with varying blob sizes
+plt.figure(figsize=(10, 6))
+plt.scatter(plot_dict["params_float"], plot_dict["test_metric"], s=np.log(blob_radii**2), alpha=0.5)  # s is area, so square radii
+# plt.scatter(plot_dict["params"], plot_dict["test_metric"], s=plot_dict["mult_adds"], alpha=0.5)  # s is area, so square radii
+
+# Add annotations for each point
+for i, model_name in enumerate(config.model_names):
+    plt.annotate(model_name, (plot_dict["params_float"][i], plot_dict["test_metric"][i]), textcoords="offset points", xytext=(5,5), ha='center')
+
+```

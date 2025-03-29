@@ -1372,6 +1372,17 @@ exp_name: multi_run_20-03-2025_10-24-54_S4_FD001_windowed_quantile_reg_feat_extr
 
 ### `S4` Model Experiments 4‍⃣ 🪟 🌗
 
+### Model Summary
+
+```txt
+##################################################
+S4 model summary with calflops:
+FLOPS: 57.0547 MFLOPS
+mult_adds: 28.201 MMACs
+Params: 355.498 K
+##################################################
+```
+
 #### Dataset `FD001`
 
 ##### Experiment 1 `S4` `FD001` 4‍⃣ 🪟 🌗 
@@ -2217,7 +2228,6 @@ After the [[ssm_experiments#^335e5a|gigantic error]] let's perform an experiment
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/7gus7uua?nw=nwuserfrizzodavide)
-
 ###### Metrics Table Pinball Loss
 
 The results here are obviously worse but there is an interesting thing to consider. Now I can in fact realize why we had these big differences between the different quantiles in the non `SSM` experiments → that's because those experiments **were the only one done with the $\tau$ multiplicative approach** (in fact if we look at the [[j3c_paper#^a2c187|updated `FD002` result table]] the error metrics look similar across the quantiles also for the non `SSM` models). Now we can see this variability across different quantiles also here and that is probably given by the addition of the multiplication by $\tau$ at the end which forces the prediction to be lower for low quantiles and higher for high quantiles. 
@@ -2255,6 +2265,51 @@ The plot look very interesting now. We do not have anymore all the predictions c
 
 Differently in the `Transformer` model (of which we have both the `tau_mult` and the non `tau_mult` plots) the predictions over the different quantiles are separated also in quantiles higher than 0.5 creating probably a wider prediction interval. In any case the single prediction signals are further from the true `RUL` than in `S4`. 
 
+After a closer look at the plot (from inside Overleaf where it is possible to look in more details than from the `yazi` image preview) a not so good thing can be seen. In fact in `Life_56` towards the end of the life we can see how the prediction of quantile 0.75 goes slightly over the one of quantile 0.9. This breaks all the theory on quantiles because it is theoretically impossible to have quantile 0.75 to be higher than quantile 0.9 (the values in quantile 0.75 should be contained inside quantile 0.9) but we can justify this as an estimation error committed by the model due to the fact that the estimation of the two quantiles are really close. Maybe if I produce plots using the quantile 0.75 model this effect won't happen  → no actually it still happens also with the quantile 0.75 model. 
+
+##### Experiment 9 `S4` `FD001` `tau_mult` `no_tau_feat` 4‍⃣ 🪟 🌗 ✖ ❎
+
+As Mister F 🧗‍♂pointed out in the `tau_mult` approach it may be too much to have the quantile level $\tau$ both as an additional input feature and as a multiplier to the model prediction. So here in what we may call as the `tau_mult_no_tau_feat` approach I am trying an experiment (usual multi run experiment with 5 runs) where $\tau$ is used just to multiply the model prediction. 
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/8rxbs8ra?nw=nwuserfrizzodavide)
+
+Comparing the `wandb` loss plots of `run_1_quantile_0.1` with the ones of the same run in [[ssm_experiments#Experiment 8 `S4` `FD001` `tau_mult` 4‍⃣ 🪟 🌗 ✖️| the `tau_mult` approach]] this approach seems a little worse, the `train_loss` saturates at an higher value and in `val_loss,test_loss` the value at which it saturates is even higher, we'll see what happens at the end. 
+
+###### Metrics Table Pinball Loss
+
+Let's start from the metrics table obtained after 1 single run. The metrics are in general higher than the ones of the previous experiment but the ranking of quantiles is the same so maybe doing 5 runs we may obtain some similar results and then maybe the plots may show some more interesting behavior. At this point let's continue the experiment with 4 additional runs. 
+
+Metrics table after 5 runs → it confirms the results obtained after 1 run
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     36.46
+quantile_0.25    27.06
+quantile_0.5     11.32
+quantile_0.75    19.29
+quantile_0.9     35.95
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     37.33
+quantile_0.25    27.18
+quantile_0.5      9.74
+quantile_0.75    20.69
+quantile_0.9     45.57
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.47
+quantile_0.25     9.06
+quantile_0.5      7.07
+quantile_0.75    11.34
+quantile_0.9     19.61
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Now the prediction interval is wider and there is no more that error where in quantile 0.75 the predictions were higher than the ones of quantile 0.9. This is a good result, we have to see what happens with the other models → `S4` may lose even more to `S5,S4D` and may also become worse with the respect to the other non `SSM` models. 
 #### Dataset `FD002`
 
 ##### Experiment 1 `S4` `FD002` 4‍⃣ 🪟 🌗
@@ -2435,7 +2490,58 @@ In this new dataset we have to choose a different triplet of lifes to plot:
 
 In `Life_135`, where there is a clear underestimation of the target, the different lines are well separated and distinguishable although not as much as in the non `SSM` model's plots on `FD001`, they are still quite close together to represent a stable model. On the other hand in `Life_134`, where there is a model overestimation, the predictions on the different quantiles are much closer one to the other, which is good because even if we choose the highest quantile we are not increasing a lot the overestimation error. Finally also in `Life_138` the predictions, which are almost overlapped to the true values, are quite close together.
 
+##### Experiment 3 `S4` `FD002` `tau_mult` 4‍⃣ 🪟 🌗 ✖
+
+Experiment using the `tau_mult` approach (for real this time). Let's start with 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/cen4ikkw?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+The result are similar to the ones obtained on `FD001` with the `tau_mult` approach, so higher error values for extreme quantiles like 0.1 and 0.9. 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     32.73
+quantile_0.25    16.74
+quantile_0.5     12.92
+quantile_0.75    15.57
+quantile_0.9     24.73
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     31.76
+quantile_0.25    14.56
+quantile_0.5     10.67
+quantile_0.75    13.75
+quantile_0.9     23.52
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     11.90
+quantile_0.25    10.47
+quantile_0.5      7.82
+quantile_0.75     7.73
+quantile_0.9     13.72
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Quite similar to the ones produced in `FD001`. The prediction interval is quite wide on the left side  (so the predictions on small quantiles are significantly different from each other) while predictions on high quantiles are much closer.
+
 ### `S5` Model Experiments 5️⃣ 🪟 🌗
+
+### Model Summary
+
+```txt
+##################################################
+S5 model summary with calflops:
+FLOPS: 1.9968 MFLOPS
+mult_adds: 921.91 KMACs
+Params: 57.808 K
+##################################################
+```
 
 #### Dataset `FD001`
 
@@ -2653,8 +2759,6 @@ Seen the good results of `S4` on [[ssm_experiments#Experiment 7 bis `S4` `FD001`
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/m2qzw29x?nw=nwuserfrizzodavide)
 
 >[!warning]
-> Results affected by the [[ssm_experiments#^335e5a|gigantic error]]. 
-
 Looking at the `metrics_df` after 5 runs the results were quite promising: quantile 0.1 is the best one with a significant margin on 0.1 and 0.75. The closer quantile to 0.25 is 0.5. Given these results I decided to expand the experiment with 10 additional runs.
 
 >[!note]
@@ -2743,6 +2847,12 @@ quantile_0.9     12.17
 
 Prediction Interval plots similar to the `S4` ones, the prediction interval are slightly narrower and that's probably because of the smaller errors on quantile 0.1 and 0.25.
 
+##### Experiment 5 `S5` `FD001` `tau_mult` `no_tau_feat` 5‍⃣ 🪟 🌗 ✖ ❎
+
+Considered the success of the `tau_mult_no_tau_feat` experiment on [[ssm_experiments#Experiment 9 `S4` `FD001` `tau_mult` `no_tau_feat` 4‍⃣ 🪟 🌗 ✖ ❎|on `S4`]] let's try to launch it also on `S5`.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/05zdynvg?nw=nwuserfrizzodavide)
 #### Dataset `FD002`
 
 ##### Experiment 1 `S5` `FD002` 5️⃣ 🪟 🌗
@@ -2888,7 +2998,58 @@ It seems indeed that they are exactly equal → it is a bit strange, something s
 
 The plots are very similar to the `S4` ones with the difference of having, as it happened also in `FD001`, a slightly more variable distribution, i.e there is a wider prediction interval.
 
+##### Experiment 3 `S5` `FD002` 5‍⃣ 🪟 🌗 ✖
+
+Let's do a `tau_mult` multi run experiment with 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/9ci8bkp6?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+As it happened in `FD001` `S5` is better than `S4` on quantiles 0.1 and 0.25 and slightly worse on the others on quantiles 0.1 and 0.25 and sloigtiigthly weorse orse on the others.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     22.57
+quantile_0.25    14.72
+quantile_0.5     16.88
+quantile_0.75    22.02
+quantile_0.9     42.93
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     20.49
+quantile_0.25    11.26
+quantile_0.5     14.99
+quantile_0.75    18.04
+quantile_0.9     42.11
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     12.77
+quantile_0.25     9.91
+quantile_0.5      9.56
+quantile_0.75    13.45
+quantile_0.9     25.12
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to `S4` but with narrowed intervals, as it happened in `FD001`.
+
 ### `S4D` Model Experiments 4 D 🪟 🌗
+
+### Model Summary
+
+```txt
+##################################################
+S4D model summary with calflops:
+FLOPS: 63.6933 MFLOPS
+mult_adds: 28.201 MMACs
+Params: 273.578 K
+##################################################
+```
 
 #### Dataset `FD001`
 
@@ -3098,8 +3259,41 @@ Experiment with the `tau_mult` approach for 5 runs.
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/g900af55?nw=nwuserfrizzodavide)
 
-#### Dataset `FD002`
+###### Metrics Table Pinball Loss
 
+Similarly to `S5` the loss values are smaller in quantile 0.1 and 0.25 and higher in the others → all with respect to `S4`. So in this case probably the prediction interval will be narrower.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     21.77
+quantile_0.25    12.91
+quantile_0.5     14.12
+quantile_0.75    14.37
+quantile_0.9     14.54
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     21.77
+quantile_0.25     9.06
+quantile_0.5     10.05
+quantile_0.75    10.99
+quantile_0.9     11.46
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     11.04
+quantile_0.25    10.82
+quantile_0.5     12.00
+quantile_0.75    11.00
+quantile_0.9      9.94
+##################################################
+```
+
+###### Prediction Interval Plot
+
+In the prediction plots we have, as expected, a narrower prediction interval. Strangely in `Life_52` the predictions are a straight smooth decreasing lines (as the ones obtained with `S5,S4D`) but in the other two lifes we have the usual noisy and oscillating predictions typical of `S4D`.
+
+Finally in `Life_56` predictions of quantiles 0.5 and 0.75 are higher than the one of quantile 0.9, this should not be possible. The only reason why this may happens is that `S4D` is so noisy that it creates this effect that however destroys all the theory on quantiles. This thing happened also in [[ssm_experiments#Experiment 8 `S4` `FD001` `tau_mult` 4‍⃣ 🪟 🌗 ✖️|`S4`]] but to a much lower degree. 
+#### Dataset `FD002`
 ##### Experiment 1 `S4D` `FD002` 4 D 🪟 🌗
 
 Let's use the same configuration used for `S4,S5`.
@@ -3208,6 +3402,45 @@ Unfortunately also in this case it seems that the `wandb` run is exactly equal t
 >[!note]
 > The results are exactly equal because of the [[ssm_experiments#^335e5a|gigantic error]]
 
+##### Experiment 3 `S4D` `FD002` `tau_mult` 4 D 🪟 🌗 ✖
+
+Multi run `tau_mult` approach experiment for 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/2rge3gkk?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+The metric values are pretty close to each other across the different quantiles which is a bit strange.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     21.35
+quantile_0.25    19.74
+quantile_0.5     21.24
+quantile_0.75    19.30
+quantile_0.9     21.44
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     20.04
+quantile_0.25    16.19
+quantile_0.5     16.79
+quantile_0.75    14.62
+quantile_0.9     17.45
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     13.95
+quantile_0.25    15.81
+quantile_0.5     16.29
+quantile_0.75    14.24
+quantile_0.9     15.32
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Here is a bit the opposite with the respect to the `FD001` experiment 😅. The noisy predictions are in `Life_135` (where there is a significant underestimation) and are smoother in the `Life_138,Life_134`. The prediction interval, as expected seen the metrics table, are very narrow. 
 
 ## `windowed` Approach + Quantile Regression + Feature Extraction 🌗 🤺
 

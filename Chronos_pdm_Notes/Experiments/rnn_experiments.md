@@ -643,6 +643,17 @@ Considering the fact that the results of the experiments performed on the `RNN` 
 
 ### `LSTM` Model Experiments 🪟 🌗
 
+### Model Summary
+
+```txt
+##################################################
+LSTM model summary with calflops:
+FLOPS: 204.283 MFLOPS
+mult_adds: 21.76 KMACs
+Params: 624.554 K
+##################################################
+```
+
 #### Dataset `FD001`
 
 ##### Experiment 1 `LSTM` `FDOO1` `windowed` `Quantile Regression` 🪟 1️⃣ 🌗
