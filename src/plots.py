@@ -7,6 +7,7 @@ import sys
 import ipdb
 from typing import List
 import matplotlib.pyplot as plt
+import plotly.express as px
 import numpy as np
 import pandas as pd
 import torch
@@ -269,6 +270,55 @@ def plot_prediction_interval(
         filename=f"{filename}_life_{life_idx_str}.pdf"
         plot_path=os.path.join(plot_path,filename)
         plt.savefig(plot_path,bbox_inches='tight')
+        print('#'*50)
+        print(f'Plot saved at: {plot_path}')
+        print('#'*50)
+
+    return fig
+
+# Blob plot
+
+def blob_plot(
+    plot_dict: dict,
+    config: ExperimentConfig,
+    plot_path: str,
+) -> plt.figure:
+    """
+    Function to produce a plot that represents the number of parameters, number of mult-adds,
+    and test metric for each model in the experiment.
+
+    Args:
+    plot_dict (dict): dictionary with the number of parameters, mult-adds, model names and test metrics
+    config (ExperimentConfig): experiment configuration
+    plot_path (str): path to save the plot
+
+    Returns:
+    plt.figure: figure with the blob plot
+    """
+    
+    plot_dict["mult_adds_ln"]=np.log(plot_dict["mult_adds_float"])
+    # Convert plot_dict into a pandas DataFrame
+    df=pd.DataFrame(plot_dict)
+
+    fig = px.scatter(
+        data_frame = df,
+        x = "params_float",
+        y = "test_metric",
+        color = "mult_adds_ln",
+        size = "mult_adds_float",
+        hover_name = "model_name",
+        log_x = True,
+        size_max=60,
+        color_continuous_scale='Viridis',
+        text="model_name"
+    )
+    fig.update_traces(textposition='bottom center')
+
+    if config.save_plot:
+
+        filename=f"{get_current_time()}_blob_plot_{config.cmapss_models}_quantile_{config.quantile_run}.png"
+        plot_path=os.path.join(plot_path,filename)
+        fig.write_image(plot_path,scale=3)
         print('#'*50)
         print(f'Plot saved at: {plot_path}')
         print('#'*50)
