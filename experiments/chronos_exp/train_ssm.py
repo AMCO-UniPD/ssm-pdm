@@ -114,6 +114,9 @@ if exp_config.test_script:
                     print("#"*50)
                     print(f"Saving outputs for run: {run+1}")
                     print("#"*50)
+                    
+                    if exp_config.save_summary_dict:
+                        exp_config.quantiles = [exp_config.quantile_run]
 
                     for quantile in exp_config.quantiles:
 
@@ -375,6 +378,9 @@ else:
             if model_config.tau_mult:
                 exp_name=f"{exp_name}_tau_mult"
 
+            if not model_config.tau_feat:
+                exp_name=f"{exp_name}_no_tau_feat"
+
         print('#'* 50)
         print(f"Starting quantile regression experiment: {exp_name}") if not exp_config.set_exp_name else print(f"Continuing quantile regression experiment: {exp_name}")
         print(f"Quantile distribution: {exp_config.quantile_dist}")
@@ -409,6 +415,9 @@ else:
 
                 if model_config.tau_mult:
                     run_name=f"{run_name}_tau_mult"
+
+                if not model_config.tau_feat:
+                    run_name=f"{run_name}_no_tau_feat"
 
                 setproctitle.setproctitle(run_name)
 

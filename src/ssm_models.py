@@ -5,8 +5,9 @@ Python script containing utility functions for the models migrated from the
 
 import os
 import sys
+from bs4 import element
 import ipdb
-from typing import Tuple
+from typing import Tuple, Union
 from dataclasses import dataclass
 
 # torch imports
@@ -15,11 +16,14 @@ import torch.nn as nn
 from torch.nn.functional import dropout
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torchinfo import summary
 from transformer_encoder import TransformerEncoder
 from transformer_encoder.utils import PositionalEncoding
 
-from utils import ExperimentConfig
+# model summary imports
+from torchinfo import summary
+from calflops import calculate_flops
+
+from utils import ExperimentConfig, save_element, generate_path
 
 
 chronos_path_src = os.path.join(os.path.dirname(__file__),"chronos-rul","src")
@@ -109,6 +113,8 @@ class Recurrent_PDM(nn.Module):
         super(Recurrent_PDM, self).__init__()
 
         self.quantile_reg = config.quantile_reg
+        self.tau_feat = config.tau_feat
+        self.tau_mult = config.tau_mult
         self.device = config.device
 
         if model_name == "LSTM":
@@ -145,11 +151,12 @@ class Recurrent_PDM(nn.Module):
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
-            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+            if self.tau_feat:
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         out = self.recurrent(x) # (B, L, D) -> (B, L, H)
         out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
-        out = self.fc(out) * tau # (B, H) -> (B, L)
+        out = self.fc(out) * tau if self.tau_mult else self.fc(out) # (B, H) -> (B, L)
         # out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
         return out
 
@@ -169,6 +176,7 @@ class S4Model(nn.Module):
         self.prenorm = config.prenorm
         self.gap = config.gap
         self.tau_mult = config.tau_mult
+        self.tau_feat = config.tau_feat
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         d_model = config.d_model
@@ -206,7 +214,8 @@ class S4Model(nn.Module):
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
-            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+            if self.tau_feat:
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -334,6 +343,7 @@ class S5Model(nn.Module):
 
         self.gap = config.gap
         self.tau_mult = config.tau_mult
+        self.tau_feat = config.tau_feat
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         d_model = config.d_model
@@ -359,7 +369,8 @@ class S5Model(nn.Module):
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
-            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+            if self.tau_feat:
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         for layer in self.s5_layers: # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
             x = layer(x)
@@ -387,6 +398,8 @@ class RULTransformer(nn.Module):
         super(RULTransformer, self).__init__()
 
         self.quantile_reg = config.quantile_reg
+        self.tau_feat = config.tau_feat
+        self.tau_mult = config.tau_mult
         self.device = config.device
 
         self.embedding = nn.Sequential(
@@ -423,13 +436,14 @@ class RULTransformer(nn.Module):
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
-            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+            if self.tau_feat:
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         x = x.argmax(dim=-1) # (B, L, d_input) -> (B, L)
         x = self.embedding(x) # (B, L) -> (B, L, d_model)
         x = self.encoder(x, mask) # (B, L, d_model) -> (B, L, d_model)
         x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-        x = self.decoder(x) * tau # (B, d_model) -> (B, d_output)
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x) # (B, d_model) -> (B, d_output)
         # x = self.decoder(x).squeeze(-1) # (B, L, d_model) -> (B, L)
         return x
         
@@ -447,6 +461,8 @@ class RULInformer(nn.Module):
         super(RULInformer,self).__init__()
 
         self.quantile_reg = config.quantile_reg
+        self.tau_feat = config.tau_feat
+        self.tau_mult = config.tau_mult
         self.device = config.device
         self.output_attention = output_attention
 
@@ -494,13 +510,14 @@ class RULInformer(nn.Module):
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
-            x_enc = torch.cat([x_enc, torch.ones(x_enc.shape[0],x_enc.shape[1],1).to(self.device) * tau], dim=-1)
+            if self.tau_feat:
+                x_enc = torch.cat([x_enc, torch.ones(x_enc.shape[0],x_enc.shape[1],1).to(self.device) * tau], dim=-1)
 
         enc_out = self.enc_embedding(x_enc) # [B,L,D] -> [B,L,H]
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
 
         enc_out = enc_out.mean(dim=1) # [B,L,H] -> [B,H]
-        dec_out = self.projection(enc_out) * tau # [B,L,H] -> [B,L]
+        dec_out = self.projection(enc_out) * tau if self.tau_mult else self.projection(enc_out) # [B,L,H] -> [B,L]
 
         if output_attention:
             return dec_out, attns
@@ -511,7 +528,7 @@ class RULInformer(nn.Module):
 
 def model_summary_manual(
     model: nn.Module
-) -> None:
+) -> int:
     
     """
     Manual version of torchinfo summary module.
@@ -520,7 +537,7 @@ def model_summary_manual(
         model: nn.Module object
 
     Returns:
-        The function prints out the number of trainable and non trainable parameters of the model and does not return anything.
+        total_params: the number of parameters in the model
     """
 
     total_params = 0
@@ -546,13 +563,18 @@ def model_summary_manual(
     print(f"Trainable parameters: {trainable_params}")
     print(f"Non-trainable parameters: {non_trainable_params}")
 
+    return total_params
+
 # Function to create the model
 
 def load_ssm_model(
         exp_config:ExperimentConfig,
         model_config:ModelConfig,
         d_input: int,
-) -> Tuple[nn.Module, optim.Optimizer, optim.lr_scheduler]:
+) -> Union[
+         Tuple[nn.Module, optim.Optimizer, optim.lr_scheduler],
+         Tuple[nn.Module, dict]
+]:
 
     """
     Function to create the model based on the configuration.
@@ -606,22 +628,55 @@ def load_ssm_model(
 
         # Obtain the model summary with torchsummary
         try:
-            model_summary=summary(
-                model = model,
-                input_size = (1, exp_config.sequence_length, d_input) if not exp_config.quantile_reg else (1, exp_config.sequence_length, d_input-1),
-                device = model_config.device
+
+            print('#'* 50)
+            print(f"Model summary computation with calflops:")
+            print('#'* 50)
+
+            input_size=(1, exp_config.sequence_length, d_input) if ((not exp_config.quantile_reg) or (not model_config.tau_feat)) else (1, exp_config.sequence_length, d_input-1)
+            flops,mult_adds,params=calculate_flops(
+                model=model.to(model_config.device),
+                input_shape=input_size,
+                output_as_string=True,
+                output_precision=4
             )
 
-            print('#'*50)
-            print(f"Total params: {model_summary.total_params}")
-            print(f"Total mult adds: {model_summary.total_mult_adds}")
-            print('#'*50)
+            print('#'* 50)
+            print(f"{exp_config.model_name} model summary with calflops:")
+            print(f"FLOPS: {flops}")
+            print(f"mult_adds: {mult_adds}")
+            print(f"Params: {params}")
+            print('#'* 50)
 
         except Exception as e:
+
+            mult_adds=None
             print('#'*50)
-            print("torchinfo summary not working, let's use the manual computation")
+            print("Also calflops not working, let's compute the model summary manually")
             print('#'*50)
-            model_summary_manual(model)
+            params=model_summary_manual(model)
+
+        if exp_config.save_summary_dict:
+            summary_dict = {
+                "params": params,
+                "mult_adds": mult_adds
+            }
+
+            print('#'* 50)
+            print(f"Model summary for {exp_config.model_name} model")
+            print('#'* 50)
+
+            summary_dict_dirpath = generate_path(basepath=experiment_path,
+                                                 folders=["summary_dict",
+                                                          exp_config.model_name])
+            save_element(
+                element = summary_dict,
+                dirpath = summary_dict_dirpath,
+                filename = f"{exp_config.model_name}_summary_dict",
+                filetype = "pickle"
+            )
+
+            return model,summary_dict
 
     if exp_config.model_summary_manual:
         model_summary_manual(model)

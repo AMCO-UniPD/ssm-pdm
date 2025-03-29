@@ -563,12 +563,23 @@ def best_model_perf(
                                                    exp_config=config)
     else:
         feature_names = get_feature_names(config)
-        model,_,_=load_ssm_model(
-            model_config=model_config,
-            exp_config=config,
-            d_input=len(feature_names) if not config.quantile_reg else len(feature_names)+1,
-        )
-        tokenizer=None
+        
+        if config.save_summary_dict:
+            model,summary_dict=load_ssm_model(
+                model_config=model_config,
+                exp_config=config,
+                d_input=len(feature_names) if not config.quantile_reg else len(feature_names)+1,
+            )
+            print('#'* 50)
+            print(f"Summary dict keys: {summary_dict.keys()}")
+            print('#'* 50)
+        else:
+            model,_,_=load_ssm_model(
+                model_config=model_config,
+                exp_config=config,
+                d_input=len(feature_names) if ((not config.quantile_reg) or (not model_config.tau_feat)) else len(feature_names)+1,
+            )
+            tokenizer=None
 
     model.load_state_dict(best_model_state_dict)
     model=model.to(device)
@@ -715,7 +726,7 @@ def wandb_run(
             model,optimizer,scheduler=load_ssm_model(
                 model_config=model_config,
                 exp_config=config,
-                d_input=len(feature_names) if not config.quantile_reg else len(feature_names)+1
+                d_input=len(feature_names) if ((not config.quantile_reg) or (not model_config.tau_feat)) else len(feature_names)+1
             )
             tokenizer=None
         model=model.to(device)

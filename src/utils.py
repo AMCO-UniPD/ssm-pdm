@@ -5,6 +5,7 @@ Script containing some utility functions for the `chronos-pdm` project
 import os
 import sys
 import time
+import re
 from gluonts.transform import feature
 import yaml
 import pickle
@@ -647,3 +648,20 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = (
         False  # Disables cuDNN auto-tuner for deterministic results
     )
+
+def extract_number(text):
+  """
+  Extracts the first floating point number from a string.
+
+  Args:
+    text: The input string.
+
+  Returns:
+    A float representing the extracted number, or None if no number is found.
+  """
+
+  match = re.search(r"[-+]?\d*\.\d+|\d+", text)
+  if match:
+    return float(match.group(0))
+  else:
+    return None
