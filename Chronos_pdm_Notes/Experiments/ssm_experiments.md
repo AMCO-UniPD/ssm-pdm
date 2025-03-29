@@ -2853,6 +2853,40 @@ Considered the success of the `tau_mult_no_tau_feat` experiment on [[ssm_experim
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/05zdynvg?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+Similar values on quantiles 0.1 and 0.25 and higher values on the other three. This means that probably the Prediction Interval plots will be similar but with wider prediction intervals.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     36.82
+quantile_0.25    27.04
+quantile_0.5     14.94
+quantile_0.75    25.16
+quantile_0.9     41.93
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     38.42
+quantile_0.25    27.04
+quantile_0.5     11.15
+quantile_0.75    25.47
+quantile_0.9     48.96
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.74
+quantile_0.25     9.43
+quantile_0.5     11.09
+quantile_0.75    14.26
+quantile_0.9     19.88
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to `S4`, wider prediction interval with the respect to the previous experiment.
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `S5` `FD002` 5️⃣ 🪟 🌗
@@ -3293,6 +3327,47 @@ quantile_0.9      9.94
 In the prediction plots we have, as expected, a narrower prediction interval. Strangely in `Life_52` the predictions are a straight smooth decreasing lines (as the ones obtained with `S5,S4D`) but in the other two lifes we have the usual noisy and oscillating predictions typical of `S4D`.
 
 Finally in `Life_56` predictions of quantiles 0.5 and 0.75 are higher than the one of quantile 0.9, this should not be possible. The only reason why this may happens is that `S4D` is so noisy that it creates this effect that however destroys all the theory on quantiles. This thing happened also in [[ssm_experiments#Experiment 8 `S4` `FD001` `tau_mult` 4‍⃣ 🪟 🌗 ✖️|`S4`]] but to a much lower degree. 
+
+##### Experiment 4 `S4D` `FD001` `tau_mult_no_tau_feat` 4 D 🪟 🌗 ✖️
+
+Let's perform an experiment with `tau_mult_no_tau_feat` approach on `S4D` with 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/n0z9tpsx?nw=nwuserfrizzodavide)
+
+###### Metrics table Pinball Loss
+
+Similar results to the other models.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     36.87
+quantile_0.25    27.87
+quantile_0.5     13.69
+quantile_0.75    24.88
+quantile_0.9     39.42
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     37.56
+quantile_0.25    27.87
+quantile_0.5     10.59
+quantile_0.75    25.77
+quantile_0.9     46.40
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.62
+quantile_0.25     9.74
+quantile_0.5     11.05
+quantile_0.75     9.39
+quantile_0.9     21.53
+##################################################
+```
+
+###### Prediction Interval Plots
+
+The plots show the usual oscillating and noisy shape typical of `S4D` but for the rest are quite similar to the others produced.
+
 #### Dataset `FD002`
 ##### Experiment 1 `S4D` `FD002` 4 D 🪟 🌗
 

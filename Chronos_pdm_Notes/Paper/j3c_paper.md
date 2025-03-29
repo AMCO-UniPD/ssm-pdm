@@ -305,10 +305,31 @@ After having produced the prediction interval plots obtained with the `tau_mult`
 
 After having produced a good version of the blob plot we can get some conclusions from it to insert in the paper.
 
-From the `FD001` blob plot we may change the opinion on what is our best model → from `S4` to `S5`. iN fact `S5` is clearly the most efficient model both in terms of parameters and test metric. It is follwed by the other two `SSM` models, which have less parameters than the `Transformer` based ones (even though `S4D` has worse performances). The `Transformer` based model have acceptable performances but their size is in terms of number of parameters and `MAC`s is huge with the respect to the other models (they are in fact all to the right in the x axis ans their blobs are huge). Finally the worst model of all is `LSTM` which is placed on the top right part of the plot, however it does not have a lot of parameters but its test metric errors are too high.
+For context here are the `params` and `mult_adds` values for the different models:
+
+| Model | Parameters | Mult-Adds |
+|-------|------------|-----------|
+| S4 |  355.498 K |  28.201 MMACs |
+| S5 |  57.808 K |  921.91 KMACs |
+| S4D |  273.578 K |   28.201 MMACs |
+| RULInformer  | 724.138 K  | 127.775 MMACs |
+| RULTransformer |   621.61 K |  120.572 MMACs |
+| LSTM |  624.554 K |    21.76 KMACs |
+
+The key highlights from this table are the following:
+- `Transformer` based models and `LSTM` are the ones with the highest number of parameters
+- Among `SSM` the one with the most parameters is `S4` which makes sense because the other two are simplifications of `S4`.
+    - `S4D` uses diagonal matrices removing some parameters
+    - `S5` parallelizes everything using a `MIMO` system.
+- The strange thing is the fact that `LSTM` has a very low `MAC`s value while it is the second largest model in terms of parameters.
+
+From the `FD001` blob plot we may change the opinion on what is our best model → from `S4` to `S5`. iN fact `S5` is clearly the most efficient model both in terms of parameters and test metric. It is follwed by the other two `SSM` models, which have less parameters than the `Transformer` based ones (even though `S4D` has worse performances). The `Transformer` based model have comparable performances to the `SSM` models but their size is in terms of number of parameters and `MAC`s is huge (at least tow orders of magnitude higher) with the respect to the other models (they are in fact all to the right in the x axis ans their blobs are huge). Finally the worst model of all is `LSTM` which is placed on the top right part of the plot, however it does not have a lot of parameters but its test metric errors are too high.
 
 >[!note] `S5` vs `S4`
 > I have always considered `S4` as the best model but with the `tau_mult` approach it has lost a little bit its power producing very high errors on extreme quantiles. `S4D,S5` have more stable errors across the different quantiles. Now in this plot I used the 0.5 quantile model but `S5` is still good enough also in the other quantiles. Moreover also the Prediction Interval plots of `S5` are nice so I can also consider to insert them in the paper instead of the `S4` ones.
+
+>[!important] Comparison between models
+> Up to now, before the `tau_mult` and `tau_mult_no_tau_feat` approaches looking at the test metrics there was a significant gap between `SSM` models and the rest. Now these differences are less visible since there are some quantiles in which `Transformer` base models are better than `SSM` unless in any case the smallest single error values are still visible in `SSM`s models. In any case even if 🤖 models are closer in metrics terms we can always play the card that `SSM` are much more efficient from a computational point of view seen the result of the blob plot.
 
 # Text removed from the paper
 
@@ -366,6 +387,28 @@ The effectiveness of the proposed methodology is evaluated against traditional s
 (\ac{LSTM}, Transformer, and Informer) using the \ac{C-MAPSS} benchmark dataset.
 Results highlight superior predictive accuracy and improved uncertainty quantification of \ac{SSM} models,
 demonstrating significant promise for practical deployment in high-stakes industrial environments.
+```
+
+## Old description of plot results
+
+
+```tex
+The differences in model's uncertainty highligthed in the metrics tables are also visible in the plots.
+In fact while in Figure \ref{fig:RUL_transformer} the prediction interval is significantly wide, in Figure
+\ref{fig:RUL_S4} the prediction interval is so narrow that the predicted \ac{RUL} are
+almost overlapped. This is a clear indication of the model's high confidence in the predictions.
+On the other hand in the \texttt{Transformer}
+model choosing the wrong input quantile level may lead to highly inacurrate predictions.
+```
+
+## Pinball Loss as `eval_loss`
+
+I remove this sentence because it is probably better to re evaluate all the models with the `RMSE` loss. In fact since the Quantile Regression can be used to later by the user to decide the kind of prediction of the `RUL` to do (more risky if he wants to push for production with the risk of unexpected breaks and more conservative if he wants to avoid breaks at all costs and with the downside of not exploiting entirely the machine useful life).
+
+```tex
+The evaluation criterion employed is the Pinball Loss \ref{eq:pinball_loss} computed on $\tau=0.3$. This quantile percentage was chosen as a
+a good theoretical trade off between \textit{unexpected breaks} and \textit{unexploited lifetime}. In pratical cases the costs for \textit{unexpected breaks} and \textit{unexploited lifetime}
+is defined depending on the specific application and domain knowledge.
 ```
 
 # Code removed

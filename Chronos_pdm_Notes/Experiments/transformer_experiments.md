@@ -796,6 +796,45 @@ Considering the fact that quantile 0.5 is much better than quantile 0.25 I decid
 
 For what concerns the difference between the two plots, looking at the them more closely from Overleaf, there is some difference but not significant. In any case quantile 0.5 and 0.25 are the ones with the lowest error so maybe to see some differences I should look at the plot produced by the quantile 0.9 model which is the one with the highest error. I produced also the plot for quantile 0.9 and the result do not change much but we have to consider that the test metrics in the `metrics_df` reported above are the average metrics over all lifes and all runs so looking just at 3 of them and always on `run_1` is probably not the best way of judging the differences in performance.
 
+##### Experiment 3 `Transformer` `FD001` `tau_mult_no_tau_feat` 🤖 🪟 🌗 ✖ 
+
+Let's use the `tau_mult_no_tau_feat` approach also for the `Transformer` model in a 5 run experiment.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/0xqpee9n?nw=nwuserfrizzodavide)
+
+###### Metrics Table Pinball Loss
+
+As usual the results are similar for the small quantiles and higher errors can be observed for higher quantiles. 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     35.70
+quantile_0.25    25.05
+quantile_0.5     10.21
+quantile_0.75    26.31
+quantile_0.9     50.34
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     35.95
+quantile_0.25    24.73
+quantile_0.5      8.52
+quantile_0.75    27.57
+quantile_0.9     55.29
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.70
+quantile_0.25     9.37
+quantile_0.5      6.83
+quantile_0.75    16.03
+quantile_0.9     20.58
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to the `SSM` based plots, as expected.
 #### Dataset `FD002`
 
 ##### Experiment 1 `Transformer` `FDOO2` `windowed` 🤖 1️⃣ 🌗
@@ -1111,6 +1150,14 @@ quantile_0.9     20.09
 ###### Prediction Interval Plots
 
 As expected the plots are very similar to the ones obtained with the `Transformer`.
+
+##### Experiment 3 `Informer` `FDOO1` `windowed` `tau_mult_no_tau_feat` 🧙‍♂️ 2️⃣ 🌗 ✖
+
+Let's do a `tau_mult_no_tau_feat` approach experiment with 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/zd874oc1?nw=nwuserfrizzodavide)
+
 
 #### Dataset `FD002`
 
