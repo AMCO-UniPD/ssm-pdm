@@ -2,7 +2,7 @@
 model_config_path: config/ssm_config.yaml
 
 # cuda config
-device_num: 2
+device_num: 1
 
 # wandb config
 project_name: "chronos-rul"
@@ -53,12 +53,11 @@ weight_decay: 1.0e-4
 # model_name: LSTM
 # model_name: GRU
 # model_name: S4
-# model_name: S5
-model_name: S4D
+model_name: S5
+# model_name: S4D
 # model_name: RULTransformer
 # model_name: RULInformer
 output_attention: false
-model_summary: false
 model_summary_manual: false
 
 # Loss function to use for training
@@ -111,9 +110,19 @@ set_exp_name: false
 # Experiment name FD001 real multiplicative tau
 # exp_name: multi_run_26-03-2025_17-48-45_S4_FD001_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_27-03-2025_14-23-46_S5_FD001_windowed_quantile_reg_tau_mult
+# exp_name: multi_run_27-03-2025_17-30-47_S4D_FD001_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_24-03-2025_08-12-23_LSTM_FD001_windowed_quantile_reg
 # exp_name: multi_run_24-03-2025_17-00-56_RULTransformer_FD001_windowed_quantile_reg
 # exp_name: multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
+
+# Experiment name FD002 real multiplicative tau
+# exp_name: multi_run_28-03-2025_08-57-13_S4_FD002_windowed_quantile_reg_tau_mult
+# exp_name: multi_run_28-03-2025_12-35-12_S5_FD002_windowed_quantile_reg_tau_mult
+# exp_name: multi_run_29-03-2025_07-30-40_S4D_FD002_windowed_quantile_reg_tau_mult
+
+# Experiment name FD001 tau_mul_no_tau_feat approach
+# exp_name: 29-03-2025_10-07-53_S4_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name: multi_run_29-03-2025_12-31-34_S5_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 
 
 # test_script config
@@ -139,6 +148,11 @@ save_metrics_df: false
 stat_test: false
 power_analysis: false
 quantile_to_test: [0.25,0.75]
+
+# config for blob_plot
+model_summary: false
+save_summary_dict: false
+model_names: ["S4","S5","S4D","RULInformer","RULTransformer","LSTM"]
 
 # metrics_df experiment config
 metrics_idx: null
