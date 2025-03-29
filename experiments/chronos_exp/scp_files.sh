@@ -1,9 +1,12 @@
 #!/bin/bash
 
-MODELS=('S4')
+MODELS=('S4D')
 FOLDER=('plots')
 DATASET='FD001'
 APPROACH='windowed'
+# quantile_approach='quantile_reg'
+# quantile_approach='tau_mult'
+quantile_approach='tau_mult_no_tau_feat'
 N_RUNS=1
 
 # Experiment names FD001 dataset
@@ -29,7 +32,11 @@ N_RUNS=1
 # exp_name=multi_run_27-03-2025_17-30-47_S4D_FD001_windowed_quantile_reg_tau_mult
 
 # Experiment names FD001 real tau multiplicative + no_tau_float
-exp_name=29-03-2025_10-07-53_S4_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name=29-03-2025_10-07-53_S4_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name=multi_run_29-03-2025_12-31-34_S5_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name=multi_run_29-03-2025_14-29-45_RULTransformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+exp_name=multi_run_29-03-2025_16-39-17_S4D_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name=multi_run_29-03-2025_17-44-54_RULInformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 
 # Experiment names - FD002 dataset
 # exp_name=multi_run_18-03-2025_07-58-34_S4_FD002_windowed_quantile_reg
@@ -57,9 +64,9 @@ acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$ex
 # cd into local path in my local machine
 # cd ../../../ssm_pdm_paper/Img/rul_plots/$MODELS/$DATASET/
 # path for prediction interval plots
-cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET
+cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET/$qauntile_approach
 # path for blob plots
-# cd ../../../ssm_pdm_paper/Img
+# cd ../../../ssm_pdm_paper/Img/blob_plots/
 
 # if folder interval does not exist create it and cd into it
 # subfolder="blob_plots"
