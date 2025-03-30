@@ -830,7 +830,7 @@ quantile_0.9     9.29
 
 See [[ssm_experiments#Prediction Plots bis|here]]
 
-##### Experiment 2 `LSTM` `FDOO1` `windowed` `Quantile Regression` 🪟 3️⃣ 🌗
+##### Experiment 2 `LSTM` `FDOO1` `windowed` `tau_mult` `Quantile Regression` 🪟 3️⃣ 🌗 ✖
 
 Experiment with 15 runs and with the quantile level $\tau$ as the multiplicative factor.
 
@@ -875,6 +875,13 @@ Producing the Prediction Interval plots makes us understand this strange metric 
 If we consider the predictions just in the final time steps of the test life these model may also have better results than the `SSM` but this is not what we are looking for.
 
 After having produced the Prediction Interval plot of the experiment withot $\tau$ multiplicating the outputs I would say that in this case this addition is not very good because the predictions of experiment 1 at least were more or less straight lines so the model correctly guessed the shape of the target signal. Here for example in `Life_56` the prediction do not make a lot of sense.
+
+##### Experiment 3 `LSTM` `FDOO1` `windowed` `tau_mult_no_tau_feat`  🪟 3️⃣ 🌗 ✖
+
+`tau_mult_no_tau_feat` approach experiment with 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/vuc7i9yc?nw=nwuserfrizzodavide)
 
 
 #### Dataset `FD002`
