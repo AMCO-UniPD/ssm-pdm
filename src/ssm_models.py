@@ -265,6 +265,7 @@ class S4DModel(nn.Module):
 
         self.gap = config.gap
         self.tau_mult = config.tau_mult
+        self.tau_feat = config.tau_feat
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         d_state = config.d_state
@@ -300,7 +301,8 @@ class S4DModel(nn.Module):
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
-            x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+            if self.tau_feat:
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
