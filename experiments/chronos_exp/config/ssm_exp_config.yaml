@@ -2,7 +2,7 @@
 model_config_path: config/ssm_config.yaml
 
 # cuda config
-device_num: 1
+device_num: 2
 
 # wandb config
 project_name: "chronos-rul"
@@ -50,10 +50,10 @@ weight_decay: 1.0e-4
 
 # Model configurations
 # model_name: RNN
-# model_name: LSTM
+model_name: LSTM
 # model_name: GRU
 # model_name: S4
-model_name: S5
+# model_name: S5
 # model_name: S4D
 # model_name: RULTransformer
 # model_name: RULInformer
@@ -123,6 +123,9 @@ set_exp_name: false
 # Experiment name FD001 tau_mul_no_tau_feat approach
 # exp_name: 29-03-2025_10-07-53_S4_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name: multi_run_29-03-2025_12-31-34_S5_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name: multi_run_29-03-2025_14-29-45_RULTransformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name: multi_run_29-03-2025_16-39-17_S4D_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name: multi_run_29-03-2025_17-44-54_RULInformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 
 
 # test_script config
