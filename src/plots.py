@@ -299,17 +299,23 @@ def blob_plot(
     plot_dict["mult_adds_ln"]=np.log(plot_dict["mult_adds_float"])
     # Convert plot_dict into a pandas DataFrame
     df=pd.DataFrame(plot_dict)
+    df=df.rename(columns={
+        "params_float":"Parameters (K)",
+        "mult_adds_float":"Mult-Adds (MMACs)",
+        "mult_adds_ln":"Log Mult-Adds",
+        "test_metric": "Test Loss",
+    })
 
     fig = px.scatter(
         data_frame = df,
-        x = "params_float",
-        y = "test_metric",
-        color = "mult_adds_ln",
-        size = "mult_adds_float",
+        x = "Parameters (K)",
+        y = "Test Loss",
+        color = "Log Mult-Adds",
+        size = "Mult-Adds (MMACs)",
         hover_name = "model_name",
         log_x = True,
         size_max=60,
-        color_continuous_scale='Viridis',
+        color_continuous_scale="Viridis",
         text="model_name"
     )
     fig.update_traces(textposition='bottom center')

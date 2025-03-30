@@ -57,7 +57,11 @@ for model_name in config.model_names:
                                                    config.approach,
                                                    "quantile_reg"
                                                    ])
-    metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=config.file_pos)
+    if model_name in ["S4","S5"]:
+        metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=1)
+    else:
+        metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=config.file_pos)
+
     metrics_df_path = get_most_recent_file(metrics_exp_dirpath_model,file_pos=config.file_pos)
     metrics_df = open_element(metrics_df_path)
     plot_dict["test_metric"].append(metrics_df.loc["Life_mean",f"quantile_{config.quantile_run}"])
@@ -78,7 +82,6 @@ plot_path = generate_path(basepath=experiment_path,
                                    config.cmapss_models])
 
 # Create the blob plot
-
 blob_plot(
     plot_dict=plot_dict,
     config=config,
