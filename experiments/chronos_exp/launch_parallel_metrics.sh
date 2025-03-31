@@ -5,7 +5,8 @@ export PATH="/home/davide_frizzo/anaconda3/envs/hf/bin/:$PATH"
 
 SCRIPT_PATH="parallel_metrics.py"
 
-MODELS=("S4" "S4D" "S5" "LSTM" "RULTransformer" "RULInformer")
+MODELS=("S5" "RULTransformer" "RULInformer")
+# MODELS=("S4")
 
 for MODEL in "${MODELS[@]}"; do
   
@@ -14,5 +15,6 @@ for MODEL in "${MODELS[@]}"; do
   echo "###########################################"
 
   python $SCRIPT_PATH \
-    --model_name $MODEL
+    --model_name $MODEL \
+    --file_pos 1
   done

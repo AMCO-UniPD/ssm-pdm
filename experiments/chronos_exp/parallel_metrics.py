@@ -45,6 +45,11 @@ parser.add_argument(
     type=str,
     help="List of model names to compute the metrics for"
 )
+parser.add_argument(
+    "--file_pos_dir",
+    type=int,
+    help="Position of the experiment directory"
+)
 args=parser.parse_args()
 
 # Get the outputs directory of the most recent experiment
@@ -55,8 +60,8 @@ outputs_dict_path = generate_path(basepath=experiment_path,
                                     config.cmapss_models,
                                     config.approach,
                                     "quantile_reg",
-                                    config.exp_name
                                 ])
+outputs_dict_path = get_most_recent_dir(outputs_dict_path,file_pos=args.file_pos_dir)
 
 metrics_dfs = []
 
@@ -82,7 +87,7 @@ for i in range(config.n_runs):
 mean_metrics_df=(sum(metrics_dfs)/len(metrics_dfs)).round(2)
 
 if config.print_summary_metrics:
-    print_summary_metrics(metrics_df=mean_metrics_df)
+    print_summary_metrics(metrics_df=mean_metrics_df,model_name=args.model_name)
 
 metrics_df_path = generate_path(basepath=experiment_path,
                                 folders=[
@@ -91,8 +96,9 @@ metrics_df_path = generate_path(basepath=experiment_path,
                                     config.cmapss_models,
                                     config.approach,
                                     "quantile_reg",
-                                    config.exp_name
+                                    # config.exp_name
                                 ])
+metrics_df_path = get_most_recent_dir(metrics_df_path,file_pos=args.file_pos_dir)
 
 if config.save_mean_metrics_df:
 

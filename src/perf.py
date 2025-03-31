@@ -181,12 +181,14 @@ def df_with_index_to_obsidian_table(df):
 
 def print_summary_metrics(
         metrics_df: pd.DataFrame,
+        model_name: str = "S4"
     ) -> None:
     """
     Print the summary metrics of a metrics_df dataframe
 
     Args:
         metrics_df:pd.DataFrame Metrics DataFrame
+        model_name:str Model name
 
     Returns:
         None: The function computes and prints the summary metrics and does not return anything
@@ -197,6 +199,8 @@ def print_summary_metrics(
     metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
     metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
 
+    print('#'* 50)
+    print(f"Summary metrics for model {model_name}")
     print('#'* 50)
     print(f"Mean eval loss over all the test lifes:\n{metrics_df.loc['Life_mean']}")
     print('#'* 50)

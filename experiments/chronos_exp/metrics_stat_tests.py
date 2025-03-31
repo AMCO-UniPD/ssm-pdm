@@ -45,6 +45,7 @@ metrics_df_dirpath = generate_path(basepath=experiment_path,
 
 if config.print_summary_metrics:
 
+    ipdb.set_trace()
     metrics_df_path = get_most_recent_file(metrics_df_dirpath,file_pos=config.file_pos)
     print('#'* 50)
     print(f"Opening metrics_df from {metrics_df_path}")

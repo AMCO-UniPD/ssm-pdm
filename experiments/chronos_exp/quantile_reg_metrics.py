@@ -75,7 +75,7 @@ for i in range(config.n_runs):
 mean_metrics_df=(sum(metrics_dfs)/len(metrics_dfs)).round(2)
 
 if config.print_summary_metrics:
-    print_summary_metrics(metrics_df=mean_metrics_df)
+    print_summary_metrics(metrics_df=mean_metrics_df,model_name=config.model_name)
 
 metrics_df_path = generate_path(basepath=experiment_path,
                                 folders=[

@@ -265,7 +265,7 @@ def plot_prediction_interval(
         if config.full_life:
             filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_quantile_{config.quantile_run}_interval_full"
         else:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_quantile_{config.quantile_run}_interval_pad"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_quantile_{config.quantile_run}_interval_{config.quantile_approach}"
         life_idx_str="_".join(str(x+config.test_idx[0]+1) for x in config.life_idx)
         filename=f"{filename}_life_{life_idx_str}.pdf"
         plot_path=os.path.join(plot_path,filename)
@@ -322,7 +322,7 @@ def blob_plot(
 
     if config.save_plot:
 
-        filename=f"{get_current_time()}_blob_plot_{config.cmapss_models}_quantile_{config.quantile_run}.png"
+        filename=f"{get_current_time()}_blob_plot_{config.cmapss_models}_quantile_{config.quantile_run}_{config.quantile_approach}_{config.eval_loss}.png"
         plot_path=os.path.join(plot_path,filename)
         fig.write_image(plot_path,scale=3)
         print('#'*50)

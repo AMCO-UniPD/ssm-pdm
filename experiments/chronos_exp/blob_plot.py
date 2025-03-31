@@ -36,7 +36,7 @@ config=ExperimentConfig(config)
 # and the mult-adds in a dictionary.
 plot_dict={}
 plot_dict["params"],plot_dict["mult_adds"],plot_dict["model_name"],plot_dict["test_metric"] = [],[],[],[]
-summary_dict_dirpath=generate_path(basepath=experiment_path,folders=["summary_dict"])
+summary_dict_dirpath = generate_path(basepath=experiment_path,folders=["summary_dict"])
 metrics_dirpath = generate_path(basepath=experiment_path,folders=["metrics"])
 
 
@@ -57,10 +57,8 @@ for model_name in config.model_names:
                                                    config.approach,
                                                    "quantile_reg"
                                                    ])
-    if model_name in ["S4","S5"]:
-        metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=1)
-    else:
-        metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=config.file_pos)
+
+    metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=1)
 
     metrics_df_path = get_most_recent_file(metrics_exp_dirpath_model,file_pos=config.file_pos)
     metrics_df = open_element(metrics_df_path)
