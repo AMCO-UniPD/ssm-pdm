@@ -84,6 +84,7 @@ The metrics table is very bad, the worse seen up to now.
 | Life_64 | 85.12 |
 | Life_mean | 60.59 |
 
+
 ###### Prediction plots
 
 The prediction plots are similar to the ones observe in the `RNN` models (so with a stable decreasing line) but it can be seen that the error is higher → the prediction lines are futher from the real ones.
@@ -563,12 +564,21 @@ Since with `Transformer` we obtain different results from `RNN` models, let's se
 >[!note]
 > [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/jhglagaq?nw=nwuserfrizzodavide)
 
-
 ## `windowed` Approach Experiments + Quantile Regression 🪟 🌗
 
 In this section we group the results obtained in the `windowed` approach in the Quantile Regression mode,  the experiments will be performed [[ssm_experiments#`windowed` Approach + Quantile Regression Experiments 🪟 🌗|as explained here]].
 
 ### `Transformer` Model Experiments 🤖 🌗
+
+I insert here the model summary returned by `calflops`:
+
+```txt
+##################################################
+RULTransformer model summary with calflops:
+mult_adds: 120.572 MMACs
+Params: 621.61 K
+##################################################
+```
 
 #### Dataset `FD001`
 
@@ -876,26 +886,26 @@ quantile_0.9     24.92
 ##################################################
 ```
 
-| Life  | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
-| --- | --- | --- | --- | --- | --- |
-| Life_132 | 39.82 | 40.26 | 40.1 | 39.88 | 40.17 |
-| Life_133 | 15.28 | 14.85 | 15.01 | 15.24 | 14.93 |
-| Life_134 | 14.01 | 14.44 | 14.28 | 14.05 | 14.35 |
-| Life_135 | 86.18 | 85.74 | 85.89 | 86.12 | 85.83 |
-| Life_136 | 36.82 | 37.25 | 37.1 | 36.87 | 37.16 |
-| Life_137 | 85.92 | 85.49 | 85.65 | 85.88 | 85.58 |
-| Life_138 | 10.13 | 10.53 | 10.37 | 10.17 | 10.44 |
-| Life_139 | 33.82 | 34.26 | 34.1 | 33.87 | 34.17 |
-| Life_140 | 99.39 | 98.99 | 99.14 | 99.35 | 99.07 |
-| Life_141 | 23.17 | 22.76 | 22.9 | 23.14 | 22.85 |
-| Life_142 | 9.16 | 8.72 | 8.89 | 9.11 | 8.8 |
-| Life_143 | 78.99 | 78.56 | 78.72 | 78.95 | 78.65 |
-| Life_144 | 14.83 | 15.26 | 15.1 | 14.88 | 15.18 |
-| Life_145 | 39.17 | 38.74 | 38.9 | 39.12 | 38.82 |
-| Life_146 | 46.83 | 47.26 | 47.1 | 46.88 | 47.18 |
-| Life_mean | 42.23 | 42.21 | 42.22 | 42.23 | 42.21 |
-| Life_median | 38.0 | 38.0 | 38.0 | 37.99 | 37.99 |
-| Life_std | 28.91 | 28.73 | 28.8 | 28.89 | 28.77 |
+| Life        | quantile_0.1 | quantile_0.25 | quantile_0.5 | quantile_0.75 | quantile_0.9 |
+| ----------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| Life_132    | 39.82        | 40.26         | 40.1         | 39.88         | 40.17        |
+| Life_133    | 15.28        | 14.85         | 15.01        | 15.24         | 14.93        |
+| Life_134    | 14.01        | 14.44         | 14.28        | 14.05         | 14.35        |
+| Life_135    | 86.18        | 85.74         | 85.89        | 86.12         | 85.83        |
+| Life_136    | 36.82        | 37.25         | 37.1         | 36.87         | 37.16        |
+| Life_137    | 85.92        | 85.49         | 85.65        | 85.88         | 85.58        |
+| Life_138    | 10.13        | 10.53         | 10.37        | 10.17         | 10.44        |
+| Life_139    | 33.82        | 34.26         | 34.1         | 33.87         | 34.17        |
+| Life_140    | 99.39        | 98.99         | 99.14        | 99.35         | 99.07        |
+| Life_141    | 23.17        | 22.76         | 22.9         | 23.14         | 22.85        |
+| Life_142    | 9.16         | 8.72          | 8.89         | 9.11          | 8.8          |
+| Life_143    | 78.99        | 78.56         | 78.72        | 78.95         | 78.65        |
+| Life_144    | 14.83        | 15.26         | 15.1         | 14.88         | 15.18        |
+| Life_145    | 39.17        | 38.74         | 38.9         | 39.12         | 38.82        |
+| Life_146    | 46.83        | 47.26         | 47.1         | 46.88         | 47.18        |
+| Life_mean   | 42.23        | 42.21         | 42.22        | 42.23         | 42.21        |
+| Life_median | 38.0         | 38.0          | 38.0         | 37.99         | 37.99        |
+| Life_std    | 28.91        | 28.73         | 28.8         | 28.89         | 28.77        |
 
 ###### Metrics Table Pinball Loss
 
@@ -930,9 +940,17 @@ quantile_0.9     10.90
 
 See [[ssm_experiments#Prediction Plots `FD002`|here]]. As for the `Informer` the worst lifes are `Life_135,Life_140`, also here `Life_141` is not bad as in the `SSM` models.
 
+##### Experiment 2 `Transformer` `FDOO2` `windowed` `tau_mult_no_tau_feat` 🤖 1️⃣ 🌗
+
+`tau_mult_no_tau_feat` approach experiment for `RULTransformer` on `FD002` with 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/rei06tew?nw=nwuserfrizzodavide)
+
+
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
-### Model Summary
+I insert here the model summary returned by `calflops`:
 
 ```txt
 ##################################################
@@ -1158,6 +1176,38 @@ Let's do a `tau_mult_no_tau_feat` approach experiment with 5 runs.
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/zd874oc1?nw=nwuserfrizzodavide)
 
+###### Metrics Table Pinball Loss
+
+Similar values to the `Transformer`.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     35.19
+quantile_0.25    23.93
+quantile_0.5     11.52
+quantile_0.75    36.02
+quantile_0.9     53.59
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     35.06
+quantile_0.25    23.84
+quantile_0.5      9.51
+quantile_0.75    39.06
+quantile_0.9     55.86
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.73
+quantile_0.25     9.15
+quantile_0.5      6.58
+quantile_0.75    17.83
+quantile_0.9     21.50
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to `Transformer`.
 
 #### Dataset `FD002`
 
@@ -1280,4 +1330,4 @@ quantile_0.9      8.88
 
 ###### Prediction plots
 
-See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_141` while `Life_135` is much better than in the `SSM` models but we have `Life_140` which has significantly highe loss values now.
+See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_141` while `Life_135` is much better than in the `SSM` models but we have `Life_140` which has significantly high loss values now.

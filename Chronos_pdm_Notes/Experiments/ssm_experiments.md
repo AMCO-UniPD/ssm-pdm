@@ -1372,7 +1372,7 @@ exp_name: multi_run_20-03-2025_10-24-54_S4_FD001_windowed_quantile_reg_feat_extr
 
 ### `S4` Model Experiments 4‍⃣ 🪟 🌗
 
-### Model Summary
+I insert here the model summary returned by `calflops`:
 
 ```txt
 ##################################################
@@ -2310,6 +2310,7 @@ quantile_0.9     19.61
 ###### Prediction Interval Plots
 
 Now the prediction interval is wider and there is no more that error where in quantile 0.75 the predictions were higher than the ones of quantile 0.9. This is a good result, we have to see what happens with the other models → `S4` may lose even more to `S5,S4D` and may also become worse with the respect to the other non `SSM` models. 
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `S4` `FD002` 4‍⃣ 🪟 🌗
@@ -2530,9 +2531,49 @@ quantile_0.9     13.72
 
 Quite similar to the ones produced in `FD001`. The prediction interval is quite wide on the left side  (so the predictions on small quantiles are significantly different from each other) while predictions on high quantiles are much closer.
 
+##### Experiment 4 `S4` `FD002` `tau_mult_no_tau_feat` 4‍⃣ 🪟 🌗 ✖
+
+Let's start the experiments on the `tau_mult_no_tau_feat` approach also on the `FD002` dataset.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kx6ar6yt?nw=nwuserfrizzodavide)
+
+###### Metrics Table `RMSE` Loss
+
+Here it is a bit strange because in the first 3 quantiles the metrics are very close, or even better than the ones obtained in `FD001`, while they are worse in the last 2 quantiles. 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     127.02
+quantile_0.25     88.10
+quantile_0.5      35.60
+quantile_0.75     62.50
+quantile_0.9      99.66
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     123.91
+quantile_0.25     84.71
+quantile_0.5      31.19
+quantile_0.75     62.50
+quantile_0.9     100.96
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.49
+quantile_0.25    37.64
+quantile_0.5     25.08
+quantile_0.75    34.49
+quantile_0.9     42.92
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to the ones of `FD001`.
+
 ### `S5` Model Experiments 5️⃣ 🪟 🌗
 
-### Model Summary
+I insert here the model summary returned by `calflops`:
 
 ```txt
 ##################################################
@@ -3072,9 +3113,50 @@ quantile_0.9     25.12
 
 Similar to `S4` but with narrowed intervals, as it happened in `FD001`.
 
+##### Experiment 4 `S5` `FD002` `tau_mult_no_tau_feat` 5‍⃣ 🪟 🌗 ✖ ❎
+
+`tau_mult_no_tau_feat` approach experiment for `S5` on `FD002`, 5 runs.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/hztry9i4?nw=nwuserfrizzodavide)
+
+###### Metrics Table `RMSE` Loss
+
+Higher values than `S4` in the first quantiles, then lower values.
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     134.55
+quantile_0.25    103.17
+quantile_0.5      53.56
+quantile_0.75     50.20
+quantile_0.9      94.07
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     134.19
+quantile_0.25     99.66
+quantile_0.5      43.76
+quantile_0.75     48.69
+quantile_0.9      94.92
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     39.18
+quantile_0.25    40.35
+quantile_0.5     37.72
+quantile_0.75    25.68
+quantile_0.9     30.64
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to `FD001`.
+
 ### `S4D` Model Experiments 4 D 🪟 🌗
 
-### Model Summary
+I insert here the model summary returned by `calflops`:
 
 ```txt
 ##################################################
@@ -3516,6 +3598,46 @@ quantile_0.9     15.32
 ###### Prediction Interval Plots
 
 Here is a bit the opposite with the respect to the `FD001` experiment 😅. The noisy predictions are in `Life_135` (where there is a significant underestimation) and are smoother in the `Life_138,Life_134`. The prediction interval, as expected seen the metrics table, are very narrow. 
+
+##### Experiment 4 `S4D` `FD002` `tau_mult_no_tau_feat` 4 D 🪟 🌗 ✖
+
+Experiment with 5 runs with `tau_mult_no_tau_feat` approach for `S4D` on `FD002`.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/tvk745mq?nw=nwuserfrizzodavide)
+
+###### Metrics Table `RMSE` Loss
+
+Similar values to `S5` a part for the higher quantiles were the errors are lower.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     135.93
+quantile_0.25    106.71
+quantile_0.5      53.57
+quantile_0.75     50.92
+quantile_0.9      63.25
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     133.18
+quantile_0.25    102.37
+quantile_0.5      42.63
+quantile_0.75     42.97
+quantile_0.9      62.68
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     39.37
+quantile_0.25    41.14
+quantile_0.5     40.56
+quantile_0.75    28.55
+quantile_0.9     27.76
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to the ones obtained with the other `SSM`s but interestingly all the `RUL` predicted signals end towards the same value in the end.
 
 ## `windowed` Approach + Quantile Regression + Feature Extraction 🌗 🤺
 

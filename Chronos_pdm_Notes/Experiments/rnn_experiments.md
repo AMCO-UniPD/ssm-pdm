@@ -643,7 +643,7 @@ Considering the fact that the results of the experiments performed on the `RNN` 
 
 ### `LSTM` Model Experiments 🪟 🌗
 
-### Model Summary
+I insert here the model summary returned by `calflops`:
 
 ```txt
 ##################################################
@@ -883,7 +883,38 @@ After having produced the Prediction Interval plot of the experiment withot $\ta
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/vuc7i9yc?nw=nwuserfrizzodavide)
 
+###### Metrics Table Pinball Loss
 
+Similar values to `Transformer` based models. 
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     37.29
+quantile_0.25    29.07
+quantile_0.5     17.02
+quantile_0.75    14.87
+quantile_0.9     23.62
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     37.98
+quantile_0.25    29.07
+quantile_0.5     14.52
+quantile_0.75    14.22
+quantile_0.9     22.31
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1      9.89
+quantile_0.25     9.69
+quantile_0.5      7.87
+quantile_0.75     8.03
+quantile_0.9     14.21
+##################################################
+```
+
+###### Prediction Interval Plots
+
+As usual worse than the others because of its logarithmic shaped prediction signals. 
 #### Dataset `FD002`
 
 ##### Experiment 1 `LSTM` `FDOO2` `windowed` `Quantile Regression` 🪟 1️⃣ 🌗

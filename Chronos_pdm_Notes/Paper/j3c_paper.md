@@ -174,7 +174,7 @@ Below we report the table of results obtained using the Pinball Loss as the eval
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
-| `S4`          | 6.93         | 6.51          | 7.08         | 7.07          | 7.52         |
+| `S4`          | **6.93**         | 6.51          | 7.08         | 7.07          | 7.52         |
 | `S5`          | 11.90        | 11.09         | 12.34        | 12.88         | 13.12        |
 | `S4D`         | 13.53        | 13.40         | 13.57        | 14.07         | 13.80        |
 | `LSTM`        | 12.49        | 12.49         | 12.43        | 12.43         | 12.50        |
@@ -227,16 +227,67 @@ This is the last set of experiments I will perform (probably). Differently from 
 | `Transformer` | *33.98*      | *21.08*       | *11.81*      | *29.42*       | *50.63*      |
 | `Informer`    | *34.69*      | *23.33*       | *11.40*      | *30.95*       | *50.91*      |
 
-### `FDOO2` Experiments `windowed` Approach + Quantile Regression 🪟 🌗 + $\tau$ multiplicative factor
+## Experiment Results `quantile_reg` approach
+
+Below we report the table of results obtained using the Pinball Loss as the evaluation metric.
+
+>[!warning]
+> In these results there is a bit of disparity since the `SSM` models are evaluated on 15 runs while the others are evaluated only on 5 runs.
+
+### `FD001`
+
+This approach is not very interesting and probably will not be used in the final paper. In fact the predictions are similar across all quantiles and their are probably not even statistically significant.
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
-| `S4`          |              |               |              |               |              |
-| `S5`          |              |               |              |               |              |
-| `S4D`         |              |               |              |               |              |
-| `LSTM`        |              |               |              |               |              |
-| `Transformer` |              |               |              |               |              |
-| `Informer`    |              |               |              |               |              |
+| `S4`          | **6.93**         | **6.51**          | **7.08**         | **7.07**          | **7.52**         |
+| `S5`          | *11.90*        | *11.09*         |  *12.34*        |  *12.88*         | *13.12*       |
+| `S4D`         | 13.53        | 13.40         | 13.57        | 14.07         | 13.80        |
+| `LSTM`        | 12.49        | 12.49         | 12.43        | 12.43         | 12.50        |
+| `Transformer` | 14.28        | 14.08         | 17.60        | 22.46         | 23.64        |
+| `Informer`    | 12.69        | 13.68         | 10.81        | 12.54         | 16.60        |
+
+## Experiment Results `tau_mult` approach
+
+In this section I report the results of the `tau_mult` approach. I will do as in the section below to produce the table with the `RMSE` metric value.
+
+### `FD001`
+
+Differently from the `tau_mult_no_tau_feat` approach in `tau_mult` the `SSM` models are clearly the best ones also in term of the metrics values, probably they are helped by the fact that we have the quantile information also as an input feature rather than just a multiplication factor at the end. However the plots produced are a bit worse because we have wider intervals in the underestimation quantiles and narrower ones in overestimation quantiles and there is the problem that in some lifes we have quantile 0.75 that predicts higher values than quantile 0.9. 
+
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4`          | 110.56       | 62.43         | **24.19**    | **17.37**     | **18.67**    |
+| `S5`          | *81.54*      | **34.61**     | *27.18*      | *26.42*       | *27.95*      |
+| `S4D`         | **75.16**    | *40.62*       | 43.93        | 42.72         | 40.99        |
+| `LSTM`        | 130.58       | 103.25        | 59.85        | 35.86         | 41.26        |
+| `Transformer` | 118.63       | 72.78         | 29.49        | 45.52         | 74.65        |
+| `Informer`    | 120.79       | 84.05         | 30.11        | 43.81         | 72.60        |
+
+## Experiment Results `tau_mult_no_tau_feat` approach
+
+In this section we will group the results obtained in the `tau_mult_no_tau_feat` approach experiments. These results are reported in the table with the respect to the `RMSE` evaluation metric. It's better to evaluate the models using this metric because at the end the advantage of Quantile Regression is that is the user that will select the amount of underestimation or overestimation he/she wants chossing the quantile level.
+
+
+### `FD001`
+
+The metrics values, as expected, are much higher than the ones obtained with Pinball loss, in particular the ones for low quantiles. This happens because of the usual thing that when the model fails it fails doing a big underestimation. We may decide to play around that adding some value to the `RUL` but we want to show how the predictions change across different quantiles and moreover underestimations are in general safer than overestimation so we'll keep as it is.
+
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4` | 126.97 | 94.29 | 37.96 | 32.16 | 54.38 |
+| `S5` | 128.07 | 93.91 | 48.60 | 43.49 | 71.68 |
+| `S4D` | 128.05 | 96.39 | 45.63 | 50.88 | 67.24 |
+| `LSTM` | 130.60 | 103.21 | 60.09 | 35.92 | 41.26 |
+| `RULTransformer` | 124.36 | 87.44 | 31.46 | 41.07 | 75.09 |
+| `RULInformer` | 122.70 | 83.68 | 32.41 | 54.77 | 79.83 |
+
+Comparing the metrics values over the different models we can see that in the first 3 quantiles the `Transformer` based models are the best ones, closely followed by the `SSM` based models while in the last two quantiles `SSM` are the best ones a part from the strange case of quantile 0.9 where the best model is `LSTM`.
+
+In any case `SSM` and `Transformer` are always there among the top models, but at the end, as we will say in the description of the results in the blob plot, the winners are `SSM` because they are much more efficient.
+
+>[!note]
+> It's like when `DeepSeek` dropped. It is not better than `GPT` models in all the benchmarks, in most of them is lower but by a small margin but it is much more efficient and cheap than `OpenAI` models.
 
 # Text to insert in the paper
 
@@ -409,6 +460,19 @@ I remove this sentence because it is probably better to re evaluate all the mode
 The evaluation criterion employed is the Pinball Loss \ref{eq:pinball_loss} computed on $\tau=0.3$. This quantile percentage was chosen as a
 a good theoretical trade off between \textit{unexpected breaks} and \textit{unexploited lifetime}. In pratical cases the costs for \textit{unexpected breaks} and \textit{unexploited lifetime}
 is defined depending on the specific application and domain knowledge.
+```
+
+## Old result table description
+
+This is the old description of the result table back when we use the standard quantile regression approach and Pinball Loss with $\tau=0.3$ as the evalaution metric.
+
+```tex
+A detailed observation of the test metrics reveals a significant improvement in the performance of the \texttt{SSM} models with respect to the other
+models considered. Comparing the errors across the different evaluation quantiles considered, quantile 0.25 stands out as the most effective one,
+alinign with the choice of the evaluation criterion.
+
+Moreover, in \ac{SSM} based models the error is more stable across the different quantiles while in the other models an higher degree of uncertainty
+can be observed in the prediction of the higher quantiles.
 ```
 
 # Code removed
