@@ -1,8 +1,8 @@
 #!/bin/bash
 
-MODELS=('S4D')
+MODELS=('RULInformer')
 FOLDER=('plots')
-DATASET='FD001'
+DATASET='FD002'
 APPROACH='windowed'
 # quantile_approach='quantile_reg'
 # quantile_approach='tau_mult'
@@ -55,8 +55,10 @@ N_RUNS=1
 # Experiment names FD002 dataset real tau multiplicative + no_tau_float
 # exp_name=multi_run_30-03-2025_08-53-20_S4_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name=multi_run_30-03-2025_13-50-18_S5_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
-exp_name=multi_run_31-03-2025_10-59-36_S4D_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name=multi_run_31-03-2025_10-59-36_S4D_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name=multi_run_31-03-2025_15-10-51_RULTransformer_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name=multi_run_01-04-2025_08-30-46_LSTM_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+exp_name=multi_run_01-04-2025_10-36-18_RULInformer_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
 
 
 # Store the initial part of the path in acquario3
@@ -64,28 +66,28 @@ INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
 
 # acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$exp_name/"
 # Path for Prediction Interval plots
-# acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$exp_name/interval/"
+acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$exp_name/interval/"
 
 # blob plot path
-blob_plot_path="$INITIAL_DIR/$FOLDER/blob_plot/$DATASET/"
+# blob_plot_path="$INITIAL_DIR/$FOLDER/blob_plot/$DATASET/"
 
 # cd into local path in my local machine
 # cd ../../../ssm_pdm_paper/Img/rul_plots/$MODELS/$DATASET/
 # path for prediction interval plots
-# cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET/
+cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET/
 # path for blob plots
-cd ../../../ssm_pdm_paper/Img/blob_plots/$DATASET/
+# cd ../../../ssm_pdm_paper/Img/blob_plots/$DATASET/
 
 # if folder interval does not exist create it and cd into it
-# subfolder=$quantile_approach
-#
-# if [ ! -d $subfolder ]; then
-#   echo "Creating the folder $subfolder"
-#   mkdir $subfolder
-#   cd $subfolder
-# else
-#   cd $subfolder
-# fi
+subfolder=$quantile_approach
+
+if [ ! -d $subfolder ]; then
+  echo "Creating the folder $subfolder"
+  mkdir $subfolder
+  cd $subfolder
+else
+  cd $subfolder
+fi
 
 # Name to give to the RUL plots files when copied locally
 
@@ -107,13 +109,18 @@ for pos in "${file_pos[@]}"; do
   # scp acquario3:$latest_file .
 
   # prediction interval plots
-  # latest_file=$(ssh acquario3 "find $acquario3_path -name '*.pdf' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
+  latest_file=$(ssh acquario3 "find $acquario3_path -name '*.pdf' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
   # blob plots
-  latest_file=$(ssh acquario3 "find $blob_plot_path -name '*.png' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
+  # latest_file=$(ssh acquario3 "find $blob_plot_path -name '*.png' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
   echo "############################################"
   echo "Copying file: $latest_file"
   echo "############################################"
   scp acquario3:$latest_file .
+
+  # files=$(ssh acquario3 "cd $blob_plot_path && ls")
+  # echo "############################################"
+  # echo "Files in $blob_plot_path: $files"
+  # echo "############################################"
  
   # acquario3_path_files=$(ssh acquario3 "cd $acquario3_path && ls")
   # echo "############################################"
