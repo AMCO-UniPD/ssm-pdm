@@ -5,8 +5,8 @@ Python script containing utility functions for the models migrated from the
 
 import os
 import sys
-from bs4 import element
 import ipdb
+import traceback
 from typing import Tuple, Union
 from dataclasses import dataclass
 
@@ -631,31 +631,52 @@ def load_ssm_model(
         # Obtain the model summary with torchsummary
         try:
 
-            print('#'* 50)
-            print(f"Model summary computation with calflops:")
-            print('#'* 50)
+            if exp_config.summary_func == "torchinfo":
+                print('#'* 50)
+                print(f"Model summary computation with torchinfo:")
+                print('#'* 50)
+                input_size=(1, exp_config.sequence_length, d_input) if ((not exp_config.quantile_reg) or (not model_config.tau_feat)) else (1, exp_config.sequence_length, d_input-1)
+                model_summary=summary(
+                    model = model,
+                    input_size = input_size,
+                    device = model_config.device
+                )
+                params = model_summary.total_params
+                mult_adds = model_summary.total_mult_adds
 
-            input_size=(1, exp_config.sequence_length, d_input) if ((not exp_config.quantile_reg) or (not model_config.tau_feat)) else (1, exp_config.sequence_length, d_input-1)
-            flops,mult_adds,params=calculate_flops(
-                model=model.to(model_config.device),
-                input_shape=input_size,
-                output_as_string=True,
-                output_precision=4
-            )
+                print('#'*50)
+                print(f"Total params: {params}")
+                print(f"Total mult adds: {mult_adds}")
+                print('#'*50)
 
-            print('#'* 50)
-            print(f"{exp_config.model_name} model summary with calflops:")
-            print(f"FLOPS: {flops}")
-            print(f"mult_adds: {mult_adds}")
-            print(f"Params: {params}")
-            print('#'* 50)
+            elif exp_config.summary_func == "calflops":
+
+                print('#'* 50)
+                print(f"Model summary computation with calflops:")
+                print('#'* 50)
+
+                input_size=(1, exp_config.sequence_length, d_input) if ((not exp_config.quantile_reg) or (not model_config.tau_feat)) else (1, exp_config.sequence_length, d_input-1)
+                flops,mult_adds,params=calculate_flops(
+                    model=model.to(model_config.device),
+                    input_shape=input_size,
+                    output_as_string=True,
+                    output_precision=4
+                )
+
+                print('#'* 50)
+                print(f"{exp_config.model_name} model summary with calflops:")
+                print(f"FLOPS: {flops}")
+                print(f"mult_adds: {mult_adds}")
+                print(f"Params: {params}")
+                print('#'* 50)
 
         except Exception as e:
 
             mult_adds=None
             print('#'*50)
-            print("Also calflops not working, let's compute the model summary manually")
+            print(f"{exp_config.summary_func} not working, let's compute the model summary manually")
             print('#'*50)
+            traceback.print_exc()  # Print the full traceback of the error
             params=model_summary_manual(model)
 
         if exp_config.save_summary_dict:
@@ -674,7 +695,7 @@ def load_ssm_model(
             save_element(
                 element = summary_dict,
                 dirpath = summary_dict_dirpath,
-                filename = f"{exp_config.model_name}_summary_dict",
+                filename = f"{exp_config.model_name}_summary_dict_{exp_config.summary_func}",
                 filetype = "pickle"
             )
 

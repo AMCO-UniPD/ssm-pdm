@@ -568,7 +568,7 @@ def best_model_perf(
             model,summary_dict=load_ssm_model(
                 model_config=model_config,
                 exp_config=config,
-                d_input=len(feature_names) if not config.quantile_reg else len(feature_names)+1,
+                d_input=len(feature_names) if ((not config.quantile_reg) or (not model_config.tau_feat)) else len(feature_names)+1,
             )
             print('#'* 50)
             print(f"Summary dict keys: {summary_dict.keys()}")

@@ -58,20 +58,33 @@ for model_name in config.model_names:
                                                    "quantile_reg"
                                                    ])
 
-    metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=1)
+    metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=0)
 
     metrics_df_path = get_most_recent_file(metrics_exp_dirpath_model,file_pos=config.file_pos)
     metrics_df = open_element(metrics_df_path)
     plot_dict["test_metric"].append(metrics_df.loc["Life_mean",f"quantile_{config.quantile_run}"])
 
-plot_dict["params_float"] = [extract_number(param) for param in plot_dict["params"]]
+# plot_dict["params_float"] = [extract_number(param) for param in plot_dict["params"]] if all(isinstance(item,str) for item in plot_dict["params"]) else plot_dict["params"]
+
+params_list=[]
+for param in plot_dict["params"]:
+    if isinstance(param,str):
+        params_list.append(extract_number(param))
+    else:
+        params_list.append(param)
+
+plot_dict["params_float"] = params_list
 
 mult_adds_list=[]
 for macs in plot_dict["mult_adds"]:
-    if "KM" in macs:
-        mult_adds_list.append(extract_number(macs)/1000)
+    if isinstance(macs,str):
+        if "KM" in macs:
+            mult_adds_list.append(extract_number(macs)/1000)
+        else:
+            mult_adds_list.append(extract_number(macs))
     else:
-        mult_adds_list.append(extract_number(macs))
+        mult_adds_list.append(macs)
+
 plot_dict["mult_adds_float"] = mult_adds_list
 
 plot_path = generate_path(basepath=experiment_path,
