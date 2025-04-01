@@ -2,7 +2,7 @@
 model_config_path: config/ssm_config.yaml
 
 # cuda config
-device_num: 0
+device_num: 2
 
 # wandb config
 project_name: "chronos-rul"
@@ -10,7 +10,7 @@ project_name: "chronos-rul"
 # Dataset configurations
 data_name: CMAPSS # CMAPSS, CMPASS-2
 # For FD001 dataset
-# val_idx: 
+# val_idx:
 #   - 0
 #   - 50
 # test_idx:
@@ -23,9 +23,9 @@ val_idx:
 test_idx:
   - 131
   - 259
-cmapss_models: FD001
+# cmapss_models: FD001
 # cmapss_models: FD003
-# cmapss_models: FD002
+cmapss_models: FD002
 # cmapss_models: FD004
 
 # Feature extraction configurations
@@ -52,10 +52,10 @@ weight_decay: 1.0e-4
 # model_name: RNN
 # model_name: LSTM
 # model_name: GRU
-model_name: S4
+# model_name: S4
 # model_name: S5
 # model_name: S4D
-# model_name: RULTransformer
+model_name: RULTransformer
 # model_name: RULInformer
 output_attention: false
 model_summary_manual: false
@@ -84,14 +84,15 @@ bounds: [0.1, 0.9]
 # quantiles: [0.1,0.5,0.9]
 # quantiles: [0.25,0.75]
 # quantiles: [0.25,0.5,0.75]
-quantiles: [0.1,0.25,0.5,0.75,0.9]
-# quantiles: [0.1]
+# quantiles: [0.1,0.25,0.5,0.75,0.9]
+# quantiles: [0.25,0.5,0.75,0.9]
+quantiles: [0.1]
 # quantiles: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 quantile_run: 0.25
 
 # multi run experiment
 start_run_id: 0
-n_runs: 5
+n_runs: 1
 set_exp_name: false
 
 # Experiment name FD001
@@ -121,6 +122,14 @@ set_exp_name: false
 # exp_name: multi_run_28-03-2025_12-35-12_S5_FD002_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_29-03-2025_07-30-40_S4D_FD002_windowed_quantile_reg_tau_mult
 
+# Memory test trasnformer
+# hyperparameters equal to the usual ones
+# exp_name: 01-04-2025_18-15-45_RULTransformer_FD002_windowed_quantile_reg_tau_mult
+# n_layers=3, d_ff=64
+# exp_name: 01-04-2025_18-44-48_RULTransformer_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+# n_layers=1, d_ff=32
+# exp_name: 01-04-2025_19-00-49_RULTransformer_FD002_windowed_quantile_reg_tau_mult
+
 # Experiment name FD001 tau_mul_no_tau_feat approach
 # exp_name: 29-03-2025_10-07-53_S4_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name: multi_run_29-03-2025_12-31-34_S5_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
@@ -134,6 +143,9 @@ set_exp_name: false
 # exp_name: multi_run_30-03-2025_13-50-18_S5_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name: multi_run_31-03-2025_10-59-36_S4D_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name: multi_run_31-03-2025_15-10-51_RULTransformer_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name: multi_run_01-04-2025_08-30-46_LSTM_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+# exp_name: multi_run_01-04-2025_10-36-18_RULInformer_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+
 
 # test_script config
 test_script: false
@@ -160,9 +172,11 @@ quantile_to_test: [0.25,0.75]
 
 # config for blob_plot
 model_summary: false
+summary_func: torchinfo
+# summary_func: calflops
 save_summary_dict: false
 model_names: ["S4","S5","S4D","RULInformer","RULTransformer","LSTM"]
-# model_names: ["RULTransformer"]
+# model_names: ["S5"]
 
 # metrics_df experiment config
 metrics_idx: null
