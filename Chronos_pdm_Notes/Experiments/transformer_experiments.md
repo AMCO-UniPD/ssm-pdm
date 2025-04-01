@@ -580,6 +580,17 @@ Params: 621.61 K
 ##################################################
 ```
 
+Model summary with `torchinfo summary`:
+
+```txt
+##################################################
+Total params: 621482
+Total mult adds: 519082
+##################################################
+```
+
+Also here the Mult-Adds change significantly and they are much lower than `LSTM`.
+
 #### Dataset `FD001`
 
 ##### Experiment 1 `Transformer`` `FDOO1` `windowed` 🪟 🌗
@@ -947,6 +958,58 @@ See [[ssm_experiments#Prediction Plots `FD002`|here]]. As for the `Informer` the
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/rei06tew?nw=nwuserfrizzodavide)
 
+###### Metrics Table `RMSE` Loss
+
+Here it is probably similar to what happens in the other models when passing from `FD001` to `FD002` in the `tau_mult_no_tau_feat` approach. The performances in the first 2 quantiles (0.1,0.25) are similar to `FD001` and the ones in the other 3 are higher.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     127.07
+quantile_0.25     85.66
+quantile_0.5      35.59
+quantile_0.75     62.49
+quantile_0.9      99.65
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     123.92
+quantile_0.25     82.53
+quantile_0.5      31.20
+quantile_0.75     62.49
+quantile_0.9     100.96
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.49
+quantile_0.25    38.02
+quantile_0.5     25.07
+quantile_0.75    34.49
+quantile_0.9     42.92
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to the ones obtained in the other models.
+
+###### CPU Usage Experiments `Transformer` `FD002` `tau_mult` 🤖 🪟 🌗
+
+Since the [[transformer_experiments#Experiment 2 `Informer` `FDOO2` `windowed` `tau_mult_no_tau_feat` 🪟 1️ 🌗|`tau_mul_no_tau_feat` experiment on `FD002`]] was using a lot of the `acquario3` server `CPU` let's now do some CPU usage tests on `Transformer` (another model that uses a lot of `CPU`).
+
+First of all I did an experiment with `n_runs: 1, quantiles: [0.1]`  with `tau_mult` approach and the rest of the hyperparameters at the usual values.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gthnxl1o?nw=nwuserfrizzodavide)
+
+Here the `CPU` stays at around 500-800%,  surely lower that the `Informer` that was at about 1000-2000% but it is still high.
+
+I tried to reduce some of the model hyperparameters: for example `n_layers: 3,d_ff: 64` but still it seems that it is using the same amount of `CPU` 😢. 
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gthnxl1o?nw=nwuserfrizzodavide)
+
+Maybe the problem is related to all those overlapping windows I am using? 
+
+I also started an experiment with `n_layers=1,d_ff=32` but the `CPU` usage was still the same, the `GPU` memory is the one decreasing now. In fact these are hyperparameters of `torch` models so they are all related to the `GPU` usage, so maybe I have to watch more closely at the code to find some costly operation that I am performing on the `CPU` because I am using `np.array` or other non `torch` things that are all loading the `CPU`. 
 
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
@@ -961,6 +1024,16 @@ Params: 724.138 K
 ##################################################
 ```
 
+Model summary obtained with `torchinfo summary`:
+
+```txt
+##################################################
+Total params: 723754
+Total mult adds: 62872490
+##################################################
+```
+
+Much higher Mult-Adds than the `Transformer`.
 #### Dataset `FD001`
 
 ##### Experiment 1 `Informer` `FDOO1` `windowed` 🧙‍♂️ 🌗
@@ -1331,3 +1404,43 @@ quantile_0.9      8.88
 ###### Prediction plots
 
 See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss values for `Life_141` while `Life_135` is much better than in the `SSM` models but we have `Life_140` which has significantly high loss values now.
+
+##### Experiment 2 `Informer` `FDOO2` `windowed` `tau_mult_no_tau_feat` 🪟 1️ 🌗
+
+`tau_mult_no_tau_feat` multi run experiment for `Informer` on `FD002`.
+
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/st4m28hm?nw=nwuserfrizzodavide)
+
+>[!warning]
+> Experiment stopped during `run_2_quantile_0.25` because apparently it was occupying too much `CPU` on `acquario3`. 
+
+###### Metrics Table `RMSE` Loss
+
+In any case even after 1 run the results are quite similar to the ones obtained with the `Transformer` so I can be happy with just this run I think.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     127.00
+quantile_0.25     85.98
+quantile_0.5      35.49
+quantile_0.75     59.78
+quantile_0.9      99.62
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     123.90
+quantile_0.25     83.30
+quantile_0.5      30.81
+quantile_0.75     59.78
+quantile_0.9     100.92
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.49
+quantile_0.25    37.98
+quantile_0.5     24.98
+quantile_0.75    33.27
+quantile_0.9     42.91
+##################################################
+```

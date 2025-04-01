@@ -654,6 +654,20 @@ Params: 624.554 K
 ##################################################
 ```
 
+Summary obtained with `torchinfo summary`:
+
+```txt
+##################################################
+Total params: 624,042 K
+Total mult adds: 102,380,970
+##################################################
+```
+
+>[!note]
+> The number of parameters is a bit smaller than the one obtained with `calflops` but that is purely because here we have computed it in the `tau_mult_no_tau_feat` approach (where there is one feature less) while all the summaries computed with `calflops` (and used to produce the blob plots) where computed in the `tau_mult` approach.
+
+Here we have a much higher number of Mult-Adds which makes more sense than the result obtained with `calflops`. 
+
 #### Dataset `FD001`
 
 ##### Experiment 1 `LSTM` `FDOO1` `windowed` `Quantile Regression` 🪟 1️⃣ 🌗
@@ -914,7 +928,8 @@ quantile_0.9     14.21
 
 ###### Prediction Interval Plots
 
-As usual worse than the others because of its logarithmic shaped prediction signals. 
+As usual worse than the others because of its logarithmic shaped prediction signals.
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `LSTM` `FDOO2` `windowed` `Quantile Regression` 🪟 1️⃣ 🌗
@@ -922,7 +937,7 @@ As usual worse than the others because of its logarithmic shaped prediction sign
 Let's use the same configuration used in the `SSM` experiments.
 
 >[!note]
-> [Link to the first `wandb` run]()
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/zpl15al8/workspace?nw=nwuserfrizzodavide)
 
 The `LSTM` was pretty fast, it took only 1 hours and 30 minutes, according to the terminal.
 
@@ -1010,4 +1025,42 @@ quantile_0.9     10.76
 
 See [[ssm_experiments#Prediction Plots `FD002`|here]]. Similarly to the `Transformer` based models the worst lifes are `Life_135,Life_140`.
 
+##### Experiment 2 `LSTM` `FDOO2` `windowed` `tau_mult_no_tau_feat` 🪟 1️⃣ 🌗
 
+`tau_mult_no_tau_feat` approach experiment with 5 runs for `LSTM` on `FD002`.
+
+>[!note]
+> [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/1xa06jfj?nw=nwuserfrizzodavide)
+
+###### Metrics Table `RMSE` Loss
+
+Pretty similar to the `Transformer` results.
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     127.46
+quantile_0.25     86.45
+quantile_0.5      36.11
+quantile_0.75     59.79
+quantile_0.9      96.45
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     124.26
+quantile_0.25     83.16
+quantile_0.5      30.59
+quantile_0.75     59.53
+quantile_0.9      97.85
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.49
+quantile_0.25    37.96
+quantile_0.5     25.36
+quantile_0.75    33.73
+quantile_0.9     42.27
+##################################################
+```
+
+###### Prediction Interval Plots
+
+Similar to the `Transformer` one.

@@ -475,6 +475,41 @@ Moreover, in \ac{SSM} based models the error is more stable across the different
 can be observed in the prediction of the higher quantiles.
 ```
 
+## `RNN` citation
+
+After I have added this `bibtex` citation for the `RNN` paper some strange problem happened so I am removing it untile I solve the problem:
+
+
+```tex
+@article{rnn,
+  author = {Elman, Jeffrey L.},
+  title = {Finding Structure in Time},
+  journal = {Cognitive Science},
+  volume = {14},
+  number = {2},
+  pages = {179-211},
+  doi = {https://doi.org/10.1207/s15516709cog1402\_1},
+  abstract = {Time underlies many interesting human behaviors. Thus, the question of how to represent time in connectionist models is very important. One approach is to represent time implicitly by its effects on processing rather than explicitly (as in a spatial representation). The current report develops a proposal along these lines first described by Jordan (1986) which involves the use of recurrent links in order to provide networks with a dynamic memory. In this approach, hidden unit patterns are fed back to themselves: the internal representations which develop thus reflect task demands in the context of prior internal states. A set of simulations is reported which range from relatively simple problems (temporal version of XOR) to discovering syntactic/semantic features for words. The networks are able to learn interesting internal representations which incorporate task demands with memory demands: indeed, in this approach the notion of memory is inextricably bound up with task processing. These representations reveal a rich structure, which allows them to be highly context-dependent, while also expressing generalizations across classes of items. These representations suggest a method for representing lexical categories and the type/token distinction.},
+  year = {1990}
+}
+```
+
+Removed al the citation of `LSTM` that was inside `attns.bib`:
+
+
+```tex
+@article{lstm,
+  author={Hochreiter, Sepp and Schmidhuber, Jürgen},
+  journal={Neural Computation},
+  title={Long Short-Term Memory},
+  year={1997},
+  volume={9},
+  number={8},
+  pages={1735-1780},
+  keywords={},
+  doi={10.1162/neco.1997.9.8.1735}}
+```
+
 # Code removed
 
 Code to compute the model summary with `torchinfo`:

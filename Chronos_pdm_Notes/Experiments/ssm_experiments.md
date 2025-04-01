@@ -1383,6 +1383,17 @@ Params: 355.498 K
 ##################################################
 ```
 
+Model summary obtained with `torchinfo summary`:
+
+```txt
+##################################################
+Total params: 355370
+Total mult adds: 190250
+##################################################
+```
+
+At leas the fact that  `SSM` models have much less parameters and Mult-Adds is maintained.
+
 #### Dataset `FD001`
 
 ##### Experiment 1 `S4` `FD001` 4‍⃣ 🪟 🌗 
@@ -3167,6 +3178,16 @@ Params: 273.578 K
 ##################################################
 ```
 
+Model summary obtained with `torchinfo summary`:
+
+```txt
+##################################################
+Total params: 273450
+Total mult adds: 28094250
+##################################################
+```
+
+Here it is similar to `calflops` also the Mult-Adds. 
 #### Dataset `FD001`
 
 ##### Experiment 1 `S4D` `FD001` 4 D 🪟 🌗
