@@ -3734,3 +3734,24 @@ quantile_0.75    17.06
 quantile_0.9     16.96
 ##################################################
 ```
+
+# Potential things that may create high `CPU` consumption
+
+I am inspecting the code to find out some potential places that may be responsible for the high `CPU` consumption that my experiments are causing.
+
+The main suspect piece of code is inside `eval_loop`:
+
+```python
+batch_out = output.to("cpu").detach().numpy()
+batch_target = rul.to("cpu").detach().numpy()
+y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
+y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
+```
+
+This code is used to append the prediction and true values from different batches inside a list and these two lists are returned by `eval_loop` and are used to create the `pickle` files inside the `outputs` folder which are used to create the `metrics_df` and the plots.
+
+This piece of code may create `CPU` usage because we are moving the `output` and `rul` tensors to the `cpu` and we are appending them to a list.
+
+The other bad thing is that this code is almost completely useless when used in the training loop 😱. In fact inside `wandb_train_test` I am using the `y_pred,y_true` list only in the last epoch to create the `model_info` dictionary that I do not even use at all.
+
+This piece of code is useful just inside `best_model_perf` when it is used to compute the predictions and true values for the best model.
