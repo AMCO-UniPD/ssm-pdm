@@ -7,6 +7,7 @@ import sys
 import ipdb
 from typing import List
 import matplotlib.pyplot as plt
+import plotly.express as px
 import numpy as np
 import pandas as pd
 import torch
@@ -83,7 +84,6 @@ def plot_forecast(life:pd.DataFrame,
 
 def plot_predictions_grid(
     config:ExperimentConfig,
-    sensor_idx:int=0,
     outputs_path:str=experiment_path,
     plot_path:str=experiment_path,
 ) -> plt.figure:
@@ -91,6 +91,20 @@ def plot_predictions_grid(
     """
     Function to plot in a grid the `RUL` prediction of each life for a specific
     feature/sensor
+
+    Parameters:
+    -----------
+    config: ExperimentConfig
+        Experiment configuration object
+    outputs_path: str
+        Path to the outputs dictionary
+    plot_path: str
+        Path to save the plot
+
+    Returns:
+    --------
+    fig: plt.figure 
+        Figure containing the plot
     """
 
     if config.life_idx is None:
@@ -100,7 +114,7 @@ def plot_predictions_grid(
 
     # Get the name of the sensor to plot
     feature_names = get_feature_names(config)
-    sensor_name = feature_names[sensor_idx]
+    sensor_name = feature_names[config.sensor_idx]
 
     # Get the y_pred and y_true tensors
     outputs_path = get_most_recent_file(outputs_path,file_pos=config.file_pos)
@@ -111,28 +125,37 @@ def plot_predictions_grid(
 
     # Select the predictions and true values for the sensor
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
-    pred,true = y_pred[config.life_idx][:,sensor_idx,:],y_true[config.life_idx][:,sensor_idx,:]
-    mask = torch.tensor(true!=0) if not config.full_life else torch.ones(true.shape).int()
+    if config.model_name.startswith("chronos"):
+        pred,true = y_pred[config.life_idx][:,sensor_idx,:],y_true[config.life_idx][:,sensor_idx,:]
+    elif config.approach == "padding":
+        pred,true = y_pred[config.life_idx,:],y_true[config.life_id,:]
+    elif config.approach == "windowed":
+        pred = [y_pred[i] for i in config.life_idx]
+        true = [y_true[i] for i in config.life_idx]
+    if not config.full_life:
+        mask = true!=0 if config.approach=="padding" else [true[i]!=0 for i in range(len(true))]
+    else:
+        np.ones(true.shape,dtype=int)
 
     # Produce the plot
-    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(15,15))
+    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(30,20))
     for i in range(config.nrows):
         for j in range(config.ncols):
             if i*config.ncols+j<(config.nrows*config.ncols):
-                
+
                 ax=axs[i,j]
-                ax.plot(true[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="blue",label='True RUL')
-                ax.plot(pred[i*config.ncols+j,:][mask[i*config.ncols+j,:]],color="orange",label='Predicted RUL')
-                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1} {sensor_name}')
+                ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="blue",label='True RUL')
+                ax.plot(pred[i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL')
+                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1}')
                 ax.set_xticks([])
                 ax.set_ylabel('RUL')
                 ax.legend()
 
     if config.save_plot:
         if config.full_life:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid_full"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_full"
         else:
-            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_{sensor_name}_predictions_grid_pad"
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad"
         life_idx_str="_".join(str(x) for x in config.life_idx)
         filename=f"{filename}_life_{life_idx_str}.pdf"
         plot_path=os.path.join(plot_path,filename)
@@ -143,4 +166,167 @@ def plot_predictions_grid(
 
     return fig
 
+# Plot function to plot the prediction intervals of the model using the 
+# predictions from different quantile levels
 
+def plot_prediction_interval(
+        config:ExperimentConfig,
+        outputs_path:str=experiment_path,
+        plot_path:str=experiment_path,
+        run:int=1,
+) -> plt.figure:
+
+    """
+    Function to plot in a grid the `RUL` predictions of each life compared to the true `RUL`,M
+    The prediction on different quantiles will be used to create some prediction intervals.
+    
+    Parameters:
+    -----------
+    config: ExperimentConfig
+        Experiment configuration object
+    outputs_path: str
+        Path to the outputs dictionary
+    plot_path: str
+        Path to save the plot
+    run: int
+        Run number to plot
+
+    Returns:
+    --------
+    fig: plt.figure
+        Figure containing the plot
+    """
+
+    if config.life_idx is None:
+        config.life_idx = np.arange(config.nrows*config.ncols)
+    else:
+        assert config.nrows*config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
+
+    # Get the outputs dictionary
+    outputs_path = get_most_recent_file(outputs_path,file_pos=config.file_pos)
+    outputs_dict = open_element(
+        file_path=outputs_path,
+        filetype="pickle"
+    )
+
+    assert config.approach == "windowed", "The Quantile Regression experiments were don only on the windowed approach"
+    
+    y_true = outputs_dict["y_true"]
+    true = [y_true[i] for i in config.life_idx]
+    quantile_0_5 = [outputs_dict["quantile_0.5"][i] for i in config.life_idx]
+    quantile_0_25 = [outputs_dict["quantile_0.25"][i] for i in config.life_idx]
+    quantile_0_75 = [outputs_dict["quantile_0.75"][i] for i in config.life_idx]
+    quantile_0_1 = [outputs_dict["quantile_0.1"][i] for i in config.life_idx]
+    quantile_0_9 = [outputs_dict["quantile_0.9"][i] for i in config.life_idx]
+    
+    if not config.full_life:
+        mask = [true[i]!=0 for i in range(len(true))]
+    else:
+        np.ones(true.shape,dtype=int)
+
+    # Produce the plot
+    fig, axs = plt.subplots(config.nrows,config.ncols,figsize=(50,20))
+    for i in range(config.nrows):
+        for j in range(config.ncols):
+            if i*config.ncols+j<(config.nrows*config.ncols):
+
+                if config.nrows==1 and config.ncols==1:
+                    ax=axs
+                elif config.nrows==1:
+                    ax=axs[j]
+                elif config.ncols==1:
+                    ax=axs[i]
+                else:
+                    ax=axs[i,j]
+
+                # True RUL as a solid blue line
+                ax.plot(true[i*config.ncols+j][mask[i*config.ncols+j]],color="#00008B",label='True RUL')
+                # Predicted RUL with quantile 0.5 as a solid orange line
+                ax.plot(quantile_0_5[i*config.ncols+j][mask[i*config.ncols+j]],color="orange",label='Predicted RUL 0.5')
+                # Predicted RUL with quantile 0.25 and 0.75 as dashed orange lines
+                ax.plot(quantile_0_25[i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="--",label='Predicted RUL 0.25')
+                ax.plot(quantile_0_75[i*config.ncols+j][mask[i*config.ncols+j]],color="#007BFF",linestyle="-.",label='Predicted RUL 0.75')
+                # Use plt.fill_between to create the prediction interval using predictions on quantile 0.1 and 0.9
+                ax.fill_between(
+                    np.arange(len(true[i*config.ncols+j][mask[i*config.ncols+j]])),
+                    quantile_0_1[i*config.ncols+j][mask[i*config.ncols+j]],
+                    quantile_0_9[i*config.ncols+j][mask[i*config.ncols+j]],
+                    color="#ADD8E6",
+                    alpha=0.5,
+                    label='Prediction Interval 0.1-0.9'
+                )
+
+                ax.set_title(f'Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1}')
+                ax.set_xticks([])
+                ax.set_ylabel('RUL')
+                ax.legend()
+
+    if config.save_plot:
+        if config.full_life:
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_quantile_{config.quantile_run}_interval_full"
+        else:
+            filename=f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_quantile_{config.quantile_run}_interval_{config.quantile_approach}"
+        life_idx_str="_".join(str(x+config.test_idx[0]+1) for x in config.life_idx)
+        filename=f"{filename}_life_{life_idx_str}.pdf"
+        plot_path=os.path.join(plot_path,filename)
+        plt.savefig(plot_path,bbox_inches='tight')
+        print('#'*50)
+        print(f'Plot saved at: {plot_path}')
+        print('#'*50)
+
+    return fig
+
+# Blob plot
+
+def blob_plot(
+    plot_dict: dict,
+    config: ExperimentConfig,
+    plot_path: str,
+) -> plt.figure:
+    """
+    Function to produce a plot that represents the number of parameters, number of mult-adds,
+    and test metric for each model in the experiment.
+
+    Args:
+    plot_dict (dict): dictionary with the number of parameters, mult-adds, model names and test metrics
+    config (ExperimentConfig): experiment configuration
+    plot_path (str): path to save the plot
+
+    Returns:
+    plt.figure: figure with the blob plot
+    """
+    
+    plot_dict["mult_adds_ln"]=np.log(plot_dict["mult_adds_float"])
+    # Convert plot_dict into a pandas DataFrame
+    df=pd.DataFrame(plot_dict)
+    df=df.rename(columns={
+        "params_float":"Parameters (K)",
+        "mult_adds_float":"Mult-Adds (MMACs)",
+        "mult_adds_ln":"Log Mult-Adds",
+        "test_metric": "Test Loss",
+    })
+
+    fig = px.scatter(
+        data_frame = df,
+        x = "Parameters (K)",
+        y = "Test Loss",
+        color = "Log Mult-Adds",
+        size = "Mult-Adds (MMACs)",
+        hover_name = "model_name",
+        log_x = True,
+        size_max=60,
+        color_continuous_scale="Viridis",
+        text="model_name"
+    )
+    fig.update_traces(textposition='bottom center')
+
+    if config.save_plot:
+
+        filename=f"{get_current_time()}_blob_plot_{config.cmapss_models}_quantile_{config.quantile_run}_{config.quantile_approach}_{config.eval_loss}.png"
+        plot_path=os.path.join(plot_path,filename)
+        fig.write_image(plot_path,scale=3)
+        print('#'*50)
+        print(f'Plot saved at: {plot_path}')
+        print('#'*50)
+
+    return fig

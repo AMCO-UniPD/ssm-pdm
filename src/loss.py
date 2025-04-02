@@ -127,6 +127,7 @@ class SSMAELoss(nn.Module):
         Args:
             yhat (torch.Tensor): The predicted values
             y (torch.Tensor): The true values
+            mask: torch.Tensor: The mask for the padded values
 
         Returns:
             torch.Tensor: The RMSE loss
@@ -135,6 +136,7 @@ class SSMAELoss(nn.Module):
         y_pred=y_pred[mask.bool()]
         y_true=y_true[mask.bool()]
         return torch.mean(torch.abs((y_pred - y_true)))
+
 
 class PinballLoss(nn.Module):
     def __init__(self, tau:float):
@@ -161,15 +163,17 @@ class PinballLoss(nn.Module):
         y_true_unpadded=torch.cat(masked_true)
         d = y_pred_unpadded - y_true_unpadded
 
-        if d>0: # Overestimation
-            return (1-self.tau) * self.mae_loss(y_pred, y_true, mask)
-        else: # Underestimation
-            return self.tau *  self.mae_loss(y_pred, y_true, mask)
+        loss = torch.where(
+            d>0,
+            (1-self.tau) * torch.abs(d), # Overestimation
+            self.tau *  torch.abs(d) # Underestimation
+        )
+
+        return torch.mean(loss)
 
 class SSMPinballLoss(nn.Module):
     def __init__(self, tau:float):
         super(SSMPinballLoss, self).__init__()
-        self.mae_loss=MAELoss()
         self.tau=tau
 
     def forward(self, y_pred:torch.Tensor, y_true:torch.Tensor, mask:torch.Tensor) -> torch.Tensor:
@@ -189,10 +193,49 @@ class SSMPinballLoss(nn.Module):
         y_true=y_true[mask.bool()]
         d = y_pred - y_true
 
-        if d>0: # Overestimation
-            return (1-self.tau) * self.mae_loss(y_pred, y_true, mask)
-        else: # Underestimation
-            return self.tau *  self.mae_loss(y_pred, y_true, mask)
+        loss = torch.where(
+            d>0,
+            (1-self.tau) * torch.abs(d), # Overestimation
+            self.tau *  torch.abs(d) # Underestimation
+        )
+
+        return torch.mean(loss)
+
+class QuantileLoss(nn.Module):
+    def __init__(self):
+        super(QuantileLoss, self).__init__()
+
+    def forward(self,
+                y_pred:torch.Tensor,
+                y_true:torch.Tensor,
+                mask:torch.Tensor,
+                tau: float = 0.5
+    ) -> torch.Tensor:
+        """
+        Compute the Pinball loss between the predicted and the true values
+
+        Args:
+            y_pred (torch.Tensor): The predicted values
+            y_true (torch.Tensor): The true values
+            mask (torch.Tensor): The mask for the padded values
+            tau (float): The quantile level
+
+        Returns:
+            torch.Tensor: The Pinball loss
+        """
+
+        y_pred=y_pred[mask.bool()]
+        y_true=y_true[mask.bool()]
+        d = y_pred - y_true
+
+        loss = torch.where(
+            d>0,
+            (1-tau) * torch.abs(d), # Overestimation
+            tau *  torch.abs(d) # Underestimation
+        )
+
+        return torch.mean(loss)
+
 
 def load_loss_functions(loss_name:str,
                         model_name:str,
@@ -225,15 +268,26 @@ def load_loss_functions(loss_name:str,
         else:
             criterion=SSMRMSELoss()
     elif loss_name=="pinball":
-        criterion=PinballLoss(tau=tau)
+        if model_name.startswith("chronos"):
+            criterion=PinballLoss(tau=tau)
+        else:
+            criterion=SSMPinballLoss(tau=tau)
+    elif loss_name=="quantile_reg":
+        criterion=QuantileLoss()
 
     if eval_loss_name=="mae":
         eval_loss=MAELoss()
     elif eval_loss_name=="mse":
         eval_loss=MSELoss()
     elif eval_loss_name=="rmse":
-        eval_loss=RMSELoss()
+        if model_name.startswith("chronos"):
+            eval_loss=RMSELoss()
+        else:
+            eval_loss=SSMRMSELoss()
     elif eval_loss_name=="pinball":
-        eval_loss=PinballLoss(tau=tau)
+        if model_name.startswith("chronos"):
+            eval_loss=PinballLoss(tau=tau)
+        else:
+            eval_loss=SSMPinballLoss(tau=tau)
 
     return criterion, eval_loss

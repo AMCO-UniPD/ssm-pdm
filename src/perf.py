@@ -8,6 +8,7 @@ import sys
 import ipdb
 import torch
 import pandas as pd
+import numpy as np
 from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
 
 chronos_path_src = os.path.join(os.path.dirname(__file__),"chronos-rul","src")
@@ -32,7 +33,8 @@ def lifes_metrics(
         config: ExperimentConfig,
         outputs_path: str = experiment_path,
         metrics_path: str = experiment_path,
-):
+        compute_stats: bool = False,
+) -> pd.DataFrame:
     """
     Calculate the metrics for each life and each sensor in the dataset and save them in a pd.DataFrame
 
@@ -40,6 +42,10 @@ def lifes_metrics(
         config:dict ExperimentConfig object
         outputs_path:str Path to the outputs
         metrics_path:str Path to save the metrics
+        compute_stats:bool Whether to compute the mean,median and std of the metrics
+
+    Returns:
+        pd.DataFrame Metrics DataFrame
     """
 
     feature_names = get_feature_names(config)
@@ -50,66 +56,106 @@ def lifes_metrics(
         file_path=outputs_path,
         filetype="pickle"
     )
+    print('#'* 50)
     print(f"Opened outputs_dict at path: {outputs_path}")
+    print('#'* 50)
     y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
 
     _,eval_criterion=load_loss_functions(
         loss_name=config.loss,
+        model_name=config.model_name,
         eval_loss_name=config.eval_loss,
         tau=config.tau
     )
 
     pd.options.display.float_format = "{:.2f}".format
 
-    for i in range(y_pred.shape[0]):
-        mask = torch.tensor(y_true[i,0,:]!=0).unsqueeze(0)
-        for j,sensor in zip(range(y_pred.shape[1]),feature_names):
-            pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
-            true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
+    if config.model_name.startswith("chronos"):
+        for i in range(y_pred.shape[0]):
+            mask = torch.tensor(y_true[i,0,:]!=0).unsqueeze(0)
+            for j,sensor in zip(range(y_pred.shape[1]),feature_names):
+                pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
+                true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
+                eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
+                metrics_df.at[f"Life_{i+config.test_idx[0]+1}",sensor]=round(eval_loss,2)
+    else:
+        for i in range(len(y_pred)):
+            mask = torch.tensor(y_true[i]!=0)
+            pred=torch.tensor(y_pred[i])
+            true=torch.tensor(y_true[i])
             eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
-            metrics_df.at[f"Life_{i+config.test_idx[0]}",sensor]=round(eval_loss,2)
-    
-    # Add a row Life_mean with the mean of the metrics over all the columns
-    metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0).round(2)
-    # Add a column Sensor_mean with the mean of the metrics over all the rows
-    metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
+            metrics_df.at[f"Life_{i+config.test_idx[0]+1}","Eval Loss"]=round(eval_loss,2)
 
-    save_element(
-        element=metrics_df,
-        dirpath=metrics_path,
-        filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}.pkl"
-    )
+    if compute_stats:
+        # Add a row Life_mean with the mean of the metrics over all the columns
+        metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0).round(2)
+        # Add a row Life_median with the median of the metrics over all the columns
+        metrics_df.loc["Life_median"]=metrics_df.median(axis=0).round(2)
+        # Add a row Life_std with the std of the metrics over all the columns
+        metrics_df.loc["Life_std"]=metrics_df.std(axis=0).round(2)
+        # Add a column Sensor_mean with the mean of the metrics over all the rows
+        if config.model_name.startswith("chronos"):
+            metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
+            metrics_df["Sensor_median"]=metrics_df.median(axis=1).round(2)
+            metrics_df["Sensor_std"]=metrics_df.std(axis=1).round(2)
+
+        print('#'* 50)
+        print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life_mean']}")
+        print('#'* 50)
+        print(f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}")
+        print('#'* 50)
+        print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
+        print('#'* 50)
+
+    if config.save_metrics_df:
+        save_element(
+            element=metrics_df,
+            dirpath=metrics_path,
+            filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}.pickle"
+        )
 
     pd.options.display.float_format = None
 
     return metrics_df
 
-# Function to select a subset of the rows and a subset of the columns 
+# Function to select a subset of the rows and a subset of the columns
 # of a metrics_df
 
 def sub_lifes_metrics(
     config: ExperimentConfig,
     metrics_df: pd.DataFrame,
+    compute_stats: bool = False,
 ):
-
     """
     Select a subset of the rows and a subset of the columns of a metrics_df
 
     Args:
         config:ExperimentConfig ExperimentConfig object
         metrics_df:pd.DataFrame Metrics DataFrame
+        compute_stats:bool Whether to compute the mean,median and std of the metrics
 
     Returns:
         pd.DataFrame Subset of the metrics_df
     """
 
-    metrics_idx = [f"Life_{i+config.test_idx[0]}" for i in config.metrics_idx]
-    metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
-    metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
-    if len(config.metrics_cols)>1:
-        metrics_df["Sensor_mean"] = metrics_df.mean(axis=1).round(2)
+    if config.metrics_idx is None:
+        config.metrics_idx=np.arange(config.n_metrics_lifes)
+    metrics_idx = [f"Life_{i+config.test_idx[0]+1}" for i in config.metrics_idx]
+    if config.model_name.startswith("chronos"):
+        sub_metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
+    else:
+        sub_metrics_df = metrics_df.loc[metrics_idx]
 
-    return metrics_df
+    if compute_stats:
+        sub_metrics_df.loc["Life_mean"] = sub_metrics_df.mean(axis=0).round(2)
+        sub_metrics_df.loc["Life_median"] = sub_metrics_df.median(axis=0).round(2)
+        sub_metrics_df.loc["Life_std"] = sub_metrics_df.std(axis=0).round(2)
+        if len(config.metrics_cols)>1 and config.model_name.startswith("chronos"):
+            sub_metrics_df["Sensor_mean"] = sub_metrics_df.mean(axis=1).round(2)
+            sub_metrics_df["Sensor_median"] = sub_metrics_df.median(axis=1).round(2)
+            sub_metrics_df["Sensor_std"] = sub_metrics_df.std(axis=1).round(2)
+
+    return sub_metrics_df
 
 
 # Function to render the data contained in a pd.DataFrame into a markdown table
@@ -131,4 +177,34 @@ def df_with_index_to_obsidian_table(df):
         lines.append("| " + " | ".join([str(idx)] + list(map(str, row))) + " |")
     return "\n".join(lines)
 
+# Function to print the summary metrics of a metrics_df dataframe
 
+def print_summary_metrics(
+        metrics_df: pd.DataFrame,
+        model_name: str = "S4"
+    ) -> None:
+    """
+    Print the summary metrics of a metrics_df dataframe
+
+    Args:
+        metrics_df:pd.DataFrame Metrics DataFrame
+        model_name:str Model name
+
+    Returns:
+        None: The function computes and prints the summary metrics and does not return anything
+    """
+
+    # Compute the mean, median and std of the metrics
+    metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
+    metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
+    metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
+
+    print('#'* 50)
+    print(f"Summary metrics for model {model_name}")
+    print('#'* 50)
+    print(f"Mean eval loss over all the test lifes:\n{metrics_df.loc['Life_mean']}")
+    print('#'* 50)
+    print(f"Median eval loss over all the test lifes:\n{metrics_df.loc['Life_median']}")
+    print('#'* 50)
+    print(f"Std eval loss over all the test lifes:\n{metrics_df.loc['Life_std']}")
+    print('#'* 50)
