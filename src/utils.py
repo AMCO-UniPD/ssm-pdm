@@ -274,12 +274,13 @@ class SSMRegressionDataset(Dataset):
             sequences=np.concatenate((life.values,pad_arr))
             targets=np.concatenate((rul.values,pad_arr[:,-1]))
         else:
-            print("*"*50)
+            print("#"*50)
             print(f"Padding approach: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps")
-            print("*"*50)
+            print("#"*50)
             sequences=life.values[life.shape[0]-sequence_length:,:]
-            mask=np.ones(shape=(sequence_length,life.shape[1]))
-            targets=life["RUL"].values[life.shape[0]-sequence_length:,:]
+            mask=np.ones(shape=(sequence_length))
+            # targets=rul.values[life.shape[0]-sequence_length:,:]
+            targets=rul.values[life.shape[0]-sequence_length:]
 
         self.sequences = sequences
         self.targets = targets
@@ -305,24 +306,47 @@ class SSMWindowRegressionDataset(Dataset):
 
         life,rul = life.iloc[:,:-1],life["RUL"]
 
-        if sequence_length > life.shape[0]:
-            pad_arr=np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))
-            mask=np.concatenate((np.ones(shape=(life.shape[0])),np.zeros(shape=(sequence_length-life.shape[0]))))
-            sequences=np.concatenate((life.values,pad_arr))
-            targets=np.concatenate((rul.values,pad_arr[:,-1]))
+        # if sequence_length > life.shape[0]:
+        #     pad_arr=np.zeros(shape=(sequence_length-life.shape[0],life.shape[1]))
+        #     mask=np.concatenate((np.ones(shape=(life.shape[0])),np.zeros(shape=(sequence_length-life.shape[0]))))
+        #     sequences=np.concatenate((life.values,pad_arr))
+        #     targets=np.concatenate((rul.values,pad_arr[:,-1]))
+        #     # Add the extra dimension to match the windowed approach
+        #     #NOTE: This is the equivalent of `unsqueeze(0)` in PyTorch
+        #     sequences = np.expand_dims(sequences, axis=0)
+        #     targets = np.expand_dims(targets, axis=0)
+        #     mask = np.expand_dims(mask, axis=0)
+        # else:
+        #     n_windows = life.shape[0] - sequence_length
+        #     # print("*"*50)
+        #     # print(f"Windowed approach: This life is longer than {sequence_length}, dividing it into {n_windows} windows of length {sequence_length}")
+        #     # print("*"*50)
+        #     sequences = np.array([life[i:i + sequence_length] for i in range(n_windows+1)])
+        #     targets = np.array([rul[i:i + sequence_length] for i in range(n_windows+1)])
+        #     mask = np.array([np.ones(sequence_length) for _ in range(n_windows+1)])
+
+        life = torch.from_numpy(life.values).float() # Convert to tensor immediately
+        rul = torch.from_numpy(rul.values).float()
+
+        if life.shape[0] < sequence_length:
+            # Padding approach using PyTorch
+            pad_len = sequence_length - life.shape[0]
+            pad_arr = torch.zeros((pad_len, life.shape[1]))
+            mask = torch.cat((torch.ones(life.shape[0]), torch.zeros(pad_len)))
+            sequences = torch.cat((life, pad_arr))
+            targets = torch.cat((rul, pad_arr[:, -1])) # Ensure target padding matches
+
             # Add the extra dimension to match the windowed approach
-            #NOTE: This is the equivalent of `unsqueeze(0)` in PyTorch
-            sequences = np.expand_dims(sequences, axis=0)
-            targets = np.expand_dims(targets, axis=0)
-            mask = np.expand_dims(mask, axis=0)
+            sequences = sequences.unsqueeze(0)
+            targets = targets.unsqueeze(0)
+            mask = mask.unsqueeze(0)
+
         else:
-            n_windows = life.shape[0] - sequence_length
-            # print("*"*50)
-            # print(f"Windowed approach: This life is longer than {sequence_length}, dividing it into {n_windows} windows of length {sequence_length}")
-            # print("*"*50)
-            sequences = np.array([life[i:i + sequence_length] for i in range(n_windows+1)])
-            targets = np.array([rul[i:i + sequence_length] for i in range(n_windows+1)])
-            mask = np.array([np.ones(sequence_length) for _ in range(n_windows+1)])
+            # Windowed approach using PyTorch
+            n_windows = life.shape[0] - sequence_length + 1  # Corrected window count
+            sequences = torch.stack([life[i:i + sequence_length] for i in range(n_windows)])
+            targets = torch.stack([rul[i:i + sequence_length] for i in range(n_windows)]) # Ensure target windowing matches
+            mask = torch.ones(n_windows, sequence_length)
 
         self.sequences = sequences
         self.targets = targets
@@ -332,9 +356,12 @@ class SSMWindowRegressionDataset(Dataset):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32).unsqueeze(-1)
-        target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
-        mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
+        # sequence = torch.tensor(self.sequences[idx], dtype=torch.float32).unsqueeze(-1)
+        # target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
+        # mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
+        sequence = self.sequences[idx].unsqueeze(-1)
+        target = self.targets[idx].unsqueeze(-1)
+        mask = self.mask[idx].unsqueeze(-1)
         return sequence, target, mask
 
 

@@ -267,6 +267,7 @@ def eval_loop(
         mode: str = "Test",
         device: torch.device = torch.device("cpu"),
         use_tqdm: bool = True,
+        epoch_number: int = 0,
         tau: float = 0.5,
 ) -> Tuple[float,float,np.ndarray,np.ndarray]:
     """
@@ -315,8 +316,11 @@ def eval_loop(
                 y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
                 y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
             else:
-                y_pred.append(output) if config.approach=="padding" else y_pred.extend(output)
-                y_true.append(rul) if config.approach=="padding" else y_true.extend(rul)
+                if (epoch_number == config.epochs -1) or (use_tqdm == False):
+                    y_pred.append(output) if config.approach=="padding" else y_pred.extend(output)
+                    y_true.append(rul) if config.approach=="padding" else y_true.extend(rul)
+                else:
+                    y_pred,y_true=None,None
 
             loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
             rmse_loss = eval_criterion(output, rul, mask)
@@ -331,10 +335,14 @@ def eval_loop(
     if config.cpu_version:
         y_pred=np.array(y_pred)
         y_true=np.array(y_true)
+        return eval_loss, eval_rmse_loss, y_pred, y_true
     else:
-        y_pred=torch.cat(y_pred).cpu().numpy()
-        y_true=torch.cat(y_true).cpu().numpy()
-    return eval_loss, eval_rmse_loss, y_pred, y_true
+        if (epoch_number == config.epochs -1) or (use_tqdm == False):
+            y_pred=torch.cat(y_pred).cpu().numpy()
+            y_true=torch.cat(y_true).cpu().numpy()
+            return eval_loss, eval_rmse_loss, y_pred, y_true
+        else:
+            return eval_loss, eval_rmse_loss, None, None
 
 # Save the best model
 
@@ -437,6 +445,7 @@ def wandb_train_test(
                 eval_criterion=eval_criterion,
                 mode="Val",
                 device=device,
+                epoch_number=epoch,
                 tau=tau
             )
             val_time = time.time() - val_time
@@ -451,6 +460,7 @@ def wandb_train_test(
                 eval_criterion=eval_criterion,
                 mode="Test",
                 device=device,
+                epoch_number=epoch,
                 tau=tau
             )
             test_time = time.time() - test_time
