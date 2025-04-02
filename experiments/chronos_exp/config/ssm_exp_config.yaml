@@ -10,15 +10,15 @@ project_name: "chronos-rul"
 # Dataset configurations
 data_name: CMAPSS # CMAPSS, CMPASS-2
 # For FD001 dataset
-# val_idx: [0,50]
-# test_idx: [50,100]
+val_idx: [0,50]
+test_idx: [50,100]
 # For FD002 dataset
-val_idx: [0,131]
-test_idx: [131,259]
+# val_idx: [0,131]
+# test_idx: [131,259]
 # dataset name
-# cmapss_models: FD001
+cmapss_models: FD001
 # cmapss_models: FD003
-cmapss_models: FD002
+# cmapss_models: FD002
 # cmapss_models: FD004
 
 # Feature extraction configurations
@@ -36,9 +36,12 @@ scaler_kwargs:
   high_limit: 1.0
 
 # Training parameters
-epochs: 20
+epochs: 50
 lr: 1.0e-3
+# for windowed approach
 sequence_length: 170
+# for padding approach
+# sequence_length: 40
 weight_decay: 1.0e-4
 
 # Model configurations
