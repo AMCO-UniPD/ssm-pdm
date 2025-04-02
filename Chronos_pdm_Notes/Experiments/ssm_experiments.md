@@ -3739,6 +3739,8 @@ quantile_0.9     16.96
 
 I am inspecting the code to find out some potential places that may be responsible for the high `CPU` consumption that my experiments are causing.
 
+## `eval_loop` Function
+
 The main suspect piece of code is inside `eval_loop`:
 
 ```python
@@ -3755,3 +3757,43 @@ This piece of code may create `CPU` usage because we are moving the `output` and
 The other bad thing is that this code is almost completely useless when used in the training loop 😱. In fact inside `wandb_train_test` I am using the `y_pred,y_true` list only in the last epoch to create the `model_info` dictionary that I do not even use at all.
 
 This piece of code is useful just inside `best_model_perf` when it is used to compute the predictions and true values for the best model.
+
+## `SSMWindowedRegressionDataset`
+
+In this `Dataset` class there is the creation of the overlapped windows which may be another potential part of the code that requires high `CPU` load. 
+
+# `cpu_test` Results
+
+I created a new branch `cpu_test` to test the `CPU` usage of the code.
+
+## `eval_loop` `cpu_test`
+
+I modified the piece of code inside `eval_loop` to:
+
+```python
+if config.cpu_version:
+    batch_out = output.to("cpu").detach().numpy()
+    batch_target = rul.to("cpu").detach().numpy()
+    y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
+    y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
+else:
+    if epoch_number == config.epochs -1:
+        y_pred.append(output) if config.approach=="padding" else y_pred.extend(output)
+        y_true.append(rul) if config.approach=="padding" else y_true.extend(rul)
+    else:
+        y_pred,y_true=None,None
+```
+
+I tested with `cpu_version: false` and moreover with the addition of the `epoch_number` input parameter now the `append` and `extend` commands are done just in the last epoch.
+
+However still the `CPU` usage it's very high, moreover the main problem is that even if I change the model (I tried also with `S4` and with `S5` (the lightest model) on `FD001`) the `CPU` usage remains the same → so this means that the problem is not this piece of code used to save the predictions and true values, nor the specific model, so I have to check for some other pieces of code that may create this high `CPU` load.
+
+The fact that also with `S5` on `FD001` the `CPU` is very high means that probably the problem is due to something I did, not something in the `S5` implementation.
+
+## `SSMWindowedRegressionDataset`
+
+Before trying to change the code for the creation of the sequences let's try to modify `sequence_length` so that we create less overlapped windows.
+
+Let's start trying to set `sequence_length=400` which is surely higher than all the life lengths → in this way there is no overlapping window and maybe there are less computations performed by the `CPU`?
+
+I tried with different values for `sequence_length` but the `CPU` usage remains the same. Now I will try to modify the code using `torch.tensor` instead of `np.array` to create the windows.
