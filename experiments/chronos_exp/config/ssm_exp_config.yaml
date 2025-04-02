@@ -97,9 +97,7 @@ quantile_run: 0.25
 # multi run experiment
 start_run_id: 0
 n_runs: 1
-set_exp_name: true
-exp_name: cpu_test
-cpu_version: true
+set_exp_name: false
 
 # Experiment name FD001
 # exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
