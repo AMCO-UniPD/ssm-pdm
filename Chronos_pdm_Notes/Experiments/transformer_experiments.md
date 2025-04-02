@@ -1007,9 +1007,9 @@ I tried to reduce some of the model hyperparameters: for example `n_layers: 3,d_
 >[!note]
 > [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gthnxl1o?nw=nwuserfrizzodavide)
 
-Maybe the problem is related to all those overlapping windows I am using? 
+Maybe the problem is related to all those overlapping windows I am using?
 
-I also started an experiment with `n_layers=1,d_ff=32` but the `CPU` usage was still the same, the `GPU` memory is the one decreasing now. In fact these are hyperparameters of `torch` models so they are all related to the `GPU` usage, so maybe I have to watch more closely at the code to find some costly operation that I am performing on the `CPU` because I am using `np.array` or other non `torch` things that are all loading the `CPU`. 
+I also started an experiment with `n_layers=1,d_ff=32` but the `CPU` usage was still the same, the `GPU` memory is the one decreasing now. In fact these are hyperparameters of `torch` models so they are all related to the `GPU` usage, so maybe I have to watch more closely at the code to find some costly operation that I am performing on the `CPU` because I am using `np.array` or other non `torch` things that are all loading the `CPU`.
 
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
@@ -1414,7 +1414,7 @@ See [[ssm_experiments#Prediction Plots `FD002`|here]] . Also here very high loss
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/st4m28hm?nw=nwuserfrizzodavide)
 
 >[!warning]
-> Experiment stopped during `run_2_quantile_0.25` because apparently it was occupying too much `CPU` on `acquario3`. 
+> Experiment stopped during `run_2_quantile_0.25` because apparently it was occupying too much `CPU` on `acquario3`.
 
 ###### Metrics Table `RMSE` Loss
 

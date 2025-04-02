@@ -275,12 +275,12 @@ The metrics values, as expected, are much higher than the ones obtained with Pin
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
-| `S4` | 126.97 | 94.29 | 37.96 | 32.16 | 54.38 |
+| `S4` | 126.97 | 94.29 | 37.96 | **32.16** | *54.38* |
 | `S5` | 128.07 | 93.91 | 48.60 | 43.49 | 71.68 |
 | `S4D` | 128.05 | 96.39 | 45.63 | 50.88 | 67.24 |
-| `LSTM` | 130.60 | 103.21 | 60.09 | 35.92 | 41.26 |
-| `RULTransformer` | 124.36 | 87.44 | 31.46 | 41.07 | 75.09 |
-| `RULInformer` | 122.70 | 83.68 | 32.41 | 54.77 | 79.83 |
+| `LSTM` | 130.60 | 103.21 | 60.09 | *35.92* | **41.26** |
+| `RULTransformer` | *124.36* | *87.44* | **31.46** | 41.07 | 75.09 |
+| `RULInformer` | **122.70** | **83.68** | *32.41* | 54.77 | 79.83 |
 
 Comparing the metrics values over the different models we can see that in the first 3 quantiles the `Transformer` based models are the best ones, closely followed by the `SSM` based models while in the last two quantiles `SSM` are the best ones a part from the strange case of quantile 0.9 where the best model is `LSTM`.
 
@@ -288,6 +288,22 @@ In any case `SSM` and `Transformer` are always there among the top models, but a
 
 >[!note]
 > It's like when `DeepSeek` dropped. It is not better than `GPT` models in all the benchmarks, in most of them is lower but by a small margin but it is much more efficient and cheap than `OpenAI` models.
+
+### `FD002`
+
+The metric values are similar to the ones obtained in `FD001` in the first three quantiles, while they are worse (as expected) in the last two quantiles. As usual we have higher errors on the underestimation quantiles, the magnitude of these errors seems to not change much pasing from `FD001` to `FD002`. For what concerns the best models, as in `FD001` in the first quantiles attention based models are better while in the final two also `SSM` models are there. There is a strange behavior of the `LSTM` model that is by far the best on in quantile 0.75. In any case the result more or less follow the trend of `FD001` so in the paper we can use a single explanation that holds for both the result tables.
+
+| Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
+| ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |
+| `S4` | **127.02** | 88.10 | **35.60** | 62.50 | 99.66 |
+| `S5` | 134.55 | 103.17 | 53.56 | *50.20* | *94.07* |
+| `S4D` | 135.93 | 106.71 | 53.57 | 50.92 | **63.25** |
+| `LSTM` | 127.46 | *86.45* | 36.11 | **36.11** | 96.45 |
+| `Transformer` | *127.07* | **85.66** | *35.59* | 62.49 | 99.65 |
+| `Informer` | 127.00 | 85.98 | 35.49 | 59.78 | 99.62 |
+
+>[!note]
+> The results of `Informer` have to be considered with care since the experiment was stopped at the beginning of the second run because of a too high `CPU` usage, so the metrics are the ones of the first run, probably they will be a bit worse if averaged over 5 runs.
 
 # Text to insert in the paper
 

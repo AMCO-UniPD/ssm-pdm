@@ -2548,10 +2548,10 @@ Let's start the experiments on the `tau_mult_no_tau_feat` approach also on the `
 
 >[!note]
 > [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/kx6ar6yt?nw=nwuserfrizzodavide)
-
 ###### Metrics Table `RMSE` Loss
 
-Here it is a bit strange because in the first 3 quantiles the metrics are very close, or even better than the ones obtained in `FD001`, while they are worse in the last 2 quantiles. 
+Here it is a bit strange because in the first 3 quantiles the metrics are very close, or even better than the ones obtained in `FD001`, while they are worse in the last 2 quantiles.
+
 
 ```txt
 ##################################################
