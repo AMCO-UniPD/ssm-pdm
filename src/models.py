@@ -309,10 +309,14 @@ def eval_loop(
                 rul = rul.unsqueeze(0) if config.approach=="padding" else rul
                 output = model(life) if not config.quantile_reg else model(life,tau=tau)
 
-            batch_out = output.to("cpu").detach().numpy()
-            batch_target = rul.to("cpu").detach().numpy()
-            y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
-            y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
+            if config.cpu_version:
+                batch_out = output.to("cpu").detach().numpy()
+                batch_target = rul.to("cpu").detach().numpy()
+                y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
+                y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
+            else:
+                y_pred.append(output) if config.approach=="padding" else y_pred.extend(output)
+                y_true.append(rul) if config.approach=="padding" else y_true.extend(rul)
 
             loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
             rmse_loss = eval_criterion(output, rul, mask)

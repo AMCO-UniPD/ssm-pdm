@@ -10,6 +10,8 @@ project_name: "chronos-rul"
 # Dataset configurations
 data_name: CMAPSS # CMAPSS, CMPASS-2
 # For FD001 dataset
+# val_idx: [0,50]
+# test_idx: [50,100]
 # val_idx:
 #   - 0
 #   - 50
@@ -17,12 +19,14 @@ data_name: CMAPSS # CMAPSS, CMPASS-2
 #   - 50
 #   - 100
 # For FD002 dataset
-val_idx:
-  - 0
-  - 131
-test_idx:
-  - 131
-  - 259
+val_idx: [0,131]
+test_idx: [131,259]
+# val_idx:
+#   - 0
+#   - 131
+# test_idx:
+#   - 131
+#   - 259
 # cmapss_models: FD001
 # cmapss_models: FD003
 cmapss_models: FD002
@@ -93,7 +97,9 @@ quantile_run: 0.25
 # multi run experiment
 start_run_id: 0
 n_runs: 1
-set_exp_name: false
+set_exp_name: true
+exp_name: cpu_test
+cpu_version: true
 
 # Experiment name FD001
 # exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
