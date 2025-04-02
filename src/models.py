@@ -328,7 +328,13 @@ def eval_loop(
         print(f"Avg {mode} Loss: {eval_loss:.4f} | \
                 Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
 
-    return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
+    if config.cpu_version:
+        y_pred=np.array(y_pred)
+        y_true=np.array(y_true)
+    else:
+        y_pred=torch.cat(y_pred).cpu().numpy()
+        y_true=torch.cat(y_true).cpu().numpy()
+    return eval_loss, eval_rmse_loss, y_pred, y_true
 
 # Save the best model
 

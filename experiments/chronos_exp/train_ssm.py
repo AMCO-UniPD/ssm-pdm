@@ -408,7 +408,10 @@ else:
                 print(f"Starting experiment for quantile level: {quantile}")
                 print('#'* 50)
 
-                run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_quantile_{quantile}_bounds_{exp_config.bounds[0]}_{exp_config.bounds[1]}"
+                if exp_config.set_exp_name:
+                    run_name=f"{exp_name}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}"
+                else:
+                    run_name=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_quantile_{quantile}_bounds_{exp_config.bounds[0]}_{exp_config.bounds[1]}"
 
                 if exp_config.transformer_type == 2:
                     run_name=f"{run_name}_feat_extraction"
