@@ -152,7 +152,7 @@ class Recurrent_PDM(nn.Module):
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device,non_blocking=True) * tau], dim=-1)
 
         out = self.recurrent(x) # (B, L, D) -> (B, L, H)
         out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
@@ -215,7 +215,7 @@ class S4Model(nn.Module):
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device,non_blocking=True) * tau], dim=-1)
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -302,7 +302,7 @@ class S4DModel(nn.Module):
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device,non_blocking=True) * tau], dim=-1)
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -372,7 +372,7 @@ class S5Model(nn.Module):
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device,non_blocking=True) * tau], dim=-1)
 
         for layer in self.s5_layers: # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
             x = layer(x)
@@ -439,7 +439,7 @@ class RULTransformer(nn.Module):
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device,non_blocking=True) * tau], dim=-1)
 
         x = x.argmax(dim=-1) # (B, L, d_input) -> (B, L)
         x = self.embedding(x) # (B, L) -> (B, L, d_model)
@@ -513,7 +513,7 @@ class RULInformer(nn.Module):
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x_enc = torch.cat([x_enc, torch.ones(x_enc.shape[0],x_enc.shape[1],1).to(self.device) * tau], dim=-1)
+                x_enc = torch.cat([x_enc, torch.ones(x_enc.shape[0],x_enc.shape[1],1).to(self.device,non_blocking=True) * tau], dim=-1)
 
         enc_out = self.enc_embedding(x_enc) # [B,L,D] -> [B,L,H]
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
@@ -691,7 +691,8 @@ def load_ssm_model(
 
             summary_dict_dirpath = generate_path(basepath=experiment_path,
                                                  folders=["summary_dict",
-                                                          exp_config.model_name])
+                                                          exp_config.model_name,
+                                                          exp_config.summary_func])
             save_element(
                 element = summary_dict,
                 dirpath = summary_dict_dirpath,

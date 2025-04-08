@@ -17,6 +17,7 @@ from typing import Tuple, Union
 
 # torch imports
 import torch
+import torch.profiler as profiler
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
@@ -222,38 +223,57 @@ def train_loop(
     model.train()
     train_loss = 0.0
     num_batches = len(dataloader)
-    pbar=tqdm(enumerate(dataloader))
+    pbar = tqdm(enumerate(dataloader))
 
-    for batch_idx, (life, rul, mask) in pbar:
-        life = life.to(device) if config.approach=="padding" else life.to(device).squeeze(-1)
-        rul = rul.to(device).squeeze(-1)
-        mask = mask.to(device) if config.approach=="padding" else mask.to(device).squeeze(-1)
-        if config.quantile_reg:
-            tau = sample_quantile(
-                quantile_dist=config.quantile_dist,
-                bounds=config.bounds,
-                print_quantile=True
-            )
+    with profiler.profile(
+        activities=[
+            profiler.ProfilerActivity.CPU,
+            profiler.ProfilerActivity.CUDA
+        ],
+        record_shapes=True,
+    ) as prof:
+        for batch_idx, (life, rul, mask) in pbar:
+            life = life.to(device,non_blocking=True) if config.approach=="padding" else life.to(device,non_blocking=True).squeeze(-1)
+            rul = rul.to(device,non_blocking=True).squeeze(-1)
+            mask = mask.to(device,non_blocking=True) if config.approach=="padding" else mask.to(device,non_blocking=True).squeeze(-1)
+            if config.quantile_reg:
+                tau = sample_quantile(
+                    quantile_dist=config.quantile_dist,
+                    bounds=config.bounds,
+                    print_quantile=False
+                )
 
-        if config.model_name.startswith("chronos"):
-            input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
-            output = model(input_ids=input_ids, attention_mask=attention_mask).logits
-        else:
-            life = life.permute(2,0,1) if config.approach=="padding" else life
-            mask = mask.permute(1,0) if config.approach=="padding" else mask
-            rul = rul.unsqueeze(0) if config.approach=="padding" else rul
-            output = model(life) if not config.quantile_reg else model(life,tau=tau)
+            if config.model_name.startswith("chronos"):
+                input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
+                output = model(input_ids=input_ids, attention_mask=attention_mask).logits
+            else:
+                life = life.permute(2,0,1) if config.approach=="padding" else life
+                mask = mask.permute(1,0) if config.approach=="padding" else mask
+                rul = rul.unsqueeze(0) if config.approach=="padding" else rul
+                output = model(life) if not config.quantile_reg else model(life,tau=tau)
 
-        loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        train_loss += loss.item()
+            train_loss += loss
 
-        pbar.set_description(f"Batch Idx: {batch_idx}/{len(dataloader)} | Train Loss: {train_loss / (batch_idx + 1):.4f}")
+            # pbar.set_description(f"Batch Idx: {batch_idx}/{len(dataloader)} | Train Loss: {train_loss / (batch_idx + 1):.4f}")
 
-    return train_loss / num_batches
+    # print('#'* 50)
+    # print("Profiler results:")
+    # print('#'* 50)
+    # print("CPU time train_lopp:")
+    # print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+    # print('#'* 50)
+    # print("GPU time train_loop:")
+    # print('#'* 50)
+    # print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+    # print('#'* 50)
+
+    train_loss = (train_loss / num_batches).item()
+    return train_loss
 
 # Evaluation loop (i.e. validation and test) for one epoch
 
@@ -290,47 +310,66 @@ def eval_loop(
     """
 
     model.eval()
-    eval_loss, eval_rmse_loss = 0.0, 0.0
+    eval_loss_sum = torch.tensor(0.0, device=device)
+    eval_rmse_loss_sum = torch.tensor(0.0, device=device)
     num_batches = len(dataloader)
     pbar = tqdm(dataloader) if use_tqdm else dataloader
     y_pred,y_true = [],[]
 
     with torch.no_grad():
-        for life, rul, mask in pbar:
-            life = life.to(device) if config.approach=="padding" else life.to(device).squeeze(-1)
-            rul = rul.to(device).squeeze(-1)
-            mask = mask.to(device) if config.approach=="padding" else mask.to(device).squeeze(-1)
+        with profiler.profile(
+            activities=[
+                profiler.ProfilerActivity.CPU,
+                profiler.ProfilerActivity.CUDA
+            ],
+            record_shapes=True,
+        ) as prof:
+            for life, rul, mask in pbar:
+                life = life.to(device,non_blocking=True) if config.approach=="padding" else life.to(device,non_blocking=True).squeeze(-1)
+                rul = rul.to(device,non_blocking=True).squeeze(-1)
+                mask = mask.to(device,non_blocking=True) if config.approach=="padding" else mask.to(device,non_blocking=True).squeeze(-1)
 
-            if config.model_name.startswith("chronos"):
-                input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
-                output = model(input_ids=input_ids, attention_mask=attention_mask).logits
-            else:
-                life = life.permute(2,0,1) if config.approach=="padding" else life
-                mask = mask.permute(1,0) if config.approach=="padding" else mask
-                rul = rul.unsqueeze(0) if config.approach=="padding" else rul
-                output = model(life) if not config.quantile_reg else model(life,tau=tau)
-
-            if config.cpu_version:
-                batch_out = output.to("cpu").detach().numpy()
-                batch_target = rul.to("cpu").detach().numpy()
-                y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
-                y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
-            else:
-                if (epoch_number == config.epochs -1) or (use_tqdm == False):
-                    y_pred.append(output) if config.approach=="padding" else y_pred.extend(output)
-                    y_true.append(rul) if config.approach=="padding" else y_true.extend(rul)
+                if config.model_name.startswith("chronos"):
+                    input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
+                    output = model(input_ids=input_ids, attention_mask=attention_mask).logits
                 else:
-                    y_pred,y_true=None,None
+                    life = life.permute(2,0,1) if config.approach=="padding" else life
+                    mask = mask.permute(1,0) if config.approach=="padding" else mask
+                    rul = rul.unsqueeze(0) if config.approach=="padding" else rul
+                    output = model(life) if not config.quantile_reg else model(life,tau=tau)
 
-            loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
-            rmse_loss = eval_criterion(output, rul, mask)
-            eval_loss += loss.item()
-            eval_rmse_loss += rmse_loss.item()
+                if config.cpu_version:
+                    batch_out = output.to("cpu").detach().numpy()
+                    batch_target = rul.to("cpu").detach().numpy()
+                    y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
+                    y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
+                else:
+                    if (epoch_number == config.epochs -1) or (use_tqdm == False):
+                        y_pred.append(output) if config.approach=="padding" else y_pred.extend(output)
+                        y_true.append(rul) if config.approach=="padding" else y_true.extend(rul)
+                    else:
+                        y_pred,y_true=None,None
 
-        eval_loss/=num_batches
-        eval_rmse_loss/=num_batches
-        print(f"Avg {mode} Loss: {eval_loss:.4f} | \
-                Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+                loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
+                rmse_loss = eval_criterion(output, rul, mask)
+                eval_loss_sum += loss
+                eval_rmse_loss_sum += rmse_loss
+
+    eval_loss = (eval_loss_sum / num_batches).item()
+    eval_rmse_loss = (eval_rmse_loss_sum / num_batches).item()
+    # print(f"Avg {mode} Loss: {eval_loss:.4f} | \
+    #         Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+
+    # print('#'* 50)
+    # print("Profiler results:")
+    # print('#'* 50)
+    # print("CPU time eval_loop:")
+    # print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+    # print('#'* 50)
+    # print("GPU time eval_loop:")
+    # print('#'* 50)
+    # print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+    # print('#'* 50)
 
     if config.cpu_version:
         y_pred=np.array(y_pred)
