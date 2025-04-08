@@ -296,7 +296,7 @@ def blob_plot(
     plt.figure: figure with the blob plot
     """
     
-    plot_dict["mult_adds_ln"]=np.log(plot_dict["mult_adds_float"])
+    plot_dict["mult_adds_ln"]=np.abs(np.log(plot_dict["mult_adds_float"]))
     # Convert plot_dict into a pandas DataFrame
     df=pd.DataFrame(plot_dict)
     df=df.rename(columns={
@@ -306,19 +306,30 @@ def blob_plot(
         "test_metric": "Test Loss",
     })
 
+    # Add jitter to text positions
+    jitter_strength = 0.01  # Adjust as needed
+
+    # df['text_x'] = df['Parameters (K)'] + np.random.normal(0, jitter_strength * df['Parameters (K)'].mean(), len(df))
+    # df['text_y'] = df['Test Loss'] + np.random.normal(0, jitter_strength * df['Test Loss'].mean(), len(df))
+
     fig = px.scatter(
         data_frame = df,
         x = "Parameters (K)",
         y = "Test Loss",
         color = "Log Mult-Adds",
-        size = "Mult-Adds (MMACs)",
+        size = "Log Mult-Adds",
+        # size = "Mult-Adds (MMACs)",
         hover_name = "model_name",
         log_x = True,
         size_max=60,
         color_continuous_scale="Viridis",
-        text="model_name"
+        text="model_name",
+        opacity=0.9
     )
-    fig.update_traces(textposition='bottom center')
+    fig.update_traces(
+        textposition='bottom center',
+        textfont=dict(size=10),
+    )
 
     if config.save_plot:
 

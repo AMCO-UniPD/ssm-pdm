@@ -36,14 +36,21 @@ config=ExperimentConfig(config)
 # and the mult-adds in a dictionary.
 plot_dict={}
 plot_dict["params"],plot_dict["mult_adds"],plot_dict["model_name"],plot_dict["test_metric"] = [],[],[],[]
+# plot_dict["metrics_dirpath"]=[]
 summary_dict_dirpath = generate_path(basepath=experiment_path,folders=["summary_dict"])
 metrics_dirpath = generate_path(basepath=experiment_path,folders=["metrics"])
 
 
 for model_name in config.model_names:
 
-    summary_dict_dirpath_model = generate_path(basepath=summary_dict_dirpath,
-                                            folders=[model_name])
+    if model_name == "LSTM":
+        summary_dict_dirpath_model = generate_path(basepath=summary_dict_dirpath,
+                                                folders=[model_name,"torchinfo"])
+    else:
+        summary_dict_dirpath_model = generate_path(basepath=summary_dict_dirpath,
+                                                folders=[model_name,config.summary_func])
+
+    print(f"Getting the summary dict for model: {model_name}")
     summary_dict_path = get_most_recent_file(summary_dict_dirpath_model,file_pos=config.file_pos)
     summary_dict = open_element(summary_dict_path)
     params,mult_adds = summary_dict["params"],summary_dict["mult_adds"]
@@ -58,8 +65,8 @@ for model_name in config.model_names:
                                                    "quantile_reg"
                                                    ])
 
-    metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=0)
-
+    metrics_exp_dirpath_model = get_most_recent_dir(metrics_dirpath_model,file_pos=config.file_pos)
+    # plot_dict["metrics_dirpath"].append(os.path.basename(metrics_exp_dirpath_model))
     metrics_df_path = get_most_recent_file(metrics_exp_dirpath_model,file_pos=config.file_pos)
     metrics_df = open_element(metrics_df_path)
     plot_dict["test_metric"].append(metrics_df.loc["Life_mean",f"quantile_{config.quantile_run}"])

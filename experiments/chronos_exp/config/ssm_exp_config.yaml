@@ -57,9 +57,9 @@ weight_decay: 1.0e-4
 # model_name: LSTM
 # model_name: GRU
 # model_name: S4
-# model_name: S5
+model_name: S5
 # model_name: S4D
-model_name: RULTransformer
+# model_name: RULTransformer
 # model_name: RULInformer
 output_attention: false
 model_summary_manual: false
@@ -88,16 +88,18 @@ bounds: [0.1, 0.9]
 # quantiles: [0.1,0.5,0.9]
 # quantiles: [0.25,0.75]
 # quantiles: [0.25,0.5,0.75]
-# quantiles: [0.1,0.25,0.5,0.75,0.9]
+quantiles: [0.1,0.25,0.5,0.75,0.9]
 # quantiles: [0.25,0.5,0.75,0.9]
-quantiles: [0.1]
+# quantiles: [0.1]
 # quantiles: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 quantile_run: 0.25
 
 # multi run experiment
 start_run_id: 0
-n_runs: 1
+n_runs: 5
 set_exp_name: false
+# exp_name: cpu_test
+cpu_version: false
 
 # Experiment name FD001
 # exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
@@ -136,7 +138,7 @@ set_exp_name: false
 
 # Experiment name FD001 tau_mul_no_tau_feat approach
 # exp_name: 29-03-2025_10-07-53_S4_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
-# exp_name: multi_run_29-03-2025_12-31-34_S5_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+exp_name: multi_run_29-03-2025_12-31-34_S5_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name: multi_run_29-03-2025_14-29-45_RULTransformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name: multi_run_29-03-2025_16-39-17_S4D_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
 # exp_name: multi_run_29-03-2025_17-44-54_RULInformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
@@ -152,7 +154,7 @@ set_exp_name: false
 
 
 # test_script config
-test_script: false
+test_script: true
 file_pos: 0
 # outputs → train_ssm.py
 save_outputs: true
@@ -175,10 +177,10 @@ power_analysis: false
 quantile_to_test: [0.25,0.75]
 
 # config for blob_plot
-model_summary: false
-summary_func: torchinfo
-# summary_func: calflops
-save_summary_dict: false
+model_summary: true
+# summary_func: torchinfo
+summary_func: calflops
+save_summary_dict: true
 model_names: ["S4","S5","S4D","RULInformer","RULTransformer","LSTM"]
 # model_names: ["S5"]
 
