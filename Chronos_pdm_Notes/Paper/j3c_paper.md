@@ -291,7 +291,7 @@ In any case `SSM` and `Transformer` are always there among the top models, but a
 
 ### `FD002`
 
-The metric values are similar to the ones obtained in `FD001` in the first three quantiles, while they are worse (as expected) in the last two quantiles. As usual we have higher errors on the underestimation quantiles, the magnitude of these errors seems to not change much pasing from `FD001` to `FD002`. For what concerns the best models, as in `FD001` in the first quantiles attention based models are better while in the final two also `SSM` models are there. There is a strange behavior of the `LSTM` model that is by far the best on in quantile 0.75. In any case the result more or less follow the trend of `FD001` so in the paper we can use a single explanation that holds for both the result tables.
+The metric values are similar to the ones obtained in `FD001` in the first three quantiles, while they are worse (as expected) in the last two quantiles. As usual we have higher errors on the underestimation quantiles, the magnitude of these errors seems to not change much passing from `FD001` to `FD002`. For what concerns the best models, as in `FD001` in the first quantiles attention based models are better while in the final two also `SSM` models are there. There is a strange behavior of the `LSTM` model that is by far the best on in quantile 0.75. In any case the result more or less follow the trend of `FD001` so in the paper we can use a single explanation that holds for both the result tables.
 
 | Model         | quantile 0.1 | quantile 0.25 | quantile 0.5 | quantile 0.75 | quantile 0.9 |
 | ------------- | ------------ | ------------- | ------------ | ------------- | ------------ |

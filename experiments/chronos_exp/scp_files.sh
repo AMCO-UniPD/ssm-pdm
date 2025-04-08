@@ -2,7 +2,7 @@
 
 MODELS=('RULInformer')
 FOLDER=('plots')
-DATASET='FD002'
+DATASET='FD001'
 APPROACH='windowed'
 # quantile_approach='quantile_reg'
 # quantile_approach='tau_mult'
@@ -69,25 +69,25 @@ INITIAL_DIR='/home/davide_frizzo/chronos-pdm/experiments/chronos_exp'
 acquario3_path="$INITIAL_DIR/$FOLDER/$MODELS/$DATASET/$APPROACH/quantile_reg/$exp_name/interval/"
 
 # blob plot path
-# blob_plot_path="$INITIAL_DIR/$FOLDER/blob_plot/$DATASET/"
+blob_plot_path="$INITIAL_DIR/$FOLDER/blob_plot/$DATASET/"
 
 # cd into local path in my local machine
 # cd ../../../ssm_pdm_paper/Img/rul_plots/$MODELS/$DATASET/
 # path for prediction interval plots
-cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET/
+# cd ../../../ssm_pdm_paper/Img/interval_plots/$DATASET/
 # path for blob plots
-# cd ../../../ssm_pdm_paper/Img/blob_plots/$DATASET/
+cd ../../../ssm_pdm_paper/Img/blob_plots/$DATASET/
 
 # if folder interval does not exist create it and cd into it
-subfolder=$quantile_approach
-
-if [ ! -d $subfolder ]; then
-  echo "Creating the folder $subfolder"
-  mkdir $subfolder
-  cd $subfolder
-else
-  cd $subfolder
-fi
+# subfolder=$quantile_approach
+#
+# if [ ! -d $subfolder ]; then
+#   echo "Creating the folder $subfolder"
+#   mkdir $subfolder
+#   cd $subfolder
+# else
+#   cd $subfolder
+# fi
 
 # Name to give to the RUL plots files when copied locally
 
@@ -109,9 +109,9 @@ for pos in "${file_pos[@]}"; do
   # scp acquario3:$latest_file .
 
   # prediction interval plots
-  latest_file=$(ssh acquario3 "find $acquario3_path -name '*.pdf' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
+  # latest_file=$(ssh acquario3 "find $acquario3_path -name '*.pdf' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
   # blob plots
-  # latest_file=$(ssh acquario3 "find $blob_plot_path -name '*.png' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
+  latest_file=$(ssh acquario3 "find $blob_plot_path -name '*.png' -type f -printf '%T@ %p\n' | sort -n | tail -$pos | head -1 | cut -f2- -d' '") 
   echo "############################################"
   echo "Copying file: $latest_file"
   echo "############################################"
