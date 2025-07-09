@@ -9,4 +9,4 @@ echo "###########################################"
 echo "Executing $SCRIPT_PATH"
 echo "###########################################"
 
-python $SCRIPT_PATH
+python $SCRIPT_PATH --no_mult_adds

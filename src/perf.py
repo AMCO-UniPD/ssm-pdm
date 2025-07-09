@@ -5,13 +5,24 @@ inside `best_model_perf`
 
 import os
 import sys
+import time
 import ipdb
+from tqdm import trange
 import torch
 import pandas as pd
 import numpy as np
 from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
 
-chronos_path_src = os.path.join(os.path.dirname(__file__),"chronos-rul","src")
+# torch imports
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+import torch.optim as optim
+
+# from apex.optimizers import FusedAdam
+from torch.optim import AdamW, lr_scheduler
+
+chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
 sys.path.append(chronos_path_src)
 
 from utils import (
@@ -22,18 +33,23 @@ from utils import (
     save_element,
     open_element,
     get_most_recent_file,
+    set_seed
 )
 
 from loss import *
 
+from models import train_loop, test_loop
+from ssm_models import load_ssm_model
+
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 
+
 def lifes_metrics(
-        config: ExperimentConfig,
-        outputs_path: str = experiment_path,
-        metrics_path: str = experiment_path,
-        compute_stats: bool = False,
+    config: ExperimentConfig,
+    outputs_path: str = experiment_path,
+    metrics_path: str = experiment_path,
+    compute_stats: bool = False,
 ) -> pd.DataFrame:
     """
     Calculate the metrics for each life and each sensor in the dataset and save them in a pd.DataFrame
@@ -49,77 +65,82 @@ def lifes_metrics(
     """
 
     feature_names = get_feature_names(config)
-    metrics_df=pd.DataFrame()
+    metrics_df = pd.DataFrame()
 
-    outputs_path = get_most_recent_file(outputs_path,file_pos=config.file_pos)
-    outputs_dict = open_element(
-        file_path=outputs_path,
-        filetype="pickle"
-    )
-    print('#'* 50)
+    outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
+    outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
+    print("#" * 50)
     print(f"Opened outputs_dict at path: {outputs_path}")
-    print('#'* 50)
-    y_pred,y_true=outputs_dict["y_pred"],outputs_dict["y_true"]
+    print("#" * 50)
+    y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
 
-    _,eval_criterion=load_loss_functions(
+    _, eval_criterion = load_loss_functions(
         loss_name=config.loss,
         model_name=config.model_name,
         eval_loss_name=config.eval_loss,
-        tau=config.tau
+        tau=config.tau,
     )
 
     pd.options.display.float_format = "{:.2f}".format
 
     if config.model_name.startswith("chronos"):
         for i in range(y_pred.shape[0]):
-            mask = torch.tensor(y_true[i,0,:]!=0).unsqueeze(0)
-            for j,sensor in zip(range(y_pred.shape[1]),feature_names):
-                pred=torch.tensor(y_pred[i,j,:]).unsqueeze(0)
-                true=torch.tensor(y_true[i,j,:]).unsqueeze(0)
-                eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
-                metrics_df.at[f"Life_{i+config.test_idx[0]+1}",sensor]=round(eval_loss,2)
+            mask = torch.tensor(y_true[i, 0, :] != 0).unsqueeze(0)
+            for j, sensor in zip(range(y_pred.shape[1]), feature_names):
+                pred = torch.tensor(y_pred[i, j, :]).unsqueeze(0)
+                true = torch.tensor(y_true[i, j, :]).unsqueeze(0)
+                eval_loss = eval_criterion(y_pred=pred, y_true=true, mask=mask).item()
+                metrics_df.at[f"Life_{i+config.test_idx[0]+1}", sensor] = round(
+                    eval_loss, 2
+                )
     else:
         for i in range(len(y_pred)):
-            mask = torch.tensor(y_true[i]!=0)
-            pred=torch.tensor(y_pred[i])
-            true=torch.tensor(y_true[i])
-            eval_loss=eval_criterion(y_pred=pred,y_true=true,mask=mask).item()
-            metrics_df.at[f"Life_{i+config.test_idx[0]+1}","Eval Loss"]=round(eval_loss,2)
+            mask = torch.tensor(y_true[i] != 0)
+            pred = torch.tensor(y_pred[i])
+            true = torch.tensor(y_true[i])
+            eval_loss = eval_criterion(y_pred=pred, y_true=true, mask=mask).item()
+            metrics_df.at[f"Life_{i+config.test_idx[0]+1}", "Eval Loss"] = round(
+                eval_loss, 2
+            )
 
     if compute_stats:
         # Add a row Life_mean with the mean of the metrics over all the columns
-        metrics_df.loc["Life_mean"]=metrics_df.mean(axis=0).round(2)
+        metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
         # Add a row Life_median with the median of the metrics over all the columns
-        metrics_df.loc["Life_median"]=metrics_df.median(axis=0).round(2)
+        metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
         # Add a row Life_std with the std of the metrics over all the columns
-        metrics_df.loc["Life_std"]=metrics_df.std(axis=0).round(2)
+        metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
         # Add a column Sensor_mean with the mean of the metrics over all the rows
         if config.model_name.startswith("chronos"):
-            metrics_df["Sensor_mean"]=metrics_df.mean(axis=1).round(2)
-            metrics_df["Sensor_median"]=metrics_df.median(axis=1).round(2)
-            metrics_df["Sensor_std"]=metrics_df.std(axis=1).round(2)
+            metrics_df["Sensor_mean"] = metrics_df.mean(axis=1).round(2)
+            metrics_df["Sensor_median"] = metrics_df.median(axis=1).round(2)
+            metrics_df["Sensor_std"] = metrics_df.std(axis=1).round(2)
 
-        print('#'* 50)
+        print("#" * 50)
         print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life_mean']}")
-        print('#'* 50)
-        print(f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}")
-        print('#'* 50)
+        print("#" * 50)
+        print(
+            f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}"
+        )
+        print("#" * 50)
         print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
-        print('#'* 50)
+        print("#" * 50)
 
     if config.save_metrics_df:
         save_element(
             element=metrics_df,
             dirpath=metrics_path,
-            filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}.pickle"
+            filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}.pickle",
         )
 
     pd.options.display.float_format = None
 
     return metrics_df
 
+
 # Function to select a subset of the rows and a subset of the columns
 # of a metrics_df
+
 
 def sub_lifes_metrics(
     config: ExperimentConfig,
@@ -139,10 +160,10 @@ def sub_lifes_metrics(
     """
 
     if config.metrics_idx is None:
-        config.metrics_idx=np.arange(config.n_metrics_lifes)
+        config.metrics_idx = np.arange(config.n_metrics_lifes)
     metrics_idx = [f"Life_{i+config.test_idx[0]+1}" for i in config.metrics_idx]
     if config.model_name.startswith("chronos"):
-        sub_metrics_df = metrics_df.loc[metrics_idx,config.metrics_cols]
+        sub_metrics_df = metrics_df.loc[metrics_idx, config.metrics_cols]
     else:
         sub_metrics_df = metrics_df.loc[metrics_idx]
 
@@ -150,7 +171,7 @@ def sub_lifes_metrics(
         sub_metrics_df.loc["Life_mean"] = sub_metrics_df.mean(axis=0).round(2)
         sub_metrics_df.loc["Life_median"] = sub_metrics_df.median(axis=0).round(2)
         sub_metrics_df.loc["Life_std"] = sub_metrics_df.std(axis=0).round(2)
-        if len(config.metrics_cols)>1 and config.model_name.startswith("chronos"):
+        if len(config.metrics_cols) > 1 and config.model_name.startswith("chronos"):
             sub_metrics_df["Sensor_mean"] = sub_metrics_df.mean(axis=1).round(2)
             sub_metrics_df["Sensor_median"] = sub_metrics_df.median(axis=1).round(2)
             sub_metrics_df["Sensor_std"] = sub_metrics_df.std(axis=1).round(2)
@@ -159,6 +180,7 @@ def sub_lifes_metrics(
 
 
 # Function to render the data contained in a pd.DataFrame into a markdown table
+
 
 def df_to_obsidian_table(df):
     markdown = "| " + " | ".join(df.columns) + " |\n"
@@ -177,12 +199,11 @@ def df_with_index_to_obsidian_table(df):
         lines.append("| " + " | ".join([str(idx)] + list(map(str, row))) + " |")
     return "\n".join(lines)
 
+
 # Function to print the summary metrics of a metrics_df dataframe
 
-def print_summary_metrics(
-        metrics_df: pd.DataFrame,
-        model_name: str = "S4"
-    ) -> None:
+
+def print_summary_metrics(metrics_df: pd.DataFrame, model_name: str = "S4") -> None:
     """
     Print the summary metrics of a metrics_df dataframe
 
@@ -199,12 +220,66 @@ def print_summary_metrics(
     metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
     metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
 
-    print('#'* 50)
+    print("#" * 50)
     print(f"Summary metrics for model {model_name}")
-    print('#'* 50)
+    print("#" * 50)
     print(f"Mean eval loss over all the test lifes:\n{metrics_df.loc['Life_mean']}")
-    print('#'* 50)
+    print("#" * 50)
     print(f"Median eval loss over all the test lifes:\n{metrics_df.loc['Life_median']}")
-    print('#'* 50)
+    print("#" * 50)
     print(f"Std eval loss over all the test lifes:\n{metrics_df.loc['Life_std']}")
-    print('#'* 50)
+    print("#" * 50)
+
+
+def time_exp(
+    config: ExperimentConfig,
+    model_config: ModelConfig,
+) -> dict:
+    """
+    This function computes the execution time for a call to test_loop
+    for a specific model to have an estimate of its inference time.
+
+    Args:
+        config (ExperimentConfig): experiment configuration
+        model_config (ModelConfig): model configuration
+
+    Returns:
+        dict_time (dict): dictionary containing inference times of the model over different runs
+    """
+
+    # Initialize time dictionary
+    dict_time = {}
+    dict_time["test_time"] = []
+    # Define dimensions of the tensor
+    batch_size, sequence_length, d_input = 32, 170, 14
+
+    device = f"cuda:{config.device_num}" if torch.cuda.available() else "cpu"
+
+    # Load the model
+
+    model, _, _ = load_ssm_model(
+        model_config=model_config, exp_config=config, d_input=d_input
+    )
+    model = model.to(device)
+
+
+    for i in trange(config.n_runs,desc="Time experiment runs")
+
+        set_seed(seed=i)
+        # Create a random input tensor with the same size used in the project
+        x = torch.rand(batch_size, sequence_length, d_input).to(device)
+
+        start_time = time.time()
+        with torch.no_grad():
+            _ = model(x, tau=0.5)
+        dict_time["test_time"].append(time.time() - start_time)
+
+    avg_time = np.round(np.mean(dict_time["test_time"]),3)
+    std_time = np.round(np.std(dict_time["test_time"]),3)
+    dict_time["avg_time"] = avg_time
+    dict_time["std_time"] = std_time
+    print("#" * 50)
+    print(f"Inference time for {config.model_type}: {avg_time} +- {std_time}")
+    print("#" * 50)
+
+    return dict_time

@@ -346,6 +346,7 @@ def blob_plot(
     plot_dict: dict,
     config: ExperimentConfig,
     plot_path: str,
+    no_mult_adds: bool = False,
 ) -> plt.figure:
     """
     Function to produce a plot that represents the number of parameters, number of mult-adds,
@@ -355,6 +356,7 @@ def blob_plot(
     plot_dict (dict): dictionary with the number of parameters, mult-adds, model names and test metrics
     config (ExperimentConfig): experiment configuration
     plot_path (str): path to save the plot
+    no_mult_adds (bool): if set the mult_adds metric will not be used to produce the blob plot, the inference time will be used instead. By default False
 
     Returns:
     plt.figure: figure with the blob plot
@@ -373,7 +375,7 @@ def blob_plot(
     )
 
     # Add jitter to text positions
-    jitter_strength = 0.01  # Adjust as needed
+    # jitter_strength = 0.01  # Adjust as needed
 
     # df['text_x'] = df['Parameters (K)'] + np.random.normal(0, jitter_strength * df['Parameters (K)'].mean(), len(df))
     # df['text_y'] = df['Test Loss'] + np.random.normal(0, jitter_strength * df['Test Loss'].mean(), len(df))
@@ -382,8 +384,8 @@ def blob_plot(
         data_frame=df,
         x="Parameters (K)",
         y="Test Loss",
-        color="Log Mult-Adds",
-        size="Log Mult-Adds",
+        color="Log Mult-Adds" if not no_mult_adds else "Inference Time (s)",
+        size="Log Mult-Adds" if not no_mult_adds else "Inference Time (s)",
         # size = "Mult-Adds (MMACs)",
         hover_name="model_name",
         log_x=True,
