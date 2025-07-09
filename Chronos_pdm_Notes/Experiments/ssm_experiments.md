@@ -2320,7 +2320,16 @@ quantile_0.9     19.61
 
 ###### Prediction Interval Plots
 
-Now the prediction interval is wider and there is no more that error where in quantile 0.75 the predictions were higher than the ones of quantile 0.9. This is a good result, we have to see what happens with the other models → `S4` may lose even more to `S5,S4D` and may also become worse with the respect to the other non `SSM` models. 
+Now the prediction interval is wider and there is no more that error where in quantile 0.75 the predictions were higher than the ones of quantile 0.9. This is a good result, we have to see what happens with the other models → `S4` may lose even more to `S5,S4D` and may also become worse with the respect to the other non `SSM` models.
+
+
+###### `wandb` Execution Times
+
+| Set | Time (s) |
+| --- | --- |
+| `train_time` | 1.11 |
+| `val_time` | 0.03 |
+| `test_time` | 0.05 |
 
 #### Dataset `FD002`
 
@@ -2939,6 +2948,14 @@ quantile_0.9     19.88
 
 Similar to `S4`, wider prediction interval with the respect to the previous experiment.
 
+###### `wandb` Execution Times
+
+| Set | Time (s) |
+| --- | --- |
+| `train_time` | 2.12 |
+| `val_time` | 0.07 |
+| `test_time` | 0.10 |
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `S5` `FD002` 5️⃣ 🪟 🌗
@@ -3429,7 +3446,7 @@ quantile_0.9      9.94
 
 In the prediction plots we have, as expected, a narrower prediction interval. Strangely in `Life_52` the predictions are a straight smooth decreasing lines (as the ones obtained with `S5,S4D`) but in the other two lifes we have the usual noisy and oscillating predictions typical of `S4D`.
 
-Finally in `Life_56` predictions of quantiles 0.5 and 0.75 are higher than the one of quantile 0.9, this should not be possible. The only reason why this may happens is that `S4D` is so noisy that it creates this effect that however destroys all the theory on quantiles. This thing happened also in [[ssm_experiments#Experiment 8 `S4` `FD001` `tau_mult` 4‍⃣ 🪟 🌗 ✖️|`S4`]] but to a much lower degree. 
+Finally in `Life_56` predictions of quantiles 0.5 and 0.75 are higher than the one of quantile 0.9, this should not be possible. The only reason why this may happens is that `S4D` is so noisy that it creates this effect that however destroys all the theory on quantiles. This thing happened also in [[ssm_experiments#Experiment 8 `S4` `FD001` `tau_mult` 4‍⃣ 🪟 🌗 ✖️|`S4`]] but to a much lower degree.
 
 ##### Experiment 4 `S4D` `FD001` `tau_mult_no_tau_feat` 4 D 🪟 🌗 ✖️
 
@@ -3471,7 +3488,17 @@ quantile_0.9     21.53
 
 The plots show the usual oscillating and noisy shape typical of `S4D` but for the rest are quite similar to the others produced.
 
+
+###### `wandb` Execution Times
+
+| Set | Time (s) |
+| --- | --- |
+| `train_time` | 0.82 |
+| `val_time` | 0.03 |
+| `test_time` | 0.05 |
+
 #### Dataset `FD002`
+
 ##### Experiment 1 `S4D` `FD002` 4 D 🪟 🌗
 
 Let's use the same configuration used for `S4,S5`.

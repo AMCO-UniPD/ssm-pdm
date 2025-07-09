@@ -826,7 +826,7 @@ Let's use the `tau_mult_no_tau_feat` approach also for the `Transformer` model i
 
 ###### Metrics Table Pinball Loss
 
-As usual the results are similar for the small quantiles and higher errors can be observed for higher quantiles. 
+As usual the results are similar for the small quantiles and higher errors can be observed for higher quantiles.
 
 ```txt
 ##################################################
@@ -856,6 +856,16 @@ quantile_0.9     20.58
 ###### Prediction Interval Plots
 
 Similar to the `SSM` based plots, as expected.
+
+
+###### `wandb` Execution Times
+
+| Set | Time (s) |
+| --- | --- |
+| `train_time` | 2.12 |
+| `val_time` | 0.07 |
+| `test_time` | 0.10 |
+
 #### Dataset `FD002`
 
 ##### Experiment 1 `Transformer` `FDOO2` `windowed` 🤖 1️⃣ 🌗
@@ -1281,6 +1291,15 @@ quantile_0.9     21.50
 ###### Prediction Interval Plots
 
 Similar to `Transformer`.
+
+
+###### `wandb` Execution Times
+
+| Set | Time (s) |
+| --- | --- |
+| `train_time` | 8.26 |
+| `val_time` | 0.68 |
+| `test_time` | 0.72 |
 
 #### Dataset `FD002`
 

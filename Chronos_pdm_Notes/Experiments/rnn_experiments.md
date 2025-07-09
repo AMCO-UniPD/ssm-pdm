@@ -899,7 +899,7 @@ After having produced the Prediction Interval plot of the experiment withot $\ta
 
 ###### Metrics Table Pinball Loss
 
-Similar values to `Transformer` based models. 
+Similar values to `Transformer` based models.
 
 ```txt
 ##################################################
@@ -929,6 +929,14 @@ quantile_0.9     14.21
 ###### Prediction Interval Plots
 
 As usual worse than the others because of its logarithmic shaped prediction signals.
+
+###### `wandb` Execution Times
+
+| Set | Time (s) |
+| --- | --- |
+| `train_time` | 0.78 |
+| `val_time` | 0.03 |
+| `test_time` | 0.05 |
 
 #### Dataset `FD002`
 
