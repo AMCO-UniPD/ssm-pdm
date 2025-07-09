@@ -101,6 +101,9 @@ set_exp_name: false
 # exp_name: cpu_test
 cpu_version: false
 
+# time experiments
+n_runs_time: 100
+
 # Experiment name FD001
 # exp_name: multi_run_22-03-2025_15-41-44_S4_FD001_windowed_quantile_reg
 # exp_name: multi_run_23-03-2025_09-14-06_S5_FD001_windowed_quantile_reg
@@ -177,10 +180,10 @@ power_analysis: false
 quantile_to_test: [0.25,0.75]
 
 # config for blob_plot
-model_summary: true
+model_summary: false
 # summary_func: torchinfo
 summary_func: calflops
-save_summary_dict: true
+save_summary_dict: false
 model_names: ["S4","S5","S4D","RULInformer","RULTransformer","LSTM"]
 # model_names: ["S5"]
 

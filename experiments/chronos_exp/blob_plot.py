@@ -139,6 +139,8 @@ else:
 
     plot_dict["mult_adds_float"] = mult_adds_list
 
+ipdb.set_trace()
+
 plot_path = generate_path(
     basepath=experiment_path, folders=["plots", "blob_plot", config.cmapss_models]
 )

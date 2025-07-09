@@ -6,6 +6,7 @@ inside `best_model_perf`
 import os
 import sys
 import time
+import timeit
 import ipdb
 from tqdm import trange
 import torch
@@ -33,13 +34,12 @@ from utils import (
     save_element,
     open_element,
     get_most_recent_file,
-    set_seed
+    set_seed,
 )
 
 from loss import *
 
-from models import train_loop, test_loop
-from ssm_models import load_ssm_model
+from ssm_models import load_ssm_model, ModelConfig
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
@@ -253,7 +253,10 @@ def time_exp(
     # Define dimensions of the tensor
     batch_size, sequence_length, d_input = 32, 170, 14
 
-    device = f"cuda:{config.device_num}" if torch.cuda.available() else "cpu"
+    device = torch.device(
+        f"cuda:{config.device_num}" if torch.cuda.is_available() else "cpu"
+    )
+    model_config.device = device
 
     # Load the model
 
@@ -262,24 +265,20 @@ def time_exp(
     )
     model = model.to(device)
 
+    # for i in trange(config.n_runs, desc="Time experiment runs"):
 
-    for i in trange(config.n_runs,desc="Time experiment runs")
+    set_seed(seed=0)
 
-        set_seed(seed=i)
+    with torch.no_grad():
         # Create a random input tensor with the same size used in the project
         x = torch.rand(batch_size, sequence_length, d_input).to(device)
+        test_time = timeit.timeit(lambda: model(x, tau=0.5), number=config.n_runs_time)
+    dict_time["test_time"] = test_time
 
-        start_time = time.time()
-        with torch.no_grad():
-            _ = model(x, tau=0.5)
-        dict_time["test_time"].append(time.time() - start_time)
-
-    avg_time = np.round(np.mean(dict_time["test_time"]),3)
-    std_time = np.round(np.std(dict_time["test_time"]),3)
+    avg_time = np.round(dict_time["test_time"] / config.n_runs_time, 3)
     dict_time["avg_time"] = avg_time
-    dict_time["std_time"] = std_time
     print("#" * 50)
-    print(f"Inference time for {config.model_type}: {avg_time} +- {std_time}")
+    print(f"Inference time for current model: {avg_time}")
     print("#" * 50)
 
     return dict_time
