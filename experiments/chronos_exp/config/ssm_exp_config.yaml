@@ -123,7 +123,7 @@ file_pos_pickle: 1
 # exp_name: multi_run_29-03-2025_07-30-40_S4D_FD002_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_10-07-2025_16-34-55_LSTM_FD002_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_10-07-2025_17-13-14_RULTransformer_FD002_windowed_quantile_reg_tau_mult
-# exp_name: multi_run_10-07-2025_17-28-16_RULInformer_FD002_windowed_quantile_reg_tau_mult
+exp_name: multi_run_10-07-2025_17-28-16_RULInformer_FD002_windowed_quantile_reg_tau_mult
 
 
 # Memory test trasnformer
