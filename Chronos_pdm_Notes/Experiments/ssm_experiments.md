@@ -2243,7 +2243,7 @@ After the [[ssm_experiments#^335e5a|gigantic error]] let's perform an experiment
 
 The results here are obviously worse but there is an interesting thing to consider. Now I can in fact realize why we had these big differences between the different quantiles in the non `SSM` experiments → that's because those experiments **were the only one done with the $\tau$ multiplicative approach** (in fact if we look at the [[j3c_paper#^a2c187|updated `FD002` result table]] the error metrics look similar across the quantiles also for the non `SSM` models). Now we can see this variability across different quantiles also here and that is probably given by the addition of the multiplication by $\tau$ at the end which forces the prediction to be lower for low quantiles and higher for high quantiles. 
 
-It is interesting to see what happens in the Prediction Interval plots here → in fact it probably makes more sense if there is some difference between the different quantiles (and so the prediction interval is larger) also for the `SSM`  models. In fact the very small prediction interval we get without the $\tau$ multiplicative approach may also be due just to random noise and not be statistically significant. In other words even if the results are worse metric wise they make more sense with this approach and they better show the effect of Quantile Regression → in any case the metric values here in `S4` are still better than the ones of the other models so the thesis that `SSM` are better still holds. 
+It is interesting to see what happens in the Prediction Interval plots here → in fact it probably makes more sense if there is some difference between the different quantiles (and so the prediction interval is larger) also for the `SSM`  models. In fact the very small prediction interval we get without the $\tau$ multiplicative approach may also be due just to random noise and not be statistically significant. In other words even if the results are worse metric wise they make more sense with this approach and they better show the effect of Quantile Regression → in any case the metric values here in `S4` are still better than the ones of the other models so the thesis that `SSM` are better still holds.
   
 ```txt
 ##################################################
@@ -2520,7 +2520,7 @@ Experiment using the `tau_mult` approach (for real this time). Let's start with 
 
 ###### Metrics Table Pinball Loss
 
-The result are similar to the ones obtained on `FD001` with the `tau_mult` approach, so higher error values for extreme quantiles like 0.1 and 0.9. 
+The result are similar to the ones obtained on `FD001` with the `tau_mult` approach, so higher error values for extreme quantiles like 0.1 and 0.9.
 
 ```txt
 ##################################################

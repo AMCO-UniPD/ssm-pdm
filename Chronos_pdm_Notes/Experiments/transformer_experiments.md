@@ -1021,6 +1021,17 @@ Maybe the problem is related to all those overlapping windows I am using?
 
 I also started an experiment with `n_layers=1,d_ff=32` but the `CPU` usage was still the same, the `GPU` memory is the one decreasing now. In fact these are hyperparameters of `torch` models so they are all related to the `GPU` usage, so maybe I have to watch more closely at the code to find some costly operation that I am performing on the `CPU` because I am using `np.array` or other non `torch` things that are all loading the `CPU`.
 
+##### Experiment 3 `Transformer` `FDOO2` `windowed` `tau_mult` 🤖 1️⃣ 🌗
+
+2 run experiment with the `tau_mult` approach:
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/gzwr6wp5?nw=nwuserfrizzodavide)
+
+###### Metrics Table `RMSE` Loss
+
+
+
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
 I insert here the model summary returned by `calflops`:
@@ -1463,3 +1474,12 @@ quantile_0.75    33.27
 quantile_0.9     42.91
 ##################################################
 ```
+
+##### Experiment 3 `Informer` `FDOO2` `windowed` `tau_mult` 🪟 1️ 🌗
+
+2 run experiment with `tau_mult` approach.
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/z9js2jgg?nw=nwuserfrizzodavide)
+
+
