@@ -31,6 +31,7 @@ from utils import (
     get_current_time,
     generate_path,
     get_feature_names,
+    get_most_recent_dir,
     save_element,
     open_element,
     get_most_recent_file,
@@ -282,3 +283,75 @@ def time_exp(
     print("#" * 50)
 
     return dict_time
+
+
+def state_dict_size(
+    config: ExperimentConfig,
+    basepath: str = experiment_path,
+    model_name: str = "S4",
+    run_id: int = 1,
+    tau: float = 0.5,
+) -> tuple[dict, str]:
+    """
+    Function to return the filesize of the `pickle` file containing the state dict of a model, to use as a metric to compare the sizes of different models
+
+    Args:
+        config (ExperimentConfig): experiment configuration
+        basepath (str): starting path for defining the path where to find the `pickle` file, by default experiment_path
+        model_name (str): name of the model, by default S4
+        run_id (int): select a run id for multi run experiments
+        tau (float): select a quantile level
+
+    Returns:
+        size_dict (dict): dictionary containing the file size
+        state_dict_path (str): path to the pickle file
+    """
+
+    assert run_id <= 5, "The maximum run number is 5"
+    assert (
+        tau in config.quantiles
+    ), f"The quantile level must be inside {config.quantiles}"
+
+    size_dict = {}
+    state_dict_dirpath = generate_path(
+        basepath=basepath,
+        folders=[
+            "best_models",
+            model_name,
+            config.cmapss_models,
+            config.approach,
+            "quantile_reg",
+        ],
+    )
+    state_dict_exp_dirpath = get_most_recent_dir(
+        state_dict_dirpath, file_pos=config.file_pos_pickle
+    )
+
+    state_dict_quantile_dirpath = generate_path(
+        basepath=state_dict_exp_dirpath,
+        folders=[
+            f"run_{run_id}",
+            f"quantile_{tau}",
+        ],
+    )
+
+    state_dict_path = get_most_recent_file(
+        state_dict_quantile_dirpath, file_pos=config.file_pos
+    )
+
+    pickle_size = os.path.getsize(state_dict_path)
+    size_dict["pickle_size"] = pickle_size
+    size_dict["pickle_size_kb"] = pickle_size / 1024
+    size_dict["pickle_size_mb"] = pickle_size / (1024**2)
+    print("#" * 50)
+    print(
+        f"Size of the pickled state dict for model {model_name}: {size_dict['pickle_size']} bytes"
+    )
+    print(
+        f"Size of the pickled state dict for model {model_name}: {size_dict['pickle_size_kb']} KB"
+    )
+    print(
+        f"Size of the pickled state dict for model {model_name}: {size_dict['pickle_size_mb']} MB"
+    )
+    print("#" * 50)
+    return size_dict, state_dict_path

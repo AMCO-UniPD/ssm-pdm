@@ -20,18 +20,19 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
+
 # from apex.optimizers import FusedAdam
 from torch.optim import AdamW, lr_scheduler
 
-chronos_path_src = os.path.join(os.path.dirname(__file__),"chronos-rul","src")
-chronos_path_scripts = os.path.join(os.path.dirname(__file__),"chronos-rul","scripts")
-imports_path = os.path.join(os.path.dirname(__file__),"AD_MG","src")
+chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
+chronos_path_scripts = os.path.join(os.path.dirname(__file__), "chronos-rul", "scripts")
+imports_path = os.path.join(os.path.dirname(__file__), "AD_MG", "src")
 sys.path.append(chronos_path_src)
 sys.path.append(chronos_path_scripts)
 sys.path.append(imports_path)
 
 # import from other modules
-from utils import(
+from utils import (
     sample_quantile,
     save_element,
     ExperimentConfig,
@@ -47,11 +48,7 @@ from ssm_models import load_ssm_model
 
 from loss import load_loss_functions
 
-from perf import(
-    lifes_metrics,
-    sub_lifes_metrics,
-    df_with_index_to_obsidian_table
-)
+from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_table
 
 from plots import plot_predictions_grid
 
@@ -65,7 +62,8 @@ from utils import ExperimentConfig, MeanScaleUniformBinsSensor, get_current_time
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 
-def get_activation(act:str) -> nn.Module:
+
+def get_activation(act: str) -> nn.Module:
     """
     Get the activation function
 
@@ -89,14 +87,17 @@ def get_activation(act:str) -> nn.Module:
 
     return activation
 
+
 class RegressionHead(nn.Module):
-    def __init__(self,
-                 sequence_length:int=500,
-                 hidden_size:int=512,
-                 num_fc_layers:int=1,
-                 activation:str="relu",
-                 dropout_rate:float=0.1,
-                 use_fc_layers:bool=False):
+    def __init__(
+        self,
+        sequence_length: int = 500,
+        hidden_size: int = 512,
+        num_fc_layers: int = 1,
+        activation: str = "relu",
+        dropout_rate: float = 0.1,
+        use_fc_layers: bool = False,
+    ):
         super(RegressionHead, self).__init__()
 
         self.fc = nn.Linear(hidden_size, sequence_length)
@@ -107,26 +108,27 @@ class RegressionHead(nn.Module):
                 self.fc_layers.append(nn.Linear(hidden_size, hidden_size))
             self.activation = get_activation(act=activation)
             self.dropout = nn.Dropout(p=dropout_rate)
- 
-    def forward(self, x:torch.Tensor) -> torch.Tensor:
-        
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.use_fc_layers:
             for layer in self.fc_layers:
                 x = layer(x)
                 x = self.activation(x)
                 x = self.dropout(x)
 
-            x=self.fc(x)
+            x = self.fc(x)
             return x
 
-        x = self.fc(x) # (n_sensors,hidden_size) -> (n_sensors,sequence_length)
+        x = self.fc(x)  # (n_sensors,hidden_size) -> (n_sensors,sequence_length)
         # x = self.dropout(x)
         return x
 
+
 def load_model_tokenizer(
-        train_loader:DataLoader,
-        model_config:ChronosConfig,
-        exp_config:ExperimentConfig) -> Tuple[nn.Module, MeanScaleUniformBins, optim.Optimizer, optim.lr_scheduler._LRScheduler]:
+    train_loader: DataLoader, model_config: ChronosConfig, exp_config: ExperimentConfig
+) -> Tuple[
+    nn.Module, MeanScaleUniformBins, optim.Optimizer, optim.lr_scheduler._LRScheduler
+]:
     """
     Load the model and the tokenizer for the `chronos` model
 
@@ -143,7 +145,7 @@ def load_model_tokenizer(
     """
 
     # Create the ChronosConfig object
-    chronos_config=ChronosConfig(
+    chronos_config = ChronosConfig(
         tokenizer_class=model_config["tokenizer_class"],
         tokenizer_kwargs=model_config["tokenizer_kwargs"],
         n_tokens=model_config["n_tokens"],
@@ -160,21 +162,21 @@ def load_model_tokenizer(
         top_p=model_config["top_p"],
     )
 
-    tokenizer=MeanScaleUniformBinsSensor(
+    tokenizer = MeanScaleUniformBinsSensor(
         low_limit=chronos_config.tokenizer_kwargs["low_limit"],
         high_limit=chronos_config.tokenizer_kwargs["high_limit"],
-        config=chronos_config
+        config=chronos_config,
     )
 
     if exp_config.random_init:
         random_conf = AutoConfig.from_pretrained(exp_config.model_id)
-        if isinstance(random_conf,T5Config):
+        if isinstance(random_conf, T5Config):
             random_conf.initializer_factor = 0.05
         random_conf.tie_word_embeddings = True
         model = AutoModelForSequenceClassification.from_config(random_conf)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(exp_config.model_id)
-    
+
     # The classification head can also be defined with a nn.Module
     new_classification_head = RegressionHead(
         sequence_length=exp_config.sequence_length,
@@ -182,27 +184,34 @@ def load_model_tokenizer(
         num_fc_layers=exp_config.num_fc_layers,
         activation=exp_config.act,
         dropout_rate=exp_config.dropout_rate,
-        use_fc_layers=exp_config.use_fc_layers
+        use_fc_layers=exp_config.use_fc_layers,
     )
 
     # Substitute classification_head with the new one
     model.classification_head = new_classification_head
 
     optimizer = AdamW(model.parameters(), lr=exp_config.lr)
-    scheduler = lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=0.0, total_iters=exp_config.epochs*len(train_loader))
+    scheduler = lr_scheduler.LinearLR(
+        optimizer,
+        start_factor=1.0,
+        end_factor=0.0,
+        total_iters=exp_config.epochs * len(train_loader),
+    )
 
     return model, tokenizer, optimizer, scheduler
 
+
 # Train loop for one epoch
 
+
 def train_loop(
-        dataloader: DataLoader,
-        model: nn.Module,
-        config: ExperimentConfig,
-        tokenizer: MeanScaleUniformBinsSensor,
-        optimizer: optim.Optimizer,
-        criterion: nn.Module,
-        device: torch.device = torch.device("cpu"),
+    dataloader: DataLoader,
+    model: nn.Module,
+    config: ExperimentConfig,
+    tokenizer: MeanScaleUniformBinsSensor,
+    optimizer: optim.Optimizer,
+    criterion: nn.Module,
+    device: torch.device = torch.device("cpu"),
 ) -> float:
     """
     Train loop for one epoch
@@ -222,53 +231,71 @@ def train_loop(
     model.train()
     train_loss = 0.0
     num_batches = len(dataloader)
-    pbar=tqdm(enumerate(dataloader))
+    pbar = tqdm(enumerate(dataloader))
 
     for batch_idx, (life, rul, mask) in pbar:
-        life = life.to(device) if config.approach=="padding" else life.to(device).squeeze(-1)
+        life = (
+            life.to(device)
+            if config.approach == "padding"
+            else life.to(device).squeeze(-1)
+        )
         rul = rul.to(device).squeeze(-1)
-        mask = mask.to(device) if config.approach=="padding" else mask.to(device).squeeze(-1)
+        mask = (
+            mask.to(device)
+            if config.approach == "padding"
+            else mask.to(device).squeeze(-1)
+        )
         if config.quantile_reg:
             tau = sample_quantile(
                 quantile_dist=config.quantile_dist,
                 bounds=config.bounds,
-                print_quantile=True
+                print_quantile=True,
             )
 
         if config.model_name.startswith("chronos"):
-            input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
+            input_ids, attention_mask, _ = tokenizer.context_input_transform(
+                context=life, mask=mask
+            )
             output = model(input_ids=input_ids, attention_mask=attention_mask).logits
         else:
-            life = life.permute(2,0,1) if config.approach=="padding" else life
-            mask = mask.permute(1,0) if config.approach=="padding" else mask
-            rul = rul.unsqueeze(0) if config.approach=="padding" else rul
-            output = model(life) if not config.quantile_reg else model(life,tau=tau)
+            life = life.permute(2, 0, 1) if config.approach == "padding" else life
+            mask = mask.permute(1, 0) if config.approach == "padding" else mask
+            rul = rul.unsqueeze(0) if config.approach == "padding" else rul
+            output = model(life) if not config.quantile_reg else model(life, tau=tau)
 
-        loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
+        loss = (
+            criterion(output, rul, mask)
+            if not config.quantile_reg
+            else criterion(output, rul, mask, tau)
+        )
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         train_loss += loss.item()
 
-        pbar.set_description(f"Batch Idx: {batch_idx}/{len(dataloader)} | Train Loss: {train_loss / (batch_idx + 1):.4f}")
+        pbar.set_description(
+            f"Batch Idx: {batch_idx}/{len(dataloader)} | Train Loss: {train_loss / (batch_idx + 1):.4f}"
+        )
 
     return train_loss / num_batches
 
+
 # Evaluation loop (i.e. validation and test) for one epoch
 
+
 def eval_loop(
-        dataloader: DataLoader,
-        model: nn.Module,
-        config: ExperimentConfig,
-        tokenizer: MeanScaleUniformBinsSensor,
-        criterion: nn.Module,
-        eval_criterion: nn.Module,
-        mode: str = "Test",
-        device: torch.device = torch.device("cpu"),
-        use_tqdm: bool = True,
-        tau: float = 0.5,
-) -> Tuple[float,float,np.ndarray,np.ndarray]:
+    dataloader: DataLoader,
+    model: nn.Module,
+    config: ExperimentConfig,
+    tokenizer: MeanScaleUniformBinsSensor,
+    criterion: nn.Module,
+    eval_criterion: nn.Module,
+    mode: str = "Test",
+    device: torch.device = torch.device("cpu"),
+    use_tqdm: bool = True,
+    tau: float = 0.5,
+) -> Tuple[float, float, np.ndarray, np.ndarray]:
     """
     Evaluation loop for one epoch
 
@@ -292,41 +319,67 @@ def eval_loop(
     eval_loss, eval_rmse_loss = 0.0, 0.0
     num_batches = len(dataloader)
     pbar = tqdm(dataloader) if use_tqdm else dataloader
-    y_pred,y_true = [],[]
+    y_pred, y_true = [], []
 
     with torch.no_grad():
         for life, rul, mask in pbar:
-            life = life.to(device) if config.approach=="padding" else life.to(device).squeeze(-1)
+            life = (
+                life.to(device)
+                if config.approach == "padding"
+                else life.to(device).squeeze(-1)
+            )
             rul = rul.to(device).squeeze(-1)
-            mask = mask.to(device) if config.approach=="padding" else mask.to(device).squeeze(-1)
+            mask = (
+                mask.to(device)
+                if config.approach == "padding"
+                else mask.to(device).squeeze(-1)
+            )
 
             if config.model_name.startswith("chronos"):
-                input_ids, attention_mask, _ = tokenizer.context_input_transform(context=life, mask=mask)
-                output = model(input_ids=input_ids, attention_mask=attention_mask).logits
+                input_ids, attention_mask, _ = tokenizer.context_input_transform(
+                    context=life, mask=mask
+                )
+                output = model(
+                    input_ids=input_ids, attention_mask=attention_mask
+                ).logits
             else:
-                life = life.permute(2,0,1) if config.approach=="padding" else life
-                mask = mask.permute(1,0) if config.approach=="padding" else mask
-                rul = rul.unsqueeze(0) if config.approach=="padding" else rul
-                output = model(life) if not config.quantile_reg else model(life,tau=tau)
+                life = life.permute(2, 0, 1) if config.approach == "padding" else life
+                mask = mask.permute(1, 0) if config.approach == "padding" else mask
+                rul = rul.unsqueeze(0) if config.approach == "padding" else rul
+                output = (
+                    model(life) if not config.quantile_reg else model(life, tau=tau)
+                )
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
-            y_pred.append(batch_out) if config.approach=="padding" else y_pred.extend(batch_out)
-            y_true.append(batch_target) if config.approach=="padding" else y_true.extend(batch_target)
+            y_pred.append(batch_out) if config.approach == "padding" else y_pred.extend(
+                batch_out
+            )
+            y_true.append(
+                batch_target
+            ) if config.approach == "padding" else y_true.extend(batch_target)
 
-            loss = criterion(output, rul, mask) if not config.quantile_reg else criterion(output, rul, mask, tau)
+            loss = (
+                criterion(output, rul, mask)
+                if not config.quantile_reg
+                else criterion(output, rul, mask, tau)
+            )
             rmse_loss = eval_criterion(output, rul, mask)
             eval_loss += loss.item()
             eval_rmse_loss += rmse_loss.item()
 
-        eval_loss/=num_batches
-        eval_rmse_loss/=num_batches
-        print(f"Avg {mode} Loss: {eval_loss:.4f} | \
-                Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+        eval_loss /= num_batches
+        eval_rmse_loss /= num_batches
+        print(
+            f"Avg {mode} Loss: {eval_loss:.4f} | \
+                Avg {mode} eval Loss: {eval_rmse_loss:.4f}"
+        )
 
     return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
 
+
 # Save the best model
+
 
 def save_best_model(
     best_model_state_dict: dict,
@@ -352,22 +405,24 @@ def save_best_model(
     print(f"Best model saved at: {best_model_path}")
     print("#" * 50)
 
+
 # Function to train and test the model on a wandb run
 
+
 def wandb_train_test(
-        model:nn.Module,
-        tokenizer:Union[MeanScaleUniformBinsSensor,None],
-        train_loader:DataLoader,
-        val_loader:DataLoader,
-        test_loader:DataLoader,
-        criterion:nn.Module,
-        eval_criterion:nn.Module,
-        optimizer:optim.Optimizer,
-        scheduler: optim.lr_scheduler._LRScheduler,
-        config: ExperimentConfig,
-        device:torch.device=torch.device("cpu"),
-        best_model_path:str = experiment_path,
-        tau:float=0.5
+    model: nn.Module,
+    tokenizer: Union[MeanScaleUniformBinsSensor, None],
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    test_loader: DataLoader,
+    criterion: nn.Module,
+    eval_criterion: nn.Module,
+    optimizer: optim.Optimizer,
+    scheduler: optim.lr_scheduler._LRScheduler,
+    config: ExperimentConfig,
+    device: torch.device = torch.device("cpu"),
+    best_model_path: str = experiment_path,
+    tau: float = 0.5,
 ) -> dict:
     """
     Train and test the model on a wandb run and log the metrics
@@ -400,10 +455,14 @@ def wandb_train_test(
         for epoch in pbar:
             if epoch == 0:
                 pbar.set_description("Epoch: %d" % (epoch))
-                val_loss,test_loss=0.0,0.0
+                val_loss, test_loss = 0.0, 0.0
             else:
-                pbar.set_description(f"Epoch: {epoch:d} | Val loss: {val_loss:1.3f} | Eval Val loss: {eval_val_loss:1.3f}")
-                pbar.set_description(f"Epoch: {epoch:d} | Test loss: {test_loss:1.3f} | Eval Test loss: {eval_test_loss:1.3f}")
+                pbar.set_description(
+                    f"Epoch: {epoch:d} | Val loss: {val_loss:1.3f} | Eval Val loss: {eval_val_loss:1.3f}"
+                )
+                pbar.set_description(
+                    f"Epoch: {epoch:d} | Test loss: {test_loss:1.3f} | Eval Test loss: {eval_test_loss:1.3f}"
+                )
 
             train_time = time.time()
             train_loss = train_loop(
@@ -418,7 +477,7 @@ def wandb_train_test(
             train_time = time.time() - train_time
 
             val_time = time.time()
-            val_loss,eval_val_loss,y_pred,y_true = eval_loop(
+            val_loss, eval_val_loss, y_pred, y_true = eval_loop(
                 dataloader=val_loader,
                 model=model,
                 config=config,
@@ -427,12 +486,12 @@ def wandb_train_test(
                 eval_criterion=eval_criterion,
                 mode="Val",
                 device=device,
-                tau=tau
+                tau=tau,
             )
             val_time = time.time() - val_time
 
             test_time = time.time()
-            test_loss,eval_test_loss, y_pred, y_true = eval_loop(
+            test_loss, eval_test_loss, y_pred, y_true = eval_loop(
                 dataloader=test_loader,
                 model=model,
                 config=config,
@@ -441,7 +500,7 @@ def wandb_train_test(
                 eval_criterion=eval_criterion,
                 mode="Test",
                 device=device,
-                tau=tau
+                tau=tau,
             )
             test_time = time.time() - test_time
 
@@ -508,13 +567,14 @@ def wandb_train_test(
 
     print("No errors occured during the training process, saving the best model")
     save_best_model(
-        best_model_state_dict=best_model_state_dict,
-        best_model_path=best_model_path
+        best_model_state_dict=best_model_state_dict, best_model_path=best_model_path
     )
 
     return model_info
 
+
 # Function to get the best model performance
+
 
 def best_model_perf(
     config: ExperimentConfig,
@@ -522,12 +582,12 @@ def best_model_perf(
     device: torch.device = torch.device("cpu"),
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
-    tau: float = 0.5
-    ) -> Union[None,nn.Module,dict]:
+    tau: float = 0.5,
+) -> Union[None, nn.Module, dict]:
     """
     This function loads the best model according to the validation set and
     computes the performance on the test set
-    
+
     Args:
         config (ExperimentConfig): The configuration dictionary
         model_config (ChronosConfig): The model configuration object
@@ -544,54 +604,60 @@ def best_model_perf(
 
     """
 
-    #NOTE: Removed the `if config.zero_shot` block because it is not used in the `ssm_pdm` part
+    # NOTE: Removed the `if config.zero_shot` block because it is not used in the `ssm_pdm` part
 
-    loaders_dict=load_reg_data(config)
-    train_loader,test_loaders=loaders_dict["train_loader"],loaders_dict["test_loaders"]
+    loaders_dict = load_reg_data(config)
+    train_loader, test_loaders = (
+        loaders_dict["train_loader"],
+        loaders_dict["test_loaders"],
+    )
 
     # Load the best model
-    best_model_filepath = get_most_recent_file(dirpath=best_model_path,
-                                               file_pos=config.file_pos)
+    best_model_filepath = get_most_recent_file(
+        dirpath=best_model_path, file_pos=config.file_pos
+    )
 
-    best_model_state_dict = open_element(best_model_filepath,
-                                         filetype="pickle")
-
+    best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
 
     if config.model_name.startswith("chronos"):
-        model,tokenizer,_,_ = load_model_tokenizer(train_loader=train_loader,
-                                                   model_config=model_config,
-                                                   exp_config=config)
+        model, tokenizer, _, _ = load_model_tokenizer(
+            train_loader=train_loader, model_config=model_config, exp_config=config
+        )
     else:
         feature_names = get_feature_names(config)
-        
+
         if config.save_summary_dict:
-            model,summary_dict=load_ssm_model(
+            model, summary_dict = load_ssm_model(
                 model_config=model_config,
                 exp_config=config,
-                d_input=len(feature_names) if ((not config.quantile_reg) or (not model_config.tau_feat)) else len(feature_names)+1,
+                d_input=len(feature_names)
+                if ((not config.quantile_reg) or (not model_config.tau_feat))
+                else len(feature_names) + 1,
             )
-            print('#'* 50)
+            print("#" * 50)
             print(f"Summary dict keys: {summary_dict.keys()}")
-            print('#'* 50)
+            print("#" * 50)
         else:
-            model,_,_=load_ssm_model(
+            model, _, _ = load_ssm_model(
                 model_config=model_config,
                 exp_config=config,
-                d_input=len(feature_names) if ((not config.quantile_reg) or (not model_config.tau_feat)) else len(feature_names)+1,
+                d_input=len(feature_names)
+                if ((not config.quantile_reg) or (not model_config.tau_feat))
+                else len(feature_names) + 1,
             )
-            tokenizer=None
+            tokenizer = None
 
     model.load_state_dict(best_model_state_dict)
-    model=model.to(device)
+    model = model.to(device)
 
     if config.model_summary:
         return model
 
-    criterion,eval_criterion=load_loss_functions(
+    criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
         model_name=config.model_name,
         eval_loss_name=config.eval_loss,
-        tau=config.tau
+        tau=config.tau,
     )
 
     # Evaluate the model on the test set
@@ -600,11 +666,10 @@ def best_model_perf(
     print("#" * 50)
 
     if config.approach == "padding" or config.model_name.startswith("chronos"):
-
         print("#" * 50)
         print(f"Testing on life {i+1+config.test_idx[0]}")
         print("#" * 50)
-        _,_,y_pred,y_true = eval_loop(
+        _, _, y_pred, y_true = eval_loop(
             dataloader=test_loader,
             model=model,
             config=config,
@@ -617,10 +682,7 @@ def best_model_perf(
             tau=tau,
         )
 
-        outputs_dict = {
-                    "y_pred": y_pred,
-                    "y_true": y_true
-                }
+        outputs_dict = {"y_pred": y_pred, "y_true": y_true}
 
         if config.save_outputs:
             save_element(
@@ -633,14 +695,13 @@ def best_model_perf(
         if config.return_outputs:
             return outputs_dict
     else:
+        preds, true_vals = [], []
 
-        preds,true_vals = [],[]
-
-        for i,test_loader in enumerate(test_loaders):
+        for i, test_loader in enumerate(test_loaders):
             print("#" * 50)
             print(f"Testing on life {i+1+config.test_idx[0]}")
             print("#" * 50)
-            _,_,y_pred,y_true = eval_loop(
+            _, _, y_pred, y_true = eval_loop(
                 dataloader=test_loader,
                 model=model,
                 config=config,
@@ -652,7 +713,7 @@ def best_model_perf(
                 use_tqdm=False,
                 tau=tau,
             )
-            combined_preds,combined_true_vals=combine_values(
+            combined_preds, combined_true_vals = combine_values(
                 predictions=y_pred,
                 true_values=y_true,
                 sequence_length=config.sequence_length,
@@ -660,10 +721,7 @@ def best_model_perf(
             preds.append(combined_preds)
             true_vals.append(combined_true_vals)
 
-        outputs_dict = {
-            "y_pred": preds,
-            "y_true": true_vals
-        }
+        outputs_dict = {"y_pred": preds, "y_true": true_vals}
 
         if config.save_outputs:
             save_element(
@@ -677,19 +735,19 @@ def best_model_perf(
             return outputs_dict
 
 
-
 # Function that implements a wandb run
 
+
 def wandb_run(
-    run_name:str,
-    config:ExperimentConfig,
-    model_config:ChronosConfig,
-    device:torch.device=torch.device("cpu"),
-    best_model_path:str=experiment_path,
-    outputs_path:str=experiment_path,
-    metrics_path:str=experiment_path,
-    plot_path:str=experiment_path,
-    tau:float=0.5
+    run_name: str,
+    config: ExperimentConfig,
+    model_config: ChronosConfig,
+    device: torch.device = torch.device("cpu"),
+    best_model_path: str = experiment_path,
+    outputs_path: str = experiment_path,
+    metrics_path: str = experiment_path,
+    plot_path: str = experiment_path,
+    tau: float = 0.5,
 ) -> Tuple[nn.Module, dict]:
     """
     Function that implements a wandb run
@@ -711,31 +769,36 @@ def wandb_run(
     """
 
     with wandb.init(project=config.project_name, name=run_name):
-
-        loaders_dict=load_reg_data(config)
-        train_loader, val_loader, test_loader = loaders_dict["train_loader"], loaders_dict["val_loader"], loaders_dict["test_loader"]
+        loaders_dict = load_reg_data(config)
+        train_loader, val_loader, test_loader = (
+            loaders_dict["train_loader"],
+            loaders_dict["val_loader"],
+            loaders_dict["test_loader"],
+        )
 
         if config.model_name.startswith("chronos"):
-            model,tokenizer,optimizer,scheduler=load_model_tokenizer(
+            model, tokenizer, optimizer, scheduler = load_model_tokenizer(
                 train_loader=train_loader,
                 model_config=model_config,
                 exp_config=config,
             )
         else:
             feature_names = get_feature_names(config)
-            model,optimizer,scheduler=load_ssm_model(
+            model, optimizer, scheduler = load_ssm_model(
                 model_config=model_config,
                 exp_config=config,
-                d_input=len(feature_names) if ((not config.quantile_reg) or (not model_config.tau_feat)) else len(feature_names)+1
+                d_input=len(feature_names)
+                if ((not config.quantile_reg) or (not model_config.tau_feat))
+                else len(feature_names) + 1,
             )
-            tokenizer=None
-        model=model.to(device)
+            tokenizer = None
+        model = model.to(device)
 
-        criterion,eval_criterion=load_loss_functions(
+        criterion, eval_criterion = load_loss_functions(
             loss_name=config.loss,
             model_name=config.model_name,
             eval_loss_name=config.eval_loss,
-            tau=config.tau
+            tau=config.tau,
         )
 
         model_info = wandb_train_test(
@@ -751,14 +814,13 @@ def wandb_run(
             config=config,
             device=device,
             best_model_path=best_model_path,
-            tau=tau
+            tau=tau,
         )
 
     if config.return_outputs or config.save_outputs:
-
-        print("#"*50)
+        print("#" * 50)
         print("Saving outputs")
-        print("#"*50)
+        print("#" * 50)
 
         best_model_perf(
             config=config,
@@ -766,11 +828,10 @@ def wandb_run(
             device=device,
             best_model_path=best_model_path,
             outputs_path=outputs_path,
-            tau=tau
+            tau=tau,
         )
 
     if config.compute_metrics:
-
         print("#" * 50)
         print("Computing metrics for each life and for each sensor in the test set")
         print("#" * 50)
@@ -784,27 +845,22 @@ def wandb_run(
         print(f"metrics_df shape: {metrics_df.shape}")
 
     if config.obsidian_table:
+        print("#" * 50)
+        print("Producing the obsidian table")
+        print("#" * 50)
 
-       print("#" * 50)
-       print("Producing the obsidian table")
-       print("#" * 50)
+        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
+        metrics_df = open_element(metrics_path)
 
-       metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
-       metrics_df = open_element(metrics_path)
-
-       if config.sub_lifes_metrics:
-            sub_metrics_df = sub_lifes_metrics(
-                config=config,
-                metrics_df=metrics_df
-            )
+        if config.sub_lifes_metrics:
+            sub_metrics_df = sub_lifes_metrics(config=config, metrics_df=metrics_df)
             obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
-       else:
+        else:
             obsidian_table = df_with_index_to_obsidian_table(metrics_df)
 
-       print(obsidian_table)
+        print(obsidian_table)
 
     if config.plot_preds:
-
         print("#" * 50)
         print("Producing grid plot of the predictions")
         print("#" * 50)
@@ -815,5 +871,4 @@ def wandb_run(
             plot_path=plot_path,
         )
 
-
-    return model,model_info
+    return model, model_info
