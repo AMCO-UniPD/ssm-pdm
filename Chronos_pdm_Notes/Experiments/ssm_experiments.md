@@ -2547,6 +2547,37 @@ quantile_0.9     13.72
 ##################################################
 ```
 
+##### Metrics Table `RMSE` Loss
+
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     116.33
+quantile_0.25     60.48
+quantile_0.5      35.64
+quantile_0.75     36.09
+quantile_0.9      39.86
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     113.48
+quantile_0.25     56.21
+quantile_0.5      24.78
+quantile_0.75     35.95
+quantile_0.9      36.26
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.38
+quantile_0.25    37.87
+quantile_0.5     28.53
+quantile_0.75    15.79
+quantile_0.9     22.20
+Name: Life_std, dtype: float64
+##################################################
+```
+
 ###### Prediction Interval Plots
 
 Quite similar to the ones produced in `FD001`. The prediction interval is quite wide on the left side  (so the predictions on small quantiles are significantly different from each other) while predictions on high quantiles are much closer.
@@ -3101,7 +3132,7 @@ It seems indeed that they are exactly equal → it is a bit strange, something s
 
 The plots are very similar to the `S4` ones with the difference of having, as it happened also in `FD001`, a slightly more variable distribution, i.e there is a wider prediction interval.
 
-##### Experiment 3 `S5` `FD002` 5‍⃣ 🪟 🌗 ✖
+##### Experiment 3 `S5` `FD002` `tau_mult` 5‍⃣ 🪟 🌗 ✖
 
 Let's do a `tau_mult` multi run experiment with 5 runs.
 
@@ -3134,6 +3165,36 @@ quantile_0.25     9.91
 quantile_0.5      9.56
 quantile_0.75    13.45
 quantile_0.9     25.12
+##################################################
+```
+
+##### Metrics Table `RMSE` Loss
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     86.24
+quantile_0.25    44.00
+quantile_0.5     52.38
+quantile_0.75    42.21
+quantile_0.9     86.16
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     81.46
+quantile_0.25    27.11
+quantile_0.5     32.20
+quantile_0.75    41.26
+quantile_0.9     78.06
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     44.44
+quantile_0.25    35.43
+quantile_0.5     40.60
+quantile_0.75    21.06
+quantile_0.9     53.76
+Name: Life_std, dtype: float64
 ##################################################
 ```
 
@@ -3640,6 +3701,36 @@ quantile_0.25    15.81
 quantile_0.5     16.29
 quantile_0.75    14.24
 quantile_0.9     15.32
+##################################################
+```
+
+##### Metrics Table `RMSE` Loss
+
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     82.94
+quantile_0.25    62.02
+quantile_0.5     68.84
+quantile_0.75    60.82
+quantile_0.9     60.82
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     81.22
+quantile_0.25    49.18
+quantile_0.5     60.96
+quantile_0.75    39.21
+quantile_0.9     39.62
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     52.29
+quantile_0.25    53.51
+quantile_0.5     57.80
+quantile_0.75    52.40
+quantile_0.9     51.59
+Name: Life_std, dtype: float64
 ##################################################
 ```
 

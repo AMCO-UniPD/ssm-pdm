@@ -30,7 +30,7 @@ Params: 621.61 K
 ##### Experiment 1 `Transformer` `FDOO1` `padding` 🤖 1️⃣ 🦜
 
 A part from the `d_model` parameter we have more or less the same configuration of the `S4` model.
-   
+
 | Parameter          | Value                     |
 | ------------------ | ------------------------- |
 | `model_type`       | `Transformer`             |
@@ -1030,7 +1030,34 @@ I also started an experiment with `n_layers=1,d_ff=32` but the `CPU` usage was s
 
 ###### Metrics Table `RMSE` Loss
 
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     126.90
+quantile_0.25     85.91
+quantile_0.5      91.61
+quantile_0.75     79.88
+quantile_0.9     116.53
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     123.80
+quantile_0.25     82.76
+quantile_0.5      52.08
+quantile_0.75     69.66
+quantile_0.9     106.90
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.49
+quantile_0.25    38.03
+quantile_0.5     80.41
+quantile_0.75    54.31
+quantile_0.9     59.29
+Name: Life_std, dtype: float64
+##################################################
 
+```
 
 ### `Informer` Model Experiments 🧙‍♂️ 🌗
 
@@ -1482,4 +1509,9 @@ quantile_0.9     42.91
 >[!note]
 > [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/z9js2jgg?nw=nwuserfrizzodavide)
 
+##### Metrics Table `RMSE` Loss
+
+```txt
+
+```
 

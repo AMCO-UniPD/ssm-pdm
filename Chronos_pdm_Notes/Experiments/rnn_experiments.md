@@ -1085,4 +1085,31 @@ Since I have a few time before the final submission and I have to produce the re
 
 ###### Metrics Table `RMSE` Loss
 
+```txt
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     127.38
+quantile_0.25     86.43
+quantile_0.5      36.12
+quantile_0.75     59.88
+quantile_0.9      96.65
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     124.19
+quantile_0.25     83.15
+quantile_0.5      30.74
+quantile_0.75     59.72
+quantile_0.9      98.10
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.49
+quantile_0.25    37.96
+quantile_0.5     25.42
+quantile_0.75    33.75
+quantile_0.9     42.30
+Name: Life_std, dtype: float64
+##################################################
+```
 
