@@ -1072,3 +1072,17 @@ quantile_0.9     42.27
 ###### Prediction Interval Plots
 
 Similar to the `Transformer` one.
+
+##### Experiment 3 `LSTM` `FDOO2` `windowed` `tau_mult` 🪟 1️⃣ 🌗
+
+After some discussion we realized that probably for the paper (and for the correctness of the Quantile Regression approach) is better to use the `tau_mult` approach so that we have also the quantile in input to the model so that the model has knowledge of which quantile it is working on and it can thus adjust its prediction based on it. With the `tau_mult_no_tau_feat` approach instead the model gets always the same input and the prediction changes just because of the multiplication by the quantile level that we do at the end.
+
+Since I have a few time before the final submission and I have to produce the results for all the non `SSM` models on the `tau_mult` approach let's start with an experiment with just 2 runs (then we will see weather it is necessary to perform 5 runs).
+
+>[!note]
+> [Link to the `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/5fhmn2eh?nw=nwuserfrizzodavide)
+
+
+###### Metrics Table `RMSE` Loss
+
+
