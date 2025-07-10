@@ -35,7 +35,7 @@ from utils import (
 
 from plots import blob_plot
 from ssm_models import ModelConfig
-from perf import time_exp
+from perf import state_dict_size, time_exp
 
 config_path = os.path.join(experiment_path, "config", "ssm_exp_config.yaml")
 config = load_yaml_to_dict(config_path)
@@ -60,7 +60,9 @@ plot_dict = {}
     plot_dict["mult_adds"],
     plot_dict["model_name"],
     plot_dict["test_metric"],
-) = [], [], [], []
+    plot_dict["pickle_size_kb"],
+    plot_dict["test_time"],
+) = [], [], [], [], [], []
 # plot_dict["metrics_dirpath"]=[]
 summary_dict_dirpath = generate_path(basepath=experiment_path, folders=["summary_dict"])
 metrics_dirpath = generate_path(basepath=experiment_path, folders=["metrics"])
@@ -91,7 +93,18 @@ for model_name in config.model_names:
     print(f"Performing time experiment for model: {model_name}")
     print("#" * 50)
     dict_time = time_exp(config=config, model_config=model_config)
-    plot_dict["test_time"] = dict_time["avg_time"]
+    plot_dict["test_time"].append(dict_time["avg_time"])
+
+    print("#" * 50)
+    print(f"Computing state dict size for model {model_name}")
+    print("#" * 50)
+    size_dict, state_dict_path = state_dict_size(
+        config=config, basepath=experiment_path, model_name=model_name
+    )
+    print("#" * 50)
+    print(f"Getting pickle size from file: {state_dict_path}")
+    print("#" * 50)
+    plot_dict["pickle_size_kb"].append(size_dict["pickle_size_kb"])
 
     metrics_dirpath_model = generate_path(
         basepath=metrics_dirpath,
