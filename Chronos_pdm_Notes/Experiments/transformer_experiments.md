@@ -1245,21 +1245,21 @@ quantile_0.9     10.00
 
 Here we have the usual high variance in the prediction interval that distinguishes the non `SSM` based models from the `SSM` ones. Here in `Life_52` if we consider quantiles 0.9 and 0.75 they are really close to the true prediction while quantile 0.1 and 0.25 are significantly overestimating. This is a problem because the model has an high uncertainty in its predictions and thus on a general use case it is not very easy to select the correct quantile to use for the predictions since we may be lucky and select the correct one or not. On the other hand with `SSM`s the model uncertainty is much lower and so the predictions are more reliable independently on the quantile chosen.
 
-##### Experiment 2 `Informer` `FDOO1` `windowed` 🧙‍♂️ 2️⃣ 🌗
+##### Experiment 2 `Informer` `FDOO1` `windowed` `tau_mult` 🧙‍♂️ 2️⃣ 🌗
 
-Let's start the usual 15 run experiment with $\tau$ as multiplicative factor. 
+Let's start the usual 15 run experiment with $\tau$ as multiplicative factor.
 
 >[!warning]
-> The `Informer` was the model that by far took the larges amount of time in [[transformer_experiments#Experiment 1 bis `Informer` `FDOO1` `windowed` 🧙‍♂️ 2️⃣ 🌗|the previous set of experiments]]. Now I launched it for 15 runs but in case I realized that it is taking too much time I can stop it after 5 runs or so. 
+> The `Informer` was the model that by far took the larges amount of time in [[transformer_experiments#Experiment 1 bis `Informer` `FDOO1` `windowed` 🧙‍♂️ 2️⃣ 🌗|the previous set of experiments]]. Now I launched it for 15 runs but in case I realized that it is taking too much time I can stop it after 5 runs or so.
 
 >[!note]
 > [Link to the first `wandb` run](https://wandb.ai/frizzo-davide-Univeristy%20of%20Padova/chronos-rul/runs/ofjso0j1?nw=nwuserfrizzodavide)
 
-The entire set of experiments took more than 20 hours to run 😱. So it is pretty clear that we cannot afford to perform 15 runs on `FD002`. 
+The entire set of experiments took more than 20 hours to run 😱. So it is pretty clear that we cannot afford to perform 15 runs on `FD002`.
 
 ###### Metrics Table Pinball Loss
 
-The metric values are very similar to the ones observed in the [[transformer_experiments#Experiment 2 `Transformer` `FDOO1` `windowed` 🤖 2️⃣ 🌗|`Transformer` experiment]], quantile 0.5 has slightly lower values but the global behavior remains the same so I also expect similar results in the plots. 
+The metric values are very similar to the ones observed in the [[transformer_experiments#Experiment 2 `Transformer` `FDOO1` `windowed` 🤖 2️⃣ 🌗|`Transformer` experiment]], quantile 0.5 has slightly lower values but the global behavior remains the same so I also expect similar results in the plots.
 
 ```txt
 ##################################################
@@ -1512,6 +1512,30 @@ quantile_0.9     42.91
 ##### Metrics Table `RMSE` Loss
 
 ```txt
-
+##################################################
+Mean eval loss over all the test lifes:
+quantile_0.1     126.90
+quantile_0.25     85.99
+quantile_0.5      35.97
+quantile_0.75     60.69
+quantile_0.9     100.05
+Name: Life_mean, dtype: float64
+##################################################
+Median eval loss over all the test lifes:
+quantile_0.1     123.80
+quantile_0.25     82.78
+quantile_0.5      31.06
+quantile_0.75     60.69
+quantile_0.9     100.12
+Name: Life_median, dtype: float64
+##################################################
+Std eval loss over all the test lifes:
+quantile_0.1     38.49
+quantile_0.25    38.04
+quantile_0.5     25.16
+quantile_0.75    33.96
+quantile_0.9     43.07
+Name: Life_std, dtype: float64
+##################################################
 ```
 
