@@ -252,7 +252,14 @@ def time_exp(
     dict_time = {}
     dict_time["test_time"] = []
     # Define dimensions of the tensor
-    batch_size, sequence_length, d_input = 32, 170, 14
+    batch_size, sequence_length = 32, 170
+    feature_names = get_feature_names(config)
+    d_input = (
+        len(feature_names)
+        if ((not config.quantile_reg) or (not model_config.tau_feat))
+        else len(feature_names) + 1,
+    )
+    d_input = d_input[0]
 
     device = torch.device(
         f"cuda:{config.device_num}" if torch.cuda.is_available() else "cpu"
@@ -265,8 +272,6 @@ def time_exp(
         model_config=model_config, exp_config=config, d_input=d_input
     )
     model = model.to(device)
-
-    # for i in trange(config.n_runs, desc="Time experiment runs"):
 
     set_seed(seed=0)
 

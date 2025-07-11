@@ -50,6 +50,18 @@ parser.add_argument(
     action="store_true",
     help="If set, do not use the Mult Adds metric for the blob plot",
 )
+parser.add_argument(
+    "--no_test_time",
+    action="store_true",
+    help="If set, do not use the Mult Adds metric for the blob plot",
+)
+parser.add_argument(
+    "--exp_names",
+    nargs="+",
+    type=str,
+    default=[""],
+    help="List of the experiment names folders",
+)
 args = parser.parse_args()
 
 # Load the summary dict for all the models and save the number of parameters
@@ -61,13 +73,14 @@ plot_dict = {}
     plot_dict["model_name"],
     plot_dict["test_metric"],
     plot_dict["pickle_size_kb"],
-    plot_dict["test_time"],
-) = [], [], [], [], [], []
+) = [], [], [], [], []
+
+
 # plot_dict["metrics_dirpath"]=[]
 summary_dict_dirpath = generate_path(basepath=experiment_path, folders=["summary_dict"])
 metrics_dirpath = generate_path(basepath=experiment_path, folders=["metrics"])
 
-for model_name in config.model_names:
+for model_name, exp_name in zip(config.model_names, args.exp_names):
     if model_name == "LSTM":
         summary_dict_dirpath_model = generate_path(
             basepath=summary_dict_dirpath, folders=[model_name, "torchinfo"]
@@ -89,11 +102,13 @@ for model_name in config.model_names:
     plot_dict["mult_adds"].append(mult_adds)
     plot_dict["model_name"].append(model_name)
 
-    print("#" * 50)
-    print(f"Performing time experiment for model: {model_name}")
-    print("#" * 50)
-    dict_time = time_exp(config=config, model_config=model_config)
-    plot_dict["test_time"].append(dict_time["avg_time"])
+    if not args.no_test_time:
+        plot_dict["test_time"] = []
+        print("#" * 50)
+        print(f"Performing time experiment for model: {model_name}")
+        print("#" * 50)
+        dict_time = time_exp(config=config, model_config=model_config)
+        plot_dict["test_time"].append(dict_time["avg_time"])
 
     print("#" * 50)
     print(f"Computing state dict size for model {model_name}")
@@ -106,18 +121,21 @@ for model_name in config.model_names:
     print("#" * 50)
     plot_dict["pickle_size_kb"].append(size_dict["pickle_size_kb"])
 
-    metrics_dirpath_model = generate_path(
+    metrics_exp_dirpath_model = generate_path(
         basepath=metrics_dirpath,
-        folders=[model_name, config.cmapss_models, config.approach, "quantile_reg"],
+        folders=[
+            model_name,
+            config.cmapss_models,
+            config.approach,
+            "quantile_reg",
+            exp_name,
+        ],
     )
 
     print("#" * 50)
     print(f"Getting the metrics dataframe for model: {model_name}")
+    print(f"Metrics dataframe taken from path: {metrics_exp_dirpath_model}")
     print("#" * 50)
-    metrics_exp_dirpath_model = get_most_recent_dir(
-        metrics_dirpath_model, file_pos=config.file_pos
-    )
-    # plot_dict["metrics_dirpath"].append(os.path.basename(metrics_exp_dirpath_model))
     metrics_df_path = get_most_recent_file(
         metrics_exp_dirpath_model, file_pos=config.file_pos
     )
@@ -125,8 +143,6 @@ for model_name in config.model_names:
     plot_dict["test_metric"].append(
         metrics_df.loc["Life_mean", f"quantile_{config.quantile_run}"]
     )
-
-# plot_dict["params_float"] = [extract_number(param) for param in plot_dict["params"]] if all(isinstance(item,str) for item in plot_dict["params"]) else plot_dict["params"]
 
 params_list = []
 for param in plot_dict["params"]:
@@ -152,7 +168,6 @@ else:
 
     plot_dict["mult_adds_float"] = mult_adds_list
 
-ipdb.set_trace()
 
 plot_path = generate_path(
     basepath=experiment_path, folders=["plots", "blob_plot", config.cmapss_models]
@@ -164,4 +179,5 @@ blob_plot(
     config=config,
     plot_path=plot_path,
     no_mult_adds=args.no_mult_adds,
+    no_test_time=args.no_test_time,
 )

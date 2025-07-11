@@ -12,7 +12,7 @@ gap: true # Global Average Pooling in the Regression Head
 # tau_mult approach
 tau_mult: true
 # tau as input feature
-tau_feat: false
+tau_feat: true
 
 # S4 config
 lr: 1.0e-3

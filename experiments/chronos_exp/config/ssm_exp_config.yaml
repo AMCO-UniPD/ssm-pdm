@@ -10,13 +10,13 @@ project_name: "chronos-rul"
 # Dataset configurations
 data_name: CMAPSS # CMAPSS, CMPASS-2
 # For FD001 dataset
-# val_idx: [0,50]
-# test_idx: [50,100]
-# cmapss_models: FD001
+val_idx: [0,50]
+test_idx: [50,100]
+cmapss_models: FD001
 # For FD002 dataset
-val_idx: [0,131]
-test_idx: [131,259]
-cmapss_models: FD002
+# val_idx: [0,131]
+# test_idx: [131,259]
+# cmapss_models: FD002
 
 # Other CMAPSS models
 # cmapss_models: FD003
@@ -46,11 +46,11 @@ weight_decay: 1.0e-4
 # model_name: RNN
 # model_name: LSTM
 # model_name: GRU
-# model_name: S4
+model_name: S4
 # model_name: S5
 # model_name: S4D
 # model_name: RULTransformer
-model_name: RULInformer
+# model_name: RULInformer
 output_attention: false
 model_summary_manual: false
 
@@ -73,21 +73,14 @@ batch_size: 100
 quantile_reg: true
 quantile_dist: uniform
 bounds: [0.1, 0.9]
-# bounds: [0.5, 0.99]
-# bounds: [0.25, 0.01]
-# quantiles: [0.1,0.5,0.9]
-# quantiles: [0.25,0.75]
-# quantiles: [0.25,0.5,0.75]
 quantiles: [0.1,0.25,0.5,0.75,0.9]
-# quantiles: [0.25,0.5,0.75,0.9]
-# quantiles: [0.1]
-# quantiles: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+# quantiles: [0.5,0.75,0.9]
 quantile_run: 0.25
 
 # multi run experiment
-start_run_id: 0
+start_run_id: 1
 n_runs: 2
-set_exp_name: false
+set_exp_name: true
 # exp_name: cpu_test
 cpu_version: false
 
@@ -115,7 +108,7 @@ file_pos_pickle: 1
 # exp_name: multi_run_27-03-2025_17-30-47_S4D_FD001_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_24-03-2025_08-12-23_LSTM_FD001_windowed_quantile_reg
 # exp_name: multi_run_24-03-2025_17-00-56_RULTransformer_FD001_windowed_quantile_reg
-# exp_name: multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_quantile_reg
+# exp_name: multi_run_25-03-2025_08-31-33_RULInformer_FD001_windowed_tau_mult
 
 #NOTE: Experiment name FD002 real multiplicative tau
 # exp_name: multi_run_28-03-2025_08-57-13_S4_FD002_windowed_quantile_reg_tau_mult
@@ -123,7 +116,7 @@ file_pos_pickle: 1
 # exp_name: multi_run_29-03-2025_07-30-40_S4D_FD002_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_10-07-2025_16-34-55_LSTM_FD002_windowed_quantile_reg_tau_mult
 # exp_name: multi_run_10-07-2025_17-13-14_RULTransformer_FD002_windowed_quantile_reg_tau_mult
-exp_name: multi_run_10-07-2025_17-28-16_RULInformer_FD002_windowed_quantile_reg_tau_mult
+# exp_name: multi_run_10-07-2025_17-28-16_RULInformer_FD002_windowed_quantile_reg_tau_mult
 
 
 # Memory test trasnformer
@@ -180,8 +173,8 @@ model_summary: false
 summary_func: calflops
 save_summary_dict: false
 # multiple model names
-model_names: ["S4","S4D","S5","RULInformer","RULTransformer","LSTM"]
-# model_names: ["RULTransformer"]
+model_names: ["S4","S5","S4D","LSTM","RULTransformer","RULInformer"]
+# model_names: ["S4D"]
 
 # metrics_df experiment config
 metrics_idx: null

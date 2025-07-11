@@ -26,18 +26,21 @@ from calflops import calculate_flops
 from utils import ExperimentConfig, save_element, generate_path
 
 
-chronos_path_src = os.path.join(os.path.dirname(__file__),"chronos-rul","src")
-imports_path = os.path.join(os.path.dirname(__file__),"AD_MG","src")
+chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
+imports_path = os.path.join(os.path.dirname(__file__), "AD_MG", "src")
 sys.path.append(chronos_path_src)
 sys.path.append(imports_path)
 
 # s4 imports
 from s4 import DropoutNd
 from s4 import S4Block as S4
+
 # s4d imports
 from s4d import S4D
+
 # s5 imports
 from s5 import S5, S5Block
+
 # informer imports
 from informer import *
 
@@ -46,13 +49,13 @@ experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 
 # dataclass for the model configuration
 
+
 @dataclass
 class ModelConfig:
+    def __init__(self, config: dict):
+        for key, value in config.items():
+            setattr(self, key, value)
 
-    def __init__(self,config:dict):
-
-        for key,value in config.items():
-            setattr(self,key,value)
 
 def setup_optimizer(model, lr, weight_decay, epochs):
     """
@@ -77,13 +80,12 @@ def setup_optimizer(model, lr, weight_decay, epochs):
     # Add parameters with special hyperparameters
     hps = [getattr(p, "_optim") for p in all_parameters if hasattr(p, "_optim")]
     hps = [
-        dict(s) for s in sorted(list(dict.fromkeys(frozenset(hp.items()) for hp in hps)))
+        dict(s)
+        for s in sorted(list(dict.fromkeys(frozenset(hp.items()) for hp in hps)))
     ]  # Unique dicts
     for hp in hps:
         params = [p for p in all_parameters if getattr(p, "_optim", None) == hp]
-        optimizer.add_param_group(
-            {"params": params, **hp}
-        )
+        optimizer.add_param_group({"params": params, **hp})
 
     # Create a lr scheduler
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=patience, factor=0.2)
@@ -100,15 +102,17 @@ def setup_optimizer(model, lr, weight_decay, epochs):
 
     return optimizer, scheduler
 
+
 # RNN based models
-    
+
+
 class Recurrent_PDM(nn.Module):
     def __init__(
-            self,
-            config: ModelConfig,
-            model_name: str,
-            input_size: int,
-            output_size: int,
+        self,
+        config: ModelConfig,
+        model_name: str,
+        input_size: int,
+        output_size: int,
     ):
         super(Recurrent_PDM, self).__init__()
 
@@ -123,7 +127,7 @@ class Recurrent_PDM(nn.Module):
                 hidden_size=config.d_model,
                 num_layers=config.n_layers,
                 batch_first=True,
-                dropout=config.dropout
+                dropout=config.dropout,
             )
             # self.bn = nn.BatchNorm1d(hidden_size)
         elif model_name == "GRU":
@@ -132,7 +136,7 @@ class Recurrent_PDM(nn.Module):
                 hidden_size=config.d_model,
                 num_layers=config.n_layers,
                 batch_first=True,
-                dropout=config.dropout
+                dropout=config.dropout,
             )
         elif model_name == "RNN":
             self.recurrent = nn.RNN(
@@ -140,35 +144,38 @@ class Recurrent_PDM(nn.Module):
                 hidden_size=config.d_model,
                 num_layers=config.n_layers,
                 batch_first=True,
-                dropout=config.dropout
+                dropout=config.dropout,
             )
 
         self.fc = nn.Linear(config.d_model, output_size)
-    
+
     def forward(self, x, tau=0.5):
-        
         if self.quantile_reg:
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat(
+                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
+                    dim=-1,
+                )
 
-        out = self.recurrent(x) # (B, L, D) -> (B, L, H)
-        out = out[0].mean(dim=1) # (B, L, H) -> (B, H)
-        out = self.fc(out) * tau if self.tau_mult else self.fc(out) # (B, H) -> (B, L)
+        out = self.recurrent(x)  # (B, L, D) -> (B, L, H)
+        out = out[0].mean(dim=1)  # (B, L, H) -> (B, H)
+        out = self.fc(out) * tau if self.tau_mult else self.fc(out)  # (B, H) -> (B, L)
         # out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
         return out
 
+
 # SSM model classes
 
-class S4Model(nn.Module):
 
+class S4Model(nn.Module):
     def __init__(
         self,
-        config:ModelConfig,
-        d_input:int,
-        d_output:int,
+        config: ModelConfig,
+        d_input: int,
+        d_output: int,
         lr,
     ):
         super().__init__()
@@ -195,27 +202,32 @@ class S4Model(nn.Module):
         self.dropouts = nn.ModuleList()
         for _ in range(n_layers):
             self.s4_layers.append(
-                S4(d_model,
-                   dropout=dropout,
-                   activation=activation,
-                   gate_act=gate_act,
-                   mult_act=mult_act,
-                   final_act=final_act,
-                   transposed=True,
-                   lr=min(0.001, lr)))
+                S4(
+                    d_model,
+                    dropout=dropout,
+                    activation=activation,
+                    gate_act=gate_act,
+                    mult_act=mult_act,
+                    final_act=final_act,
+                    transposed=True,
+                    lr=min(0.001, lr),
+                )
+            )
             self.norms.append(nn.LayerNorm(d_model))
             self.dropouts.append(DropoutNd(dropout))
 
         self.decoder = nn.Linear(d_model, d_output)
 
     def forward(self, x, tau=0.5):
-
         if self.quantile_reg:
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat(
+                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
+                    dim=-1,
+                )
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -242,24 +254,28 @@ class S4Model(nn.Module):
                 # Postnorm
                 x = norm(x.transpose(-1, -2)).transpose(-1, -2)
 
-        x = x.transpose(-1, -2) # (B, d_model, L) -> (B, L, d_model)
+        x = x.transpose(-1, -2)  # (B, d_model, L) -> (B, L, d_model)
 
         if self.gap:
-            x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x) # (B, d_model) -> (B, d_output)
+            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+            x = (
+                self.decoder(x) * tau if self.tau_mult else self.decoder(x)
+            )  # (B, d_model) -> (B, d_output)
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x) # (B,L,d_model) -> (B,L)
+        x = (
+            self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)
+        )  # (B,L,d_model) -> (B,L)
         return x
 
-class S4DModel(nn.Module):
 
+class S4DModel(nn.Module):
     def __init__(
         self,
-        config:ModelConfig,
-        d_input:int,
-        d_output:int,
+        config: ModelConfig,
+        d_input: int,
+        d_output: int,
     ):
         super().__init__()
 
@@ -283,12 +299,14 @@ class S4DModel(nn.Module):
         self.dropouts = nn.ModuleList()
         for _ in range(n_layers):
             self.s4d_layers.append(
-                S4D(d_model=d_model,
+                S4D(
+                    d_model=d_model,
                     d_output=d_output,
                     d_state=d_state,
                     dropout=dropout,
                     act=act,
-                    transposed=True)
+                    transposed=True,
+                )
             )
             self.norms.append(nn.LayerNorm(d_model))
             self.dropouts.append(DropoutNd(dropout))
@@ -296,13 +314,15 @@ class S4DModel(nn.Module):
         self.decoder = nn.Linear(d_model, d_output)
 
     def forward(self, x, tau=0.5):
-
         if self.quantile_reg:
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat(
+                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
+                    dim=-1,
+                )
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -324,22 +344,26 @@ class S4DModel(nn.Module):
         x = x.transpose(-1, -2)
 
         if self.gap:
-            x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x) # (B, d_model) -> (B, d_output)
+            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+            x = (
+                self.decoder(x) * tau if self.tau_mult else self.decoder(x)
+            )  # (B, d_model) -> (B, d_output)
             return x
 
         # Decode the outputs
         # x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
-        x = self.decoder(x).squeeze(-1) if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
+        x = (
+            self.decoder(x).squeeze(-1) if self.tau_mult else self.decoder(x)
+        )  # (B,L,d_model) -> (B,L)
         return x
 
-class S5Model(nn.Module):
 
+class S5Model(nn.Module):
     def __init__(
         self,
-        config:ModelConfig,
-        d_input:int,
-        d_output:int,
+        config: ModelConfig,
+        d_input: int,
+        d_output: int,
     ):
         super().__init__()
 
@@ -357,38 +381,42 @@ class S5Model(nn.Module):
         # Stack S5 layers as residual blocks
         self.s5_layers = nn.ModuleList()
         for _ in range(n_layers):
-            self.s5_layers.append(
-                S5Block(dim=d_input,
-                        state_dim=d_model,
-                        bidir=bidir))
-
+            self.s5_layers.append(S5Block(dim=d_input, state_dim=d_model, bidir=bidir))
 
         self.decoder = nn.Linear(d_model, d_output)
 
     def forward(self, x, tau=0.5):
-
         if self.quantile_reg:
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat(
+                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
+                    dim=-1,
+                )
 
-        for layer in self.s5_layers: # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
+        for layer in self.s5_layers:  # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
             x = layer(x)
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
         if self.gap:
-            x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)   # (B, d_model) -> (B, d_output)
+            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+            x = (
+                self.decoder(x) * tau if self.tau_mult else self.decoder(x)
+            )  # (B, d_model) -> (B, d_output)
             return x
 
         # Decode the outputs
-        x = self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
+        x = (
+            self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)
+        )  # (B,L,d_model) -> (B,L)
         return x
 
+
 # Transformer based models
+
 
 class RULTransformer(nn.Module):
     def __init__(
@@ -405,15 +433,10 @@ class RULTransformer(nn.Module):
         self.device = config.device
 
         self.embedding = nn.Sequential(
-            nn.Embedding(
-                num_embeddings=input_size,
-                embedding_dim=config.d_model
-            ),
+            nn.Embedding(num_embeddings=input_size, embedding_dim=config.d_model),
             PositionalEncoding(
-                d_model=config.d_model,
-                dropout=config.dropout,
-                max_len=output_size
-            )
+                d_model=config.d_model, dropout=config.dropout, max_len=output_size
+            ),
         )
 
         self.encoder = TransformerEncoder(
@@ -421,46 +444,48 @@ class RULTransformer(nn.Module):
             d_ff=config.d_ff,
             n_heads=config.n_heads,
             n_layers=config.n_layers,
-            dropout=config.dropout
+            dropout=config.dropout,
         )
-        
-        self.decoder = nn.Linear(
-            in_features=config.d_model,
-            out_features=output_size
-        )
-        
-    def forward(self, x, mask=None, tau=0.5):
 
+        self.decoder = nn.Linear(in_features=config.d_model, out_features=output_size)
+
+    def forward(self, x, mask=None, tau=0.5):
         if mask is None:
-            mask = torch.zeros(x.size(0),x.size(1)).to(x.device)
+            mask = torch.zeros(x.size(0), x.size(1)).to(x.device)
 
         if self.quantile_reg:
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x = torch.cat([x, torch.ones(x.shape[0],x.shape[1],1).to(self.device) * tau], dim=-1)
+                x = torch.cat(
+                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
+                    dim=-1,
+                )
 
-        x = x.argmax(dim=-1) # (B, L, d_input) -> (B, L)
-        x = self.embedding(x) # (B, L) -> (B, L, d_model)
-        x = self.encoder(x, mask) # (B, L, d_model) -> (B, L, d_model)
-        x = x.mean(dim=1) # (B, L, d_model) -> (B, d_model)
-        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x) # (B, d_model) -> (B, d_output)
+        x = x.argmax(dim=-1)  # (B, L, d_input) -> (B, L)
+        x = self.embedding(x)  # (B, L) -> (B, L, d_model)
+        x = self.encoder(x, mask)  # (B, L, d_model) -> (B, L, d_model)
+        x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+        x = (
+            self.decoder(x) * tau if self.tau_mult else self.decoder(x)
+        )  # (B, d_model) -> (B, d_output)
         # x = self.decoder(x).squeeze(-1) # (B, L, d_model) -> (B, L)
         return x
-        
+
 
 # Informer based model
+
 
 class RULInformer(nn.Module):
     def __init__(
         self,
         config: ModelConfig,
-        d_input:int,
-        d_output:int,
-        output_attention:bool=False
-       ):
-        super(RULInformer,self).__init__()
+        d_input: int,
+        d_output: int,
+        output_attention: bool = False,
+    ):
+        super(RULInformer, self).__init__()
 
         self.quantile_reg = config.quantile_reg
         self.tau_feat = config.tau_feat
@@ -470,68 +495,77 @@ class RULInformer(nn.Module):
 
         # Encoding
         self.enc_embedding = DataEmbedding(
-            c_in=d_input,
-            d_model=config.d_model,
-            dropout=config.dropout
+            c_in=d_input, d_model=config.d_model, dropout=config.dropout
         )
         # Attention
-        Attn = ProbAttention if config.attn=='prob' else FullAttention
+        Attn = ProbAttention if config.attn == "prob" else FullAttention
         # Encoder
         self.encoder = Encoder(
-            attn_layers = [
+            attn_layers=[
                 EncoderLayer(
-                    attention = AttentionLayer(
-                        attention = Attn(
-                            mask_flag = False,
-                            factor = config.factor,
+                    attention=AttentionLayer(
+                        attention=Attn(
+                            mask_flag=False,
+                            factor=config.factor,
                             attention_dropout=config.dropout,
-                            output_attention=True
+                            output_attention=True,
                         ),
-                        d_model = config.d_model,
-                        n_heads = config.n_heads,
-                        mix=False),
-                    d_model = config.d_model,
-                    d_ff = config.d_ff,
+                        d_model=config.d_model,
+                        n_heads=config.n_heads,
+                        mix=False,
+                    ),
+                    d_model=config.d_model,
+                    d_ff=config.d_ff,
                     dropout=config.dropout,
-                    activation=config.inf_activation
-                ) for _ in range(config.n_layers)
+                    activation=config.inf_activation,
+                )
+                for _ in range(config.n_layers)
             ],
-            conv_layers = [
-                ConvLayer(
-                    config.d_model
-                ) for _ in range(config.n_layers-1)
-            ] if config.distil else None,
-            norm_layer=torch.nn.LayerNorm(config.d_model)
+            conv_layers=[ConvLayer(config.d_model) for _ in range(config.n_layers - 1)]
+            if config.distil
+            else None,
+            norm_layer=torch.nn.LayerNorm(config.d_model),
         )
 
         self.projection = nn.Linear(config.d_model, d_output)
 
     def forward(self, x_enc, output_attention=False, enc_self_mask=None, tau=0.5):
-
         if self.quantile_reg:
             assert isinstance(tau, float), "tau must be a float"
             assert 0 <= tau <= 1, "tau must be between 0 and 1"
             # Concatenate the tau value to the inputs
             if self.tau_feat:
-                x_enc = torch.cat([x_enc, torch.ones(x_enc.shape[0],x_enc.shape[1],1).to(self.device) * tau], dim=-1)
+                x_enc = torch.cat(
+                    [
+                        x_enc,
+                        torch.ones(x_enc.shape[0], x_enc.shape[1], 1).to(self.device)
+                        * tau,
+                    ],
+                    dim=-1,
+                )
 
-        enc_out = self.enc_embedding(x_enc) # [B,L,D] -> [B,L,H]
-        enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask) # [B,L,H] -> [B,L,H]
+        enc_out = self.enc_embedding(x_enc)  # [B,L,D] -> [B,L,H]
+        enc_out, attns = self.encoder(
+            enc_out, attn_mask=enc_self_mask
+        )  # [B,L,H] -> [B,L,H]
 
-        enc_out = enc_out.mean(dim=1) # [B,L,H] -> [B,H]
-        dec_out = self.projection(enc_out) * tau if self.tau_mult else self.projection(enc_out) # [B,L,H] -> [B,L]
+        enc_out = enc_out.mean(dim=1)  # [B,L,H] -> [B,H]
+        dec_out = (
+            self.projection(enc_out) * tau
+            if self.tau_mult
+            else self.projection(enc_out)
+        )  # [B,L,H] -> [B,L]
 
         if output_attention:
             return dec_out, attns
         else:
             return dec_out
 
+
 # Manual parameter count computation in case torchinfo does not work
 
-def model_summary_manual(
-    model: nn.Module
-) -> int:
-    
+
+def model_summary_manual(model: nn.Module) -> int:
     """
     Manual version of torchinfo summary module.
 
@@ -556,7 +590,7 @@ def model_summary_manual(
             f"{name}: Shape={list(param.shape)}, Num params={num_params},"
             f" Trainable={param.requires_grad}"
         )
-        print('#'* 50)
+        print("#" * 50)
 
     print("#" * 50)
     print("Model Summary:")
@@ -567,17 +601,17 @@ def model_summary_manual(
 
     return total_params
 
+
 # Function to create the model
 
-def load_ssm_model(
-        exp_config:ExperimentConfig,
-        model_config:ModelConfig,
-        d_input: int,
-) -> Union[
-         Tuple[nn.Module, optim.Optimizer, optim.lr_scheduler],
-         Tuple[nn.Module, dict]
-]:
 
+def load_ssm_model(
+    exp_config: ExperimentConfig,
+    model_config: ModelConfig,
+    d_input: int,
+) -> Union[
+    Tuple[nn.Module, optim.Optimizer, optim.lr_scheduler], Tuple[nn.Module, dict]
+]:
     """
     Function to create the model based on the configuration.
     The function also sets up the optimizer and the scheduler.
@@ -593,121 +627,132 @@ def load_ssm_model(
     """
 
     if exp_config.model_name == "S4":
-        model = S4Model(config=model_config,
-                        d_input=d_input,
-                        d_output=1 if not model_config.gap else exp_config.sequence_length,
-                        lr=exp_config.lr)
+        model = S4Model(
+            config=model_config,
+            d_input=d_input,
+            d_output=1 if not model_config.gap else exp_config.sequence_length,
+            lr=exp_config.lr,
+        )
     elif exp_config.model_name == "S4D":
-        model = S4DModel(config=model_config,
-                         d_input=d_input,
-                         d_output=1 if not model_config.gap else exp_config.sequence_length)
+        model = S4DModel(
+            config=model_config,
+            d_input=d_input,
+            d_output=1 if not model_config.gap else exp_config.sequence_length,
+        )
     elif exp_config.model_name == "S5":
-        model = S5Model(config=model_config,
-                        d_input=d_input,
-                        d_output=1 if not model_config.gap else exp_config.sequence_length)
-    elif exp_config.model_name in ["RNN","LSTM","GRU"]:
-        model = Recurrent_PDM(config=model_config,
-                              model_name=exp_config.model_name,
-                              input_size=d_input,
-                              output_size=exp_config.sequence_length)
+        model = S5Model(
+            config=model_config,
+            d_input=d_input,
+            d_output=1 if not model_config.gap else exp_config.sequence_length,
+        )
+    elif exp_config.model_name in ["RNN", "LSTM", "GRU"]:
+        model = Recurrent_PDM(
+            config=model_config,
+            model_name=exp_config.model_name,
+            input_size=d_input,
+            output_size=exp_config.sequence_length,
+        )
     elif exp_config.model_name == "RULTransformer":
         model = RULTransformer(
             config=model_config,
             input_size=d_input,
-            output_size=exp_config.sequence_length
+            output_size=exp_config.sequence_length,
         )
     elif exp_config.model_name == "RULInformer":
         model = RULInformer(
             config=model_config,
             d_input=d_input,
             d_output=exp_config.sequence_length,
-            output_attention=exp_config.output_attention
+            output_attention=exp_config.output_attention,
         )
     else:
         raise ValueError(f"Model {exp_config.model_name} not recognized")
 
     if exp_config.model_summary:
-
         # Obtain the model summary with torchsummary
         try:
-
             if exp_config.summary_func == "torchinfo":
-                print('#'* 50)
+                print("#" * 50)
                 print(f"Model summary computation with torchinfo:")
-                print('#'* 50)
-                input_size=(1, exp_config.sequence_length, d_input) if ((not exp_config.quantile_reg) or (not model_config.tau_feat)) else (1, exp_config.sequence_length, d_input-1)
-                model_summary=summary(
-                    model = model,
-                    input_size = input_size,
-                    device = model_config.device
+                print("#" * 50)
+                input_size = (
+                    (1, exp_config.sequence_length, d_input)
+                    if ((not exp_config.quantile_reg) or (not model_config.tau_feat))
+                    else (1, exp_config.sequence_length, d_input - 1)
+                )
+                model_summary = summary(
+                    model=model, input_size=input_size, device=model_config.device
                 )
                 params = model_summary.total_params
                 mult_adds = model_summary.total_mult_adds
 
-                print('#'*50)
+                print("#" * 50)
                 print(f"Total params: {params}")
                 print(f"Total mult adds: {mult_adds}")
-                print('#'*50)
+                print("#" * 50)
 
             elif exp_config.summary_func == "calflops":
-
-                print('#'* 50)
+                print("#" * 50)
                 print(f"Model summary computation with calflops:")
-                print('#'* 50)
+                print("#" * 50)
 
-                input_size=(1, exp_config.sequence_length, d_input) if ((not exp_config.quantile_reg) or (not model_config.tau_feat)) else (1, exp_config.sequence_length, d_input-1)
-                flops,mult_adds,params=calculate_flops(
+                input_size = (
+                    (1, exp_config.sequence_length, d_input)
+                    if ((not exp_config.quantile_reg) or (not model_config.tau_feat))
+                    else (1, exp_config.sequence_length, d_input - 1)
+                )
+                flops, mult_adds, params = calculate_flops(
                     model=model.to(model_config.device),
                     input_shape=input_size,
                     output_as_string=True,
-                    output_precision=4
+                    output_precision=4,
                 )
 
-                print('#'* 50)
+                print("#" * 50)
                 print(f"{exp_config.model_name} model summary with calflops:")
                 print(f"FLOPS: {flops}")
                 print(f"mult_adds: {mult_adds}")
                 print(f"Params: {params}")
-                print('#'* 50)
+                print("#" * 50)
 
         except Exception as e:
-
-            mult_adds=None
-            print('#'*50)
-            print(f"{exp_config.summary_func} not working, let's compute the model summary manually")
-            print('#'*50)
+            mult_adds = None
+            print("#" * 50)
+            print(
+                f"{exp_config.summary_func} not working, let's compute the model summary manually"
+            )
+            print("#" * 50)
             traceback.print_exc()  # Print the full traceback of the error
-            params=model_summary_manual(model)
+            params = model_summary_manual(model)
 
         if exp_config.save_summary_dict:
-            summary_dict = {
-                "params": params,
-                "mult_adds": mult_adds
-            }
+            summary_dict = {"params": params, "mult_adds": mult_adds}
 
-            print('#'* 50)
+            print("#" * 50)
             print(f"Model summary for {exp_config.model_name} model")
-            print('#'* 50)
+            print("#" * 50)
 
-            summary_dict_dirpath = generate_path(basepath=experiment_path,
-                                                 folders=["summary_dict",
-                                                          exp_config.model_name])
+            summary_dict_dirpath = generate_path(
+                basepath=experiment_path,
+                folders=["summary_dict", exp_config.model_name],
+            )
             save_element(
-                element = summary_dict,
-                dirpath = summary_dict_dirpath,
-                filename = f"{exp_config.model_name}_summary_dict_{exp_config.summary_func}",
-                filetype = "pickle"
+                element=summary_dict,
+                dirpath=summary_dict_dirpath,
+                filename=f"{exp_config.model_name}_summary_dict_{exp_config.summary_func}",
+                filetype="pickle",
             )
 
-            return model,summary_dict
+            return model, summary_dict
 
     if exp_config.model_summary_manual:
         model_summary_manual(model)
 
     optimizer, scheduler = setup_optimizer(
-                                       model,
-                                       lr=exp_config.lr,
-                                       weight_decay=exp_config.weight_decay,
-                                       epochs=exp_config.epochs)
+        model,
+        lr=exp_config.lr,
+        weight_decay=exp_config.weight_decay,
+        epochs=exp_config.epochs,
+    )
 
     return model, optimizer, scheduler

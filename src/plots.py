@@ -347,6 +347,7 @@ def blob_plot(
     config: ExperimentConfig,
     plot_path: str,
     no_mult_adds: bool = False,
+    no_test_time: bool = False,
 ) -> plt.figure:
     """
     Function to produce a plot that represents the number of parameters, number of mult-adds,
@@ -356,37 +357,48 @@ def blob_plot(
     plot_dict (dict): dictionary with the number of parameters, mult-adds, model names and test metrics
     config (ExperimentConfig): experiment configuration
     plot_path (str): path to save the plot
-    no_mult_adds (bool): if set the mult_adds metric will not be used to produce the blob plot, the inference time will be used instead. By default False
+    no_mult_adds (bool): if set the mult_adds metric will not be used to produce the blob plot, by default False
+    no_test_time (bool): if set the inference time will not be considered as a metric to produce the blob plot, by default False
 
     Returns:
     plt.figure: figure with the blob plot
     """
 
-    plot_dict["mult_adds_ln"] = np.abs(np.log(plot_dict["mult_adds_float"]))
     # Convert plot_dict into a pandas DataFrame
     df = pd.DataFrame(plot_dict)
     df = df.rename(
         columns={
             "params_float": "Parameters (K)",
-            "mult_adds_float": "Mult-Adds (MMACs)",
-            "mult_adds_ln": "Log Mult-Adds",
             "test_metric": "Test Loss",
+            "pickle_size_kb": "Model Size (kB)",
         }
     )
 
-    # Add jitter to text positions
-    # jitter_strength = 0.01  # Adjust as needed
-
-    # df['text_x'] = df['Parameters (K)'] + np.random.normal(0, jitter_strength * df['Parameters (K)'].mean(), len(df))
-    # df['text_y'] = df['Test Loss'] + np.random.normal(0, jitter_strength * df['Test Loss'].mean(), len(df))
+    if not no_mult_adds:
+        plot_dict["mult_adds_ln"] = np.abs(np.log(plot_dict["mult_adds_float"]))
+        blob_size = "Log Mult-Adds"
+        df = df.rename(
+            columns={
+                "mult_adds_float": "Mult-Adds (MMACs)",
+                "mult_adds_ln": "Log Mult-Adds",
+            }
+        )
+    elif not no_test_time:
+        blob_size = "Inference Time (s)"
+        df = df.rename(
+            columns={
+                "test_time": "Inference Time (s)",
+            }
+        )
+    else:
+        blob_size = "Model Size (kB)"
 
     fig = px.scatter(
         data_frame=df,
         x="Parameters (K)",
         y="Test Loss",
-        color="Log Mult-Adds" if not no_mult_adds else "Inference Time (s)",
-        size="Log Mult-Adds" if not no_mult_adds else "Inference Time (s)",
-        # size = "Mult-Adds (MMACs)",
+        color=blob_size,
+        size=blob_size,
         hover_name="model_name",
         log_x=True,
         size_max=60,
