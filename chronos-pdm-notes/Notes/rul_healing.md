@@ -15,20 +15,37 @@ mainly with synthetic datasets like `CMAPSS` where the `RUL` or the Health
 Index is considered to be a simple monotonically decreasing line.
 
 Lucas Brito told me about a problem he is having in RUL estimation and that can
-be an interesting future research direction to tackle. 
+be an interesting future research direction to tackle.
 
-This problem happens usually in real data when we have the RUL or the health
-index (here he talked about the RMS so probably he is using some feature
-extraction methods to find and Health Index and uses it as the RUL I guess
-(something that I never did or considered up to now). The problem is that maybe
-during the condition monitoring of the equipment some operators perform
-maintenance on other parts of the machine to solve some other minor issues and
-this creates a strange "healing" effect on the machine (maybe is something
-similar to the Healing effect we have in the batteries datasets for RUL? Maybe
-I can look at one of the papers that does that and see how they deal with this
-problem), so the RUL momentarily increases and that makes the statistical
-methods Lucas usually uses (Weibull Distribution) to "go crazy" and mess up the
-whole prediction. 
+This problem happens usually in real data when we have the `RUL` or the health
+index (here he talked about the `RMS` so probably he is using some feature
+extraction methods to find and Health Index and uses it as the `RUL` I guess
+(something that I never did or considered up to now).
+
+>[!note] Magic sensor that measures the `RUL`
+> In this setting what Lucas is using as the `RUL` is like a magic sensor that
+> directly spits out the `RUL` of the equipment (in reality it's a sensor (or
+a feature extracted from raw sensor measurements) which is directly correlated
+with the `RUL`) and we want to predict its trend because we cannot directly
+> install it on the machine.
+
+>[!question] How is this magic sensor obtained?
+> How are the Health Indexes computed? I need to ask Lucas to give me
+> some examples of that to see weather I understand correctly. For me
+> in this approach the `RUL` may be considered as, for example, the
+> oil level in a component (if it goes over or under a certain threshold
+> then we have to do maintenance) or the `RMS,curtosis,skewness,...` or
+> some other feature we can extract from the raw data to characterize
+> the degradation process of the machine's life. Does that make sense?
+
+The problem is that maybe during the condition monitoring of the equipment
+**some operators perform maintenance on other parts of the machine** to solve
+some other minor issues and this creates a strange "healing" effect on the
+machine (maybe is something similar to the Healing effect we have in the
+batteries datasets for RUL? Maybe I can look at one of the papers that does
+that and see how they deal with this problem), so **the RUL momentarily
+increases** and that makes the statistical methods Lucas usually uses (Weibull
+Distribution) to "go crazy" and mess up the whole prediction.
 
 ## Quick Ideas to solve the problem
 
@@ -42,7 +59,7 @@ some way?
 2. Maybe the models that Lucas is using (based on the Weibull distribution for
    example which is a typical thing that mechanical engineers do) are very
 sensible to this unexpected behavior but in data driven models like the ones I
-am using maybe we just need to add some samples in training which exhibit this
+am using maybe we **just need to add some samples in training** which exhibit this
 strange behavior and hope that the model is able to recognize it in the test
 set when something similar happens? Obviously this should not make the model to
 always predict this healing effect also when it is not there. In any case if
@@ -68,21 +85,23 @@ of a mess. If we are able to do this clustering we can then predict the `RUL`
 singularly for each one of them and then do this thing of composing the single
 components into a single total `RUL`.
 
-- Can we use Fault Detection to do that? If we use a `XAI` model for Fault
+### Fault Detection + `RUL` Idea
+
+Can we use Fault Detection to do that? If we use a `XAI` model for Fault
 Detection (for example `ACME` that should work also for classification models)
 we can see what are the most important features (so sensors) to predict each
 different fault. We have to understand weather we have also labels on the
-faults but I think that may be the case because Lucas is using this approach of
-doing all toghether: `AD`, Fault Detection and then also `RUL` estimation. Here
-hopefully we can achieve a result from `ACME` that identifies not super
-overlapped groups of features for each different fault
+faults but I think that this may be the case because Lucas is using this
+approach of doing all toghether: `AD`, Fault Detection and then also `RUL`
+estimation. Here hopefully we can achieve a result from `ACME` that identifies
+not super overlapped groups of features for each different fault
 
 Possible pipeline:
 
 1. We start from raw data from the sensors
 2. Apply some feature engineering transformations to get the health indexes
    (`RMS`, skewness, kurtosis, ...)
-3. Do Fault Detection with some `FD` model
+3. Do Fault Detection with some `FD` model (i.e. usual `S4` adapted to classification or similar?)
 4. Interpret the results with a `XAI` model (e.g. `ACME`) → is it possible to
 obtain the most important features for `Fault 1` for `Fault 2` ecc ecc? I don't
 know if it is possible to do that on a global level, maybe it's something that
@@ -90,10 +109,15 @@ we can do just at the local level.
     - Maybe to find the most important variables for `Fault 1` we can create a
     sort of `AD` dataset where `Fault 1` are the anomalies and all the other
     data are inliers and we can also use `ExIFFI` here to find the most
-    important features, then we can do the same with all the other faults.
+    important features, then we can do the same with all the other faults → this
+    does not make a lot of sense because `EIF` does not need/use labels.
 5. The result of Step 4 should be a sort of division of the sensors into
 different groups → groups of sensors giving info for the prediction of `Fault
 1`, for the prediction of `Fault 2`, ecc ...
 6. Train a different `RUL` prediction model for each different group of
 sensors?
+
+This idea is better summarized in [[Excalidraw/rul_healing|the `rul_healing` Excalidraw sketch]].
+
+
 
