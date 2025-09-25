@@ -14,9 +14,6 @@ scenarios and so I never encountered/considered it since up to now I worked
 mainly with synthetic datasets like `CMAPSS` where the `RUL` or the Health
 Index is considered to be a simple monotonically decreasing line.
 
-Lucas Brito told me about a problem he is having in RUL estimation and that can
-be an interesting future research direction to tackle.
-
 This problem happens usually in real data when we have the `RUL` or the health
 index (here he talked about the `RMS` so probably he is using some feature
 extraction methods to find and Health Index and uses it as the `RUL` I guess
@@ -64,12 +61,18 @@ some way?
 2. Maybe the models that Lucas is using (based on the Weibull distribution for
    example which is a typical thing that mechanical engineers do) are very
 sensible to this unexpected behavior but in data driven models like the ones I
-am using maybe we **just need to add some samples in training** which exhibit this
-strange behavior and hope that the model is able to recognize it in the test
-set when something similar happens? Obviously this should not make the model to
-always predict this healing effect also when it is not there. In any case if
-there is a clear difference in the shape of the signals in the extracted
-feature is easier for the model to learn this distinction.
+am using maybe we **just need to add some samples in training** which exhibit
+this strange behavior and hope that the model is able to recognize it in the
+test set when something similar happens? Obviously this should not make the
+model to always predict this healing effect also when it is not there. In any
+case if there is a clear difference in the shape of the signals in the
+extracted feature is easier for the model to learn this distinction.
+3. In the first step of the pipeline (the part where we use `AD` models to
+   detect when a fault starts) maybe we can use a model that somehow detects
+weather there is this `RUL` healing effect or not? Depending on weather the
+`rul` healing is detected or not we can use a model that is more robust to
+detect it? Maybe if we have `rul` healing we can use just a data-driven model,
+otherwise we can use the one with the Weibull Distribution.
 
 ### `RUL` Healing in lithium-ion batteries
 
@@ -92,7 +95,8 @@ estimation on lithium-ion batteries. In particular this is what I wrote in
 
 #### Physics-informed deep learning with multi-resolution for ensemble prediction of lithium-ion battery health status*
 
-Here I report some notes I get while reading the paper to get some potential ideas on how to solve the `RUL` healing problem.
+Here I report some notes I get while reading the paper to get some potential
+ideas on how to solve the `RUL` healing problem.
 
 The simplest approach used in the literature is to smooth the `RUL` signal
 (i.e. the battery capacity degradation signal) to remove the oscillations
@@ -114,8 +118,16 @@ The `RUL` is decomposed into: **trend**, **seasonal** and **residual** component
 - **Seasonal and Residual** → together they indicate the `CRP` phenomena
 
 Some more technical details:
-- Smoothing method → robust locally weigthed regression, where locally weigthed scatterplot smoothing is fitted with a local polynomial regression. This is a method to smooth a scatterplot (i.e. so a set of 2 features?) → looking at the complicated explanation this should be something similar to `loess` regression, so a different polynomial is fitted in different segments of the `x` axis.
-- After the smoothing process (which I guess is just a pre processing step) we can proceed with the decomposition of the battery capacity time series which we call $Y_v$ which is decomposed into trend $T_v$, seasonality $S_v$ and residual $R_v$ such that:
+
+- Smoothing method → robust locally weigthed regression, where locally weigthed
+scatterplot smoothing is fitted with a local polynomial regression. This is a
+method to smooth a scatterplot (i.e. so a set of 2 features?) → looking at the
+complicated explanation this should be something similar to `loess` regression,
+so a different polynomial is fitted in different segments of the `x` axis.
+- After the smoothing process (which I guess is just a pre processing step) we
+can proceed with the decomposition of the battery capacity time series which we
+call $Y_v$ which is decomposed into trend $T_v$, seasonality $S_v$ and residual
+$R_v$ such that:
 
 $$
     Y_v = T_v + S_v + R_v
@@ -161,14 +173,24 @@ $$
 
 where:
 - $L_{\text{data}}$ is the training loss obtained by the `Bi-GRU` model.
-- $L_{\text{physics}}$ is the physical loss (i.e. loss on predicting the trend with the Gaussian function) and $\psi$ is a trade-off parameter to regulate the importance to minimize the physical or empirical loss.
+- $L_{\text{physics}}$ is the physical loss (i.e. loss on predicting the trend
+with the Gaussian function) and $\psi$ is a trade-off parameter to regulate the
+importance to minimize the physical or empirical loss.
 
-Firstly the model is used to predict the trend, seasonal and residual components, whose predictions are summed together to obtain the final prediction. In any case the complete pipeline of the proposed method is outlined in Fig. 5 of the paper. The pipeline is the following:
+Firstly the model is used to predict the trend, seasonal and residual
+components, whose predictions are summed together to obtain the final
+prediction. In any case the complete pipeline of the proposed method is
+outlined in Fig. 5 of the paper. The pipeline is the following:
 
 1. Extract the battery capacity degradation from the raw data
-2. Multi-resolution decomposition → decompose battery capacity into trend, seasonal and residual components
-3. We set the hyperparameters of the `Bi-GRU` and we use it to estimate the seasonal and residual components (which are more difficult to estimate using a physical model). For the trend prediction we use the Gaussian function and we train the model using the physics-informed loss function to predict the trend.
-4. Finally the three predictions of trend, seasonal and residual are summed together to obtain the final prediction.
+2. Multi-resolution decomposition → decompose battery capacity into trend,
+   seasonal and residual components
+3. We set the hyperparameters of the `Bi-GRU` and we use it to estimate the
+   seasonal and residual components (which are more difficult to estimate using
+a physical model). For the trend prediction we use the Gaussian function and we
+train the model using the physics-informed loss function to predict the trend.
+4. Finally the three predictions of trend, seasonal and residual are summed
+   together to obtain the final prediction.
 
 >[!important]
 > At the end the approach presented in this paper is very similar to the typical approach used in hybrid-based `RUL` estimation. The quantities which are easy to estimate through model-based approaches (i.e. the trend component in this case) is estimated through a physical-model, while the other non-linear effects (i.e. the seasonal and residual components (so the `CPR` in this case)) are estimated through a data-driven method.
@@ -241,5 +263,78 @@ sensors?
 
 This idea is better summarized in [[Excalidraw/rul_healing|the `rul_healing` Excalidraw sketch]].
 
+# Lucas Meeting Notes
 
+- Look at the spectrum of the signal to see differences in frequency to distinguish between different faults
+- In some faults there are the same harmonics so those are more difficult to separate → and that's where `AI` can help.
+- Save the signal in time domain and then extract all the features
+- Look at the velocity
 
+# Seminar Lucas
+
+Prescriptive Maintenance → a synonym of `PdM`.
+
+Data Collection
+- Offline
+- Online → real time data from accelerometer attached to the machine → with accelerometer that are cheaper.
+
+Data Analysis:
+- Raw time domain signal → feature extraction going into the frequency or time-frequency domain.
+
+Frequency domain is the most common approach.
+
+`RMS` → Overall vibration of the machine → when it starts to increase we are closer to the fault.
+
+In Vibration analysis different faults appear more or less clear on different directions, so we need to collect for exaple accelerometer data on all the 3 axes.
+
+Frequency domain → a lot of peaks, each related to specific faults. We have to extract features related to the fault we are looking for in the machine.
+
+>[!error]
+> The problem is that here in rotating machinery there are a lot of known frequency but in my case with Maschio we are not in the rotating machinery field and so in that case there are not many features to extract.
+
+>[!info]
+> If we are able to extract the correct feature `ML` + Feature Extraction is better than end-to-end `DL`.
+
+Datasets:
+
+- Bearing `NASA` Dataset → 4 dataset, each one related to a bearing
+- Gear dataset produced in Brazil
+
+Synthetic Data → Since we know what is the structure of the signals related to
+certain faults they created some synthetic data using the waveforms typical of
+specific faults → we can create a synthetic dataset in this way. The difficult
+part is to add the background noise to make the signals look more similar to
+the ones we get in the real-world in the industry.
+
+In this case he used just the frequency domain and `1DCNN` to predict the
+faults. In general in Vibration analysis is better to look at the frequency
+domain → in some cases we some faults can also be better detected in time but
+usually the frequency is the way to go.
+
+Another thing that can happen related to the `RUL` healing problem is that the
+`RMS` (or the energy of the signal) start to increase (so we are going towards
+the fault) but then immediately it starts to decrease. So there is this problem
+also in this other case.
+
+Inside the `RUL` Healing problem in any case if you look at the general `RMS`
+signal that starts to decrease at some point (because we solve an unbalance
+issue) still in the `BPFO,BPFO,BPS` features are high → so the problem of the
+`RUL` healing is due to the fact that we are looking at a global feature while
+we should look at the specific one → this is similar to what happens in the
+Battery paper → the trend is used to predict the general `RUL` and the local
+effects can detect the oscillations due to the `CRP`.
+
+## Projects
+
+- `spyAI` → software that they are developing to give to the user a dashboard →
+something similar to Statwolf. Given info on the vibration signal, identified
+fault, `RUL` estimation. It does also process monitoring but using just process
+features coming from the features produced by the process and registered by the
+sensor on the machine  → no `FFT` can be done here.
+- `spyAI` - Digital Twin → potentially they want to put also this on the
+software.
+- Fixing some fault using some automation control → when a fault is detected we
+try to contorl it automatically with automation.
+- Robot Inspector for magnetic wedges
+
+He has a lot of test bands in Brazil to collect data to create datasets.
