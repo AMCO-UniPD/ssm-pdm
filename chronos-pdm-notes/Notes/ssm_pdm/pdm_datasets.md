@@ -119,14 +119,19 @@ Quantile Regression?
 
 Some first ideas on the models to use for the benchmark:
 
-- `SSM` based models
+- `SSM` based models with Quantile Regression
     - `S4`
     - `S5`
     - `S4D`
+- Bayesian `SSM` → train the `SSM` models with the Bayesian optimization
+algorithm used in `uncertainty_bayesian` (i.e. Stain Variational Gradient)
 - `LSTM`
 - `CNN`
 - `LSTM-CNN` → this is the architecture used essentially everywhere in the
 literature and I want to try it out → We can implement the simple combination
 of the two taking inspiration from some of the multiple papers using it.
 - `TCN`
+
+>[!important]
+> The code for the Bayesian part is [in this GitHub repo](https://github.com/lucadellalib/bdl-rul-svgd)
 
