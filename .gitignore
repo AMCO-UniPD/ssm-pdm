@@ -1,19 +1,22 @@
 # gitignore file for the chronos-pdm project
 
-# Obsidian
-chronos-pdm-notes/.obsidian/
-# templates
-chronos-pdm-notes/templates/
-# daily notes
-chronos-pdm-notes/daily_notes/
-# hf_course notes
-chronos-pdm-notes/notes/hf_course/
-# git_token.md
-chronos-pdm-notes/notes/git_token.md
-# Excalidraw
-chronos-pdm-notes/Excalidraw
-# Paper
-chronos-pdm-notes/Paper
+# # Obsidian
+# chronos-pdm-notes/.obsidian/
+# # templates
+# chronos-pdm-notes/templates/
+# # daily notes
+# chronos-pdm-notes/daily_notes/
+# # hf_course notes
+# chronos-pdm-notes/notes/hf_course/
+# # git_token.md
+# chronos-pdm-notes/notes/git_token.md
+# # Excalidraw
+# chronos-pdm-notes/Excalidraw
+# # Paper
+# chronos-pdm-notes/Paper
+
+# All notes in the gitignore
+ssm-pdm-notes/
 
 # Latex paper folder
 SSM_PDM_Paper/
