@@ -28,6 +28,8 @@ experiments/transformers_tutorial/
 # pycache
 __pycache__/
 
+.python-version
+
 #ipynb checkpoints
 .ipynb_checkpoints/
 
