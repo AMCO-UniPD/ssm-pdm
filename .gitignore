@@ -57,3 +57,4 @@ package.json
 *.css
 *.woff
 *.zip
+*.tar.gz
