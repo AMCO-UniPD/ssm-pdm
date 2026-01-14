@@ -28,6 +28,9 @@ wandb/
 # Code inside experiments/transformers_tutorial
 experiments/transformers_tutorial/
 
+# test script for phm dataset
+experiments/phm_exp/test_phm_dataset.py
+
 # pycache
 __pycache__/
 

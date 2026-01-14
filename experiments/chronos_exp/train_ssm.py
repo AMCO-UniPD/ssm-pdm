@@ -69,9 +69,7 @@ model_config = load_yaml_to_dict(exp_config.model_config_path)
 model_config = ModelConfig(model_config)
 model_config.quantile_reg = exp_config.quantile_reg
 
-device = torch.device(
-    f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu"
-)
+device = torch.device(f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu")
 model_config.device = device
 
 print("#" * 50)
