@@ -1,0 +1,40 @@
+# config file for ssm models
+
+random_init: true # SSM models are always randomly initialized
+
+# General model parametrers
+d_model: 128
+n_layers: 5
+dropout: 0.0
+gap: true # Global Average Pooling in the Regression Head
+
+# Quantile Regression config
+# tau_mult approach
+tau_mult: true
+# tau as input feature
+tau_feat: true
+
+# S4 config
+lr: 1.0e-3
+activation: relu
+gate_act: null
+mult_act: null
+final_act: glu
+prenorm: false
+
+# S4D config
+d_state: 64
+act: gelu
+
+# S5 config
+bidir: false
+
+# RULTransformer config
+d_ff: 64
+n_heads: 8
+
+# RULInformer config
+factor: 5
+attn: prob
+inf_activation: gelu
+distil: true

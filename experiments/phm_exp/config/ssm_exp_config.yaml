@@ -1,0 +1,38 @@
+# Configuration file for ssm experiments on PHM dataset
+
+model_config_path: config/ssm_config.yaml
+device_num: 2
+project_name: "ssm-pdm"
+
+# Dataset
+data_name: PHM
+phm_tools: 01M01
+# phm_tools:
+#   - 01M01
+#   - 01M02
+failure_type: flow_low
+test_size: 0.2
+val_size: 0.1
+
+# dataset transformations
+transformer_type: 0
+scaler: standard
+# scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
+scaler_kwargs:
+  low_limit: -1.0
+  high_limit: 1.0
+
+# approach
+approach: windowed
+
+# quantile_reg config
+quantile_reg: true
+quantile_dist: uniform
+bounds: [0.1, 0.9]
+quantiles: [0.1,0.25,0.5,0.75,0.9]
+quantile_run: 0.25
+
+# training parameters
+batch_size: 100
+sequence_length: 170
+

@@ -48,13 +48,9 @@ from perf import (
 )
 from plots import plot_predictions_grid
 
-experiment_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "chronos_exp"
-)
+experiment_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "chronos_exp")
 
-parser = argparse.ArgumentParser(
-    description="Training script for SSM models in chronos-pdm project"
-)
+parser = argparse.ArgumentParser(description="Training script for SSM models in chronos-pdm project")
 parser.add_argument(
     "--exp_config_path",
     type=str,

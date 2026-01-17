@@ -6,7 +6,6 @@ import os
 import sys
 import time
 import re
-from gluonts.transform import feature
 import yaml
 import pickle
 import ipdb
@@ -19,12 +18,10 @@ from dataclasses import dataclass
 chronos_path = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
 sys.path.append(chronos_path)
 
-# chronos imports
-from chronos import MeanScaleUniformBins, ChronosConfig
-
 # ceruleo imports
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset
 from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
+from ceruleo.dataset.catalog.PHMDataset2018 import PHMDataset2018
 from ceruleo.dataset.catalog.CMAPSS import sensor_indices
 from ceruleo.transformation import Transformer
 from ceruleo.transformation.features.selection import (
@@ -49,6 +46,8 @@ from torch.utils.data import DataLoader, ConcatDataset
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
+
+from config_vars import CMAPSS_MODELS, PHM_TOOLS, PHM_FAILURES, PHM_FAIL_TYPES
 
 
 def get_current_time() -> str:
@@ -388,80 +387,6 @@ class SSMWindowRegressionDataset(Dataset):
         mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
         return sequence, target, mask
 
-
-class MeanScaleUniformBinsSensor(MeanScaleUniformBins):
-    def __init__(self, low_limit: float, high_limit: float, config: ChronosConfig):
-        super().__init__(low_limit, high_limit, config)
-
-    def _input_transform(
-        self,
-        context: torch.Tensor,
-        mask: torch.Tensor,
-        scale: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        context = context.to(dtype=torch.float32)
-        # attention_mask = ~torch.isnan(context)
-        attention_mask = mask.to(torch.bool)
-
-        if scale is None:
-            scale = torch.nansum(
-                torch.abs(context) * attention_mask, dim=1
-            ) / torch.nansum(attention_mask, dim=1)
-            scale[~(scale > 0)] = 1.0
-
-        scaled_context = context.squeeze(-1) / scale
-        token_ids = (
-            torch.bucketize(
-                input=scaled_context,
-                boundaries=self.boundaries.to(scaled_context.device),
-                # buckets are open to the right, see:
-                # https://pytorch.org/docs/2.1/generated/torch.bucketize.html#torch-bucketize
-                right=True,
-            )
-            + self.config.n_special_tokens
-        )
-
-        token_ids.clamp_(0, self.config.n_tokens - 1)
-
-        token_ids[~attention_mask.squeeze(-1)] = self.config.pad_token_id
-
-        return token_ids, attention_mask, scale
-
-    def _append_eos_token(
-        self, token_ids: torch.Tensor, attention_mask: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        batch_size = token_ids.shape[0]
-        eos_tokens = torch.full(
-            (batch_size, 1), fill_value=self.config.eos_token_id
-        ).to(token_ids.device)
-        token_ids = torch.concat((token_ids, eos_tokens), dim=1)
-        eos_mask = torch.full((batch_size, 1), fill_value=True).to(
-            attention_mask.device
-        )
-        attention_mask = torch.concat((attention_mask.squeeze(-1), eos_mask), dim=1)
-
-        return token_ids, attention_mask
-
-    def context_input_transform(
-        self, context: torch.Tensor, mask: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        length = context.shape[-1]
-
-        if length > self.config.context_length:
-            context = context[..., -self.config.context_length :]
-
-        token_ids, attention_mask, scale = self._input_transform(
-            context=context, mask=mask
-        )
-
-        if self.config.use_eos_token and self.config.model_type == "seq2seq":
-            token_ids, attention_mask = self._append_eos_token(
-                token_ids=token_ids, attention_mask=attention_mask
-            )
-
-        return token_ids, attention_mask, scale
-
-
 @dataclass
 class ExperimentConfig:
     def __init__(self, config: dict):
@@ -495,12 +420,15 @@ def get_transformer(
     elif config.scaler == "standard":
         scaler = StandardScaler()
 
-    if config.transformer_type == 1:
+    if config.transformer_type == 0:
+        transformer = Transformer(
+            pipelineX=make_pipeline(ByNameFeatureSelector(features=FEATURES)),
+            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"])),
+        )
+    elif config.transformer_type == 1:
         transformer = Transformer(
             pipelineX=make_pipeline(ByNameFeatureSelector(features=FEATURES), scaler),
-            pipelineY=make_pipeline(
-                ByNameFeatureSelector(features=["RUL"]),
-            ),
+            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"])),
         )
 
     elif config.transformer_type == 2:
@@ -573,23 +501,17 @@ def load_reg_data(config: ExperimentConfig) -> dict:
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
-    if config.data_name == "CMAPSS":
-        assert config.cmapss_models in [
-            "FD001",
-            "FD002",
-            "FD003",
-            "FD004",
-        ], "The models must be one of FD001,FD002,FD003,FD004"
-        train_data = CMAPSSDataset(train=True, models=config.cmapss_models)
-        # train_data, val_data = train_test_split(train_data, test_size=config.val_size, shuffle=False)
-        val_data = CMAPSSDataset(train=False, models=config.cmapss_models)[
-            config.val_idx[0] : config.val_idx[1]
-        ]
-        test_data = CMAPSSDataset(train=False, models=config.cmapss_models)[
-            config.test_idx[0] : config.test_idx[1]
-        ]
-    else:
-        raise ValueError(f"Data name {config.data_name} not supported yet")
+    assert config.data_name == "CMAPSS", "This function works just with the CMAPSS dataset"
+    assert config.cmapss_models in CMAPSS_MODELS, f"The models must be one of {CMAPSS_MODELS}"
+
+    train_data = CMAPSSDataset(train=True, models=config.cmapss_models)
+    # train_data, val_data = train_test_split(train_data, test_size=config.val_size, shuffle=False)
+    val_data = CMAPSSDataset(train=False, models=config.cmapss_models)[
+        config.val_idx[0] : config.val_idx[1]
+    ]
+    test_data = CMAPSSDataset(train=False, models=config.cmapss_models)[
+        config.test_idx[0] : config.test_idx[1]
+    ]
 
     # transform the data
     transformer = get_transformer(config, train_data)
@@ -673,6 +595,93 @@ def load_reg_data(config: ExperimentConfig) -> dict:
     test_loader = DataLoader(
         ConcatDataset(test_datasets), batch_size=batch_size, shuffle=False
     )
+
+    test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
+
+    loaders_dict = {
+        "train_loader": train_loader,
+        "val_loader": val_loader,
+        "test_loader": test_loader,
+        "test_loaders": test_loaders,
+    }
+
+    return loaders_dict
+
+def load_phm_data(config: ExperimentConfig) -> dict:
+    """
+    Clone of the load_reg_data function but adapted for the PHM dataset.
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+
+    Returns:
+        loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
+        approach, it also contains a list of DataLoader objects for each life in the test set.
+    """
+
+    assert config.data_name == "PHM", "This function works just with the PHM dataset"
+    assert config.phm_tools in PHM_TOOLS, f"The models must be one of {PHM_TOOLS}"
+    assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES}"
+
+    phm_data = PHMDataset2018(
+        failure_types = PHM_FAILURES[config.failure_type],
+        tools = config.phm_tools
+    )
+
+    train_data, test_data = train_test_split(phm_data, test_size=config.test_size)
+    train_data, val_data = train_test_split(phm_data, test_size=config.val_size)
+
+    transformer = get_transformer(config, phm_data)
+    transformer.fit(train_data)
+    transformed_train_data = train_data.map(transformer)
+    transformed_val_data = val_data.map(transformer)
+    transformed_test_data = test_data.map(transformer)
+
+    train_lifes = TransData(transformed_train_data)
+    val_lifes = TransData(transformed_val_data)
+    test_lifes = TransData(transformed_test_data)
+
+    if config.approach == "padding":
+        train_datasets = [
+            SSMRegressionDataset(life=life, sequence_length=config.sequence_length)
+            for life in train_lifes
+        ]
+        val_datasets = [
+            SSMRegressionDataset(life=life, sequence_length=config.sequence_length)
+            for life in val_lifes
+        ]
+        test_datasets = [
+            SSMRegressionDataset(life=life, sequence_length=config.sequence_length)
+            for life in test_lifes
+        ]
+    elif config.approach == "windowed":
+        train_datasets = [
+            SSMWindowRegressionDataset(
+                life=life, sequence_length=config.sequence_length
+            )
+            for life in train_lifes
+        ]
+        val_datasets = [
+            SSMWindowRegressionDataset(
+                life=life, sequence_length=config.sequence_length
+            )
+            for life in val_lifes
+        ]
+        test_datasets = [
+            SSMWindowRegressionDataset(
+                life=life, sequence_length=config.sequence_length
+            )
+            for life in test_lifes
+        ]
+
+    if config.approach == "padding":
+        batch_size = config.sequence_length
+    else:
+        batch_size = config.batch_size
+
+    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=False)
+    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=False)
 
     test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
 

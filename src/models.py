@@ -6,7 +6,6 @@ Python script containing utility functions for the models of the `chronos-pdm` p
 from math import tau
 import os
 import sys
-from gluonts import model
 import ipdb
 import traceback
 import time
@@ -44,7 +43,7 @@ from utils import (
     combine_values,
 )
 
-from ssm_models import load_ssm_model
+from ssm_models import ModelConfig, load_ssm_model
 
 from loss import load_loss_functions
 
@@ -52,16 +51,8 @@ from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_tab
 
 from plots import plot_predictions_grid
 
-# chronos imports
-from training.train import load_model
-from chronos import ChronosModel, ChronosConfig, MeanScaleUniformBins
-from transformers import AutoModelForSequenceClassification, AutoModelForSeq2SeqLM
-from transformers import AutoConfig, T5Config
-from utils import ExperimentConfig, MeanScaleUniformBinsSensor, get_current_time
-
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
-
 
 def get_activation(act: str) -> nn.Module:
     """
@@ -123,92 +114,10 @@ class RegressionHead(nn.Module):
         # x = self.dropout(x)
         return x
 
-
-def load_model_tokenizer(
-    train_loader: DataLoader, model_config: ChronosConfig, exp_config: ExperimentConfig
-) -> Tuple[
-    nn.Module, MeanScaleUniformBins, optim.Optimizer, optim.lr_scheduler._LRScheduler
-]:
-    """
-    Load the model and the tokenizer for the `chronos` model
-
-    Args:
-        train_loader (DataLoader): The DataLoader object for training, needed for the definition of the lr scheduler
-        model_config (ChronosConfig): The configuration dictionary for the model
-        exp_config (ExperimentConfig): The configuration dictionary for the experiment
-
-    Returns:
-        model (torch.nn.Module): The model object
-        tokenizer (MeanScaleUniformBins): The tokenizer object
-        optimizer (torch.optim.Optimizer): The optimizer object
-        scheduler (torch.optim.lr_scheduler._LRScheduler): The scheduler object
-    """
-
-    # Create the ChronosConfig object
-    chronos_config = ChronosConfig(
-        tokenizer_class=model_config["tokenizer_class"],
-        tokenizer_kwargs=model_config["tokenizer_kwargs"],
-        n_tokens=model_config["n_tokens"],
-        n_special_tokens=model_config["n_special_tokens"],
-        pad_token_id=model_config["pad_token_id"],
-        eos_token_id=model_config["eos_token_id"],
-        use_eos_token=model_config["use_eos_token"],
-        model_type=model_config["model_type"],
-        context_length=model_config["context_length"],
-        prediction_length=model_config["prediction_length"],
-        num_samples=model_config["num_samples"],
-        temperature=model_config["temperature"],
-        top_k=model_config["top_k"],
-        top_p=model_config["top_p"],
-    )
-
-    tokenizer = MeanScaleUniformBinsSensor(
-        low_limit=chronos_config.tokenizer_kwargs["low_limit"],
-        high_limit=chronos_config.tokenizer_kwargs["high_limit"],
-        config=chronos_config,
-    )
-
-    if exp_config.random_init:
-        random_conf = AutoConfig.from_pretrained(exp_config.model_id)
-        if isinstance(random_conf, T5Config):
-            random_conf.initializer_factor = 0.05
-        random_conf.tie_word_embeddings = True
-        model = AutoModelForSequenceClassification.from_config(random_conf)
-    else:
-        model = AutoModelForSequenceClassification.from_pretrained(exp_config.model_id)
-
-    # The classification head can also be defined with a nn.Module
-    new_classification_head = RegressionHead(
-        sequence_length=exp_config.sequence_length,
-        hidden_size=model.config.hidden_size,
-        num_fc_layers=exp_config.num_fc_layers,
-        activation=exp_config.act,
-        dropout_rate=exp_config.dropout_rate,
-        use_fc_layers=exp_config.use_fc_layers,
-    )
-
-    # Substitute classification_head with the new one
-    model.classification_head = new_classification_head
-
-    optimizer = AdamW(model.parameters(), lr=exp_config.lr)
-    scheduler = lr_scheduler.LinearLR(
-        optimizer,
-        start_factor=1.0,
-        end_factor=0.0,
-        total_iters=exp_config.epochs * len(train_loader),
-    )
-
-    return model, tokenizer, optimizer, scheduler
-
-
-# Train loop for one epoch
-
-
 def train_loop(
     dataloader: DataLoader,
     model: nn.Module,
     config: ExperimentConfig,
-    tokenizer: MeanScaleUniformBinsSensor,
     optimizer: optim.Optimizer,
     criterion: nn.Module,
     device: torch.device = torch.device("cpu"),
@@ -252,16 +161,10 @@ def train_loop(
                 print_quantile=True,
             )
 
-        if config.model_name.startswith("chronos"):
-            input_ids, attention_mask, _ = tokenizer.context_input_transform(
-                context=life, mask=mask
-            )
-            output = model(input_ids=input_ids, attention_mask=attention_mask).logits
-        else:
-            life = life.permute(2, 0, 1) if config.approach == "padding" else life
-            mask = mask.permute(1, 0) if config.approach == "padding" else mask
-            rul = rul.unsqueeze(0) if config.approach == "padding" else rul
-            output = model(life) if not config.quantile_reg else model(life, tau=tau)
+        life = life.permute(2, 0, 1) if config.approach == "padding" else life
+        mask = mask.permute(1, 0) if config.approach == "padding" else mask
+        rul = rul.unsqueeze(0) if config.approach == "padding" else rul
+        output = model(life) if not config.quantile_reg else model(life, tau=tau)
 
         loss = (
             criterion(output, rul, mask)
@@ -288,7 +191,6 @@ def eval_loop(
     dataloader: DataLoader,
     model: nn.Module,
     config: ExperimentConfig,
-    tokenizer: MeanScaleUniformBinsSensor,
     criterion: nn.Module,
     eval_criterion: nn.Module,
     mode: str = "Test",
@@ -335,20 +237,12 @@ def eval_loop(
                 else mask.to(device).squeeze(-1)
             )
 
-            if config.model_name.startswith("chronos"):
-                input_ids, attention_mask, _ = tokenizer.context_input_transform(
-                    context=life, mask=mask
-                )
-                output = model(
-                    input_ids=input_ids, attention_mask=attention_mask
-                ).logits
-            else:
-                life = life.permute(2, 0, 1) if config.approach == "padding" else life
-                mask = mask.permute(1, 0) if config.approach == "padding" else mask
-                rul = rul.unsqueeze(0) if config.approach == "padding" else rul
-                output = (
-                    model(life) if not config.quantile_reg else model(life, tau=tau)
-                )
+            life = life.permute(2, 0, 1) if config.approach == "padding" else life
+            mask = mask.permute(1, 0) if config.approach == "padding" else mask
+            rul = rul.unsqueeze(0) if config.approach == "padding" else rul
+            output = (
+                model(life) if not config.quantile_reg else model(life, tau=tau)
+            )
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
@@ -411,7 +305,6 @@ def save_best_model(
 
 def wandb_train_test(
     model: nn.Module,
-    tokenizer: Union[MeanScaleUniformBinsSensor, None],
     train_loader: DataLoader,
     val_loader: DataLoader,
     test_loader: DataLoader,
@@ -429,7 +322,6 @@ def wandb_train_test(
 
     Args:
         model (nn.Module): The model object
-        tokenizer (MeanScaleUniformBinsSensor): The tokenizer object
         train_loader (DataLoader): The DataLoader object for training
         val_loader (DataLoader): The DataLoader object for validation
         test_loader (DataLoader): The DataLoader object for testing
@@ -469,7 +361,6 @@ def wandb_train_test(
                 dataloader=train_loader,
                 model=model,
                 config=config,
-                tokenizer=tokenizer,
                 optimizer=optimizer,
                 criterion=criterion,
                 device=device,
@@ -481,7 +372,6 @@ def wandb_train_test(
                 dataloader=val_loader,
                 model=model,
                 config=config,
-                tokenizer=tokenizer,
                 criterion=criterion,
                 eval_criterion=eval_criterion,
                 mode="Val",
@@ -495,7 +385,6 @@ def wandb_train_test(
                 dataloader=test_loader,
                 model=model,
                 config=config,
-                tokenizer=tokenizer,
                 criterion=criterion,
                 eval_criterion=eval_criterion,
                 mode="Test",
@@ -578,7 +467,7 @@ def wandb_train_test(
 
 def best_model_perf(
     config: ExperimentConfig,
-    model_config: ChronosConfig,
+    model_config: ModelConfig,
     device: torch.device = torch.device("cpu"),
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
@@ -590,7 +479,7 @@ def best_model_perf(
 
     Args:
         config (ExperimentConfig): The configuration dictionary
-        model_config (ChronosConfig): The model configuration object
+        model_config (ModelConfig): The model configuration object
         device (str): The device to use
         best_model_path (str): The path to save the best model
         outputs_path (str): The path to save the outputs
@@ -741,7 +630,7 @@ def best_model_perf(
 def wandb_run(
     run_name: str,
     config: ExperimentConfig,
-    model_config: ChronosConfig,
+    model_config: ModelConfig,
     device: torch.device = torch.device("cpu"),
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
@@ -755,7 +644,7 @@ def wandb_run(
     Args:
         run_name (str): The name of the run
         config (ExperimentConfig): The experiment configuration object
-        model_config (ChronosConfig): The model configuration object
+        model_config (ModelConfig): The model configuration object
         device (str): The device to use
         best_model_path (str): The path to save the best model
         outputs_path (str): The path to save the outputs

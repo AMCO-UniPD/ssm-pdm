@@ -39,7 +39,7 @@ from s4 import S4Block as S4
 from s4d import S4D
 
 # s5 imports
-from s5 import S5, S5Block
+from s5 import S5Block
 
 # informer imports
 from informer import *
