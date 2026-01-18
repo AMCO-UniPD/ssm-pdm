@@ -1,0 +1,242 @@
+"""
+Python module to define the command line parameters and some configuration functions
+"""
+
+import argparse
+from argparse import Namespace
+from dataclasses import dataclass, field, fields
+from typing import List, Dict
+
+@dataclass
+class ExperimentConfig:
+    """
+    This dataclass contains all the experiment configuration parameters.
+    Its attributes are set by reading the ones defines in the yaml file of
+    the experiment, but we can also set some parameters with some default values
+    """
+
+    model_config_path: str = "config/ssm_config.yaml"
+    use_wandb: bool = False
+    # train test split params
+    test_size: float = 0.2
+    val_size: float = 0.1
+    # transformer params
+    transformer_type: int = 1
+    scaler: str = "standard"
+    scaler_kwargs: Dict[str, float] = field(
+        default_factory=lambda: {
+            "low_limit": -1.0,
+            "high_limit": 1.0,
+        }
+    )
+    # approach parameters
+    approach: str = "windowed"
+    # quantile regression parameters
+    quantile_reg: bool = True
+    quantile_dist: str = "uniform"
+    quantile_run: float = 0.25
+    bounds: List[float] = field(default_factory=lambda: [0.1, 0.9])
+    quantiles: List[float] = field(default_factory=lambda: [0.1, 0.25, 0.5, 0.75, 0.9])
+    # training parameters
+    batch_size: int = 32
+    sequence_length: int = 170
+    # multi run parameters
+    n_runs: int = 5
+    start_run_id: int = 0
+    # test_script parameters
+    file_pos: int = 0
+
+    @classmethod
+    def from_dict(cls, config: dict) -> "ExperimentConfig":
+        valid_keys = {f.name for f in fields(cls)}
+        unknown = config.keys() - valid_keys
+        if unknown:
+            raise ValueError(f"Unknown config keys: {unknown}")
+        return cls(**config)
+
+    def add_params(self, args: dict):
+        """
+        This function let's us to add some additional parameters
+        to the dataclass (i.e. parameters passed through the command line)
+        """
+        for key in args:
+            setattr(self, key, args[key])
+
+def define_arguments() -> Namespace:
+    """
+    This function defines an ArgumentParser object to define the command line arguments
+    and returns a Namespace object with the parsed arguments
+
+    Args:
+        No input arguments needed
+
+    Returns:
+        args (Namespace): namespace object with parsed arguments
+    """
+
+    parser = argparse.ArgumentParser(description="Experiment configuration command line parameters")
+
+    parser.add_argument(
+        "--exp_config_path",
+        type=str,
+        default="config/exp_config.yaml",
+        help="Path to the experiment config file",
+    )
+
+    parser.add_argument(
+        "--project_name",
+        type=str,
+        default="ssm-pdm",
+        help="Name of the wandb project",
+    )
+
+    parser.add_argument(
+        "--data_name",
+        type=str,
+        default="PHM",
+        help="Name of the dataset to use",
+    )
+
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="S4",
+        help="Name of the RUL prediction model to use",
+    )
+
+    parser.add_argument(
+        "--failure_type",
+        type=str,
+        default="flow_low",
+        help="Type of failure to consider",
+    )
+
+    parser.add_argument(
+        "--tool_type",
+        type=str,
+        default="M01",
+        help="Type of tools to consider in the PHM dataset",
+    )
+
+    parser.add_argument(
+        "--phm_tools",
+        type=str,
+        nargs="+",
+        default=["01M01","01M02"],
+        help="Name of the ion milling machines to use",
+    )
+
+    parser.add_argument(
+        "--cmapss_models",
+        type=str,
+        default="FD001",
+        help="Name of the CMAPSS model to use",
+    )
+
+    parser.add_argument(
+        "--val_idx",
+        type=int,
+        nargs="+",
+        default=[0,50],
+        help="Range of indexes to use for the validation set",
+    )
+
+    parser.add_argument(
+        "--test_idx",
+        type=int,
+        nargs="+",
+        default=[50,100],
+        help="Range of indexes to use for the test set",
+    )
+
+    parser.add_argument(
+        "--device_num",
+        type=int,
+        default=0,
+        help="CUDA device number",
+    )
+
+    parser.add_argument(
+        "--use_wandb",
+        action="store_true",
+        help="If set, use wandb to track the experiment"
+    )
+
+    parser.add_argument(
+        "--test_script",
+        action="store_true",
+        help="If set, use the trainig script in evaluation mode"
+    )
+
+    parser.add_argument(
+        "--save_outputs",
+        action="store_true",
+        help="If set, save the predictions into a file"
+    )
+
+    parser.add_argument(
+        "--save_outputs_quantile",
+        action="store_true",
+        help="If set, save the quantile regression predictions into a file"
+    )
+    parser.add_argument(
+        "--save_outputs_run",
+        action="store_true",
+        help="If set, save the predictions into a file for the different runs"
+    )
+
+    parser.add_argument(
+        "--return_outputs",
+        action="store_true",
+        help="If set, return the outputs"
+    )
+
+    parser.add_argument(
+        "--save_mean_metrics_df",
+        action="store_true",
+        help="If set, save the df with the average metrics over the lifes"
+    )
+
+    parser.add_argument(
+        "--print_summary_metrics",
+        action="store_true",
+        help="If set, print the summary metrics"
+    )
+
+    parser.add_argument(
+        "--save_mean_metrics_df_runs",
+        action="store_true",
+        help="If set, save the df with the average metrics for the different runs"
+    )
+
+    parser.add_argument(
+        "--sub_lifes_metrics",
+        action="store_true",
+        help="If set, compute the sub lifes metrics"
+    )
+
+    parser.add_argument(
+        "--obsidian_table",
+        action="store_true",
+        help="If set, produce a markdown table"
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+def set_exp_name(config: ExperimentConfig) -> str:
+    """
+    This function is used to set the experiment name (that will also be used
+    to set the name of the wandb runs) based on the experiment configuration
+
+    Args:
+        config (ExperimentConfig): experiment configuration
+
+    Returns:
+        exp_name (str): string containing the experiment name
+    """
+
+    exp_name = f"{config.tool_type}_{config.failure_type}_{config.approach}_{config.model_name}"
+
+    return exp_name

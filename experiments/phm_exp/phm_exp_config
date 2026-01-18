@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+project_name="ssm-pdm"
+data_name="PHM"
+failure_type="flow_low"
+
+tool_type="M01"
+if [[ "$tool_type" == "M01" ]]; then
+  phm_tools=("01M01" "02M01")
+else
+  phm_tools=("01M02" "02M02")
+fi
+
+model_name="S4"
+device_num=2
