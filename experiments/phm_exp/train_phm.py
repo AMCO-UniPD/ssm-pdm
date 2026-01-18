@@ -55,4 +55,3 @@ print("#" * 50)
 
 loaders_dict = load_phm_data(config=exp_config)
 
-ipdb.set_trace()

@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# Export the conda environment path to PATH
-# export PATH="/home/davide_frizzo/anaconda3/envs/hf/bin/:$PATH"
-
 script_path="train_phm.py"
 
 echo "-------------------------------------------"
@@ -10,5 +7,4 @@ echo "Executing $script_path"
 echo "-------------------------------------------"
 
 # uv run $script_path --exp_config_path "config/ssm_exp_config.yaml"
-
 python $script_path --exp_config_path "config/ssm_exp_config.yaml"
