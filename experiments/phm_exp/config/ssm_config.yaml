@@ -1,6 +1,5 @@
 # config file for ssm models
-
-random_init: true # SSM models are always randomly initialized
+# NOTE: See default parameters on the definition of ModelConfig class
 
 # General model parametrers
 d_model: 128

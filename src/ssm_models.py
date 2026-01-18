@@ -5,15 +5,15 @@ Python script containing utility functions for the models migrated from the
 
 import os
 import sys
+from accelerate import infer_auto_device_map
 import ipdb
 import traceback
 from typing import Tuple, Union
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 # torch imports
 import torch
 import torch.nn as nn
-from torch.nn.functional import dropout
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from transformer_encoder import TransformerEncoder
@@ -52,9 +52,56 @@ experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 
 @dataclass
 class ModelConfig:
-    def __init__(self, config: dict):
-        for key, value in config.items():
-            setattr(self, key, value)
+    """
+    This dataclass contains all the configuration parameters for the
+    models used in the project
+    """
+
+    random_init: bool = True
+    d_model: int = 128
+    n_layers: int = 5
+    dropout: float = 0.0
+    gap: bool = True
+    # quantile regression
+    quantile_reg: bool = True
+    tau_mult: bool = True
+    tau_feat: bool = True
+    # S4 config
+    lr: float = 1.0e-3
+    activation: str = "relu"
+    gate_act: str = "null"
+    mult_act: str = "null"
+    final_act: str = "glu"
+    prenorm: bool = False
+    # S4D config
+    d_state: int = 64
+    act: str = "gelu"
+    # S5 config
+    bidir: bool = False
+    # RULTransformer config
+    d_ff: int = 64
+    n_heads: int = 8
+    # RULInformer config
+    factor: int = 5
+    attn: str = "prob"
+    inf_activation: str = "gelu"
+    distil: bool = True
+
+    @classmethod
+    def from_dict(cls, config: dict) -> "ModelConfig":
+        valid_keys = {f.name for f in fields(cls)}
+        unknown = config.keys() - valid_keys
+        if unknown:
+            raise ValueError(f"Unknown config keys: {unknown}")
+        return cls(**config)
+
+    def add_params(self, args: dict):
+        """
+        This function let's us to add some additional parameters
+        to the dataclass (i.e. parameters passed through the command line)
+        """
+        for key in args:
+            setattr(self, key, args[key])
 
 
 def setup_optimizer(model, lr, weight_decay, epochs):

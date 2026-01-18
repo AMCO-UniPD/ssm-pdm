@@ -2,9 +2,88 @@
 
 script_path="train_phm.py"
 
+mode="${1:-training_no_wandb}"
+
+source "./phm_exp_config"
+
 echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
-# uv run $script_path --exp_config_path "config/ssm_exp_config.yaml"
-python $script_path --exp_config_path "config/ssm_exp_config.yaml"
+case "$mode" in
+  "training")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Training script"
+  echo "-------------------------------------------"
+
+  python $script_path \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num \
+    --use_wandb \
+    --save_outputs \
+    --save_outputs_quantile \
+    --save_mean_metrics_df \
+    --print_summary_metrics
+
+  ;;
+  "training_no_wandb")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Training without wandb logging"
+  echo "-------------------------------------------"
+
+  python $script_path \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num \
+    --save_outputs \
+    --save_outputs_quantile \
+    --save_mean_metrics_df \
+    --print_summary_metrics
+
+  ;;
+  "test_script")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Evaluation script"
+  echo "-------------------------------------------"
+
+  python $script_path \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num \
+    --test_script \
+    --save_outputs \
+    --save_outputs_quantile \
+    --save_mean_metrics_df \
+    --print_summary_metrics
+
+  ;;
+  *)
+
+  echo "mode $mode not supported"
+  exit 1
+
+  ;;
+esac
+
+

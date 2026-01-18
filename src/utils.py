@@ -13,7 +13,6 @@ import pandas as pd
 import numpy as np
 import random
 from typing import Tuple, List, Optional, Union
-from dataclasses import dataclass
 
 chronos_path = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
 sys.path.append(chronos_path)
@@ -48,7 +47,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 
 from config_vars import CMAPSS_MODELS, PHM_TOOLS, PHM_FAILURES, PHM_FAIL_TYPES
-
+from exp_config import ExperimentConfig
 
 def get_current_time() -> str:
     """
@@ -144,17 +143,12 @@ def load_yaml_to_dict(file_path: str) -> dict:
     """
     try:
         with open(file_path, "r") as file:
-            data = yaml.safe_load(
-                file
-            )  # Use safe_load to prevent arbitrary code execution
+            data = yaml.safe_load(file)  # Use safe_load to prevent arbitrary code execution
         return data
     except FileNotFoundError:
         print(f"Error: File not found at path: {file_path}")
-        return None
     except yaml.YAMLError as e:
         print(f"Error parsing YAML file: {e}")
-        return None
-
 
 def save_element(
     element: Union[dict, nn.Module, pd.DataFrame, List],
@@ -386,13 +380,6 @@ class SSMWindowRegressionDataset(Dataset):
         target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
         mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
         return sequence, target, mask
-
-@dataclass
-class ExperimentConfig:
-    def __init__(self, config: dict):
-        for key in config:
-            setattr(self, key, config[key])
-
 
 def get_transformer(
     config: ExperimentConfig, df: CMAPSSDataset

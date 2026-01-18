@@ -3,7 +3,6 @@ Python script containing utility functions for the models of the `chronos-pdm` p
 """
 
 # general imports
-from math import tau
 import os
 import sys
 import ipdb
@@ -299,9 +298,165 @@ def save_best_model(
     print(f"Best model saved at: {best_model_path}")
     print("#" * 50)
 
+def wandb_data(
+    config: ExperimentConfig,
+    model_config: ModelConfig
+) -> Tuple[
+    DataLoader,
+    DataLoader,
+    DataLoader,
+    nn.Module,
+    optim.Optimizer,
+    optim.lr_scheduler._LRScheduler,
+    nn.Module,
+    nn.Module
+]:
+    """
+    Function to prepare the data and all the ingredients needed for model training
+    and evaluation.
+
+    Args:
+        exp_config (ExperimentConfig): ExperimentConfig object
+        model_config (ModelConfig): ModelConfig object
+
+    Returns:
+        train_loader (DataLoader): train loader
+        val_loader (DataLoader): val loader
+        test_loader (DataLoader): test loader
+        model (nn.Module): the RUL prediction model
+        optimizer (optim.Optimizer): optimizer
+        lr_scheduler (optim.lr_scheduler): lr scheduler
+        criterion (nn.Module): training loss
+        eval_criterion (nn.Module): evaluation loss
+    """
+
+    loaders_dict = load_reg_data(config)
+    train_loader, val_loader, test_loader = (
+        loaders_dict["train_loader"],
+        loaders_dict["val_loader"],
+        loaders_dict["test_loader"],
+    )
+
+    feature_names = get_feature_names(config)
+    model, optimizer, scheduler = load_ssm_model(
+        model_config=model_config,
+        exp_config=config,
+        d_input=len(feature_names)
+        if ((not config.quantile_reg) or (not model_config.tau_feat))
+        else len(feature_names) + 1,
+    )
+    model = model.to(device)
+
+    criterion, eval_criterion = load_loss_functions(
+        loss_name=config.loss,
+        model_name=config.model_name,
+        eval_loss_name=config.eval_loss,
+        tau=config.tau,
+    )
+
+    return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion
+
+def exp_run(
+    config: ExperimentConfig,
+    model_config: ModelConfig,
+    device: torch.device = torch.device("cpu"),
+    best_model_path: str = experiment_path,
+    outputs_path: str = experiment_path,
+    metrics_path: str = experiment_path,
+    plot_path: str = experiment_path,
+    tau: float = 0.5,
+) -> Tuple[nn.Module, dict]:
+    """
+    This function implements all the stuff that compose a wandb run: from
+    the data pre processing to the model evaluations
+    """
+
+    (
+        train_loader,
+        val_loader,
+        test_loader,
+        model,
+        optimizer,
+        scheduler,
+        criterion,
+        eval_criterion,
+    ) = wandb_data(
+        config = config,
+        model_config = model_config
+    )
+
+    model_info = wandb_train_test(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        test_loader=test_loader,
+        criterion=criterion,
+        eval_criterion=eval_criterion,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        config=config,
+        device=device,
+        best_model_path=best_model_path,
+        tau=tau,
+    )
+
+    if config.return_outputs or config.save_outputs:
+        print("#" * 50)
+        print("Saving outputs")
+        print("#" * 50)
+
+        best_model_perf(
+            config=config,
+            model_config=model_config,
+            device=device,
+            best_model_path=best_model_path,
+            outputs_path=outputs_path,
+            tau=tau,
+        )
+
+    if config.compute_metrics:
+        print("#" * 50)
+        print("Computing metrics for each life and for each sensor in the test set")
+        print("#" * 50)
+
+        metrics_df = lifes_metrics(
+            config=config,
+            outputs_path=outputs_path,
+            metrics_path=metrics_path,
+        )
+        print("#" * 50)
+        print(f"metrics_df shape: {metrics_df.shape}")
+
+    if config.obsidian_table:
+        print("#" * 50)
+        print("Producing the obsidian table")
+        print("#" * 50)
+
+        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
+        metrics_df = open_element(metrics_path)
+
+        if config.sub_lifes_metrics:
+            sub_metrics_df = sub_lifes_metrics(config=config, metrics_df=metrics_df)
+            obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
+        else:
+            obsidian_table = df_with_index_to_obsidian_table(metrics_df)
+
+        print(obsidian_table)
+
+    if config.plot_preds:
+        print("#" * 50)
+        print("Producing grid plot of the predictions")
+        print("#" * 50)
+
+        _ = plot_predictions_grid(
+            config=config,
+            outputs_path=outputs_path,
+            plot_path=plot_path,
+        )
+
+    return model, model_info
 
 # Function to train and test the model on a wandb run
-
 
 def wandb_train_test(
     model: nn.Module,
@@ -337,7 +492,9 @@ def wandb_train_test(
         model_info (dict): The dictionary containing the model information
     """
 
-    wandb.watch(model, criterion, log="all", log_freq=10)
+    if config.use_wandb:
+        wandb.watch(model, criterion, log="all", log_freq=10)
+
     preds, true_vals, train_times, val_times, test_times = [], [], [], [], []
     min_val_loss = np.inf
     best_model_state_dict = model.state_dict()
@@ -508,33 +665,27 @@ def best_model_perf(
 
     best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
 
-    if config.model_name.startswith("chronos"):
-        model, tokenizer, _, _ = load_model_tokenizer(
-            train_loader=train_loader, model_config=model_config, exp_config=config
-        )
-    else:
-        feature_names = get_feature_names(config)
+    feature_names = get_feature_names(config)
 
-        if config.save_summary_dict:
-            model, summary_dict = load_ssm_model(
-                model_config=model_config,
-                exp_config=config,
-                d_input=len(feature_names)
-                if ((not config.quantile_reg) or (not model_config.tau_feat))
-                else len(feature_names) + 1,
-            )
-            print("#" * 50)
-            print(f"Summary dict keys: {summary_dict.keys()}")
-            print("#" * 50)
-        else:
-            model, _, _ = load_ssm_model(
-                model_config=model_config,
-                exp_config=config,
-                d_input=len(feature_names)
-                if ((not config.quantile_reg) or (not model_config.tau_feat))
-                else len(feature_names) + 1,
-            )
-            tokenizer = None
+    if config.save_summary_dict:
+        model, summary_dict = load_ssm_model(
+            model_config=model_config,
+            exp_config=config,
+            d_input=len(feature_names)
+            if ((not config.quantile_reg) or (not model_config.tau_feat))
+            else len(feature_names) + 1,
+        )
+        print("#" * 50)
+        print(f"Summary dict keys: {summary_dict.keys()}")
+        print("#" * 50)
+    else:
+        model, _, _ = load_ssm_model(
+            model_config=model_config,
+            exp_config=config,
+            d_input=len(feature_names)
+            if ((not config.quantile_reg) or (not model_config.tau_feat))
+            else len(feature_names) + 1,
+        )
 
     model.load_state_dict(best_model_state_dict)
     model = model.to(device)
@@ -626,7 +777,6 @@ def best_model_perf(
 
 # Function that implements a wandb run
 
-
 def wandb_run(
     run_name: str,
     config: ExperimentConfig,
@@ -657,107 +807,30 @@ def wandb_run(
         model_info (dict): The dictionary containing the model information
     """
 
-    with wandb.init(project=config.project_name, name=run_name):
-        loaders_dict = load_reg_data(config)
-        train_loader, val_loader, test_loader = (
-            loaders_dict["train_loader"],
-            loaders_dict["val_loader"],
-            loaders_dict["test_loader"],
-        )
+    if config.use_wandb:
 
-        if config.model_name.startswith("chronos"):
-            model, tokenizer, optimizer, scheduler = load_model_tokenizer(
-                train_loader=train_loader,
-                model_config=model_config,
-                exp_config=config,
+        with wandb.init(project=config.project_name, name=run_name):
+            model, model_info = exp_run(
+                config = config,
+                model_config = model_config,
+                device = device,
+                best_model_path = best_model_path,
+                outputs_path = outputs_path,
+                metrics_path = metrics_path,
+                plot_path = plot_path,
+                tau = tau
             )
-        else:
-            feature_names = get_feature_names(config)
-            model, optimizer, scheduler = load_ssm_model(
-                model_config=model_config,
-                exp_config=config,
-                d_input=len(feature_names)
-                if ((not config.quantile_reg) or (not model_config.tau_feat))
-                else len(feature_names) + 1,
-            )
-            tokenizer = None
-        model = model.to(device)
+    else:
 
-        criterion, eval_criterion = load_loss_functions(
-            loss_name=config.loss,
-            model_name=config.model_name,
-            eval_loss_name=config.eval_loss,
-            tau=config.tau,
-        )
-
-        model_info = wandb_train_test(
-            model=model,
-            tokenizer=tokenizer,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            test_loader=test_loader,
-            criterion=criterion,
-            eval_criterion=eval_criterion,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            config=config,
-            device=device,
-            best_model_path=best_model_path,
-            tau=tau,
-        )
-
-    if config.return_outputs or config.save_outputs:
-        print("#" * 50)
-        print("Saving outputs")
-        print("#" * 50)
-
-        best_model_perf(
-            config=config,
-            model_config=model_config,
-            device=device,
-            best_model_path=best_model_path,
-            outputs_path=outputs_path,
-            tau=tau,
-        )
-
-    if config.compute_metrics:
-        print("#" * 50)
-        print("Computing metrics for each life and for each sensor in the test set")
-        print("#" * 50)
-
-        metrics_df = lifes_metrics(
-            config=config,
-            outputs_path=outputs_path,
-            metrics_path=metrics_path,
-        )
-        print("#" * 50)
-        print(f"metrics_df shape: {metrics_df.shape}")
-
-    if config.obsidian_table:
-        print("#" * 50)
-        print("Producing the obsidian table")
-        print("#" * 50)
-
-        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
-        metrics_df = open_element(metrics_path)
-
-        if config.sub_lifes_metrics:
-            sub_metrics_df = sub_lifes_metrics(config=config, metrics_df=metrics_df)
-            obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
-        else:
-            obsidian_table = df_with_index_to_obsidian_table(metrics_df)
-
-        print(obsidian_table)
-
-    if config.plot_preds:
-        print("#" * 50)
-        print("Producing grid plot of the predictions")
-        print("#" * 50)
-
-        _ = plot_predictions_grid(
-            config=config,
-            outputs_path=outputs_path,
-            plot_path=plot_path,
+        model, model_info = exp_run(
+            config = config,
+            model_config = model_config,
+            device = device,
+            best_model_path = best_model_path,
+            outputs_path = outputs_path,
+            metrics_path = metrics_path,
+            plot_path = plot_path,
+            tau = tau
         )
 
     return model, model_info
