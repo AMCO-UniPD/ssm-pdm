@@ -28,6 +28,7 @@ case "$mode" in
     --phm_tools "${phm_tools[@]}" \
     --device_num $device_num \
     --use_wandb \
+    --save_best_model \
     --save_outputs \
     --save_outputs_quantile \
     --save_mean_metrics_df \
@@ -72,6 +73,7 @@ case "$mode" in
     --phm_tools "${phm_tools[@]}" \
     --device_num $device_num \
     --test_script \
+    --save_best_model \
     --save_outputs \
     --save_outputs_quantile \
     --save_mean_metrics_df \

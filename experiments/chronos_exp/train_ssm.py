@@ -10,15 +10,8 @@ import torch
 import argparse
 import setproctitle
 
-chronos_path = os.path.join(
-    os.path.dirname(__file__), "..", "..", "src", "chronos-rul", "src"
-)
-src_path = os.path.join(
-    os.path.dirname(__file__),
-    "..",
-    "..",
-    "src",
-)
+chronos_path = os.path.join(os.path.dirname(__file__), "..", "..", "src", "chronos-rul", "src")
+src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 sys.path.append(chronos_path)
 
@@ -165,9 +158,7 @@ if exp_config.test_script:
 
             if exp_config.save_outputs_run:
                 print("#" * 50)
-                print(
-                    "Save the prediction on the different quantiles of the same run together"
-                )
+                print("Save the prediction on the different quantiles of the same run together")
                 print("#" * 50)
 
                 for run in range(exp_config.n_runs):

@@ -46,7 +46,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
-from config_vars import CMAPSS_MODELS, PHM_TOOLS, PHM_FAILURES, PHM_FAIL_TYPES
+from config_vars import CMAPSS_MODELS, PHM_TOOLS, PHM_FAILURES, PHM_FAIL_TYPES, PHM_FEATURES
 from exp_config import ExperimentConfig
 
 def get_current_time() -> str:
@@ -313,7 +313,7 @@ class SSMRegressionDataset(Dataset):
             print("*" * 50)
             sequences = life.values[life.shape[0] - sequence_length :, :]
             mask = np.ones(shape=(sequence_length, life.shape[1]))
-            targets = life["RUL"].values[life.shape[0] - sequence_length :, :]
+            targets = rul[life.shape[0] - sequence_length:]
 
         self.sequences = sequences
         self.targets = targets
@@ -382,7 +382,8 @@ class SSMWindowRegressionDataset(Dataset):
         return sequence, target, mask
 
 def get_transformer(
-    config: ExperimentConfig, df: CMAPSSDataset
+    config: ExperimentConfig,
+    df: Union[CMAPSSDataset,PHMDataset2018],
 ) -> Tuple[Transformer, List[str]]:
     """
     Create a transformer object to preprocess the data from the CMAPSS dataset
@@ -395,7 +396,10 @@ def get_transformer(
         transformer (Transformer): The transformer object
     """
 
-    FEATURES = [df[0].columns[i] for i in sensor_indices]
+    if config.data_name == "CMAPSS":
+        FEATURES = [df[0].columns[i] for i in sensor_indices]
+    else:
+        FEATURES = PHM_FEATURES
 
     if config.scaler == "minmax":
         scaler = MinMaxScaler(
@@ -607,16 +611,27 @@ def load_phm_data(config: ExperimentConfig) -> dict:
     """
 
     assert config.data_name == "PHM", "This function works just with the PHM dataset"
-    assert config.phm_tools in PHM_TOOLS, f"The models must be one of {PHM_TOOLS}"
-    assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES}"
+    assert set(config.phm_tools).issubset(PHM_TOOLS), f"The set of tools must be a subset of {PHM_TOOLS} but got {config.phm_tools}"
+    assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
 
     phm_data = PHMDataset2018(
         failure_types = PHM_FAILURES[config.failure_type],
         tools = config.phm_tools
     )
+    phm_idx = np.arange(len(phm_data))
 
-    train_data, test_data = train_test_split(phm_data, test_size=config.test_size)
-    train_data, val_data = train_test_split(phm_data, test_size=config.val_size)
+    train_data, test_data, train_idx, test_idx = train_test_split(
+        phm_data,
+        phm_idx,
+        test_size=config.test_size,
+        random_state = 42
+    )
+    train_data, val_data, train_idx, val_idx = train_test_split(
+        train_data,
+        train_idx,
+        test_size=config.val_size,
+        random_state = 42
+    )
 
     transformer = get_transformer(config, phm_data)
     transformer.fit(train_data)
@@ -629,37 +644,13 @@ def load_phm_data(config: ExperimentConfig) -> dict:
     test_lifes = TransData(transformed_test_data)
 
     if config.approach == "padding":
-        train_datasets = [
-            SSMRegressionDataset(life=life, sequence_length=config.sequence_length)
-            for life in train_lifes
-        ]
-        val_datasets = [
-            SSMRegressionDataset(life=life, sequence_length=config.sequence_length)
-            for life in val_lifes
-        ]
-        test_datasets = [
-            SSMRegressionDataset(life=life, sequence_length=config.sequence_length)
-            for life in test_lifes
-        ]
+        train_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in train_lifes]
+        val_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
+        test_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
     elif config.approach == "windowed":
-        train_datasets = [
-            SSMWindowRegressionDataset(
-                life=life, sequence_length=config.sequence_length
-            )
-            for life in train_lifes
-        ]
-        val_datasets = [
-            SSMWindowRegressionDataset(
-                life=life, sequence_length=config.sequence_length
-            )
-            for life in val_lifes
-        ]
-        test_datasets = [
-            SSMWindowRegressionDataset(
-                life=life, sequence_length=config.sequence_length
-            )
-            for life in test_lifes
-        ]
+        train_datasets = [SSMWindowRegressionDataset(life=life, sequence_length=config.sequence_length) for life in train_lifes]
+        val_datasets = [SSMWindowRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
+        test_datasets = [SSMWindowRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
 
     if config.approach == "padding":
         batch_size = config.sequence_length
@@ -674,8 +665,11 @@ def load_phm_data(config: ExperimentConfig) -> dict:
 
     loaders_dict = {
         "train_loader": train_loader,
+        "train_idx": train_idx,
         "val_loader": val_loader,
+        "val_idx": val_idx,
         "test_loader": test_loader,
+        "test_idx": test_idx,
         "test_loaders": test_loaders,
     }
 
@@ -704,6 +698,28 @@ def get_feature_names(
     feature_names = transformer.columns()
     return feature_names
 
+def get_phm_feature_names(
+    config: ExperimentConfig,
+) -> List[str]:
+    """
+    Function to get the feature names in the PHM dataset according to the specific CeRULeO transformer used
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+
+    Returns:
+        feature_names (List[str]): The list of feature names in the CMAPSS dataset
+    """
+
+    phm_data = PHMDataset2018(
+        failure_types = PHM_FAILURES[config.failure_type],
+        tools = config.phm_tools
+    )
+
+    transformer = get_transformer(config, phm_data)
+    transformer.fit(phm_data)
+    feature_names = transformer.columns()
+    return feature_names
 
 # Function to sample a quantile level for the quantile regression approach
 

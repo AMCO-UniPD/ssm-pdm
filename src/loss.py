@@ -237,16 +237,16 @@ class QuantileLoss(nn.Module):
         return torch.mean(loss)
 
 
-def load_loss_functions(loss_name:str,
-                        model_name:str,
-                        eval_loss_name:str,
-                        tau:float=0.5) -> Tuple[nn.Module, nn.Module]:
+def load_loss_functions(
+    loss_name:str,
+    eval_loss_name:str,
+    tau:float=0.5,
+) -> Tuple[nn.Module, nn.Module]:
     """
     Load the loss functions for the training and evaluation phases
 
     Args:
         loss_name (str): The name of the loss function
-        model_name (str): The name of the model
         eval_loss_name (str): The name of the evaluation loss function
         tau (float): The quantile for the Pinball loss
 
@@ -256,22 +256,13 @@ def load_loss_functions(loss_name:str,
     """
 
     if loss_name=="mae":
-        if model_name.startswith("chronos"):
-            criterion=MAELoss()
-        else:
-            criterion=SSMAELoss()
+        criterion=SSMAELoss()
     elif loss_name=="mse":
         criterion=MSELoss()
     elif loss_name=="rmse":
-        if model_name.startswith("chronos"):
-            criterion=RMSELoss()
-        else:
-            criterion=SSMRMSELoss()
+        criterion=SSMRMSELoss()
     elif loss_name=="pinball":
-        if model_name.startswith("chronos"):
-            criterion=PinballLoss(tau=tau)
-        else:
-            criterion=SSMPinballLoss(tau=tau)
+        criterion=SSMPinballLoss(tau=tau)
     elif loss_name=="quantile_reg":
         criterion=QuantileLoss()
 
@@ -280,14 +271,8 @@ def load_loss_functions(loss_name:str,
     elif eval_loss_name=="mse":
         eval_loss=MSELoss()
     elif eval_loss_name=="rmse":
-        if model_name.startswith("chronos"):
-            eval_loss=RMSELoss()
-        else:
-            eval_loss=SSMRMSELoss()
+        eval_loss=SSMRMSELoss()
     elif eval_loss_name=="pinball":
-        if model_name.startswith("chronos"):
-            eval_loss=PinballLoss(tau=tau)
-        else:
-            eval_loss=SSMPinballLoss(tau=tau)
+        eval_loss=SSMPinballLoss(tau=tau)
 
     return criterion, eval_loss

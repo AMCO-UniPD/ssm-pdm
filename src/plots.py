@@ -208,7 +208,6 @@ def plot_prediction_interval(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
-    run: int = 1,
 ) -> plt.figure:
     """
     Function to plot in a grid the `RUL` predictions of each life compared to the true `RUL`,M
@@ -222,8 +221,6 @@ def plot_prediction_interval(
         Path to the outputs dictionary
     plot_path: str
         Path to save the plot
-    run: int
-        Run number to plot
 
     Returns:
     --------
@@ -323,9 +320,9 @@ def plot_prediction_interval(
 
     if config.save_plot:
         if config.full_life:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_quantile_{config.quantile_run}_interval_full"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{exp_config.run_id}_quantile_{config.quantile_run}_interval_full"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{run+1}_quantile_{config.quantile_run}_interval_{config.quantile_approach}"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{exp_config.run_id}_quantile_{config.quantile_run}_interval_{config.quantile_approach}"
         life_idx_str = "_".join(
             str(x + config.test_idx[0] + 1) for x in config.life_idx
         )

@@ -10,6 +10,7 @@ import traceback
 import time
 import wandb
 import numpy as np
+import pandas as pd
 from tqdm.auto import tqdm
 from typing import Tuple, Union
 
@@ -31,11 +32,14 @@ sys.path.append(imports_path)
 
 # import from other modules
 from utils import (
+    get_current_time,
+    get_phm_feature_names,
     sample_quantile,
     save_element,
     ExperimentConfig,
     generate_path,
     load_reg_data,
+    load_phm_data,
     get_most_recent_file,
     open_element,
     get_feature_names,
@@ -330,14 +334,17 @@ def wandb_data(
         eval_criterion (nn.Module): evaluation loss
     """
 
-    loaders_dict = load_reg_data(config)
+    loaders_dict = load_phm_data(config) if config.data_name == "PHM" else load_reg_data(config)
+
     train_loader, val_loader, test_loader = (
         loaders_dict["train_loader"],
         loaders_dict["val_loader"],
         loaders_dict["test_loader"],
     )
 
-    feature_names = get_feature_names(config)
+    ipdb.set_trace()
+
+    feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
     model, optimizer, scheduler = load_ssm_model(
         model_config=model_config,
         exp_config=config,
@@ -345,13 +352,12 @@ def wandb_data(
         if ((not config.quantile_reg) or (not model_config.tau_feat))
         else len(feature_names) + 1,
     )
-    model = model.to(device)
+    model = model.to(model_config.device)
+    ipdb.set_trace()
 
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
-        model_name=config.model_name,
         eval_loss_name=config.eval_loss,
-        tau=config.tau,
     )
 
     return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion
@@ -471,7 +477,7 @@ def wandb_train_test(
     device: torch.device = torch.device("cpu"),
     best_model_path: str = experiment_path,
     tau: float = 0.5,
-) -> dict:
+) -> None:
     """
     Train and test the model on a wandb run and log the metrics
 
@@ -489,7 +495,7 @@ def wandb_train_test(
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
-        model_info (dict): The dictionary containing the model information
+        None: the model does not return anything
     """
 
     if config.use_wandb:
@@ -572,15 +578,6 @@ def wandb_train_test(
             test_times.append(test_time)
 
             model_info = {
-                "preds": preds,
-                "true_vals": true_vals,
-                "train_times": train_times,
-                "val_times": val_times,
-                "test_times": test_times,
-            }
-
-            wandb.log(
-                {
                     "train_time": train_time,
                     "val_time": val_time,
                     "test_time": test_time,
@@ -590,10 +587,20 @@ def wandb_train_test(
                     "test_loss": test_loss,
                     "eval_test_loss": eval_test_loss,
                 }
-            )
+
+            if config.use_wandb:
+                wandb.log(model_info)
+            else:
+                model_info_df = pd.DataFrame(model_info,index=["values"])
+                print("-"*50)
+                print("Information on the model training and evaluation:")
+                print(model_info_df.T)
+                print("-"*50)
 
     except KeyboardInterrupt:
+        print("-"*50)
         print("Manual Early Stopping triggered. Saving the best model up to now")
+        print("-"*50)
 
         if config.save_best_model:
             save_best_model(
@@ -602,63 +609,41 @@ def wandb_train_test(
             )
 
     except torch.cuda.OutOfMemoryError:
-        print("CUDA Out of Memory Error")
+        print("-"*50)
+        print("CUDA Out of Memory Error, stopping execution")
+        print("-"*50)
         traceback.print_exc()  # Print the full traceback of the error
         quit()
 
     except Exception as e:
+        print("-"*50)
         print("An error occured during the training process:")
+        print("-"*50)
         print(e)
         traceback.print_exc()  # Print the full traceback of the error
 
     print("No errors occured during the training process, saving the best model")
     save_best_model(
-        best_model_state_dict=best_model_state_dict, best_model_path=best_model_path
+        best_model_state_dict=best_model_state_dict,
+        best_model_path=best_model_path
     )
 
-    return model_info
-
-
-# Function to get the best model performance
-
-
-def best_model_perf(
+def load_best_model(
     config: ExperimentConfig,
     model_config: ModelConfig,
-    device: torch.device = torch.device("cpu"),
-    best_model_path: str = experiment_path,
-    outputs_path: str = experiment_path,
-    tau: float = 0.5,
-) -> Union[None, nn.Module, dict]:
+    best_model_path: str
+) -> nn.Module:
     """
-    This function loads the best model according to the validation set and
-    computes the performance on the test set
+    This function loads the best model given the best model path
 
     Args:
-        config (ExperimentConfig): The configuration dictionary
-        model_config (ModelConfig): The model configuration object
-        device (str): The device to use
-        best_model_path (str): The path to save the best model
-        outputs_path (str): The path to save the outputs
-        plot_path (str): The path to save the plots
-        metrics_path (str): The path to save the test metrics
+        config (ExperimentConfig): experiment configuration object
+        best_model_path (str): path to the best model
 
     Returns:
-        Union[None,nn.Module,dict]: The function saves the plots and the metrics and does not return anything
-            If model_summary is set to True the function returns the model object, but it will not save the outputs
-            If return_outputs is set to True the function returns the outputs dictionary, but it will not save the outputs
-
+        model (nn.Module): best model
     """
 
-    # NOTE: Removed the `if config.zero_shot` block because it is not used in the `ssm_pdm` part
-
-    loaders_dict = load_reg_data(config)
-    train_loader, test_loaders = (
-        loaders_dict["train_loader"],
-        loaders_dict["test_loaders"],
-    )
-
-    # Load the best model
     best_model_filepath = get_most_recent_file(
         dirpath=best_model_path, file_pos=config.file_pos
     )
@@ -690,30 +675,75 @@ def best_model_perf(
     model.load_state_dict(best_model_state_dict)
     model = model.to(device)
 
+    return model
+
+# Function to get the best model performance
+
+
+def best_model_perf(
+    config: ExperimentConfig,
+    model_config: ModelConfig,
+    device: torch.device = torch.device("cpu"),
+    best_model_path: str = experiment_path,
+    outputs_path: str = experiment_path,
+    tau: float = 0.5,
+) -> Union[None, nn.Module, dict]:
+    """
+    This function loads the best model according to the validation set and
+    computes the performance on the test set. In particular it saves
+    (and potentially returns) the
+    prediction and true values obtained on the different test lifes
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+        model_config (ModelConfig): The model configuration object
+        device (str): The device to use
+        best_model_path (str): The path to save the best model
+        outputs_path (str): The path to save the outputs
+        plot_path (str): The path to save the plots
+        metrics_path (str): The path to save the test metrics
+
+    Returns:
+        Union[None,nn.Module,dict]: The function saves the plots and the metrics and does not return anything
+            If model_summary is set to True the function returns the model object, but it will not save the outputs
+            If return_outputs is set to True the function returns the outputs dictionary, but it will not save the outputs
+
+    """
+
+    loaders_dict = load_phm_data(config) if config.data_name == "PHM" else load_reg_data(config)
+    test_loaders = loaders_dict["test_loaders"]
+    test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None
+
+    model = load_best_model(
+        config = config,
+        model_config = model_config,
+        best_model_path = best_model_path
+    )
+
     if config.model_summary:
         return model
 
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
-        model_name=config.model_name,
         eval_loss_name=config.eval_loss,
-        tau=config.tau,
     )
 
-    # Evaluate the model on the test set
     print("#" * 50)
     print("Evaluating the best model on the test set")
     print("#" * 50)
 
-    if config.approach == "padding" or config.model_name.startswith("chronos"):
+    preds, true_vals = [], []
+
+    for i, test_loader in enumerate(test_loaders):
+
         print("#" * 50)
-        print(f"Testing on life {i+1+config.test_idx[0]}")
+        print(f"Testing on life {i+1+config.test_idx[0]}") if config.data_name == "CMAPSS" else print(f"Testing on life {test_idx[i]}")
         print("#" * 50)
+
         _, _, y_pred, y_true = eval_loop(
             dataloader=test_loader,
             model=model,
             config=config,
-            tokenizer=tokenizer,
             criterion=criterion,
             eval_criterion=eval_criterion,
             mode="Test",
@@ -722,58 +752,36 @@ def best_model_perf(
             tau=tau,
         )
 
-        outputs_dict = {"y_pred": y_pred, "y_true": y_true}
+        if config.approach == "padding":
 
-        if config.save_outputs:
-            save_element(
-                element=outputs_dict,
-                dirpath=outputs_path,
-                filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
-                filetype="pickle",
-            )
+            preds.append(y_pred)
+            true_vals.append(y_true)
 
-        if config.return_outputs:
-            return outputs_dict
-    else:
-        preds, true_vals = [], []
+        else:
 
-        for i, test_loader in enumerate(test_loaders):
-            print("#" * 50)
-            print(f"Testing on life {i+1+config.test_idx[0]}")
-            print("#" * 50)
-            _, _, y_pred, y_true = eval_loop(
-                dataloader=test_loader,
-                model=model,
-                config=config,
-                tokenizer=tokenizer,
-                criterion=criterion,
-                eval_criterion=eval_criterion,
-                mode="Test",
-                device=device,
-                use_tqdm=False,
-                tau=tau,
-            )
             combined_preds, combined_true_vals = combine_values(
                 predictions=y_pred,
                 true_values=y_true,
                 sequence_length=config.sequence_length,
             )
+
             preds.append(combined_preds)
             true_vals.append(combined_true_vals)
 
-        outputs_dict = {"y_pred": preds, "y_true": true_vals}
+    outputs_dict = {"y_pred": preds, "y_true": true_vals}
 
-        if config.save_outputs:
-            save_element(
-                element=outputs_dict,
-                dirpath=outputs_path,
-                filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}",
-                filetype="pickle",
-            )
+    filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}_{config.tool_type}"
 
-        if config.return_outputs:
-            return outputs_dict
+    if config.save_outputs:
+        save_element(
+            element=outputs_dict,
+            dirpath=outputs_path,
+            filename=filename,
+            filetype="pickle",
+        )
 
+    if config.return_outputs:
+        return outputs_dict
 
 # Function that implements a wandb run
 

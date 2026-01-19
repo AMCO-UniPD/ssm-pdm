@@ -76,7 +76,7 @@ for run in range(config.n_runs):
             true = [y_true[i] for i in config.life_idx]
         if not config.full_life:
             mask = true!=0 if config.approach=="padding" else [true[i]!=0 for i in range(len(true))]
-        
+
         quantile_preds[f"quantile_{quantile}"] = pred
 
     # Produce the plot

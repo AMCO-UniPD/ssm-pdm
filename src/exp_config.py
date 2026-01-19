@@ -5,7 +5,10 @@ Python module to define the command line parameters and some configuration funct
 import argparse
 from argparse import Namespace
 from dataclasses import dataclass, field, fields
-from typing import List, Dict
+from typing import List, Dict, Tuple
+import torch
+from utils import load_yaml_to_dict
+from ssm_models import ModelConfig
 
 @dataclass
 class ExperimentConfig:
@@ -40,9 +43,18 @@ class ExperimentConfig:
     # training parameters
     batch_size: int = 32
     sequence_length: int = 170
+    epochs: int = 100
+    lr: float = 1.0e-03
+    weight_decay: float = 1.0e-04
+    # loss parameters
+    loss: str = "quantile_reg"
+    eval_loss: str = "rmse"
     # multi run parameters
     n_runs: int = 5
     start_run_id: int = 0
+    run_id: int = 1
+    # model summary
+    summary_func: str = "torchinfo"
     # test_script parameters
     file_pos: int = 0
 
@@ -169,6 +181,12 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--save_best_model",
+        action="store_true",
+        help="If set, save the best model"
+    )
+
+    parser.add_argument(
         "--save_outputs",
         action="store_true",
         help="If set, save the predictions into a file"
@@ -195,6 +213,18 @@ def define_arguments() -> Namespace:
         "--save_mean_metrics_df",
         action="store_true",
         help="If set, save the df with the average metrics over the lifes"
+    )
+
+    parser.add_argument(
+        "--model_summary",
+        action="store_true",
+        help="If set, compute the model summary"
+    )
+
+    parser.add_argument(
+        "--model_summary_manual",
+        action="store_true",
+        help="If set, compute the model summary manually"
     )
 
     parser.add_argument(
@@ -240,3 +270,43 @@ def set_exp_name(config: ExperimentConfig) -> str:
     exp_name = f"{config.tool_type}_{config.failure_type}_{config.approach}_{config.model_name}"
 
     return exp_name
+
+def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
+    """
+    This functions sets up an experiment script defining the experiment configuration,
+    model configuration, CUDA device and experiment name
+
+    Args:
+        No arguments required becuase the input arguments are passed through the command line
+        or through the yaml files
+
+    Returns:
+        exp_config (ExperimentConfig): experiment configuration object
+        model_config (ModelConfig): model configuration object
+        device (torch.device): CUDA device to use for the GPU computations
+        exp_name (str): experiment name
+    """
+
+    args = define_arguments()
+
+    exp_config = load_yaml_to_dict(args.exp_config_path)
+    exp_config = ExperimentConfig.from_dict(exp_config)
+    exp_config.add_params(args=args.__dict__)
+
+    model_config = load_yaml_to_dict(exp_config.model_config_path)
+    model_config = ModelConfig.from_dict(model_config)
+
+    device = torch.device(f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu")
+    model_config.device = device
+
+    print("-" * 50)
+    print(f"Using device: {device}")
+    print("-" * 50)
+
+    exp_name = set_exp_name(exp_config)
+
+    print("-" * 50)
+    print(f"Experiment name set to {exp_name}")
+    print("-" * 50)
+
+    return exp_config, model_config, device, exp_name
