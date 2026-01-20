@@ -7,8 +7,8 @@ from argparse import Namespace
 from dataclasses import dataclass, field, fields
 from typing import List, Dict, Tuple
 import torch
-from utils import load_yaml_to_dict
-from ssm_models import ModelConfig
+# from utils import load_yaml_to_dict
+# from ssm_models import ModelConfig
 
 @dataclass
 class ExperimentConfig:
@@ -43,6 +43,7 @@ class ExperimentConfig:
     # training parameters
     batch_size: int = 32
     sequence_length: int = 170
+    stride: int = 1
     epochs: int = 100
     lr: float = 1.0e-03
     weight_decay: float = 1.0e-04
@@ -271,6 +272,8 @@ def set_exp_name(config: ExperimentConfig) -> str:
 
     return exp_name
 
+from ssm_models import ModelConfig
+
 def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
     """
     This functions sets up an experiment script defining the experiment configuration,
@@ -286,6 +289,8 @@ def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
         device (torch.device): CUDA device to use for the GPU computations
         exp_name (str): experiment name
     """
+
+    from utils import load_yaml_to_dict
 
     args = define_arguments()
 

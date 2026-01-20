@@ -14,8 +14,8 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-# approach: windowed
-approach: padding
+approach: windowed
+# approach: padding
 
 # quantile_reg config
 quantile_reg: true
@@ -26,7 +26,9 @@ quantile_run: 0.25
 
 #WARN: These parameters are probably to tune for the PHM dataset
 batch_size: 100
-sequence_length: 170
+# sequence_length: 170
+sequence_length: 10000
+stride: 1000
 # epochs: 100
 epochs: 1 #NOTE: test
 lr: 1.0e-3

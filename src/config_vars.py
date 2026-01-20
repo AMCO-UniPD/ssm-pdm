@@ -63,4 +63,4 @@ PHM_FAILURES = {
 
 PHM_FAIL_TYPES = list(PHM_FAILURES.keys())
 
-
+APPROACHES = ["padding", "windowed"]

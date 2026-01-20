@@ -5,6 +5,7 @@ Script containing some utility functions for the `chronos-pdm` project
 import os
 import sys
 import time
+import math
 import re
 import yaml
 import pickle
@@ -46,7 +47,14 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
-from config_vars import CMAPSS_MODELS, PHM_TOOLS, PHM_FAILURES, PHM_FAIL_TYPES, PHM_FEATURES
+from config_vars import (
+    CMAPSS_MODELS,
+    PHM_TOOLS,
+    PHM_FAILURES,
+    PHM_FAIL_TYPES,
+    PHM_FEATURES,
+    APPROACHES,
+)
 from exp_config import ExperimentConfig
 
 def get_current_time() -> str:
@@ -293,9 +301,23 @@ class SSMRegressionDataset(Dataset):
         life: pd.DataFrame,
         sequence_length: int = 500,
     ):
+        """
+        This class implements the dataset for the padding approach. In
+        this approach we set a maximum length (i.e. sequence_length) for
+        the time series associated to a life and we extract a sequence of that
+        length from each life. If the life is longer than sequence_length we take
+        the last sequence_length samples from it, otherwise we take the entire time
+        series and we use 0 padding to cover for the sequence_length - life.shape[0]
+        missing samples. As usual we have to use a mask to keep track of the samples
+        that are padded as zeros.
+        """
+
         life, rul = life.iloc[:, :-1], life["RUL"]
 
+        #NOTE: Time series shorter than sequence_length, we use 0 padding
+
         if sequence_length > life.shape[0]:
+
             pad_arr = np.zeros(shape=(sequence_length - life.shape[0], life.shape[1]))
             mask = np.concatenate(
                 (
@@ -305,27 +327,26 @@ class SSMRegressionDataset(Dataset):
             )
             sequences = np.concatenate((life.values, pad_arr))
             targets = np.concatenate((rul.values, pad_arr[:, -1]))
+
+        #NOTE: Time series longer than sequence_length we take the last sequence_length samples
+
         else:
-            print("*" * 50)
-            print(
-                f"Padding approach: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps"
-            )
-            print("*" * 50)
+
             sequences = life.values[life.shape[0] - sequence_length :, :]
             mask = np.ones(shape=(sequence_length, life.shape[1]))
             targets = rul[life.shape[0] - sequence_length:]
 
-        self.sequences = sequences
-        self.targets = targets
-        self.mask = mask
+        self.sequences = np.expand_dims(sequences,axis=0)
+        self.targets = np.expand_dims(targets,axis=0)
+        self.mask = np.expand_dims(mask,axis=0)
 
     def __len__(self):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32).unsqueeze(-1)
-        target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
-        mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
+        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32)
+        target = torch.tensor(self.targets[idx], dtype=torch.float32)
+        mask = torch.tensor(self.mask[idx], dtype=torch.float32)
         return sequence, target, mask
 
 
@@ -335,50 +356,90 @@ class SSMRegressionDataset(Dataset):
 class SSMWindowRegressionDataset(Dataset):
     def __init__(
         self,
-        life: pd.DataFrame,
+        lifes: TransData,
         sequence_length: int = 500,
+        stride: int = 1,
     ):
-        life, rul = life.iloc[:, :-1], life["RUL"]
+        """
+        This class implements the dataset for the windowed approach.
+        Each life is divided into multiple subsequences of length
+        equal to sequence length. In case a sequence is too small
+        it is padded with zeros and a mask keeps track of that to not
+        consider the predictions done on the padded indexes in the loss
+        computation
 
-        if sequence_length > life.shape[0]:
-            pad_arr = np.zeros(shape=(sequence_length - life.shape[0], life.shape[1]))
-            mask = np.concatenate(
-                (
-                    np.ones(shape=(life.shape[0])),
-                    np.zeros(shape=(sequence_length - life.shape[0])),
+        Args:
+            lifes (TransData): lifes transformed with a transformer ceruelo object
+            sequence_length (int): length of the sub sequences
+            stride (int): stride between two consecutive windows
+        """
+
+        self.lifes = [life.iloc[:,:-1] for life in lifes]
+        self.targets = [life["RUL"] for life in lifes]
+        self.sequence_length = sequence_length
+        self.stride = stride
+
+        self.data_indices = []
+        for i, df in enumerate(self.lifes):
+            self.num_sequences = max(0, math.ceil((len(df) - self.sequence_length) / self.stride) + 1)
+
+            if self.num_sequences > 0:
+
+                # Store tuples of (life_index, start_index_of_window)
+                self.data_indices.extend(
+                    [(i, j * self.stride) for j in range(self.num_sequences)]
                 )
-            )
-            sequences = np.concatenate((life.values, pad_arr))
-            targets = np.concatenate((rul.values, pad_arr[:, -1]))
-            # Add the extra dimension to match the windowed approach
-            # NOTE: This is the equivalent of `unsqueeze(0)` in PyTorch
-            sequences = np.expand_dims(sequences, axis=0)
-            targets = np.expand_dims(targets, axis=0)
-            mask = np.expand_dims(mask, axis=0)
-        else:
-            n_windows = life.shape[0] - sequence_length
-            # print("*"*50)
-            # print(f"Windowed approach: This life is longer than {sequence_length}, dividing it into {n_windows} windows of length {sequence_length}")
-            # print("*"*50)
-            sequences = np.array(
-                [life[i : i + sequence_length] for i in range(n_windows + 1)]
-            )
-            targets = np.array(
-                [rul[i : i + sequence_length] for i in range(n_windows + 1)]
-            )
-            mask = np.array([np.ones(sequence_length) for _ in range(n_windows + 1)])
 
-        self.sequences = sequences
-        self.targets = targets
-        self.mask = mask
+            else:
+
+                # If the signal is too short we'll create a single sub sequence starting from 0 and we'll add padding
+                self.data_indices.extend([(i,0)])
 
     def __len__(self):
-        return len(self.sequences)
+        return len(self.data_indices)
 
     def __getitem__(self, idx):
-        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32).unsqueeze(-1)
-        target = torch.tensor(self.targets[idx], dtype=torch.float32).unsqueeze(-1)
-        mask = torch.tensor(self.mask[idx], dtype=torch.float32).unsqueeze(-1)
+
+        acq_idx, start_idx = self.data_indices[idx]
+        life = self.lifes[acq_idx]
+        rul = self.targets[acq_idx]
+        mask = np.ones(shape=(self.sequence_length,1))
+
+        #NOTE: Life longer than sequence_length: we create the sub sequence
+
+        end_idx = start_idx + self.sequence_length - 1
+        if end_idx <= life.shape[0]:
+            inputs = life.iloc[start_idx:end_idx].values
+            targets = rul.iloc[start_idx:end_idx].values
+
+        #NOTE: Life shorter than sequence_length: we use 0 padding
+
+        else:
+
+            inputs = life.iloc[start_idx:life.shape[0]].values
+            targets = rul.iloc[start_idx:rul.shape[0]].values
+            pad_idx = self.sequence_length - (life.shape[0] - start_idx)
+
+            #NOTE: Concatenate inputs and targets with pad_idx
+
+            inputs = np.concatenate((
+                inputs,
+                np.zeros(shape=(pad_idx,inputs.shape[1]))
+            ))
+
+            targets = np.concatenate((
+                targets,
+                np.zeros(shape=(pad_idx,targets.shape[1]))
+            ))
+
+            #NOTE: From pad_idx to the end the mask becomes 0
+
+            mask[pad_idx:] = 0
+
+        targets = np.expand_dims(targets,axis=-1)
+        sequence = torch.tensor(inputs, dtype=torch.float32)
+        target = torch.tensor(targets, dtype=torch.float32)
+        mask = torch.tensor(mask, dtype=torch.float32)
         return sequence, target, mask
 
 def get_transformer(
@@ -598,12 +659,109 @@ def load_reg_data(config: ExperimentConfig) -> dict:
 
     return loaders_dict
 
-def load_phm_data(config: ExperimentConfig) -> dict:
+def create_padding_loaders(
+    config: ExperimentConfig,
+    train_lifes: TransData,
+    val_lifes: TransData,
+    test_lifes: TransData,
+) -> dict:
+    """
+    Function to create the dataloaders for the padding approach.
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        train_lifes (TransData): transformed training lifes
+        val_lifes (TransData): transformed validation lifes
+        test_lifes (TransData): transformed test lifes
+
+    Returns:
+        loaders_dict (dict): dictionary containing the dataloaders
+    """
+
+    train_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in train_lifes]
+    val_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
+    test_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
+
+    batch_size = 1
+
+    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=False)
+    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=False)
+    test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
+
+    loaders_dict = {
+        "train_loader": train_loader,
+        "val_loader": val_loader,
+        "test_loader": test_loader,
+        "test_loaders": test_loaders,
+    }
+
+    return loaders_dict
+
+def create_window_loaders(
+    config: ExperimentConfig,
+    train_lifes: TransData,
+    val_lifes: TransData,
+    test_lifes: TransData,
+    eval: bool = False
+) -> Union[List[DataLoader],dict]:
+    """
+    Function to create the dataloaders for the window approach.
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        train_lifes (TransData): transformed training lifes
+        val_lifes (TransData): transformed validation lifes
+        test_lifes (TransData): transformed test lifes
+        eval (bool): boolean flag to decide weather to load the dataloaders in eval mode
+        (i.e one loader per life) or not
+
+    Returns:
+        loaders_dict (dict): dictionary containing the dataloaders if eval=False
+        test_loaders (List[DataLoader]): list of dataloaders of the test lifes if eval=True
+    """
+
+    if eval:
+
+        print("-"*50)
+        print("Creating window dataloaders in evaluation mode")
+        print("-"*50)
+
+        test_datasets = [SSMWindowRegressionDataset(lifes=[test_life], sequence_length=config.sequence_length, stride=config.stride) for test_life in test_lifes]
+        test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
+
+        return test_loaders
+
+    else:
+
+        train_datasets = SSMWindowRegressionDataset(lifes=train_lifes, sequence_length=config.sequence_length, stride=config.stride)
+        val_datasets = SSMWindowRegressionDataset(lifes=val_lifes, sequence_length=config.sequence_length, stride=config.stride)
+        test_datasets = SSMWindowRegressionDataset(lifes=test_lifes, sequence_length=config.sequence_length, stride=config.stride)
+
+        train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
+        val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=False)
+        test_loader = DataLoader(test_datasets, batch_size=config.batch_size, shuffle=False)
+        test_loaders = [DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False) for test_dataset in test_datasets]
+
+        loaders_dict = {
+            "train_loader": train_loader,
+            "val_loader": val_loader,
+            "test_loader": test_loader,
+            "test_loaders": test_loaders,
+        }
+
+        return loaders_dict
+
+def load_phm_data(
+    config: ExperimentConfig,
+    eval: bool = False
+) -> dict:
     """
     Clone of the load_reg_data function but adapted for the PHM dataset.
 
     Args:
         config (ExperimentConfig): The configuration dictionary
+        eval (bool): weather to load the loaders in eval mode in the windowed approach
 
     Returns:
         loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
@@ -644,34 +802,34 @@ def load_phm_data(config: ExperimentConfig) -> dict:
     test_lifes = TransData(transformed_test_data)
 
     if config.approach == "padding":
-        train_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in train_lifes]
-        val_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
-        test_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
+
+        loaders_dict = create_padding_loaders(
+            config = config,
+            train_lifes = train_lifes,
+            val_lifes = val_lifes,
+            test_lifes = test_lifes,
+        )
+
     elif config.approach == "windowed":
-        train_datasets = [SSMWindowRegressionDataset(life=life, sequence_length=config.sequence_length) for life in train_lifes]
-        val_datasets = [SSMWindowRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
-        test_datasets = [SSMWindowRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
 
-    if config.approach == "padding":
-        batch_size = config.sequence_length
+        loaders_dict = create_window_loaders(
+            config = config,
+            train_lifes = train_lifes,
+            val_lifes = val_lifes,
+            test_lifes = test_lifes,
+            eval = eval
+        )
+
+        if eval:
+            return {"test_loaders": loaders_dict, "test_idx": test_idx}
+
     else:
-        batch_size = config.batch_size
 
-    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=False)
-    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=False)
+        raise ValueError(f"Approach {config.approach} not supported. Supported approaches are {APPROACHES}")
 
-    test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
-
-    loaders_dict = {
-        "train_loader": train_loader,
-        "train_idx": train_idx,
-        "val_loader": val_loader,
-        "val_idx": val_idx,
-        "test_loader": test_loader,
-        "test_idx": test_idx,
-        "test_loaders": test_loaders,
-    }
+    loaders_dict["train_idx"] = train_idx
+    loaders_dict["val_idx"] = val_idx
+    loaders_dict["test_idx"] = test_idx
 
     return loaders_dict
 

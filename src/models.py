@@ -342,8 +342,6 @@ def wandb_data(
         loaders_dict["test_loader"],
     )
 
-    ipdb.set_trace()
-
     feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
     model, optimizer, scheduler = load_ssm_model(
         model_config=model_config,
@@ -353,7 +351,6 @@ def wandb_data(
         else len(feature_names) + 1,
     )
     model = model.to(model_config.device)
-    ipdb.set_trace()
 
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
@@ -710,7 +707,7 @@ def best_model_perf(
 
     """
 
-    loaders_dict = load_phm_data(config) if config.data_name == "PHM" else load_reg_data(config)
+    loaders_dict = load_phm_data(config,eval=True) if config.data_name == "PHM" else load_reg_data(config)
     test_loaders = loaders_dict["test_loaders"]
     test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None
 
