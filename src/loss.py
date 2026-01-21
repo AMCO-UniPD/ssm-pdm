@@ -34,13 +34,20 @@ class SSMRMSELoss(nn.Module):
     def __init__(self):
         super(SSMRMSELoss, self).__init__()
 
-    def forward(self, y_pred:torch.Tensor, y_true:torch.Tensor, mask:torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        y_pred:torch.Tensor,
+        y_true:torch.Tensor,
+        mask:torch.Tensor,
+    ) -> torch.Tensor:
         """
-        Compute the Root Mean Squared Error (RMSE) loss between the predicted and the true values
+        Compute the Root Mean Squared Error (RMSE) loss
+        between the predicted and the true values
 
         Args:
-            yhat (torch.Tensor): The predicted values
-            y (torch.Tensor): The true values
+            y_pred (torch.Tensor): The predicted values
+            y_true (torch.Tensor): The true values
+            mask (torc.Tensor): mask to not consider padded values in the loss computation
 
         Returns:
             torch.Tensor: The RMSE loss
