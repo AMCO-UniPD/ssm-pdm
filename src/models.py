@@ -146,6 +146,7 @@ def train_loop(
     pbar = tqdm(enumerate(dataloader))
 
     for batch_idx, (life, rul, mask) in pbar:
+
         life = (
             life.to(device)
             if config.approach == "padding"
@@ -157,23 +158,25 @@ def train_loop(
             if config.approach == "padding"
             else mask.to(device).squeeze(-1)
         )
+
         if config.quantile_reg:
             tau = sample_quantile(
                 quantile_dist=config.quantile_dist,
                 bounds=config.bounds,
                 print_quantile=True,
             )
+        else:
+            tau = 0.5
+            print(f"No quantile regression so tau={tau}")
 
-        life = life.permute(2, 0, 1) if config.approach == "padding" else life
-        mask = mask.permute(1, 0) if config.approach == "padding" else mask
-        rul = rul.unsqueeze(0) if config.approach == "padding" else rul
-        output = model(life) if not config.quantile_reg else model(life, tau=tau)
+        output = model(life, tau=tau)
 
         loss = (
             criterion(output, rul, mask)
             if not config.quantile_reg
             else criterion(output, rul, mask, tau)
         )
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -240,12 +243,7 @@ def eval_loop(
                 else mask.to(device).squeeze(-1)
             )
 
-            life = life.permute(2, 0, 1) if config.approach == "padding" else life
-            mask = mask.permute(1, 0) if config.approach == "padding" else mask
-            rul = rul.unsqueeze(0) if config.approach == "padding" else rul
-            output = (
-                model(life) if not config.quantile_reg else model(life, tau=tau)
-            )
+            output = model(life, tau=tau)
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
@@ -336,11 +334,13 @@ def wandb_data(
 
     loaders_dict = load_phm_data(config) if config.data_name == "PHM" else load_reg_data(config)
 
-    train_loader, val_loader, test_loader = (
+    train_loader, val_loader, test_loader, test_idx = (
         loaders_dict["train_loader"],
         loaders_dict["val_loader"],
         loaders_dict["test_loader"],
+        loaders_dict["test_idx"],
     )
+    config.test_idx = test_idx
 
     feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
     model, optimizer, scheduler = load_ssm_model(
@@ -366,12 +366,24 @@ def exp_run(
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
-    plot_path: str = experiment_path,
     tau: float = 0.5,
-) -> Tuple[nn.Module, dict]:
+) -> None:
     """
     This function implements all the stuff that compose a wandb run: from
     the data pre processing to the model evaluations
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        model_config (ModelConfig): model configuration object
+        device (torch.device): CUDA device where to perform the experiment
+        best_model_path (str): basepath where to save the best model
+        outputs_path (str): basepath where to save the outputs dictionary
+        metrics_path (str): basepath where to save the metrics
+        tau (float): quantile level for the evaluation
+
+    Returns:
+        This function performs the experiment, logs the results on wandb, saves the outputs and
+        metrics but does not return anything
     """
 
     (
@@ -388,7 +400,7 @@ def exp_run(
         model_config = model_config
     )
 
-    model_info = wandb_train_test(
+    wandb_train_test(
         model=model,
         train_loader=train_loader,
         val_loader=val_loader,
@@ -404,6 +416,7 @@ def exp_run(
     )
 
     if config.return_outputs or config.save_outputs:
+
         print("#" * 50)
         print("Saving outputs")
         print("#" * 50)
@@ -418,6 +431,7 @@ def exp_run(
         )
 
     if config.compute_metrics:
+
         print("#" * 50)
         print("Computing metrics for each life and for each sensor in the test set")
         print("#" * 50)
@@ -426,11 +440,13 @@ def exp_run(
             config=config,
             outputs_path=outputs_path,
             metrics_path=metrics_path,
+            tau = tau
         )
         print("#" * 50)
         print(f"metrics_df shape: {metrics_df.shape}")
 
     if config.obsidian_table:
+
         print("#" * 50)
         print("Producing the obsidian table")
         print("#" * 50)
@@ -440,24 +456,13 @@ def exp_run(
 
         if config.sub_lifes_metrics:
             sub_metrics_df = sub_lifes_metrics(config=config, metrics_df=metrics_df)
-            obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
+            # obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
+            obsidian_table = sub_metrics_df.to_markdown()
         else:
-            obsidian_table = df_with_index_to_obsidian_table(metrics_df)
+            # obsidian_table = df_with_index_to_obsidian_table(metrics_df)
+            obsidian_table = metrics_df.to_markdown()
 
         print(obsidian_table)
-
-    if config.plot_preds:
-        print("#" * 50)
-        print("Producing grid plot of the predictions")
-        print("#" * 50)
-
-        _ = plot_predictions_grid(
-            config=config,
-            outputs_path=outputs_path,
-            plot_path=plot_path,
-        )
-
-    return model, model_info
 
 # Function to train and test the model on a wandb run
 
@@ -498,7 +503,9 @@ def wandb_train_test(
     if config.use_wandb:
         wandb.watch(model, criterion, log="all", log_freq=10)
 
-    preds, true_vals, train_times, val_times, test_times = [], [], [], [], []
+    error = False
+    # preds, true_vals = [], []
+    train_times, val_times, test_times = [], [], []
     min_val_loss = np.inf
     best_model_state_dict = model.state_dict()
     pbar = tqdm(range(config.epochs))
@@ -559,16 +566,14 @@ def wandb_train_test(
 
             if val_loss < min_val_loss:
                 min_val_loss = val_loss
-                print(
-                    f"Epoch {epoch} | New best model found with val loss: {min_val_loss}"
-                )
+                print(f"Epoch {epoch} | New best model found with val loss: {min_val_loss}")
                 print("#" * 50)
                 best_model_state_dict = model.state_dict().copy()
 
             # Save the predictions and true values only for the last epoch
-            if epoch == config.epochs - 1:
-                preds.append(y_pred)
-                true_vals.append(y_true)
+            # if epoch == config.epochs - 1:
+            #     preds.append(y_pred)
+            #     true_vals.append(y_true)
 
             train_times.append(train_time)
             val_times.append(val_time)
@@ -610,6 +615,7 @@ def wandb_train_test(
         print("CUDA Out of Memory Error, stopping execution")
         print("-"*50)
         traceback.print_exc()  # Print the full traceback of the error
+        error = True
         quit()
 
     except Exception as e:
@@ -618,12 +624,14 @@ def wandb_train_test(
         print("-"*50)
         print(e)
         traceback.print_exc()  # Print the full traceback of the error
+        error = True
 
-    print("No errors occured during the training process, saving the best model")
-    save_best_model(
-        best_model_state_dict=best_model_state_dict,
-        best_model_path=best_model_path
-    )
+    if not error:
+        print("No errors occured during the training process, saving the best model")
+        save_best_model(
+            best_model_state_dict=best_model_state_dict,
+            best_model_path=best_model_path
+        )
 
 def load_best_model(
     config: ExperimentConfig,
@@ -641,13 +649,11 @@ def load_best_model(
         model (nn.Module): best model
     """
 
-    best_model_filepath = get_most_recent_file(
-        dirpath=best_model_path, file_pos=config.file_pos
-    )
+    best_model_filepath = get_most_recent_file(dirpath=best_model_path, file_pos=config.file_pos)
 
     best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
 
-    feature_names = get_feature_names(config)
+    feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
 
     if config.save_summary_dict:
         model, summary_dict = load_ssm_model(
@@ -670,7 +676,7 @@ def load_best_model(
         )
 
     model.load_state_dict(best_model_state_dict)
-    model = model.to(device)
+    model = model.to(model_config.device)
 
     return model
 
@@ -790,11 +796,12 @@ def wandb_run(
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
-    plot_path: str = experiment_path,
     tau: float = 0.5,
-) -> Tuple[nn.Module, dict]:
+) -> None:
     """
-    Function that implements a wandb run
+    Function that implements a wandb run. It's essentially a wrapper of
+    the exp_run function with two different ways of calling it depending on
+    weather we want to log the results on wandb or not
 
     Args:
         run_name (str): The name of the run
@@ -804,38 +811,33 @@ def wandb_run(
         best_model_path (str): The path to save the best model
         outputs_path (str): The path to save the outputs
         metrics_path (str): The path to save the metrics
-        plot_path (str): The path to save the plots
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
-        model (nn.Module): The model object
-        model_info (dict): The dictionary containing the model information
+        None: Performs a wandb run and does not return anything
     """
 
     if config.use_wandb:
 
         with wandb.init(project=config.project_name, name=run_name):
-            model, model_info = exp_run(
+            exp_run(
                 config = config,
                 model_config = model_config,
                 device = device,
                 best_model_path = best_model_path,
                 outputs_path = outputs_path,
                 metrics_path = metrics_path,
-                plot_path = plot_path,
                 tau = tau
             )
     else:
 
-        model, model_info = exp_run(
+        exp_run(
             config = config,
             model_config = model_config,
             device = device,
             best_model_path = best_model_path,
             outputs_path = outputs_path,
             metrics_path = metrics_path,
-            plot_path = plot_path,
             tau = tau
         )
 
-    return model, model_info

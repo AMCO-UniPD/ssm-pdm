@@ -1,5 +1,6 @@
 """
 Python script to save the prediction on the different quantiles of the same run together
+into a single dictionary/dataframe
 """
 
 # general imports
@@ -16,8 +17,10 @@ sys.path.append(src_path)
 from exp_config import setup_exp
 from utils import (
     generate_path,
+    open_element,
     save_element,
     get_current_time,
+    get_most_recent_file
 )
 from models import best_model_perf
 
@@ -56,16 +59,12 @@ print("Save the prediction on the different quantiles of the same run together")
 print("#" * 50)
 
 for run in range(exp_config.n_runs):
+
     print("#" * 50)
     print(f"Saving outputs for run: {run+1}")
     print("#" * 50)
 
-    run_folders = [
-        "quantile_reg",
-        exp_name,
-        f"run_{run+1}",
-        f"quantile_{exp_config.quantile_run}",
-    ]
+    run_folders = [f"run_{run+1}"]
     run_outputs_path = generate_path(
         basepath=outputs_path, folders=run_folders
     )
@@ -77,14 +76,8 @@ for run in range(exp_config.n_runs):
 
     for i, quantile in enumerate(exp_config.quantiles):
 
-        outputs_dict = best_model_perf(
-            config=exp_config,
-            model_config=model_config,
-            device=device,
-            best_model_path=best_model_run_path,
-            outputs_path=run_outputs_path,
-            tau=quantile,
-        )
+        outputs_dict_path = get_most_recent_file(os.path.join(run_outputs_path,f"quantile_{quantile}"),file_pos=exp_config.file_pos)
+        outputs_dict = open_element(outputs_dict_path,filetype="pickle")
 
         y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
 
@@ -93,16 +86,11 @@ for run in range(exp_config.n_runs):
 
         run_outputs_dict[f"quantile_{quantile}"] = y_pred
 
-    run_outputs_dict_path = generate_path(
-        basepath=run_outputs_path,
-        folders=[f"outputs_quantile_{exp_config.quantile_run}"],
-    )
-
-    filename = f"{get_current_time()}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs" if config.data_name == "CMAPSS" else f"{get_current_time()}_{exp_config.model_name}_{exp_config.tool_type}_{exp_config.approach}_run_{run+1}_outputs"
+    filename = f"{get_current_time()}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs" if exp_config.data_name == "CMAPSS" else f"{get_current_time()}_{exp_config.model_name}_{exp_config.tool_type}_{exp_config.approach}_run_{run+1}_outputs"
 
     save_element(
         element=run_outputs_dict,
-        dirpath=run_outputs_dict_path,
+        dirpath=run_outputs_path,
         filename=filename,
         filetype="pickle",
     )

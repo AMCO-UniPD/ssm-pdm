@@ -10,14 +10,12 @@ import torch
 import argparse
 import setproctitle
 
-from plots import plot_prediction_interval
-
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from exp_config import setup_exp
 from utils import generate_path
-from perf import lifes_metrics
+from plots import plot_prediction_interval
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
@@ -32,7 +30,7 @@ outputs_path = generate_path(
         exp_config.failure_type,
         exp_config.approach,
         exp_name,
-        f"run_{exp_config.run_id}"
+        f"run_{exp_config.run_id}",
     ],
 )
 
@@ -45,7 +43,7 @@ plot_path = generate_path(
         exp_config.failure_type,
         exp_config.approach,
         exp_name,
-        f"run_{exp_config.run_id}"
+        f"run_{exp_config.plot_run_id}"
     ],
 )
 

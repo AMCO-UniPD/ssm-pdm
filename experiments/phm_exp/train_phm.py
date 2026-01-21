@@ -82,12 +82,22 @@ plot_path = generate_path(
     ],
 )
 
+#NOTE: Probably this test_script thing is useless, use the scripts I created
+
 if exp_config.test_script:
     print("#" * 50)
     print("Running best model performance test")
     print("#" * 50)
 
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script")
+
+    best_model_perf(
+        config = exp_config,
+        model_config = model_config,
+        device = device,
+        best_model_path = best_model_path,
+        outputs_path = outputs_path,
+    )
 
 for run in range(exp_config.start_run_id, exp_config.start_run_id + exp_config.n_runs):
 
@@ -96,7 +106,7 @@ for run in range(exp_config.start_run_id, exp_config.start_run_id + exp_config.n
     print(f"Setting the seed for this run to {run+1}")
     print("-"*50)
 
-    set_seed(run)
+    set_seed(run+1)
 
     for quantile in exp_config.quantiles:
 
@@ -113,14 +123,16 @@ for run in range(exp_config.start_run_id, exp_config.start_run_id + exp_config.n
 
         quantile_best_model_path = generate_path(basepath=best_model_path, folders=quantile_reg_folders)
         quantile_outputs_path = generate_path(basepath=outputs_path, folders=quantile_reg_folders)
+        quantile_metrics_path = generate_path(basepath=metrics_path, folders=quantile_reg_folders)
 
-        model, model_info = wandb_run(
+        wandb_run(
             run_name = exp_name,
             config = exp_config,
             model_config = model_config,
             device = model_config.device,
             best_model_path = quantile_best_model_path,
             outputs_path = quantile_outputs_path,
+            metrics_path = quantile_metrics_path,
             tau = quantile
         )
 

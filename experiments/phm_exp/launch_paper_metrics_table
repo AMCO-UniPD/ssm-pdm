@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+script_path="paper_metrics_table.py"
+
+source "./phm_exp_config"
+
+echo "-------------------------------------------"
+echo "Executing $script_path"
+echo "-------------------------------------------"
+
+# model_names=("S4" "S5" "S4D" "MLP" "Linear" "LSTM" "GRU" "RNN" "Transformer" "Informer")
+
+model_names=("S4")
+
+exp_name="M01_flow_low_windowed_S4_test"
+
+python $script_path \
+  --exp_name "$exp_name" \
+  --exp_config_path "config/ssm_exp_config.yaml" \
+  --project_name "$project_name" \
+  --data_name "$data_name" \
+  --model_names "${model_names[@]}" \
+  --failure_type "$failure_type" \
+  --tool_type "$tool_type" \
+  --phm_tools "${phm_tools[@]}"
+
+

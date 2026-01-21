@@ -7,8 +7,8 @@ val_size: 0.1
 
 # dataset transformations
 transformer_type: 1
-scaler: standard
-# scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
+# scaler: standard
+scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
 scaler_kwargs:
   low_limit: -1.0
   high_limit: 1.0
@@ -25,7 +25,7 @@ quantiles: [0.1,0.25,0.5,0.75,0.9]
 quantile_run: 0.25
 
 #WARN: These parameters are probably to tune for the PHM dataset
-batch_size: 100
+batch_size: 32
 # sequence_length: 170
 sequence_length: 10000
 stride: 1000
@@ -41,10 +41,20 @@ eval_loss: rmse
 # multi run parameters
 n_runs: 5
 start_run_id: 0
-run_id: 1
 
 # model summary
 summary_func: torchinfo
+
+# quantile plots
+plot_run_id: 1
+quantile_plot: 0.25
+life_idx: [0]
+# life_idx: [1,3,5]
+nrows: 1
+ncols: 1
+# ncols: 3
+full_life: false
+save_plot: true
 
 #NOTE: The following parameters are all set through the command line
 # with the define_arguments function

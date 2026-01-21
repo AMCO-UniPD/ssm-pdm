@@ -4,6 +4,7 @@ Python module to define the command line parameters and some configuration funct
 
 import argparse
 from argparse import Namespace
+import ipdb
 from dataclasses import dataclass, field, fields
 from typing import List, Dict, Tuple
 import torch
@@ -23,6 +24,7 @@ class ExperimentConfig:
     # train test split params
     test_size: float = 0.2
     val_size: float = 0.1
+    test_idx: List[int] = field(default_factory=lambda: [0])
     # transformer params
     transformer_type: int = 1
     scaler: str = "standard"
@@ -58,6 +60,14 @@ class ExperimentConfig:
     summary_func: str = "torchinfo"
     # test_script parameters
     file_pos: int = 0
+    # quantile plots
+    full_life: bool = False
+    ncols: int = 1
+    nrows: int = 1
+    life_idx: List[int] = field(default_factory=lambda: [3])
+    plot_run_id: int = 1
+    quantile_plot: float = 0.25
+    save_plot: bool = False
 
     @classmethod
     def from_dict(cls, config: dict) -> "ExperimentConfig":
@@ -97,6 +107,13 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--exp_name",
+        type=str,
+        default="exp",
+        help="Experiment name",
+    )
+
+    parser.add_argument(
         "--project_name",
         type=str,
         default="ssm-pdm",
@@ -115,6 +132,14 @@ def define_arguments() -> Namespace:
         type=str,
         default="S4",
         help="Name of the RUL prediction model to use",
+    )
+
+    parser.add_argument(
+        "--model_names",
+        type=str,
+        nargs="+",
+        default=["S4"],
+        help="Names of the models to insert in the final paper metrics table",
     )
 
     parser.add_argument(
@@ -147,7 +172,7 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
-        "--val_idx",
+        "--cmapss_val_idx",
         type=int,
         nargs="+",
         default=[0,50],
@@ -155,7 +180,7 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
-        "--test_idx",
+        "--cmapss_test_idx",
         type=int,
         nargs="+",
         default=[50,100],
@@ -211,7 +236,19 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--compute_metrics",
+        action="store_true",
+        help="If set, save the df with the average metrics over the lifes"
+    )
+
+    parser.add_argument(
         "--save_mean_metrics_df",
+        action="store_true",
+        help="If set, save the df with the average metrics over the lifes"
+    )
+
+    parser.add_argument(
+        "--save_metrics_df",
         action="store_true",
         help="If set, save the df with the average metrics over the lifes"
     )
@@ -229,9 +266,21 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--save_summary_dict",
+        action="store_true",
+        help="If set, compute the model summary manually"
+    )
+
+    parser.add_argument(
         "--print_summary_metrics",
         action="store_true",
         help="If set, print the summary metrics"
+    )
+
+    parser.add_argument(
+        "--print_mean_metrics_df",
+        action="store_true",
+        help="If set, print the mean metrics dataframe"
     )
 
     parser.add_argument(
@@ -308,10 +357,19 @@ def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
     print(f"Using device: {device}")
     print("-" * 50)
 
-    exp_name = set_exp_name(exp_config)
+    if args.exp_name == "exp":
+        exp_name = set_exp_name(exp_config)
 
-    print("-" * 50)
-    print(f"Experiment name set to {exp_name}")
-    print("-" * 50)
+        print("-" * 50)
+        print(f"Experiment name set to {exp_name}")
+        print("-" * 50)
+
+    else:
+
+        exp_name = args.exp_name
+
+        print("-" * 50)
+        print(f"Experiment name set to {exp_name}")
+        print("-" * 50)
 
     return exp_config, model_config, device, exp_name

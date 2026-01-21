@@ -65,8 +65,6 @@ for run in range(exp_config.n_runs):
         print("#" * 50)
 
         quantile_reg_folders = [
-            "quantile_reg",
-            exp_name,
             f"run_{run+1}",
             f"quantile_{quantile}",
         ]

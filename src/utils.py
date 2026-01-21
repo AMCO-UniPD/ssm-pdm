@@ -36,7 +36,7 @@ from ceruleo.transformation.features.scalers import (
     StandardScaler,
     RobustStandardScaler,
 )
-from ceruleo.transformation.features.imputers import MeanImputer
+from ceruleo.transformation.features.imputers import MeanImputer, RollingMeanImputer
 
 # sklearn imports
 from sklearn.model_selection import train_test_split
@@ -407,7 +407,7 @@ class SSMWindowRegressionDataset(Dataset):
 
         #NOTE: Life longer than sequence_length: we create the sub sequence
 
-        end_idx = start_idx + self.sequence_length - 1
+        end_idx = start_idx + self.sequence_length
         if end_idx <= life.shape[0]:
             inputs = life.iloc[start_idx:end_idx].values
             targets = rul.iloc[start_idx:end_idx].values
@@ -429,7 +429,7 @@ class SSMWindowRegressionDataset(Dataset):
 
             targets = np.concatenate((
                 targets,
-                np.zeros(shape=(pad_idx,targets.shape[1]))
+                np.zeros(shape=(pad_idx,))
             ))
 
             #NOTE: From pad_idx to the end the mask becomes 0
@@ -479,7 +479,11 @@ def get_transformer(
         )
     elif config.transformer_type == 1:
         transformer = Transformer(
-            pipelineX=make_pipeline(ByNameFeatureSelector(features=FEATURES), scaler),
+            pipelineX=make_pipeline(
+                ByNameFeatureSelector(features=FEATURES),
+                MeanImputer(),
+                scaler,
+            ),
             pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"])),
         )
 

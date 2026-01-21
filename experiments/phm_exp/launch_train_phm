@@ -30,9 +30,8 @@ case "$mode" in
     --use_wandb \
     --save_best_model \
     --save_outputs \
-    --save_outputs_quantile \
-    --save_mean_metrics_df \
-    --print_summary_metrics
+    --compute_metrics \
+    --save_metrics_df
 
   ;;
   "training_no_wandb")
@@ -51,16 +50,15 @@ case "$mode" in
     --phm_tools "${phm_tools[@]}" \
     --device_num $device_num \
     --save_outputs \
-    --save_outputs_quantile \
-    --save_mean_metrics_df \
-    --print_summary_metrics
+    --compute_metrics \
+    --save_metrics_df
 
   ;;
-  "test_script")
+  "save_outputs")
 
   echo "-------------------------------------------"
   echo "mode: $mode"
-  echo "Evaluation script"
+  echo "Saving outputs"
   echo "-------------------------------------------"
 
   python $script_path \
@@ -73,11 +71,103 @@ case "$mode" in
     --phm_tools "${phm_tools[@]}" \
     --device_num $device_num \
     --test_script \
-    --save_best_model \
-    --save_outputs \
-    --save_outputs_quantile \
-    --save_mean_metrics_df \
-    --print_summary_metrics
+    --save_outputs
+
+  ;;
+  "save_outputs_run")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Saving the outputs for all the quantiles in the same run"
+  echo "-------------------------------------------"
+
+  python "save_outputs_run.py" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num
+
+  ;;
+  "compute_metrics")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Saving the outputs for all the quantiles in the same run"
+  echo "-------------------------------------------"
+
+  python "compute_metrics.py" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num
+
+  ;;
+  "quantile_metrics")
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Grouping metrics from different quantiles"
+  echo "-------------------------------------------"
+
+
+  python "quantile_metrics.py" \
+    --exp_name "$exp_name" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num \
+    --print_summary_metrics \
+    --print_mean_metrics_df
+
+  ;;
+  "model_summary")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Computing and saving the model summary"
+  echo "-------------------------------------------"
+
+  python $script_path \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num \
+    --test_script \
+    --save_summary_dict \
+    --model_summary
+
+  ;;
+  "quantile_plots")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Producing quantile plots"
+  echo "-------------------------------------------"
+
+  python "quantile_plot.py" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --tool_type "$tool_type" \
+    --phm_tools "${phm_tools[@]}" \
+    --device_num $device_num
 
   ;;
   *)

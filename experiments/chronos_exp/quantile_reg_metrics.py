@@ -10,10 +10,8 @@ import ipdb
 import numpy as np
 import pandas as pd
 from scipy import stats
-from statsmodels.stats.power import TTestIndPower
 
-src_path = os.path.join(os.path.dirname(__file__),"..","..","src",
-)
+src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from utils import (

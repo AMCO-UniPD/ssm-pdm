@@ -134,7 +134,6 @@ def plot_predictions_grid(
 
     # Get the name of the sensor to plot
     feature_names = get_feature_names(config)
-    sensor_name = feature_names[config.sensor_idx]
 
     # Get the y_pred and y_true tensors
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
@@ -178,7 +177,7 @@ def plot_predictions_grid(
                     label="Predicted RUL",
                 )
                 ax.set_title(
-                    f"Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1}"
+                    f"Life {config.life_idx[i*config.ncols+j]+config.cmapss_test_idx[0]+1}"
                 )
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
@@ -208,7 +207,7 @@ def plot_prediction_interval(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
-) -> plt.figure:
+) -> None:
     """
     Function to plot in a grid the `RUL` predictions of each life compared to the true `RUL`,M
     The prediction on different quantiles will be used to create some prediction intervals.
@@ -224,32 +223,33 @@ def plot_prediction_interval(
 
     Returns:
     --------
-    fig: plt.figure
-        Figure containing the plot
+        None: the function produces the plot but does not return anything
     """
 
-    if config.life_idx is None:
-        config.life_idx = np.arange(config.nrows * config.ncols)
-    else:
-        assert config.nrows * config.ncols == len(
-            config.life_idx
-        ), "Number of rows and columns must match the number of lives"
+    assert (config.approach == "windowed"), "The Quantile Regression experiments were don only on the windowed approach"
+    assert config.nrows * config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
 
     # Get the outputs dictionary
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
-    assert (
-        config.approach == "windowed"
-    ), "The Quantile Regression experiments were don only on the windowed approach"
-
     y_true = outputs_dict["y_true"]
     true = [y_true[i] for i in config.life_idx]
-    quantile_0_5 = [outputs_dict["quantile_0.5"][i] for i in config.life_idx]
-    quantile_0_25 = [outputs_dict["quantile_0.25"][i] for i in config.life_idx]
-    quantile_0_75 = [outputs_dict["quantile_0.75"][i] for i in config.life_idx]
-    quantile_0_1 = [outputs_dict["quantile_0.1"][i] for i in config.life_idx]
-    quantile_0_9 = [outputs_dict["quantile_0.9"][i] for i in config.life_idx]
+
+    try:
+
+        quantile_0_5 = [outputs_dict["quantile_0.5"][i] for i in config.life_idx]
+        quantile_0_25 = [outputs_dict["quantile_0.25"][i] for i in config.life_idx]
+        quantile_0_75 = [outputs_dict["quantile_0.75"][i] for i in config.life_idx]
+        quantile_0_1 = [outputs_dict["quantile_0.1"][i] for i in config.life_idx]
+        quantile_0_9 = [outputs_dict["quantile_0.9"][i] for i in config.life_idx]
+
+    except Exception as e:
+
+        print("-"*50)
+        print("Something is wrong, maybe you forgot to run the save_quantile_run script?")
+        print("-"*50)
+        quit()
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
@@ -311,29 +311,27 @@ def plot_prediction_interval(
                     label="Prediction Interval 0.1-0.9",
                 )
 
-                ax.set_title(
-                    f"Life {config.life_idx[i*config.ncols+j]+config.test_idx[0]+1}"
-                )
+                plot_title = f"Life {config.life_idx[i*config.ncols+j]+config.cmapss_test_idx[0]+1}" if config.data_name == "CMAPSS" else f"Life {config.life_idx[i*config.ncols+j]}"
+                ax.set_title(plot_title)
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
                 ax.legend()
 
     if config.save_plot:
         if config.full_life:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{exp_config.run_id}_quantile_{config.quantile_run}_interval_full"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot_full_life" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_{config.tool_type}_run_{config.run_id}_interval_plot_full_life"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{exp_config.run_id}_quantile_{config.quantile_run}_interval_{config.quantile_approach}"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_{config.tool_type}_run_{config.run_id}_interval_plot"
+
         life_idx_str = "_".join(
-            str(x + config.test_idx[0] + 1) for x in config.life_idx
+            str(x + config.cmapss_test_idx[0] + 1) for x in config.life_idx
         )
-        filename = f"{filename}_life_{life_idx_str}.pdf"
+        filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
         print("#" * 50)
         print(f"Plot saved at: {plot_path}")
         print("#" * 50)
-
-    return fig
 
 
 # Blob plot

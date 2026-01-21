@@ -5,23 +5,15 @@ inside `best_model_perf`
 
 import os
 import sys
-import time
 import timeit
 import ipdb
-from tqdm import trange
 import torch
 import pandas as pd
 import numpy as np
-from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
 
 # torch imports
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import torch.optim as optim
-
-# from apex.optimizers import FusedAdam
-from torch.optim import AdamW, lr_scheduler
 
 chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
 sys.path.append(chronos_path_src)
@@ -31,6 +23,7 @@ from utils import (
     get_current_time,
     generate_path,
     get_feature_names,
+    get_phm_feature_names,
     get_most_recent_dir,
     save_element,
     open_element,
@@ -38,7 +31,7 @@ from utils import (
     set_seed,
 )
 
-from loss import *
+from loss import load_loss_functions
 
 from ssm_models import load_ssm_model, ModelConfig
 
@@ -51,6 +44,7 @@ def lifes_metrics(
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
     compute_stats: bool = False,
+    tau: float = 0.5
 ) -> pd.DataFrame:
     """
     Calculate the metrics for each life and each sensor in the dataset and save them in a pd.DataFrame
@@ -60,12 +54,12 @@ def lifes_metrics(
         outputs_path:str Path to the outputs
         metrics_path:str Path to save the metrics
         compute_stats:bool Whether to compute the mean,median and std of the metrics
+        tau (float): quantile level
 
     Returns:
         pd.DataFrame Metrics DataFrame
     """
 
-    feature_names = get_feature_names(config)
     metrics_df = pd.DataFrame()
 
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
@@ -77,32 +71,19 @@ def lifes_metrics(
 
     _, eval_criterion = load_loss_functions(
         loss_name=config.loss,
-        model_name=config.model_name,
         eval_loss_name=config.eval_loss,
-        tau=config.tau,
+        tau=tau,
     )
 
     pd.options.display.float_format = "{:.2f}".format
 
-    if config.model_name.startswith("chronos"):
-        for i in range(y_pred.shape[0]):
-            mask = torch.tensor(y_true[i, 0, :] != 0).unsqueeze(0)
-            for j, sensor in zip(range(y_pred.shape[1]), feature_names):
-                pred = torch.tensor(y_pred[i, j, :]).unsqueeze(0)
-                true = torch.tensor(y_true[i, j, :]).unsqueeze(0)
-                eval_loss = eval_criterion(y_pred=pred, y_true=true, mask=mask).item()
-                metrics_df.at[f"Life_{i+config.test_idx[0]+1}", sensor] = round(
-                    eval_loss, 2
-                )
-    else:
-        for i in range(len(y_pred)):
-            mask = torch.tensor(y_true[i] != 0)
-            pred = torch.tensor(y_pred[i])
-            true = torch.tensor(y_true[i])
-            eval_loss = eval_criterion(y_pred=pred, y_true=true, mask=mask).item()
-            metrics_df.at[f"Life_{i+config.test_idx[0]+1}", "Eval Loss"] = round(
-                eval_loss, 2
-            )
+    for i in range(len(y_pred)):
+        mask = torch.tensor(y_true[i] != 0)
+        pred = torch.tensor(y_pred[i])
+        true = torch.tensor(y_true[i])
+        eval_loss = eval_criterion(y_pred=pred, y_true=true, mask=mask).item()
+        life_name = f"Life_{i+config.test_idx[0]+1}" if config.data_name == "CMAPSS" else f"Life_{config.test_idx[i]}"
+        metrics_df.at[life_name, "Eval Loss"] = round(eval_loss, 2)
 
     if compute_stats:
         # Add a row Life_mean with the mean of the metrics over all the columns
@@ -111,27 +92,24 @@ def lifes_metrics(
         metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
         # Add a row Life_std with the std of the metrics over all the columns
         metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
-        # Add a column Sensor_mean with the mean of the metrics over all the rows
-        if config.model_name.startswith("chronos"):
-            metrics_df["Sensor_mean"] = metrics_df.mean(axis=1).round(2)
-            metrics_df["Sensor_median"] = metrics_df.median(axis=1).round(2)
-            metrics_df["Sensor_std"] = metrics_df.std(axis=1).round(2)
 
         print("#" * 50)
         print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life_mean']}")
         print("#" * 50)
-        print(
-            f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}"
-        )
+        print(f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}")
         print("#" * 50)
         print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
         print("#" * 50)
 
+
     if config.save_metrics_df:
+
+        filename = f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}" if config.data_name == "CMAPSS" else f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.tool_type}_{config.eval_loss}"
+
         save_element(
             element=metrics_df,
             dirpath=metrics_path,
-            filename=f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}.pickle",
+            filename=filename,
         )
 
     pd.options.display.float_format = None
@@ -147,7 +125,7 @@ def sub_lifes_metrics(
     config: ExperimentConfig,
     metrics_df: pd.DataFrame,
     compute_stats: bool = False,
-):
+) -> pd.DataFrame:
     """
     Select a subset of the rows and a subset of the columns of a metrics_df
 
@@ -157,7 +135,7 @@ def sub_lifes_metrics(
         compute_stats:bool Whether to compute the mean,median and std of the metrics
 
     Returns:
-        pd.DataFrame Subset of the metrics_df
+        sub_metrics_df (pd.DataFrame): Subset of the metrics_df
     """
 
     if config.metrics_idx is None:
