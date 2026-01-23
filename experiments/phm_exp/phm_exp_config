@@ -6,10 +6,11 @@ failure_type="flow_low"
 
 tool_type="M01"
 if [[ "$tool_type" == "M01" ]]; then
-  phm_tools=("01M01" "02M01")
+  # phm_tools=("01M01" "02M01")
+  phm_tools=("01M01" "02M01" "03M01" "04M01" "05M01" "06M01" "07M01" "08M01" "09M01" "10M01")
 else
   phm_tools=("01M02" "02M02")
 fi
 
 model_name="S4"
-device_num=2
+device_num=1

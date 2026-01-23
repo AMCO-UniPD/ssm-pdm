@@ -1,0 +1,10 @@
+# Configuration file for wandb sweep experiments
+
+sweep_method: random
+sweep_param_names:
+  - batch_size
+  - lr
+
+batch_size_vals: [16, 32, 48]
+lr_vals: [0.0001, 0.01]
+

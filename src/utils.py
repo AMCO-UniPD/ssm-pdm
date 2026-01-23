@@ -743,9 +743,9 @@ def create_window_loaders(
         test_datasets = SSMWindowRegressionDataset(lifes=test_lifes, sequence_length=config.sequence_length, stride=config.stride)
 
         train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
-        val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=False)
-        test_loader = DataLoader(test_datasets, batch_size=config.batch_size, shuffle=False)
-        test_loaders = [DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False) for test_dataset in test_datasets]
+        val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=True)
+        test_loader = DataLoader(test_datasets, batch_size=config.batch_size, shuffle=True)
+        test_loaders = [DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True) for test_dataset in test_datasets]
 
         loaders_dict = {
             "train_loader": train_loader,

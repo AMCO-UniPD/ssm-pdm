@@ -68,6 +68,11 @@ class ExperimentConfig:
     plot_run_id: int = 1
     quantile_plot: float = 0.25
     save_plot: bool = False
+    # wandb sweep
+    sweep_method: str = "random"
+    sweep_param_names: List[str] = field(default_factory=lambda: ["batch_size", "lr"])
+    batch_size_vals: List[int] = field(default_factory=lambda: [16, 32, 48])
+    lr_vals: List[float] = field(default_factory=lambda: [1e-04, 1e-02])
 
     @classmethod
     def from_dict(cls, config: dict) -> "ExperimentConfig":
@@ -111,6 +116,13 @@ def define_arguments() -> Namespace:
         type=str,
         default="exp",
         help="Experiment name",
+    )
+
+    parser.add_argument(
+        "--sweep_name",
+        type=str,
+        default="sweep",
+        help="wandb sweep name",
     )
 
     parser.add_argument(
@@ -320,6 +332,25 @@ def set_exp_name(config: ExperimentConfig) -> str:
     exp_name = f"{config.tool_type}_{config.failure_type}_{config.approach}_{config.model_name}"
 
     return exp_name
+
+def set_sweep_name(config: ExperimentConfig) -> str:
+    """
+    This function is used to set the name of a wandb sweep 
+    based on the sweep configuration
+
+    Args:
+        config (ExperimentConfig): experiment configuration
+
+    Returns:
+        sweep_name (str): string containing the sweep name
+    """
+
+    sweep_name = f"sweep_{config.tool_type}_{config.failure_type}_{config.approach}_{config.model_name}_{config.sweep_method}"
+
+    for param_name in config.sweep_param_names:
+        sweep_name = f"{sweep_name}_{param_name}"
+
+    return sweep_name
 
 from ssm_models import ModelConfig
 

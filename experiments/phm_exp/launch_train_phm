@@ -10,6 +10,8 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
+exp_name="all_M01_flow_low_windowed_S4"
+
 case "$mode" in
   "training")
 
@@ -19,6 +21,7 @@ case "$mode" in
   echo "-------------------------------------------"
 
   python $script_path \
+    --exp_name "$exp_name" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --project_name "$project_name" \
     --data_name "$data_name" \
@@ -42,6 +45,7 @@ case "$mode" in
   echo "-------------------------------------------"
 
   python $script_path \
+    --exp_name "$exp_name" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --data_name "$data_name" \
     --model_name "$model_name" \
@@ -62,6 +66,7 @@ case "$mode" in
   echo "-------------------------------------------"
 
   python $script_path \
+    --exp_name "$exp_name" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --project_name "$project_name" \
     --data_name "$data_name" \
@@ -82,6 +87,7 @@ case "$mode" in
   echo "-------------------------------------------"
 
   python "save_outputs_run.py" \
+    --exp_name "$exp_name" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --project_name "$project_name" \
     --data_name "$data_name" \
@@ -100,6 +106,7 @@ case "$mode" in
   echo "-------------------------------------------"
 
   python "compute_metrics.py" \
+    --exp_name "$exp_name" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --project_name "$project_name" \
     --data_name "$data_name" \
@@ -139,6 +146,7 @@ case "$mode" in
   echo "-------------------------------------------"
 
   python $script_path \
+    --exp_name "$exp_name" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --project_name "$project_name" \
     --data_name "$data_name" \
@@ -160,6 +168,7 @@ case "$mode" in
   echo "-------------------------------------------"
 
   python "quantile_plot.py" \
+    --exp_name "$exp_name" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --project_name "$project_name" \
     --data_name "$data_name" \

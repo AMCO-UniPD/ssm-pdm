@@ -114,7 +114,8 @@ for run in range(exp_config.start_run_id, exp_config.start_run_id + exp_config.n
         print(f"Experiment run for quantile level {quantile} and run {run+1}")
         print("-"*50)
 
-        setproctitle.setproctitle(exp_name)
+        run_name = f"{exp_name}_run_{run+1}_quantile_{quantile}"
+        setproctitle.setproctitle(run_name)
 
         quantile_reg_folders = [
             f"run_{run+1}",
@@ -126,7 +127,7 @@ for run in range(exp_config.start_run_id, exp_config.start_run_id + exp_config.n
         quantile_metrics_path = generate_path(basepath=metrics_path, folders=quantile_reg_folders)
 
         wandb_run(
-            run_name = exp_name,
+            run_name = run_name,
             config = exp_config,
             model_config = model_config,
             device = model_config.device,
