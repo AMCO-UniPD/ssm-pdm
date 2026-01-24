@@ -8,9 +8,6 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
-# sweep_name="M01_flow_low_windowed_S4_sweep"
-# sweep_name="test_sweep"
-
 python $script_path \
   --exp_config_path "config/ssm_exp_config.yaml" \
   --project_name "$project_name" \
@@ -19,5 +16,12 @@ python $script_path \
   --failure_type "$failure_type" \
   --tool_type "$tool_type" \
   --phm_tools "${phm_tools[@]}" \
-  --device_num $device_num
+  --device_num $device_num \
+  --wandb_entity "$wandb_entity" \
+  --sweep_id "$sweep_id" \
+  --continue_old_sweep
 
+
+#NOTE: Options to pass to resume an old sweep
+# --sweep_id "$sweep_id" \
+# --continue_old_sweep

@@ -10,7 +10,10 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
+#NOTE: Experiment names
+# exp_name="M01_flow_low_windowed_S4"
 exp_name="all_M01_flow_low_windowed_S4"
+# exp_name="M01_flow_low_windowed_S4_dropout"
 
 case "$mode" in
   "training")
@@ -135,7 +138,8 @@ case "$mode" in
     --phm_tools "${phm_tools[@]}" \
     --device_num $device_num \
     --print_summary_metrics \
-    --print_mean_metrics_df
+    --print_mean_metrics_df \
+    --save_mean_metrics_df
 
   ;;
   "model_summary")
@@ -176,7 +180,8 @@ case "$mode" in
     --failure_type "$failure_type" \
     --tool_type "$tool_type" \
     --phm_tools "${phm_tools[@]}" \
-    --device_num $device_num
+    --device_num $device_num \
+    --get_test_idx
 
   ;;
   *)

@@ -16,10 +16,13 @@ sys.path.append(src_path)
 from exp_config import setup_exp
 from utils import generate_path
 from plots import plot_prediction_interval
+from models import wandb_data
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
+
+wandb_data(config=exp_config, model_config=model_config)
 
 outputs_path = generate_path(
     basepath=experiment_path,

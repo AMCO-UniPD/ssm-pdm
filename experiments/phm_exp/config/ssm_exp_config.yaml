@@ -25,12 +25,11 @@ quantiles: [0.1,0.25,0.5,0.75,0.9]
 quantile_run: 0.25
 
 #WARN: These parameters are probably to tune for the PHM dataset
-batch_size: 32
-# sequence_length: 170
-sequence_length: 10000
+batch_size: 16
+sequence_length: 30000
 stride: 1000
-epochs: 20
-lr: 1.0e-3
+epochs: 50
+lr: 0.006
 weight_decay: 1.0e-4
 
 # loss parameters
@@ -38,7 +37,8 @@ loss: quantile_reg
 eval_loss: rmse
 
 # multi run parameters
-n_runs: 5
+n_runs: 2 #NOTE: test
+# n_runs: 5
 start_run_id: 0
 
 # model summary
@@ -47,10 +47,10 @@ summary_func: torchinfo
 # quantile plots
 plot_run_id: 1
 quantile_plot: 0.25
-life_idx: [0]
-# life_idx: [1,3,5]
-nrows: 1
-ncols: 1
+# life_idx: [0,1,5,11]
+life_idx: [77,97,129,228]
+nrows: 2
+ncols: 2
 # ncols: 3
 full_life: false
 save_plot: true

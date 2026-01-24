@@ -73,6 +73,8 @@ class ExperimentConfig:
     sweep_param_names: List[str] = field(default_factory=lambda: ["batch_size", "lr"])
     batch_size_vals: List[int] = field(default_factory=lambda: [16, 32, 48])
     lr_vals: List[float] = field(default_factory=lambda: [1e-04, 1e-02])
+    sequence_length_vals: List[int] = field(default_factory=lambda: [10000, 20000])
+    d_model_vals: List[float] = field(default_factory=lambda: [32, 64])
 
     @classmethod
     def from_dict(cls, config: dict) -> "ExperimentConfig":
@@ -311,6 +313,32 @@ def define_arguments() -> Namespace:
         "--obsidian_table",
         action="store_true",
         help="If set, produce a markdown table"
+    )
+
+    parser.add_argument(
+        "--continue_old_sweep",
+        action="store_true",
+        help="If set, continue an already started sweep"
+    )
+
+    parser.add_argument(
+        "--get_test_idx",
+        action="store_true",
+        help="If set, get the indexes of the test lifes. Needed to produce the quantile plots"
+    )
+
+    parser.add_argument(
+        "--sweep_id",
+        type = str,
+        default = "hxol4h28",
+        help = "id of a wandb sweep"
+    )
+
+    parser.add_argument(
+        "--wandb_entity",
+        type = str,
+        default = "frizzo-davide-Univeristy of Padova",
+        help = "entity name of wandb"
     )
 
     args = parser.parse_args()

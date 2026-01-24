@@ -1,7 +1,9 @@
 """
 Python module containing all the functions needed to perform a wandb sweep
 """
+import os
 import ipdb
+import setproctitle
 import time
 from tqdm.auto import tqdm
 import numpy as np
@@ -25,6 +27,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
+
+experiment_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"experiments","phm_exp")
+sweep_config_path = os.path.join(experiment_path,"config","sweep_config.yaml")
 
 def define_sweep_config(
     sweep_config_path: str,
@@ -201,6 +206,7 @@ def wandb_train_test_sweep(
 
 
 def exp_run_sweep(
+    sweep_config: dict,
     wandb_config: WandbConfig,
     exp_config: ExperimentConfig,
     model_config: ModelConfig,
@@ -214,6 +220,7 @@ def exp_run_sweep(
     the score
 
     Args:
+        sweep_config (dict): dictionary containing the sweep config
         wandb_config (WandbConfig): wandb config object
         exp_config (Config): experiment config object
         model_config (ModelConfig): model config object
@@ -223,17 +230,8 @@ def exp_run_sweep(
         score (float): score of the run (i.e. minimum validation loss obtained over the different epochs)
     """
 
-    #WARN: For the moment I am hard coding the changes,
-    # maybe I can create a function that iterates over the
-    # hyperparameters defined in the sweep_config and assign them
-    # to the respective field in config.
-    # To do this however I need to have a function that defines the
-    # sweep config (based on some values passed through the command line
-    # or through the yaml file) so that I do not have to pass it through the
-    # wandb_run_sweep function
-
-    exp_config.batch_size = wandb_config.batch_size
-    exp_config.lr = wandb_config.lr
+    for param_name in sweep_config["parameters"].keys():
+        setattr(exp_config,param_name,getattr(wandb_config,param_name))
 
     (
         train_loader,
@@ -273,7 +271,8 @@ def wandb_run_sweep():
         - log the returned score to wandb
     """
 
-    exp_config, model_config, device, exp_name = setup_exp()
+    exp_config, model_config, device, _ = setup_exp()
+    sweep_config = define_sweep_config(sweep_config_path)
 
     with wandb.init(project=exp_config.project_name) as sweep_run:
 
@@ -282,7 +281,10 @@ def wandb_run_sweep():
             wandb_config = sweep_run.config
         )
 
+        setproctitle.setproctitle(sweep_run.name)
+
         score = exp_run_sweep(
+            sweep_config = sweep_config,
             wandb_config = sweep_run.config,
             exp_config = exp_config,
             model_config = model_config,

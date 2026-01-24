@@ -303,15 +303,18 @@ def save_best_model(
 def wandb_data(
     config: ExperimentConfig,
     model_config: ModelConfig
-) -> Tuple[
-    DataLoader,
-    DataLoader,
-    DataLoader,
-    nn.Module,
-    optim.Optimizer,
-    optim.lr_scheduler._LRScheduler,
-    nn.Module,
-    nn.Module
+) -> Union[
+        Tuple[
+        DataLoader,
+        DataLoader,
+        DataLoader,
+        nn.Module,
+        optim.Optimizer,
+        optim.lr_scheduler._LRScheduler,
+        nn.Module,
+        nn.Module
+        ],
+        ExperimentConfig
 ]:
     """
     Function to prepare the data and all the ingredients needed for model training
@@ -322,14 +325,17 @@ def wandb_data(
         model_config (ModelConfig): ModelConfig object
 
     Returns:
-        train_loader (DataLoader): train loader
-        val_loader (DataLoader): val loader
-        test_loader (DataLoader): test loader
-        model (nn.Module): the RUL prediction model
-        optimizer (optim.Optimizer): optimizer
-        lr_scheduler (optim.lr_scheduler): lr scheduler
-        criterion (nn.Module): training loss
-        eval_criterion (nn.Module): evaluation loss
+        If get_test_idx is false the method returns the following:
+            train_loader (DataLoader): train loader
+            val_loader (DataLoader): val loader
+            test_loader (DataLoader): test loader
+            model (nn.Module): the RUL prediction model
+            optimizer (optim.Optimizer): optimizer
+            lr_scheduler (optim.lr_scheduler): lr scheduler
+            criterion (nn.Module): training loss
+            eval_criterion (nn.Module): evaluation loss
+        otherwise it returns:
+            config (ExperimentConfig): experiment configuration object updated with the test_idx
     """
 
     loaders_dict = load_phm_data(config) if config.data_name == "PHM" else load_reg_data(config)
@@ -341,6 +347,9 @@ def wandb_data(
         loaders_dict["test_idx"],
     )
     config.test_idx = test_idx
+
+    if config.get_test_idx:
+        return config
 
     feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
     model, optimizer, scheduler = load_ssm_model(

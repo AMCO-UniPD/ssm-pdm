@@ -33,6 +33,16 @@ experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
 
+print("-"*50)
+print("PHM Dataset Experiment")
+print(f"Model: {exp_config.model_name}")
+print(f"Tools: {exp_config.tool_type}")
+print(f"Failure type: {exp_config.failure_type}")
+print(f"Model size: {model_config.d_model}")
+print(f"Sequence length: {exp_config.sequence_length}")
+print(f"Approach: {exp_config.approach}")
+print("-"*50)
+
 best_model_path = generate_path(
     basepath=experiment_path,
     folders=[

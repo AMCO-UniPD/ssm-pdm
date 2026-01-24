@@ -3,6 +3,7 @@ Python script containing the plotting functions for the chronos pdm project
 """
 
 import os
+import traceback
 import sys
 import ipdb
 from typing import List
@@ -233,22 +234,24 @@ def plot_prediction_interval(
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
-    y_true = outputs_dict["y_true"]
-    true = [y_true[i] for i in config.life_idx]
+    y_pred = outputs_dict["y_true"]
+    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
+    true = [y_pred[i] for i in life_idxs]
 
     try:
 
-        quantile_0_5 = [outputs_dict["quantile_0.5"][i] for i in config.life_idx]
-        quantile_0_25 = [outputs_dict["quantile_0.25"][i] for i in config.life_idx]
-        quantile_0_75 = [outputs_dict["quantile_0.75"][i] for i in config.life_idx]
-        quantile_0_1 = [outputs_dict["quantile_0.1"][i] for i in config.life_idx]
-        quantile_0_9 = [outputs_dict["quantile_0.9"][i] for i in config.life_idx]
+        quantile_0_5 = [outputs_dict["quantile_0.5"][i] for i in life_idxs]
+        quantile_0_25 = [outputs_dict["quantile_0.25"][i] for i in life_idxs]
+        quantile_0_75 = [outputs_dict["quantile_0.75"][i] for i in life_idxs]
+        quantile_0_1 = [outputs_dict["quantile_0.1"][i] for i in life_idxs]
+        quantile_0_9 = [outputs_dict["quantile_0.9"][i] for i in life_idxs]
 
     except Exception as e:
 
         print("-"*50)
         print("Something is wrong, maybe you forgot to run the save_quantile_run script?")
         print("-"*50)
+        traceback.print_exc()
         quit()
 
     if not config.full_life:
@@ -311,7 +314,7 @@ def plot_prediction_interval(
                     label="Prediction Interval 0.1-0.9",
                 )
 
-                plot_title = f"Life {config.life_idx[i*config.ncols+j]+config.cmapss_test_idx[0]+1}" if config.data_name == "CMAPSS" else f"Life {config.life_idx[i*config.ncols+j]}"
+                plot_title = f"Life {config.life_idx[i*config.ncols+j]}" if config.data_name == "CMAPSS" else f"Life {config.life_idx[i*config.ncols+j]}"
                 ax.set_title(plot_title)
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
@@ -323,9 +326,7 @@ def plot_prediction_interval(
         else:
             filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_{config.tool_type}_run_{config.run_id}_interval_plot"
 
-        life_idx_str = "_".join(
-            str(x + config.cmapss_test_idx[0] + 1) for x in config.life_idx
-        )
+        life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")

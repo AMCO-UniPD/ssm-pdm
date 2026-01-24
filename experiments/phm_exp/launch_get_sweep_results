@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+script_path="get_sweep_results.py"
+
+sweep_id="hxol4h28"
+
+echo "-------------------------------------------"
+echo "Getting best config of sweep $sweep_id"
+echo "-------------------------------------------"
+
+python $script_path --sweep_id "$sweep_id"
