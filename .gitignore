@@ -49,6 +49,8 @@ package.json
 *.xlsx
 *.csv
 
+!requirements.txt
+
 # some file types files
 *.pickle
 *.pth
