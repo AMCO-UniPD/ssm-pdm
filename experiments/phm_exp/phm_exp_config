@@ -12,7 +12,7 @@ else
 fi
 
 model_name="S4"
-device_num=1
+device_num=0
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_id="t86x1hw1"

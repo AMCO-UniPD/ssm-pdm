@@ -230,7 +230,12 @@ def exp_run_sweep(
     """
 
     for param_name in sweep_config["parameters"].keys():
-        setattr(exp_config,param_name,getattr(wandb_config,param_name))
+        if param_name in exp_config.__dict__.keys():
+            setattr(exp_config,param_name,getattr(wandb_config,param_name))
+        elif param_name in model_config.__dict__.keys():
+            setattr(model_config,param_name,getattr(wandb_config,param_name))
+        else:
+            raise ValueError(f"Error: {param_name} is neither in the experiment or the model config")
 
     (
         train_loader,
