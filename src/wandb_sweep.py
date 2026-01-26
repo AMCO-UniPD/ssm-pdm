@@ -123,7 +123,6 @@ def wandb_train_test_sweep(
     The modifications are the following:
     - only the training and validation loop are executed (we only need to track the validation loss)
     - no model is saved
-    - remove also all the try except thing
     - the min_val_loss is returned
 
     Args:
@@ -265,8 +264,8 @@ def wandb_run_sweep():
     """
     Function to pass to wandb.sweep to run a wandb sweep.
     Following the wandb sweep docs this function must not have any input arguments or return anything.
-    It should do the following:
-        - call a function that returns the metric to track (the validation loss) and that takes as input a wandb config object
+    The function does the following:
+        - call the exp_run_sweep function that returns the metric to track (the validation loss) and that takes as input a wandb config object
         → this will be a modified version of the exp_run function
         - log the returned score to wandb
     """

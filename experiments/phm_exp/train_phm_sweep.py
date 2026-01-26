@@ -5,7 +5,6 @@ Training script to perform a wandb sweep
 # general imports
 import os
 import sys
-from pandas.io.formats.format import printing
 import wandb
 import ipdb
 import torch
