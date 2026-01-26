@@ -73,6 +73,7 @@ class ExperimentConfig:
     sweep_param_names: List[str] = field(default_factory=lambda: ["batch_size", "lr"])
     batch_size_vals: List[int] = field(default_factory=lambda: [16, 32, 48])
     lr_vals: List[float] = field(default_factory=lambda: [1e-04, 1e-02])
+    dropout_vals: List[float] = field(default_factory=lambda: [0.1, 0.2])
     sequence_length_vals: List[int] = field(default_factory=lambda: [10000, 20000])
     d_model_vals: List[float] = field(default_factory=lambda: [32, 64])
 

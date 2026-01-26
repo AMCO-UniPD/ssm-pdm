@@ -76,6 +76,10 @@ for run in range(exp_config.n_runs):
 
     for i, quantile in enumerate(exp_config.quantiles):
 
+        print("#" * 50)
+        print(f"Saving outputs for quantile: {quantile}")
+        print("#" * 50)
+
         outputs_dict_path = get_most_recent_file(os.path.join(run_outputs_path,f"quantile_{quantile}"),file_pos=exp_config.file_pos)
         outputs_dict = open_element(outputs_dict_path,filetype="pickle")
 

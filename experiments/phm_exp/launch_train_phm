@@ -12,8 +12,8 @@ echo "-------------------------------------------"
 
 #NOTE: Experiment names
 # exp_name="M01_flow_low_windowed_S4"
-exp_name="all_M01_flow_low_windowed_S4"
-# exp_name="M01_flow_low_windowed_S4_dropout"
+# exp_name="all_M01_flow_low_windowed_S4"
+exp_name="M01_flow_low_windowed_S4_dropout"
 
 case "$mode" in
   "training")

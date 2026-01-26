@@ -6,7 +6,8 @@ sweep_param_names:
   - sequence_length
 
 # batch_size_vals: [16, 32, 48]
-# lr_vals: [0.0001, 0.01]
+# lr_vals: [0.001, 0.01]
+# dropout_vals: [0.1, 0.4]
 d_model_vals: [64, 128, 200]
 sequence_length_vals: [10000, 20000, 30000]
 
