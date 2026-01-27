@@ -63,3 +63,6 @@ package.json
 *.woff
 *.zip
 *.tar.gz
+
+# ignore all the slurm related stuff
+slurm_jobs/
