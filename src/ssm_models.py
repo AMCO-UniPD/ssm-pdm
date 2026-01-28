@@ -8,8 +8,17 @@ import sys
 from accelerate import infer_auto_device_map
 import ipdb
 import traceback
-from typing import Tuple, Union
-from dataclasses import dataclass, fields
+from typing import (
+    Tuple,
+    Union,
+    Optional,
+    Callable,
+)
+from dataclasses import (
+    dataclass,
+    fields,
+    field,
+)
 
 # torch imports
 import torch
@@ -61,6 +70,7 @@ class ModelConfig:
     d_model: int = 128
     n_layers: int = 5
     dropout: float = 0.0
+    dropout_fn: Optional[Callable] = field(default=torch.nn.modules.dropout.Dropout1d)
     gap: bool = True
     # quantile regression
     quantile_reg: bool = True
@@ -78,6 +88,8 @@ class ModelConfig:
     act: str = "gelu"
     # S5 config
     bidir: bool = False
+    ff_dropout: float = 0.0
+    attn_dropout: float = 0.0
     # RULTransformer config
     d_ff: int = 64
     n_heads: int = 8
@@ -86,6 +98,7 @@ class ModelConfig:
     attn: str = "prob"
     inf_activation: str = "gelu"
     distil: bool = True
+    device: torch.device = torch.device("cpu")
 
     @classmethod
     def from_dict(cls, config: dict) -> "ModelConfig":
@@ -148,6 +161,73 @@ def setup_optimizer(model, lr, weight_decay, epochs):
         # ] + [f"{k} {v}" for k, v in group_hps.items()]))
 
     return optimizer, scheduler
+
+class MLPModel(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        input_size: int,
+        output_size: int,
+    ):
+        super(MLPModel, self).__init__()
+        self.quantile_reg = config.quantile_reg
+        self.tau_feat = config.tau_feat
+        self.tau_mult = config.tau_mult
+        self.gap = config.gap
+        self.device = config.device
+
+        self.fc1 = nn.Linear(input_size, config.d_model)
+        self.hidden_layers = nn.ModuleList()
+        self.norms = nn.ModuleList()
+        self.dropouts = nn.ModuleList()
+        self.acts = nn.ModuleList()
+
+        if config.act == "gelu":
+            self.activation = nn.GELU()
+        elif config.act == "relu":
+            self.activation = nn.ReLU()
+        else:
+            self.activation = nn.Identity()
+
+        for _ in range(config.n_layers):
+            self.hidden_layers.append(nn.Linear(config.d_model, config.d_model))
+            self.norms.append(nn.LayerNorm(config.d_model))
+            self.acts.append(self.activation)
+            self.dropouts.append(config.dropout_fn(config.dropout))
+            self.hidden_layers.append(self.activation)
+
+        self.fc_out = nn.Linear(config.d_model, output_size)
+
+    def forward(self, x, tau=0.5):
+        if self.quantile_reg:
+            assert tau is not None, "tau must be provided for quantile regression"
+            assert isinstance(tau, float), "tau must be a float"
+            # assert 0 <= tau <= 1, "tau must be between 0 and 1"
+            # Concatenate the tau value to the inputs
+            if self.tau_feat:
+                x = torch.cat(
+                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
+                    dim=-1,
+                )
+
+        x = self.fc1(x) # (B,L,D) → (B,L,H)
+
+        # In this loop it's all (B,L,H) → (B,L,H)
+
+        for layer, norm, act, dropout in zip(self.hidden_layers, self.norms, self.acts, self.dropouts):
+            x = layer(x)
+            x = norm(x)
+            x = act(x)
+            x = dropout(x)
+
+        if self.gap:
+            x = x.mean(dim=1) # (B,L,H) → (B,H)
+            x = self.fc_out(x) * tau if self.tau_mult else self.fc_out(x)
+            return x
+
+        x = self.fc_out(x).squeeze(-1) * tau if self.tau_mult else self.fc_out(x)
+
+        return x
 
 
 # RNN based models
@@ -336,7 +416,6 @@ class S4DModel(nn.Module):
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
-        d_input = d_input
 
         self.encoder = nn.Linear(d_input, d_model)
 
@@ -379,14 +458,17 @@ class S4DModel(nn.Module):
 
             z = x
 
-            # Apply S4 block: we ignore the state input and output
+            # Apply S4D block: we ignore the state input and output
             z, _ = layer(z)
 
-            # Dropout on the output of the S4 block
+            # Dropout on the output of the S4D block
             z = dropout(z)
 
             # Residual connection
             x = z + x
+
+            # layer norm
+            x = norm(x.transpose(-1,-2)).transpose(-1,-2)
 
         x = x.transpose(-1, -2)
 
@@ -419,18 +501,27 @@ class S5Model(nn.Module):
         self.tau_feat = config.tau_feat
         self.quantile_reg = config.quantile_reg
         self.device = config.device
-        d_model = config.d_model
-        n_layers = config.n_layers
-        bidir = config.bidir
 
-        self.encoder = nn.Linear(d_input, d_model)
+        self.encoder = nn.Linear(d_input, config.d_model)
 
         # Stack S5 layers as residual blocks
         self.s5_layers = nn.ModuleList()
-        for _ in range(n_layers):
-            self.s5_layers.append(S5Block(dim=d_input, state_dim=d_model, bidir=bidir))
+        # self.norms = nn.ModuleList()
+        # self.dropouts = nn.ModuleList()
+        for _ in range(config.n_layers):
+            self.s5_layers.append(
+                S5Block(
+                    dim=d_input,
+                    state_dim=config.d_model,
+                    bidir=config.bidir,
+                    ff_dropout=config.ff_dropout,
+                    attn_dropout=config.attn_dropout
+                )
+            )
+            # self.norms.append(nn.LayerNorm(d_model))
+            # self.dropouts.append(DropoutNd(dropout))
 
-        self.decoder = nn.Linear(d_model, d_output)
+        self.decoder = nn.Linear(config.d_model, d_output)
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -444,7 +535,13 @@ class S5Model(nn.Module):
                 )
 
         for layer in self.s5_layers:  # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
+
+            # 1. layer
             x = layer(x)
+            # 2. dropout
+            # x = dropout(x)
+            # 3. norm
+            # x = norm(x)
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -691,6 +788,12 @@ def load_ssm_model(
             config=model_config,
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
+        )
+    elif exp_config.model_name == "MLP":
+        model = MLPModel(
+            config=model_config,
+            input_size=d_input,
+            output_size=1 if not model_config.gap else exp_config.sequence_length,
         )
     elif exp_config.model_name in ["RNN", "LSTM", "GRU"]:
         model = Recurrent_PDM(

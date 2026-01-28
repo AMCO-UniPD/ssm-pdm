@@ -9,6 +9,7 @@ dropout: 0.2
 gap: true # Global Average Pooling in the Regression Head
 
 # Quantile Regression config
+quantile_reg: true
 # tau_mult approach
 tau_mult: true
 # tau as input feature
@@ -24,10 +25,12 @@ prenorm: false
 
 # S4D config
 d_state: 64
-act: gelu
+act: relu
 
 # S5 config
 bidir: false
+ff_dropout: 0.2
+attn_dropout: 0.2
 
 # RULTransformer config
 d_ff: 64

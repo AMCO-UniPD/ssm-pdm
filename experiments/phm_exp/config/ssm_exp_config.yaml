@@ -29,8 +29,8 @@ quantile_run: 0.25
 batch_size: 16
 sequence_length: 30000
 stride: 3000
-epochs: 50
-lr: 0.01
+epochs: 20
+lr: 0.006
 weight_decay: 1.0e-4
 
 # loss parameters

@@ -109,7 +109,7 @@ class S4D(nn.Module):
             self.activation = nn.SiLU()
         else:
             raise ValueError(f"Activation {act} not supported")
-        
+
         # dropout_fn = nn.Dropout2d # NOTE: bugged in PyTorch 1.11
         dropout_fn = dropout_fn
         self.dropout = dropout_fn(dropout) if dropout > 0.0 else nn.Identity()
