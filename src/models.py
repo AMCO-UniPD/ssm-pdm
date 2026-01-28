@@ -352,12 +352,11 @@ def wandb_data(
         return config
 
     feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
+    d_input = len(feature_names) if ((not config.quantile_reg) or (not model_config.tau_feat)) else len(feature_names) + 1
     model, optimizer, scheduler = load_ssm_model(
         model_config=model_config,
         exp_config=config,
-        d_input=len(feature_names)
-        if ((not config.quantile_reg) or (not model_config.tau_feat))
-        else len(feature_names) + 1,
+        d_input=d_input
     )
     model = model.to(model_config.device)
 

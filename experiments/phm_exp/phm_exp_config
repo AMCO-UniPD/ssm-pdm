@@ -31,5 +31,3 @@ wandb_entity="frizzo-davide-Univeristy of Padova"
 
 #NOTE: Experiment names S4D
 exp_name="exp"
-
-
