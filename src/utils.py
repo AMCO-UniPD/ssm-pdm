@@ -28,7 +28,7 @@ from ceruleo.transformation.features.selection import (
     ByNameFeatureSelector,
     PandasVarianceThreshold,
 )
-from ceruleo.transformation.features.extraction import RollingStatistics
+# from ceruleo.transformation.features.extraction import RollingStatistics
 from ceruleo.transformation.functional.pipeline.pipeline import make_pipeline
 from ceruleo.transformation.features.scalers import (
     MinMaxScaler,
@@ -48,6 +48,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 
 from config_vars import (
+    PHM_PATH,
     CMAPSS_MODELS,
     PHM_TOOLS,
     PHM_FAILURES,
@@ -491,9 +492,9 @@ def get_transformer(
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
-                RollingStatistics(
-                    window=config.window_size, to_compute=config.features
-                ),
+                # RollingStatistics(
+#                     window=config.window_size, to_compute=config.features
+#                 ),
                 MeanImputer(),
                 # PandasVarianceThreshold(min_variance=config.min_variance),
                 scaler,
@@ -788,10 +789,25 @@ def load_phm_data(
     assert set(config.phm_tools).issubset(PHM_TOOLS), f"The set of tools must be a subset of {PHM_TOOLS} but got {config.phm_tools}"
     assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
 
-    phm_data = PHMDataset2018(
-        failure_types = PHM_FAILURES[config.failure_type],
-        tools = config.phm_tools
-    )
+    if os.path.exists(PHM_PATH):
+
+      print("-"*50)
+      print(f"{PHM_PATH} exists so we download the PHM dataset here")
+      print("-"*50)
+
+      phm_data = PHMDataset2018(
+          path = PHM_PATH,
+          failure_types = PHM_FAILURES[config.failure_type],
+          tools = config.phm_tools
+      )
+
+    else:
+
+      phm_data = PHMDataset2018(
+          failure_types = PHM_FAILURES[config.failure_type],
+          tools = config.phm_tools
+      )
+
     phm_idx = np.arange(len(phm_data))
 
     train_data, test_data, train_idx, test_idx = train_test_split(
@@ -885,10 +901,20 @@ def get_phm_feature_names(
         feature_names (List[str]): The list of feature names in the CMAPSS dataset
     """
 
-    phm_data = PHMDataset2018(
-        failure_types = PHM_FAILURES[config.failure_type],
-        tools = config.phm_tools
-    )
+    if os.path.exists(PHM_PATH):
+
+      phm_data = PHMDataset2018(
+          path = PHM_PATH,
+          failure_types = PHM_FAILURES[config.failure_type],
+          tools = config.phm_tools
+      )
+
+    else:
+
+      phm_data = PHMDataset2018(
+          failure_types = PHM_FAILURES[config.failure_type],
+          tools = config.phm_tools
+      )
 
     transformer = get_transformer(config, phm_data)
     transformer.fit(phm_data)

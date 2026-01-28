@@ -10,17 +10,6 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
-#NOTE: Experiment names S4
-# exp_name="M01_flow_low_windowed_S4"
-# exp_name="all_M01_flow_low_windowed_S4"
-# exp_name="M01_flow_low_windowed_S4_dropout"
-
-#NOTE: Experiment names MLP
-# exp_name="exp"
-
-#NOTE: Experiment names S5
-exp_name="M01_flow_low_windowed_S5_ff_attn_dropout"
-
 case "$mode" in
   "training")
 

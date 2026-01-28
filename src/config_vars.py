@@ -3,6 +3,9 @@ Python module with some configuration variables
 """
 
 from ceruleo.dataset.catalog.PHMDataset2018 import FailureType
+from pathlib import Path
+
+PHM_PATH = Path(Path.home() / "datasets")
 
 CMAPSS_MODELS = [
     "FD001",

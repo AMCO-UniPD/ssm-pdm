@@ -11,11 +11,25 @@ else
   phm_tools=("01M02" "02M02" "03M02" "04M02" "05M02" "06M02" "07M02" "08M02" "09M02" "10M02")
 fi
 
-# model_name="MLP"
-model_name="S5"
-device_num=1
+model_name="S4"
+device_num=0
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_id="t86x1hw1"
 wandb_entity="frizzo-davide-Univeristy of Padova"
+
+#NOTE: Experiment names S4
+# exp_name="M01_flow_low_windowed_S4"
+# exp_name="all_M01_flow_low_windowed_S4"
+# exp_name="M01_flow_low_windowed_S4_dropout"
+
+#NOTE: Experiment names MLP
+# exp_name="exp"
+
+#NOTE: Experiment names S5
+# exp_name="M01_flow_low_windowed_S5_ff_attn_dropout"
+
+#NOTE: Experiment names S4D
+exp_name="exp"
+
 
