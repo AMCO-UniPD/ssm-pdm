@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+#SBATCH --job-name=S4_phm_exp
+#SBATCH --output=slurm_logs/S4_phm_exp_%j.txt
+#SBATCH --error=slurm_logs/S4_phm_exp_error_%j.txt
+#SBATCH --time=02:00:00
+#SBATCH --partition=pgpu_most
+#SBATCH --account=dei_most
+#SBATCH --mem=20G
+#SBATCH --gpus=1
+#SBATCH --mail-type=NONE
+#SBATCH --mail-user=davide.frizzo.1@studenti.unipd.it
+
+echo "-----------------------------"
+echo "Loading jupyter module to use conda and activate environment"
+echo "-----------------------------"
+
+module load jupyter
+
+env_name="ssm-pdm"
+conda activate "$env_name"
+
+echo "-----------------------------"
+echo "Starting PHM experiment run"
+echo "-----------------------------"
+
+./run_phm_exp
+
