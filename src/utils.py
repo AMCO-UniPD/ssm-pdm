@@ -473,6 +473,8 @@ def get_transformer(
     elif config.scaler == "standard":
         scaler = StandardScaler()
 
+    #TODO: Insert another transformer type without the scaler
+
     if config.transformer_type == 0:
         transformer = Transformer(
             pipelineX=make_pipeline(ByNameFeatureSelector(features=FEATURES)),
@@ -789,6 +791,10 @@ def load_phm_data(
     assert set(config.phm_tools).issubset(PHM_TOOLS), f"The set of tools must be a subset of {PHM_TOOLS} but got {config.phm_tools}"
     assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
 
+    #TODO: Use all the 20 phm_tools for train_phm_data
+    # then use the 5 tools contained in the test folder to create
+    # another PHMDataset2018 object called test_phm_data
+
     if os.path.exists(PHM_PATH):
 
       print("-"*50)
@@ -810,6 +816,10 @@ def load_phm_data(
 
     phm_idx = np.arange(len(phm_data))
 
+    ipdb.set_trace()
+
+    #TODO: Split just the train_phm_data in training and validation set
+
     train_data, test_data, train_idx, test_idx = train_test_split(
         phm_data,
         phm_idx,
@@ -822,6 +832,8 @@ def load_phm_data(
         test_size=config.val_size,
         random_state = 42
     )
+
+    ipdb.set_trace()
 
     transformer = get_transformer(config, phm_data)
     transformer.fit(train_data)

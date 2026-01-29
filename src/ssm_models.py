@@ -193,7 +193,7 @@ class MLPModel(nn.Module):
             self.hidden_layers.append(nn.Linear(config.d_model, config.d_model))
             self.norms.append(nn.LayerNorm(config.d_model))
             self.acts.append(self.activation)
-            self.dropouts.append(config.dropout_fn(config.dropout))
+            self.dropouts.append(nn.Dropout(config.dropout))
             self.hidden_layers.append(self.activation)
 
         self.fc_out = nn.Linear(config.d_model, output_size)
@@ -341,7 +341,7 @@ class S4Model(nn.Module):
                 )
             )
             self.norms.append(nn.LayerNorm(d_model))
-            self.dropouts.append(DropoutNd(dropout))
+            self.dropouts.append(nn.Dropout(dropout))
 
         self.decoder = nn.Linear(d_model, d_output)
 
@@ -435,7 +435,7 @@ class S4DModel(nn.Module):
                 )
             )
             self.norms.append(nn.LayerNorm(d_model))
-            self.dropouts.append(DropoutNd(dropout))
+            self.dropouts.append(nn.Dropout(dropout))
 
         self.decoder = nn.Linear(d_model, d_output)
 
@@ -506,20 +506,20 @@ class S5Model(nn.Module):
 
         # Stack S5 layers as residual blocks
         self.s5_layers = nn.ModuleList()
-        # self.norms = nn.ModuleList()
-        # self.dropouts = nn.ModuleList()
+        self.norms = nn.ModuleList()
+        self.dropouts = nn.ModuleList()
         for _ in range(config.n_layers):
             self.s5_layers.append(
                 S5Block(
-                    dim=d_input,
-                    state_dim=config.d_model,
+                    dim=config.d_model,
+                    state_dim=config.d_state,
                     bidir=config.bidir,
                     ff_dropout=config.ff_dropout,
                     attn_dropout=config.attn_dropout
                 )
             )
-            # self.norms.append(nn.LayerNorm(d_model))
-            # self.dropouts.append(DropoutNd(dropout))
+            self.norms.append(nn.LayerNorm(config.d_model))
+            self.dropouts.append(nn.Dropout(config.dropout))
 
         self.decoder = nn.Linear(config.d_model, d_output)
 
@@ -534,28 +534,33 @@ class S5Model(nn.Module):
                     dim=-1,
                 )
 
-        for layer in self.s5_layers:  # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
+        x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
+
+        for layer, norm, dropout in zip(self.s5_layers, self.norms, self.dropouts):  # (B, L, H) -> (B, L, H). The P is used inside here (black box we do not care)
 
             # 1. layer
             x = layer(x)
-            # 2. dropout
-            # x = dropout(x)
-            # 3. norm
-            # x = norm(x)
 
-        x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
+            if torch.isnan(x).any():
+                print("-"*50)
+                print("Obtained NaN after x=layer(x) operation, check better inside the S5Block module")
+                print("-"*50)
+                ipdb.set_trace()
+
+            # 2. dropout
+            x = dropout(x)
+            # 3. norm
+            x = norm(x)
 
         if self.gap:
             x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-            x = (
-                self.decoder(x) * tau if self.tau_mult else self.decoder(x)
-            )  # (B, d_model) -> (B, d_output)
+
+            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+
             return x
 
         # Decode the outputs
-        x = (
-            self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)
-        )  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
         return x
 
 
@@ -775,7 +780,7 @@ def load_ssm_model(
             config=model_config,
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
-            lr=exp_config.lr,
+            lr=model_config.lr,
         )
     elif exp_config.model_name == "S4D":
         model = S4DModel(

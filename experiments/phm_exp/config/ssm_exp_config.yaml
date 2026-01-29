@@ -27,10 +27,10 @@ quantile_run: 0.25
 
 #WARN: These parameters are probably to tune for the PHM dataset
 batch_size: 16
-sequence_length: 30000
+sequence_length: 10000
 stride: 3000
-epochs: 20
-lr: 0.006
+epochs: 50
+lr: 0.007790009334009813
 weight_decay: 1.0e-4
 
 # loss parameters
