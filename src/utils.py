@@ -37,6 +37,7 @@ from ceruleo.transformation.features.scalers import (
     RobustStandardScaler,
 )
 from ceruleo.transformation.features.imputers import MeanImputer, RollingMeanImputer
+from ceruleo.transformation.features.transformation import Clip
 
 # sklearn imports
 from sklearn.model_selection import train_test_split
@@ -494,6 +495,18 @@ def get_transformer(
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
+                MeanImputer(),
+            ),
+            pipelineY=make_pipeline(
+                ByNameFeatureSelector(features=["RUL"]),
+                Clip(lower = 0.0, upper = 500.0)
+            ),
+        )
+
+    elif config.transformer_type == 3:
+        transformer = Transformer(
+            pipelineX=make_pipeline(
+                ByNameFeatureSelector(features=FEATURES),
                 # RollingStatistics(
 #                     window=config.window_size, to_compute=config.features
 #                 ),
@@ -791,55 +804,62 @@ def load_phm_data(
     assert set(config.phm_tools).issubset(PHM_TOOLS), f"The set of tools must be a subset of {PHM_TOOLS} but got {config.phm_tools}"
     assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
 
-    #TODO: Use all the 20 phm_tools for train_phm_data
-    # then use the 5 tools contained in the test folder to create
-    # another PHMDataset2018 object called test_phm_data
-
     if os.path.exists(PHM_PATH):
 
       print("-"*50)
       print(f"{PHM_PATH} exists so we download the PHM dataset here")
       print("-"*50)
 
-      phm_data = PHMDataset2018(
+      train_phm_data = PHMDataset2018(
           path = PHM_PATH,
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.phm_tools
+          tools = config.train_phm_tools
+      )
+
+      test_phm_data = PHMDataset2018(
+          path = PHM_PATH,
+          failure_types = PHM_FAILURES[config.failure_type],
+          tools = config.test_phm_tools
       )
 
     else:
 
-      phm_data = PHMDataset2018(
+      train_phm_data = PHMDataset2018(
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.phm_tools
+          tools = config.train_phm_tools
       )
 
-    phm_idx = np.arange(len(phm_data))
+      test_phm_data = PHMDataset2018(
+          failure_types = PHM_FAILURES[config.failure_type],
+          tools = config.test_phm_tools
+      )
+
+    train_phm_idx = np.arange(len(train_phm_data))
+    test_phm_idx = np.arange(len(test_phm_data))
 
     ipdb.set_trace()
 
-    #TODO: Split just the train_phm_data in training and validation set
+    # train_data, test_data, train_idx, test_idx = train_test_split(
+    #     phm_data,
+    #     phm_idx,
+    #     test_size=config.test_size,
+    #     random_state = 42
+    # )
 
-    train_data, test_data, train_idx, test_idx = train_test_split(
-        phm_data,
-        phm_idx,
-        test_size=config.test_size,
-        random_state = 42
-    )
     train_data, val_data, train_idx, val_idx = train_test_split(
-        train_data,
-        train_idx,
+        train_phm_data,
+        train_phm_idx,
         test_size=config.val_size,
         random_state = 42
     )
 
     ipdb.set_trace()
 
-    transformer = get_transformer(config, phm_data)
+    transformer = get_transformer(config, train_phm_data)
     transformer.fit(train_data)
     transformed_train_data = train_data.map(transformer)
     transformed_val_data = val_data.map(transformer)
-    transformed_test_data = test_data.map(transformer)
+    transformed_test_data = test_phm_data.map(transformer)
 
     train_lifes = TransData(transformed_train_data)
     val_lifes = TransData(transformed_val_data)
@@ -873,7 +893,7 @@ def load_phm_data(
 
     loaders_dict["train_idx"] = train_idx
     loaders_dict["val_idx"] = val_idx
-    loaders_dict["test_idx"] = test_idx
+    loaders_dict["test_idx"] = test_phm_idx
 
     return loaders_dict
 

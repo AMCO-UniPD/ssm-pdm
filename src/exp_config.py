@@ -172,11 +172,19 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
-        "--phm_tools",
+        "--train_phm_tools",
         type=str,
         nargs="+",
-        default=["01M01","01M02"],
-        help="Name of the ion milling machines to use",
+        default=["01M01"],
+        help="Name of the ion milling machines to use in the training set",
+    )
+
+    parser.add_argument(
+        "--test_phm_tools",
+        type=str,
+        nargs="+",
+        default=["01M02"],
+        help="Name of the ion milling machines to use in the test set",
     )
 
     parser.add_argument(
