@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import math
+import json
 import re
 import yaml
 import pickle
@@ -130,14 +131,23 @@ def open_element(
         Element stored in the file
     """
 
-    assert filetype in ["pickle", "pth"], "filetype must be either 'pickle' or 'pth'"
+    FILETYPES = [
+        "pickle",
+        "pth",
+        "json",
+    ]
+    assert filetype in FILETYPES , f"filetype must be one of {FILETYPES}, but got {filetype}"
+
     if filetype == "pickle":
         with open(file_path, "rb") as fl:
             element = pickle.load(fl)
     elif filetype == "pth":
         element = torch.load(file_path)
+    elif filetype == "json":
+        with open(file_path, "r") as fl:
+            element = json.load(fl)
     else:
-        raise ValueError("Invalid filetype. Please choose either 'pickle' or 'pth'")
+        raise ValueError(f"Invalid filetype. Please choose one in {FILETYPES}")
     return element
 
 
@@ -801,7 +811,8 @@ def load_phm_data(
     """
 
     assert config.data_name == "PHM", "This function works just with the PHM dataset"
-    assert set(config.phm_tools).issubset(PHM_TOOLS), f"The set of tools must be a subset of {PHM_TOOLS} but got {config.phm_tools}"
+    assert set(config.train_phm_tools).issubset(PHM_TOOLS), f"The set of train tools must be a subset of {PHM_TOOLS} but got {config.train_phm_tools}"
+    assert set(config.test_phm_tools).issubset(PHM_TOOLS), f"The set of test tools must be a subset of {PHM_TOOLS} but got {config.test_phm_tools}"
     assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
 
     if os.path.exists(PHM_PATH):
