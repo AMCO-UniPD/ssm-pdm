@@ -1,3 +1,6 @@
 [submodule "chronos-rul"]
 	path = chronos-rul
 	url = https://FrizzoDavide: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@github.com/FrizzoDavide/chronos-rul.git
+[submodule "src/phm_ceruleo"]
+	path = src/phm_ceruleo
+	url = https://github.com/AMCO-UniPD/phm_ceruleo.git
