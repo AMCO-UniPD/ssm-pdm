@@ -1,0 +1,3 @@
+[submodule "src/ceruleo"]
+	path = src/ceruleo
+	url = https://github.com/AMCO-UniPD/ceruleo.git
