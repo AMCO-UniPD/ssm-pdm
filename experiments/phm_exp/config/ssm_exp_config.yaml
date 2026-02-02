@@ -6,7 +6,7 @@ test_size: 0.2
 val_size: 0.1
 
 # dataset transformations
-transformer_type: 1
+transformer_type: 2
 # scaler: standard
 scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
 scaler_kwargs:
