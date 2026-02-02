@@ -484,8 +484,6 @@ def get_transformer(
     elif config.scaler == "standard":
         scaler = StandardScaler()
 
-    #TODO: Insert another transformer type without the scaler
-
     if config.transformer_type == 0:
         transformer = Transformer(
             pipelineX=make_pipeline(ByNameFeatureSelector(features=FEATURES)),
