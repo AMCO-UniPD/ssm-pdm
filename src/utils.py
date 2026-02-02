@@ -51,6 +51,7 @@ from torch.utils.data import Dataset
 
 from config_vars import (
     PHM_PATH,
+    PHM_PATH_ACQ4,
     CMAPSS_MODELS,
     PHM_TOOLS,
     PHM_FAILURES,
@@ -813,34 +814,40 @@ def load_phm_data(
     assert set(config.test_phm_tools).issubset(PHM_TOOLS), f"The set of test tools must be a subset of {PHM_TOOLS} but got {config.test_phm_tools}"
     assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
 
-    if os.path.exists(PHM_PATH):
+    if os.path.exists(PHM_PATH_ACQ4):
 
       print("-"*50)
-      print(f"{PHM_PATH} exists so we download the PHM dataset here")
+      print(f"{PHM_PATH_ACQ4} exists so we download the PHM dataset here")
       print("-"*50)
 
       train_phm_data = PHMDataset2018(
-          path = PHM_PATH,
+          path = PHM_PATH_ACQ4,
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.train_phm_tools
+          tools = config.train_phm_tools,
+          train = True
       )
 
       test_phm_data = PHMDataset2018(
-          path = PHM_PATH,
+          path = PHM_PATH_ACQ4,
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.test_phm_tools
+          tools = config.test_phm_tools,
+          train = False
       )
 
     else:
 
       train_phm_data = PHMDataset2018(
+          path = PHM_PATH,
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.train_phm_tools
+          tools = config.train_phm_tools,
+          train = True
       )
 
       test_phm_data = PHMDataset2018(
+          path = PHM_PATH,
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.test_phm_tools
+          tools = config.test_phm_tools,
+          train = False
       )
 
     train_phm_idx = np.arange(len(train_phm_data))
@@ -940,10 +947,10 @@ def get_phm_feature_names(
         feature_names (List[str]): The list of feature names in the CMAPSS dataset
     """
 
-    if os.path.exists(PHM_PATH):
+    if os.path.exists(PHM_PATH_ACQ4):
 
       phm_data = PHMDataset2018(
-          path = PHM_PATH,
+          path = PHM_PATH_ACQ4,
           failure_types = PHM_FAILURES[config.failure_type],
           tools = config.phm_tools
       )
@@ -951,6 +958,7 @@ def get_phm_feature_names(
     else:
 
       phm_data = PHMDataset2018(
+          path = PHM_PATH,
           failure_types = PHM_FAILURES[config.failure_type],
           tools = config.phm_tools
       )
