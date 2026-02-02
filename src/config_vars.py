@@ -10,7 +10,7 @@ from ceruleo.dataset.catalog.PHMDataset2018 import FailureType
 from pathlib import Path
 
 PHM_PATH_ACQ4 = Path(Path.home() / "datasets")
-PHM_PATH = Path("mnt/disk1/davide_frizzo/datasets")
+PHM_PATH = Path("/mnt/disk1/davide_frizzo/datasets")
 
 CMAPSS_MODELS = [
     "FD001",
