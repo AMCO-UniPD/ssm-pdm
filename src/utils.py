@@ -16,8 +16,8 @@ import numpy as np
 import random
 from typing import Tuple, List, Optional, Union
 
-chronos_path = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
-sys.path.append(chronos_path)
+ceruleo_path = os.path.join(os.path.dirname(__file__), "ceruleo")
+sys.path.append(ceruleo_path)
 
 # ceruleo imports
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset
@@ -846,8 +846,6 @@ def load_phm_data(
     train_phm_idx = np.arange(len(train_phm_data))
     test_phm_idx = np.arange(len(test_phm_data))
 
-    ipdb.set_trace()
-
     # train_data, test_data, train_idx, test_idx = train_test_split(
     #     phm_data,
     #     phm_idx,
@@ -862,8 +860,6 @@ def load_phm_data(
         random_state = 42
     )
 
-    ipdb.set_trace()
-
     transformer = get_transformer(config, train_phm_data)
     transformer.fit(train_data)
     transformed_train_data = train_data.map(transformer)
@@ -873,6 +869,8 @@ def load_phm_data(
     train_lifes = TransData(transformed_train_data)
     val_lifes = TransData(transformed_val_data)
     test_lifes = TransData(transformed_test_data)
+
+    ipdb.set_trace()
 
     if config.approach == "padding":
 

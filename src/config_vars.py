@@ -2,6 +2,10 @@
 Python module with some configuration variables
 """
 
+import os
+import sys
+ceruleo_path = os.path.join(os.path.dirname(__file__), "ceruleo")
+sys.path.append(ceruleo_path)
 from ceruleo.dataset.catalog.PHMDataset2018 import FailureType
 from pathlib import Path
 
@@ -34,6 +38,10 @@ PHM_FEATURES = [
     "ACTUALSTEPDURATION",
 ]
 
+#NOTE: These names are without the _ because are needed to
+# be passed as arguments to PHMDataset2018 which accepts only
+# names without the underscore
+
 PHM_TOOLS = [
     "01M01",
     "01M02",
@@ -55,6 +63,17 @@ PHM_TOOLS = [
     "09M02",
     "10M01",
     "10M02",
+]
+
+#NOTE: These names have the underscore because in the csv file names there is the
+# underscore
+
+PHM_TEST_TOOLS = [
+    "01_M02",
+    "02_M02",
+    "03_M01",
+    "04_M01",
+    "06_M01",
 ]
 
 PHM_FAILURES = {
