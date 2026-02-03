@@ -66,15 +66,12 @@ PHM_TOOLS = [
     "10M02",
 ]
 
-#NOTE: These names have the underscore because in the csv file names there is the
-# underscore
-
 PHM_TEST_TOOLS = [
-    "01_M02",
-    "02_M02",
-    "03_M01",
-    "04_M01",
-    "06_M01",
+    "01M02",
+    "02M02",
+    "03M01",
+    "04M01",
+    "06M01",
 ]
 
 PHM_FAILURES = {

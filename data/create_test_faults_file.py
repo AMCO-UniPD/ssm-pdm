@@ -12,11 +12,21 @@ import pandas as pd
 src_path = os.path.join(os.path.dirname(__file__), "..", "src")
 sys.path.append(src_path)
 
-from config_vars import PHM_TEST_TOOLS
-
 PHM_DATAPATH = "/mnt/disk1/davide_frizzo/datasets/phm_data_challenge_2018_complete/test_after"
 test_ttf_path = os.path.join(PHM_DATAPATH,"test_ttf")
 test_faults_path = os.path.join(PHM_DATAPATH,"test_faults")
+
+#NOTE: This is different from the PHM_TEST_TOOLS
+# used in config_vars. To access to the csv files
+# I have to use the underscore
+
+PHM_TEST_TOOLS = [
+    "01_M02",
+    "02_M02",
+    "03_M01",
+    "04_M01",
+    "06_M01",
+]
 
 for test_tool in PHM_TEST_TOOLS:
 
