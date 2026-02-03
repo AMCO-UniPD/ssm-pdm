@@ -50,6 +50,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 
 from config_vars import (
+    MAX_RUL,
     PHM_PATH,
     PHM_PATH_ACQ4,
     CMAPSS_MODELS,
@@ -411,10 +412,6 @@ class SSMWindowRegressionDataset(Dataset):
     def __len__(self):
         return len(self.data_indices)
 
-    #TODO: Add here a method (to call inside __getitem__) to keep just the
-    # sequences with at least one RUL value lower than MAX_RUL and keep
-    # one with all values >= MAX_RUL with a certain probability
-
     def __getitem__(self, idx):
 
         acq_idx, start_idx = self.data_indices[idx]
@@ -458,6 +455,50 @@ class SSMWindowRegressionDataset(Dataset):
         target = torch.tensor(targets, dtype=torch.float32)
         mask = torch.tensor(mask, dtype=torch.float32)
         return sequence, target, mask
+
+    def select_windows(
+        self,
+        max_rul: int = MAX_RUL,
+        keep_long_rul_prob:float = 0.2,
+    ):
+        """
+        Function to select only the windows with at least one RUL value
+        lower than MAX RUL and keep the others with probability keep_long_rul_prob
+
+        Args:
+            max_rul (int): maximum RUL value used to filter the lifes
+            keep_long_rul_prob (float): probability with which long RUL lifes are kept
+
+        Returns:
+            None: the method filters the class attributes self.lifes and self.targets
+        """
+
+        filtered_indices = []
+
+        for idx in range(len(self.data_indices)):
+            acq_idx, start_idx = self.data_indices[idx]
+            rul = self.targets[acq_idx]
+
+            # Determine the target window values for this specific index
+            end_idx = start_idx + self.sequence_length
+            # Use the same logic as __getitem__ to get the target slice
+            target_slice = rul.iloc[start_idx : min(end_idx, len(rul))].values
+
+            # Condition: at least one RUL value < max_rul
+            is_near_failure = np.any(target_slice < max_rul)
+
+            if is_near_failure:
+                filtered_indices.append(self.data_indices[idx])
+            else:
+                # Keep with a certain probability
+                if np.random.rand() < keep_long_rul_prob:
+                    print("-"*50)
+                    print(f"Keeping long RUL target for life {idx}")
+                    print("-"*50)
+                    filtered_indices.append(self.data_indices[idx])
+
+        # Update the map. __len__ will now automatically return the new size.
+        self.data_indices = filtered_indices
 
 def get_transformer(
     config: ExperimentConfig,
@@ -760,7 +801,15 @@ def create_window_loaders(
         print("Creating window dataloaders in evaluation mode")
         print("-"*50)
 
-        test_datasets = [SSMWindowRegressionDataset(lifes=[test_life], sequence_length=config.sequence_length, stride=config.stride) for test_life in test_lifes]
+        #NOTE: For the evaluation lifes we do not use select_windows because we want
+        # to test the model on the entire life
+
+        test_datasets = [
+            SSMWindowRegressionDataset(
+                lifes=[test_life],
+                sequence_length=config.sequence_length,
+                stride=config.stride
+            ) for test_life in test_lifes]
         test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
 
         print("-"*50)
@@ -775,9 +824,43 @@ def create_window_loaders(
         print("Creating window dataloaders in training mode")
         print("-"*50)
 
-        train_datasets = SSMWindowRegressionDataset(lifes=train_lifes, sequence_length=config.sequence_length, stride=config.stride)
-        val_datasets = SSMWindowRegressionDataset(lifes=val_lifes, sequence_length=config.sequence_length, stride=config.stride)
-        test_datasets = SSMWindowRegressionDataset(lifes=test_lifes, sequence_length=config.sequence_length, stride=config.stride)
+        train_datasets = SSMWindowRegressionDataset(
+            lifes=train_lifes,
+            sequence_length=config.sequence_length,
+            stride=config.stride
+        )
+
+        train_datasets.select_windows(
+            max_rul = config.max_rul,
+            keep_long_rul_prob= config.keep_long_rul_prob
+        )
+        ipdb.set_trace()
+
+        train_datasets = SSMWindowRegressionDataset(
+            lifes=train_lifes,
+            sequence_length=config.sequence_length,
+            stride=config.stride
+        ).select_windows(
+            max_rul = config.max_rul,
+            keep_long_rul_prob= config.keep_long_rul_prob
+        )
+
+        val_datasets = SSMWindowRegressionDataset(
+            lifes=val_lifes,
+            sequence_length=config.sequence_length,
+            stride=config.stride
+        ).select_windows(
+            max_rul = config.max_rul,
+            keep_long_rul_prob= config.keep_long_rul_prob
+        )
+        test_datasets = SSMWindowRegressionDataset(
+            lifes=test_lifes,
+            sequence_length=config.sequence_length,
+            stride=config.stride
+        ).select_windows(
+            max_rul = config.max_rul,
+            keep_long_rul_prob= config.keep_long_rul_prob
+        )
 
         train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
         val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=True)
@@ -857,13 +940,6 @@ def load_phm_data(
     train_phm_idx = np.arange(len(train_phm_data))
     test_phm_idx = np.arange(len(test_phm_data))
 
-    # train_data, test_data, train_idx, test_idx = train_test_split(
-    #     phm_data,
-    #     phm_idx,
-    #     test_size=config.test_size,
-    #     random_state = 42
-    # )
-
     train_data, val_data, train_idx, val_idx = train_test_split(
         train_phm_data,
         train_phm_idx,
@@ -880,8 +956,6 @@ def load_phm_data(
     train_lifes = TransData(transformed_train_data)
     val_lifes = TransData(transformed_val_data)
     test_lifes = TransData(transformed_test_data)
-
-    ipdb.set_trace()
 
     if config.approach == "padding":
 
