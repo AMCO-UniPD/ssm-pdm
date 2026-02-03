@@ -411,6 +411,10 @@ class SSMWindowRegressionDataset(Dataset):
     def __len__(self):
         return len(self.data_indices)
 
+    #TODO: Add here a method (to call inside __getitem__) to keep just the
+    # sequences with at least one RUL value lower than MAX_RUL and keep
+    # one with all values >= MAX_RUL with a certain probability
+
     def __getitem__(self, idx):
 
         acq_idx, start_idx = self.data_indices[idx]
