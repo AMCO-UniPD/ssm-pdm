@@ -492,9 +492,6 @@ class SSMWindowRegressionDataset(Dataset):
             else:
                 # Keep with a certain probability
                 if np.random.rand() < keep_long_rul_prob:
-                    print("-"*50)
-                    print(f"Keeping long RUL target for life {idx}")
-                    print("-"*50)
                     filtered_indices.append(self.data_indices[idx])
 
         # Update the map. __len__ will now automatically return the new size.
@@ -829,18 +826,7 @@ def create_window_loaders(
             sequence_length=config.sequence_length,
             stride=config.stride
         )
-
         train_datasets.select_windows(
-            max_rul = config.max_rul,
-            keep_long_rul_prob= config.keep_long_rul_prob
-        )
-        ipdb.set_trace()
-
-        train_datasets = SSMWindowRegressionDataset(
-            lifes=train_lifes,
-            sequence_length=config.sequence_length,
-            stride=config.stride
-        ).select_windows(
             max_rul = config.max_rul,
             keep_long_rul_prob= config.keep_long_rul_prob
         )
@@ -849,15 +835,18 @@ def create_window_loaders(
             lifes=val_lifes,
             sequence_length=config.sequence_length,
             stride=config.stride
-        ).select_windows(
+        )
+        val_datasets.select_windows(
             max_rul = config.max_rul,
             keep_long_rul_prob= config.keep_long_rul_prob
         )
+
         test_datasets = SSMWindowRegressionDataset(
             lifes=test_lifes,
             sequence_length=config.sequence_length,
             stride=config.stride
-        ).select_windows(
+        )
+        test_datasets.select_windows(
             max_rul = config.max_rul,
             keep_long_rul_prob= config.keep_long_rul_prob
         )
@@ -1030,7 +1019,8 @@ def get_phm_feature_names(
       phm_data = PHMDataset2018(
           path = PHM_PATH_ACQ4,
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.phm_tools
+          tools = config.test_phm_tools,
+          train = False
       )
 
     else:
@@ -1038,7 +1028,8 @@ def get_phm_feature_names(
       phm_data = PHMDataset2018(
           path = PHM_PATH,
           failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.phm_tools
+          tools = config.test_phm_tools,
+          train = False
       )
 
     transformer = get_transformer(config, phm_data)
