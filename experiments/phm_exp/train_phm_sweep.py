@@ -50,7 +50,7 @@ else:
 wandb.agent(
     sweep_id,
     function = wandb_run_sweep,
-    count = 10,
+    count = exp_config.sweep_runs,
     project = exp_config.project_name,
     entity = exp_config.wandb_entity
 )
@@ -67,6 +67,7 @@ best_run = sweep.best_run()
 print("Sweep finished!")
 print(f"Best run ID: {best_run.id}")
 print(f"Best Score ({sweep.config.get('metric', {}).get('name')}): {best_run.summary.get(sweep.config.get('metric', {}).get('name'))}")
+
 print("Best Hyperparameters:")
 for k, v in best_run.config.items():
     print("-"*50)

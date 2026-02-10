@@ -14,6 +14,9 @@ device_num=2
 sweep_id="t86x1hw1"
 wandb_entity="frizzo-davide-Univeristy of Padova"
 
+#NOTE: Number of runs to perform in the sweep
+sweep_runs=10
+
 #NOTE: Experiment names S4
 # exp_name="M01_flow_low_windowed_S4"
 # exp_name="all_M01_flow_low_windowed_S4"

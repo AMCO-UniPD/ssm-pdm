@@ -34,7 +34,6 @@ metrics_path = generate_path(
     folders=[
         "metrics",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name
@@ -90,7 +89,7 @@ if exp_config.print_mean_metrics_df:
 
 if exp_config.save_mean_metrics_df:
 
-    filename=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg_global_metrics_df" if exp_config.data_name == "CMAPSS" else f"{exp_config.model_name}_{exp_config.tool_type}_{exp_config.approach}_quantile_reg_global_metrics_df"
+    filename=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_quantile_reg_global_metrics_df" if exp_config.data_name == "CMAPSS" else f"{exp_config.model_name}_{exp_config.approach}_quantile_reg_global_metrics_df"
 
     save_element(
         mean_metrics_df,

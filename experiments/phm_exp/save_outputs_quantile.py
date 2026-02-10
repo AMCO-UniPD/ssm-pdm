@@ -26,7 +26,6 @@ best_model_path = generate_path(
     folders=[
         "best_models",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name
@@ -38,7 +37,6 @@ outputs_path = generate_path(
     folders=[
         "outputs",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name

@@ -322,9 +322,9 @@ def plot_prediction_interval(
 
     if config.save_plot:
         if config.full_life:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot_full_life" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_{config.tool_type}_run_{config.run_id}_interval_plot_full_life"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot_full_life" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot_full_life"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_{config.tool_type}_run_{config.run_id}_interval_plot"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot"
 
         life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}.png"

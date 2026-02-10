@@ -132,6 +132,13 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--sweep_runs",
+        type=int,
+        default=10,
+        help="number of hyperparameters configurations to try in a wandb sweep",
+    )
+
+    parser.add_argument(
         "--project_name",
         type=str,
         default="ssm-pdm",
@@ -165,13 +172,6 @@ def define_arguments() -> Namespace:
         type=str,
         default="flow_low",
         help="Type of failure to consider",
-    )
-
-    parser.add_argument(
-        "--tool_type",
-        type=str,
-        default="M01",
-        help="Type of tools to consider in the PHM dataset",
     )
 
     parser.add_argument(
@@ -369,7 +369,7 @@ def set_exp_name(config: ExperimentConfig) -> str:
         exp_name (str): string containing the experiment name
     """
 
-    exp_name = f"{config.tool_type}_{config.failure_type}_{config.approach}_{config.model_name}"
+    exp_name = f"{config.model_name}_{config.failure_type}_{config.approach}"
 
     return exp_name
 
@@ -385,7 +385,7 @@ def set_sweep_name(config: ExperimentConfig) -> str:
         sweep_name (str): string containing the sweep name
     """
 
-    sweep_name = f"sweep_{config.tool_type}_{config.failure_type}_{config.approach}_{config.model_name}_{config.sweep_method}"
+    sweep_name = f"sweep_{config.model_name}_{config.failure_type}_{config.approach}_{config.sweep_method}"
 
     for param_name in config.sweep_param_names:
         sweep_name = f"{sweep_name}_{param_name}"

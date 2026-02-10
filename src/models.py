@@ -781,7 +781,7 @@ def best_model_perf(
 
     outputs_dict = {"y_pred": preds, "y_true": true_vals}
 
-    filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}_{config.tool_type}"
+    filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
 
     if config.save_outputs:
         save_element(

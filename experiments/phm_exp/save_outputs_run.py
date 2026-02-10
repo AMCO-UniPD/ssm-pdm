@@ -33,7 +33,6 @@ best_model_path = generate_path(
     folders=[
         "best_models",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name
@@ -45,7 +44,6 @@ outputs_path = generate_path(
     folders=[
         "outputs",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name
@@ -90,7 +88,7 @@ for run in range(exp_config.n_runs):
 
         run_outputs_dict[f"quantile_{quantile}"] = y_pred
 
-    filename = f"{get_current_time()}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs" if exp_config.data_name == "CMAPSS" else f"{get_current_time()}_{exp_config.model_name}_{exp_config.tool_type}_{exp_config.approach}_run_{run+1}_outputs"
+    filename = f"{get_current_time()}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs" if exp_config.data_name == "CMAPSS" else f"{get_current_time()}_{exp_config.model_name}_{exp_config.approach}_run_{run+1}_outputs"
 
     save_element(
         element=run_outputs_dict,

@@ -42,7 +42,6 @@ for model_name in exp_config.model_names:
         basepath = metrics_path,
         folders = [
             model_name,
-            f"{exp_config.tool_type}_tools",
             exp_config.failure_type,
             exp_config.approach,
             exp_name

@@ -36,7 +36,6 @@ exp_config, model_config, device, exp_name = setup_exp()
 print("-"*50)
 print("PHM Dataset Experiment")
 print(f"Model: {exp_config.model_name}")
-print(f"Tools: {exp_config.tool_type}")
 print(f"Failure type: {exp_config.failure_type}")
 print(f"Model size: {model_config.d_model}")
 print(f"Learning rate: {exp_config.lr}")
@@ -55,7 +54,6 @@ best_model_path = generate_path(
     folders=[
         "best_models",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name
@@ -67,7 +65,6 @@ outputs_path = generate_path(
     folders=[
         "outputs",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name
@@ -79,7 +76,6 @@ metrics_path = generate_path(
     folders=[
         "metrics",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name
@@ -92,7 +88,6 @@ plot_path = generate_path(
     folders=[
         "plots",
         exp_config.model_name,
-        f"{exp_config.tool_type}_tools",
         exp_config.failure_type,
         exp_config.approach,
         exp_name

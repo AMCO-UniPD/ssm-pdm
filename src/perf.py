@@ -104,7 +104,7 @@ def lifes_metrics(
 
     if config.save_metrics_df:
 
-        filename = f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}" if config.data_name == "CMAPSS" else f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.tool_type}_{config.eval_loss}"
+        filename = f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}" if config.data_name == "CMAPSS" else f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.eval_loss}"
 
         save_element(
             element=metrics_df,
