@@ -9,4 +9,3 @@ sweep_param_names:
 # dropout_vals: [0.1, 0.5]
 # d_model_vals: [64, 128]
 sequence_length_vals: [3000, 4000, 5000, 7000, 10000]
-

@@ -94,12 +94,10 @@ plot_path = generate_path(
     ],
 )
 
-#NOTE: Probably this test_script thing is useless, use the scripts I created
-
 if exp_config.test_script:
-    print("#" * 50)
+    print("-" * 50)
     print("Running best model performance test")
-    print("#" * 50)
+    print("-" * 50)
 
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script")
 

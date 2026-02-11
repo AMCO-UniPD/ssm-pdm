@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_quantile_exp
-#SBATCH --output=slurm_logs/S5_quantile_exp_%j.txt
-#SBATCH --error=slurm_logs/S5_quantile_exp_error_%j.txt
-#SBATCH --time=03:00:00
+#SBATCH --job-name=S5_bayesian_sweep_phm_exp
+#SBATCH --output=slurm_logs/S5_bayesian_sweep_phm_exp_%j.txt
+#SBATCH --error=slurm_logs/S5_bayesian_sweep_phm_exp_error_%j.txt
+#SBATCH --time=20:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
-#SBATCH --mem=30G
+#SBATCH --mem=20G
 #SBATCH --gpus=1
 #SBATCH --mail-type=NONE
 #SBATCH --mail-user=davide.frizzo.1@studenti.unipd.it
@@ -21,8 +21,7 @@ env_name="ssm-pdm"
 conda activate "$env_name"
 
 echo "-----------------------------"
-echo "Starting PHM experiment run"
+echo "Starting sweep"
 echo "-----------------------------"
 
-./run_phm_exp
-
+./launch_phm_sweep

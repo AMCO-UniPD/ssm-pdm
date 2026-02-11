@@ -68,7 +68,7 @@ def define_sweep_config(
     for param_name in config.sweep_param_names:
         param_vals = f"{param_name}_vals"
         if hasattr(config,param_vals):
-            if param_name == "lr":
+            if param_name in ["lr", "dropout"]:
                 sweep_config["parameters"][param_name] = {"min": getattr(config,param_vals)[0], "max": getattr(config,param_vals)[1]}
             else:
                 sweep_config["parameters"][param_name] = {"values": getattr(config,param_vals)}

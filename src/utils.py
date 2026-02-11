@@ -966,7 +966,7 @@ def load_phm_data(
         )
 
         if eval:
-            return {"test_loaders": loaders_dict, "test_idx": test_idx}
+            return {"test_loaders": loaders_dict, "test_idx": test_phm_idx}
 
     else:
 
