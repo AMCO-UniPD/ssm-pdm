@@ -486,17 +486,15 @@ class SSMWindowRegressionDataset(Dataset):
 
             # Condition: at least one RUL value < max_rul
             is_near_failure = np.any(target_slice < max_rul)
-            is_near_failure_count = np.sum(target_slice < max_rul)
 
             if is_near_failure:
                 filtered_indices.append(self.data_indices[idx])
-            else:
-                # Keep with a certain probability
-                if np.random.rand() < keep_long_rul_prob:
-                    filtered_indices.append(self.data_indices[idx])
 
-        # Update the map. __len__ will now automatically return the new size.
-        self.data_indices = filtered_indices
+        constant_seq = list(set(self.data_indices) - set(filtered_indices))
+        seq_to_keep = constant_seq.copy()
+        seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
+        seq_to_keep.extend(filtered_indices)
+        self.data_indices = seq_to_keep
 
 def get_transformer(
     config: ExperimentConfig,
