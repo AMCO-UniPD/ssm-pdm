@@ -101,7 +101,6 @@ def lifes_metrics(
         print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
         print("#" * 50)
 
-
     if config.save_metrics_df:
 
         filename = f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.cmapss_models}_{config.eval_loss}" if config.data_name == "CMAPSS" else f"{get_current_time()}_lifes_metrics_{config.model_name}_{config.eval_loss}"
@@ -111,6 +110,11 @@ def lifes_metrics(
             dirpath=metrics_path,
             filename=filename,
         )
+
+        print("-"*50)
+        print(f"Metrics df saved at {os.path.join(metrics_path,filename)}")
+        print("-"*50)
+        ipdb.set_trace
 
     pd.options.display.float_format = None
 

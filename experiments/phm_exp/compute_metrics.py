@@ -54,10 +54,6 @@ wandb_data(config=exp_config,model_config=model_config)
 
 for run in range(exp_config.n_runs):
 
-    print("#" * 50)
-    print(f"Saving outputs for run: {run+1}")
-    print("#" * 50)
-
     run_metrics_path = generate_path(
         basepath = metrics_path,
         folders = [f"run_{run+1}"]
@@ -88,4 +84,6 @@ for run in range(exp_config.n_runs):
             config=exp_config,
             outputs_path=quantile_outputs_path,
             metrics_path=quantile_metrics_path,
+            compute_stats = True,
+            tau = quantile
         )

@@ -10,6 +10,7 @@ import torch
 import argparse
 import setproctitle
 
+
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
@@ -26,6 +27,7 @@ from utils import (
     load_phm_data
 )
 
+from perf import lifes_metrics
 from models import wandb_run, best_model_perf
 from ssm_models import ModelConfig
 
@@ -101,13 +103,57 @@ if exp_config.test_script:
 
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script")
 
-    best_model_perf(
-        config = exp_config,
-        model_config = model_config,
-        device = device,
-        best_model_path = best_model_path,
-        outputs_path = outputs_path,
-    )
+    for run in range(exp_config.n_runs):
+        for quantile in exp_config.quantiles:
+
+            quantile_reg_folders = [
+                f"run_{run+1}",
+                f"quantile_{quantile}"
+            ]
+
+            best_model_path_test_script = generate_path(
+                basepath = best_model_path,
+                folders = quantile_reg_folders
+            )
+
+            outputs_path_test_script = generate_path(
+                basepath = outputs_path,
+                folders = quantile_reg_folders
+            )
+
+            if exp_config.save_outputs:
+
+                print("-"*50)
+                print(f"Saving outputs for run {run+1} and quantile {quantile}")
+                print("-"*50)
+
+                best_model_perf(
+                    config = exp_config,
+                    model_config = model_config,
+                    device = device,
+                    best_model_path = best_model_path_test_script,
+                    outputs_path = outputs_path_test_script,
+                )
+
+            if exp_config.compute_metrics:
+
+                print("-"*50)
+                print(f"Computing metrics for run {run+1} and quantile {quantile}")
+                print("-"*50)
+
+                metrics_path_test_script = generate_path(
+                    basepath = metrics_path,
+                    folders = quantile_reg_folders
+                )
+
+                metrics_df = lifes_metrics(
+                    config = exp_config,
+                    outputs_path = outputs_path,
+                    metrics_path = metrics_path,
+                    tau = quantile
+                )
+
+    quit()
 
 for run in range(exp_config.start_run_id, exp_config.start_run_id + exp_config.n_runs):
 

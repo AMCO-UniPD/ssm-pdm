@@ -112,7 +112,8 @@ case "$mode" in
     --failure_type "$failure_type" \
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
-    --device_num $device_num
+    --device_num $device_num \
+    --save_metrics_df
 
   ;;
   "quantile_metrics")

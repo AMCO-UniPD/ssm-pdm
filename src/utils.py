@@ -414,9 +414,9 @@ class SSMWindowRegressionDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        acq_idx, start_idx = self.data_indices[idx]
-        life = self.lifes[acq_idx]
-        rul = self.targets[acq_idx]
+        life_idx, start_idx = self.data_indices[idx]
+        life = self.lifes[life_idx]
+        rul = self.targets[life_idx]
         mask = np.ones(shape=(self.sequence_length,1))
 
         #NOTE: Life longer than sequence_length: we create the sub sequence
@@ -476,8 +476,8 @@ class SSMWindowRegressionDataset(Dataset):
         filtered_indices = []
 
         for idx in range(len(self.data_indices)):
-            acq_idx, start_idx = self.data_indices[idx]
-            rul = self.targets[acq_idx]
+            life_idx, start_idx = self.data_indices[idx]
+            rul = self.targets[life_idx]
 
             # Determine the target window values for this specific index
             end_idx = start_idx + self.sequence_length
@@ -486,6 +486,7 @@ class SSMWindowRegressionDataset(Dataset):
 
             # Condition: at least one RUL value < max_rul
             is_near_failure = np.any(target_slice < max_rul)
+            is_near_failure_count = np.sum(target_slice < max_rul)
 
             if is_near_failure:
                 filtered_indices.append(self.data_indices[idx])
@@ -577,7 +578,9 @@ def get_transformer(
 
 
 def combine_values(
-    predictions: np.ndarray, true_values: np.ndarray, sequence_length: int
+    predictions: np.ndarray,
+    true_values: np.ndarray,
+    sequence_length: int
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Combine the predictions done by the model on the different sub sequences in which each life was divided in the `seq_to_seq` approach
@@ -801,13 +804,20 @@ def create_window_loaders(
         #NOTE: For the evaluation lifes we do not use select_windows because we want
         # to test the model on the entire life
 
-        test_datasets = [
-            SSMWindowRegressionDataset(
-                lifes=[test_life],
-                sequence_length=config.sequence_length,
-                stride=config.stride
-            ) for test_life in test_lifes]
-        test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
+        test_datasets = []
+        for test_life in test_lifes:
+            test_dataset = SSMWindowRegressionDataset(
+                    lifes=[test_life],
+                    sequence_length=config.sequence_length,
+                    stride=config.stride
+                )
+            test_dataset.select_windows(
+                max_rul = config.max_rul,
+                keep_long_rul_prob= config.keep_long_rul_prob
+            )
+            test_datasets.append(test_dataset)
+
+        test_loaders = [DataLoader(test_dataset , batch_size = config.batch_size) for test_dataset in test_datasets]
 
         print("-"*50)
         print("window dataloaders created successfully")

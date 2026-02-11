@@ -357,6 +357,21 @@ def define_arguments() -> Namespace:
 
     return args
 
+def check_arguments(
+    args: ExperimentConfig
+) -> None
+    """
+    This functions checks the validity of the experiment configuration through some assert statements
+
+    Args:
+        args (ExperimentConfig): experiment configuration object
+
+    Returns:
+        None: the function does not return nothing but can throw some exception if the arguments are not passed correctly
+    """
+
+    assert args.stride <= args.sequence_length, f"The stride must be less or equal to the sequence length but got stride={args.stride} and sequence_length={args.sequence_length}"
+
 def set_exp_name(config: ExperimentConfig) -> str:
     """
     This function is used to set the experiment name (that will also be used
@@ -417,6 +432,8 @@ def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
     exp_config = load_yaml_to_dict(args.exp_config_path)
     exp_config = ExperimentConfig.from_dict(exp_config)
     exp_config.add_params(args=args.__dict__)
+
+    check_arguments(args = exp_config)
 
     model_config = load_yaml_to_dict(exp_config.model_config_path)
     model_config = ModelConfig.from_dict(model_config)
