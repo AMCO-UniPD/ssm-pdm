@@ -357,9 +357,7 @@ def define_arguments() -> Namespace:
 
     return args
 
-def check_arguments(
-    args: ExperimentConfig
-) -> None
+def check_arguments(args: ExperimentConfig) -> None:
     """
     This functions checks the validity of the experiment configuration through some assert statements
 
