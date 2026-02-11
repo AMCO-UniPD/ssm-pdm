@@ -33,8 +33,8 @@ keep_long_rul_prob: 0.2
 batch_size: 16
 sequence_length: 10000
 stride: 3000
-epochs: 50
-lr: 0.007790009334009813
+epochs: 20
+lr: 0.009221065423976013
 weight_decay: 1.0e-4
 
 # loss parameters
