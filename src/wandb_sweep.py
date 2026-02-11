@@ -33,6 +33,7 @@ sweep_config_path = os.path.join(experiment_path,"config","sweep_config.yaml")
 
 def define_sweep_config(
     sweep_config_path: str,
+    script_path: str
 ) -> dict:
     """
     This function uses the hyperparameters set on the yaml sweep file
@@ -40,6 +41,7 @@ def define_sweep_config(
 
     Args:
         sweep_config_path (str): path to the sweep yaml config file
+        script_path (str): path to the script launching the sweep
 
     Returns:
         sweep_config (dict): sweep configuration dictionary
@@ -56,6 +58,7 @@ def define_sweep_config(
         sweep_name = config.sweep_name
 
     sweep_config = {
+        "program": script_path,
         "name": sweep_name,
         "method": config.sweep_method,
         "metric": {"goal": "minimize", "name": "score"},

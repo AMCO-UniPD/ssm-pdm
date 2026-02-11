@@ -17,59 +17,85 @@ sys.path.append(src_path)
 from exp_config import setup_exp
 from wandb_sweep import wandb_run_sweep, define_sweep_config
 
-experiment_path = os.path.dirname((os.path.realpath(__file__)))
-sweep_config_path = os.path.join(experiment_path,"config","sweep_config.yaml")
-exp_config, model_config, device, exp_name = setup_exp()
+def main() -> None:
 
-#NOTE: Sweep configuration
+    #NOTE: If I resume the wandb agent with the CLI I
+    # just need to call the function running the sweep otherwise it
+    # tries to re initialize the sweep and follow all the logic
+    # after this if
 
-sweep_config = define_sweep_config(sweep_config_path = sweep_config_path)
+    if wandb.run is not None:
 
-print("-"*50)
-print(f"Sweep configuration:\n {sweep_config}")
-print("-"*50)
+        print("-"*50)
+        print("wandb sweep resumed from CLI, let's just run wandb_run_sweep")
+        print("-"*50)
 
-#NOTE: Start the sweep
+        wandb_run_sweep()
 
-setproctitle.setproctitle(exp_config.sweep_name)
+        return
 
-if exp_config.continue_old_sweep:
+    experiment_path = os.path.dirname((os.path.realpath(__file__)))
+    sweep_config_path = os.path.join(experiment_path,"config","sweep_config.yaml")
+    script_path = os.path.basename(sys.argv[0])
+    exp_config, model_config, device, exp_name = setup_exp()
 
-    sweep_id = os.environ.get("WANDB_SWEEP_ID", exp_config.sweep_id)
+    #NOTE: Sweep configuration
+
+    sweep_config = define_sweep_config(
+        sweep_config_path = sweep_config_path,
+        script_path = script_path
+    )
+
     print("-"*50)
-    print(f"Resuming old sweep with id {sweep_id}")
+    print(f"Sweep configuration:\n {sweep_config}")
     print("-"*50)
 
-else:
+    #NOTE: Start the sweep
 
-    sweep_id = wandb.sweep(sweep=sweep_config , project=exp_config.project_name)
-    print("-"*50)
-    print(f"Starting new sweep with id {sweep_id}")
-    print("-"*50)
+    setproctitle.setproctitle(exp_config.sweep_name)
 
-wandb.agent(
-    sweep_id,
-    function = wandb_run_sweep,
-    count = exp_config.sweep_runs,
-    project = exp_config.project_name,
-    entity = exp_config.wandb_entity
-)
+    if exp_config.continue_old_sweep:
 
-#NOTE: Print the final result of the sweep printing the best hyperparameters found
+        sweep_id = os.environ.get("WANDB_SWEEP_ID", exp_config.sweep_id)
+        print("-"*50)
+        print(f"Resuming old sweep with id {sweep_id}")
+        print("-"*50)
 
-# After the agent finishes:
-api = wandb.Api()
-sweep = api.sweep(f"{exp_config.project_name}/{sweep_id}")
+    else:
 
-# Get the best run based on the metric defined in your sweep_config
-best_run = sweep.best_run()
+        sweep_id = wandb.sweep(sweep=sweep_config , project=exp_config.project_name)
+        print("-"*50)
+        print(f"Starting new sweep with id {sweep_id}")
+        print("-"*50)
 
-print("Sweep finished!")
-print(f"Best run ID: {best_run.id}")
-print(f"Best Score ({sweep.config.get('metric', {}).get('name')}): {best_run.summary.get(sweep.config.get('metric', {}).get('name'))}")
+    wandb.agent(
+        sweep_id,
+        function = wandb_run_sweep,
+        count = exp_config.sweep_runs,
+        project = exp_config.project_name,
+        entity = exp_config.wandb_entity
+    )
 
-print("Best Hyperparameters:")
-for k, v in best_run.config.items():
-    print("-"*50)
-    print(f"  {k}: {v}")
-    print("-"*50)
+    #NOTE: Print the final result of the sweep printing the best hyperparameters found
+
+    # After the agent finishes:
+    api = wandb.Api()
+    sweep = api.sweep(f"{exp_config.project_name}/{sweep_id}")
+
+    # Get the best run based on the metric defined in your sweep_config
+    best_run = sweep.best_run()
+
+    print("Sweep finished!")
+    print(f"Best run ID: {best_run.id}")
+    print(f"Best Score ({sweep.config.get('metric', {}).get('name')}): {best_run.summary.get(sweep.config.get('metric', {}).get('name'))}")
+
+    print("Best Hyperparameters:")
+    for k, v in best_run.config.items():
+        print("-"*50)
+        print(f"  {k}: {v}")
+        print("-"*50)
+
+if __name__ == "__main__":
+    main()
+
+
