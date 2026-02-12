@@ -29,8 +29,8 @@ sweep_runs=10
 # exp_name="exp"
 # exp_name="M01_flow_low_windowed_S5_ff_attn_dropout"
 # exp_name="M01_flow_low_windowed_S5_norm_dropout"
-exp_name="quantile_exp_flow_low_windowed_S5"
-# exp_name="quantile_exp_flow_low_windowed_S5_seq_500"
+# exp_name="quantile_exp_flow_low_windowed_S5"
+exp_name="quantile_exp_flow_low_windowed_S5_seq_500"
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_tau_feat"
 
 #NOTE: Experiment names S4D

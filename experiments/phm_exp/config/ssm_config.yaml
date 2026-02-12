@@ -11,7 +11,7 @@ gap: true # Global Average Pooling in the Regression Head
 # Quantile Regression config
 quantile_reg: true
 # tau_mult approach
-tau_mult: true
+tau_mult: false
 # tau as input feature
 tau_feat: true
 

@@ -58,7 +58,7 @@ class ExperimentConfig:
     run_id: int = 1
     # model summary
     summary_func: str = "torchinfo"
-    # test_script parameters
+    # 500test_script parameters
     file_pos: int = 0
     # quantile plots
     full_life: bool = False
