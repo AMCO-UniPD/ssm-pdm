@@ -247,6 +247,7 @@ def eval_loop(
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
+
             y_pred.append(batch_out) if config.approach == "padding" else y_pred.extend(
                 batch_out
             )
@@ -722,6 +723,7 @@ def best_model_perf(
     """
 
     loaders_dict = load_phm_data(config,eval=True) if config.data_name == "PHM" else load_reg_data(config)
+    test_lifes = loaders_dict["test_lifes"]
     test_loaders = loaders_dict["test_loaders"]
     test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None
 
@@ -773,7 +775,9 @@ def best_model_perf(
             combined_preds, combined_true_vals = combine_values(
                 predictions=y_pred,
                 true_values=y_true,
+                original_shape=test_lifes[test_idx[i]].shape[0],
                 sequence_length=config.sequence_length,
+                stride = config.stride
             )
 
             preds.append(combined_preds)

@@ -578,7 +578,9 @@ def get_transformer(
 def combine_values(
     predictions: np.ndarray,
     true_values: np.ndarray,
-    sequence_length: int
+    original_shape: int,
+    sequence_length: int,
+    stride: int
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Combine the predictions done by the model on the different sub sequences in which each life was divided in the `seq_to_seq` approach
@@ -586,21 +588,33 @@ def combine_values(
     Args:
         predictions: np.array containing the predictions for each sub sequence
         true_values: np.array containing the true values for each sub sequence
+        original_shape: shape of the signal before applying the sliding windows approach
         sequence_length: length of the sequences
+        stride: stride used to construct the sliding windows
 
     Returns:
         combined_predictions: np.array containing the combined
         combined_true_vals: np.array containing the combined true values
     """
 
-    n_samples = len(predictions) + sequence_length - 1
+    #NOTE: In case we have non overlapping windows we just need
+    # to concatenate ther predictions and true values over the windows
+
+    if sequence_length == stride:
+
+        combined_predictions = np.concatenate(predictions)
+        combined_true_vals = np.concatenate(true_values)
+
+        return combined_predictions, combined_true_vals
+
+    n_samples = (len(predictions) * stride) + sequence_length
     combined_predictions = np.zeros(n_samples)
     combined_true_vals = np.zeros(n_samples)
     counts = np.zeros(n_samples)
 
     for i, (preds, true) in enumerate(zip(predictions, true_values)):
-        start_index = i
-        end_index = i + sequence_length
+        start_index = i * stride
+        end_index = start_index + sequence_length
         combined_predictions[start_index:end_index] += preds
         combined_true_vals[start_index:end_index] += true
         counts[start_index:end_index] += 1
@@ -608,6 +622,13 @@ def combine_values(
     nonzero_counts = counts != 0
     combined_predictions[nonzero_counts] /= counts[nonzero_counts]
     combined_true_vals[nonzero_counts] /= counts[nonzero_counts]
+
+    if n_samples > original_shape:
+        print("-"*50)
+        print(f"{n_samples} grater than the original shape {original_shape} so removing the last {n_samples-original_shape} samples")
+        print("-"*50)
+
+        return combined_predictions[:-(n_samples-original_shape)], combined_true_vals[:-(n_samples-original_shape)]
 
     return combined_predictions, combined_true_vals
 
@@ -809,10 +830,10 @@ def create_window_loaders(
                     sequence_length=config.sequence_length,
                     stride=config.stride
                 )
-            test_dataset.select_windows(
-                max_rul = config.max_rul,
-                keep_long_rul_prob= config.keep_long_rul_prob
-            )
+            # test_dataset.select_windows(
+            #     max_rul = config.max_rul,
+            #     keep_long_rul_prob= config.keep_long_rul_prob
+            # )
             test_datasets.append(test_dataset)
 
         test_loaders = [DataLoader(test_dataset , batch_size = config.batch_size) for test_dataset in test_datasets]
@@ -877,6 +898,25 @@ def create_window_loaders(
 
         return loaders_dict
 
+def print_life_info(
+    phm_data: PHMDataset2018
+) -> None:
+    """
+    print statement with some information on the lifes durations
+
+    Args:
+        phm_data (PHMDataset2018): PHM dataset object
+
+    Results:
+        None: the function does not return anything, it just prints some information on the shape of the
+        lifes in the dataset
+    """
+
+    for i,life in enumerate(phm_data):
+        print("-"*50)
+        print(f"Shape of life {i}: {life.shape}")
+        print("-"*50)
+
 def load_phm_data(
     config: ExperimentConfig,
     eval: bool = False
@@ -934,6 +974,8 @@ def load_phm_data(
           train = False
       )
 
+    print_life_info(phm_data=test_phm_data)
+
     train_phm_idx = np.arange(len(train_phm_data))
     test_phm_idx = np.arange(len(test_phm_data))
 
@@ -974,7 +1016,11 @@ def load_phm_data(
         )
 
         if eval:
-            return {"test_loaders": loaders_dict, "test_idx": test_phm_idx}
+            return {
+                "test_lifes": test_lifes,
+                "test_loaders": loaders_dict,
+                "test_idx": test_phm_idx,
+            }
 
     else:
 
