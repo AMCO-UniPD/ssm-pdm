@@ -373,6 +373,8 @@ class SSMWindowRegressionDataset(Dataset):
         lifes: TransData,
         sequence_length: int = 500,
         stride: int = 1,
+        max_rul: int = MAX_RUL,
+        normalize_rul: bool = False
     ):
         """
         This class implements the dataset for the windowed approach.
@@ -386,12 +388,16 @@ class SSMWindowRegressionDataset(Dataset):
             lifes (TransData): lifes transformed with a transformer ceruelo object
             sequence_length (int): length of the sub sequences
             stride (int): stride between two consecutive windows
+            max_rul (int): maximum RUL value used to select the windows and to normalize the RUL
+            normalize_rul (bool): weather to normalize the RUL
         """
 
         self.lifes = [life.iloc[:,:-1] for life in lifes]
         self.targets = [life["RUL"] for life in lifes]
         self.sequence_length = sequence_length
         self.stride = stride
+        self.max_rul = max_rul
+        self.normalize_rul = normalize_rul
 
         self.data_indices = []
         for i, df in enumerate(self.lifes):
@@ -450,6 +456,9 @@ class SSMWindowRegressionDataset(Dataset):
 
             mask[pad_idx:] = 0
 
+        #NOTE: Normalize the RUL if self.normalize_rul is true
+        targets = targets / self.max_rul if self.normalize_rul else targets
+
         targets = np.expand_dims(targets,axis=-1)
         sequence = torch.tensor(inputs, dtype=torch.float32)
         target = torch.tensor(targets, dtype=torch.float32)
@@ -458,7 +467,6 @@ class SSMWindowRegressionDataset(Dataset):
 
     def select_windows(
         self,
-        max_rul: int = MAX_RUL,
         keep_long_rul_prob:float = 0.2,
     ):
         """
@@ -466,7 +474,6 @@ class SSMWindowRegressionDataset(Dataset):
         lower than MAX RUL and keep the others with probability keep_long_rul_prob
 
         Args:
-            max_rul (int): maximum RUL value used to filter the lifes
             keep_long_rul_prob (float): probability with which long RUL lifes are kept
 
         Returns:
@@ -484,15 +491,22 @@ class SSMWindowRegressionDataset(Dataset):
             # Use the same logic as __getitem__ to get the target slice
             target_slice = rul.iloc[start_idx : min(end_idx, len(rul))].values
 
-            # Condition: at least one RUL value < max_rul
-            is_near_failure = np.any(target_slice < max_rul)
+            # Condition: at least one RUL value < self.max_rul
+            is_near_failure = np.any(target_slice < self.max_rul)
 
             if is_near_failure:
                 filtered_indices.append(self.data_indices[idx])
 
         constant_seq = list(set(self.data_indices) - set(filtered_indices))
         seq_to_keep = constant_seq.copy()
-        seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
+        # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
+        seq_to_keep = seq_to_keep[-10:]
+
+        print("-"*50)
+        print(f"Number of constant windows (with keep_long_rul_prob = {keep_long_rul_prob}): {len(seq_to_keep)}")
+        print(f"Number of decreasing windows: {len(filtered_indices)}")
+        print("-"*50)
+
         seq_to_keep.extend(filtered_indices)
         self.data_indices = seq_to_keep
 
@@ -707,7 +721,9 @@ def load_reg_data(config: ExperimentConfig) -> dict:
     elif config.approach == "windowed":
         train_datasets = [
             SSMWindowRegressionDataset(
-                life=life, sequence_length=config.sequence_length
+                life=life,
+                sequence_length=config.sequence_length,
+                max_rul = MAX_RUL,
             )
             for life in train_lifes
         ]
@@ -828,7 +844,9 @@ def create_window_loaders(
             test_dataset = SSMWindowRegressionDataset(
                     lifes=[test_life],
                     sequence_length=config.sequence_length,
-                    stride=config.stride
+                    stride=config.stride,
+                    max_rul = MAX_RUL,
+                    normalize_rul = config.normalize_rul
                 )
             # test_dataset.select_windows(
             #     max_rul = config.max_rul,
@@ -853,32 +871,29 @@ def create_window_loaders(
         train_datasets = SSMWindowRegressionDataset(
             lifes=train_lifes,
             sequence_length=config.sequence_length,
-            stride=config.stride
+            stride=config.stride,
+            max_rul = MAX_RUL,
+            normalize_rul = config.normalize_rul
         )
-        train_datasets.select_windows(
-            max_rul = config.max_rul,
-            keep_long_rul_prob= config.keep_long_rul_prob
-        )
+        train_datasets.select_windows(keep_long_rul_prob=config.keep_long_rul_prob)
 
         val_datasets = SSMWindowRegressionDataset(
             lifes=val_lifes,
             sequence_length=config.sequence_length,
-            stride=config.stride
+            stride=config.stride,
+            max_rul = MAX_RUL,
+            normalize_rul = config.normalize_rul
         )
-        val_datasets.select_windows(
-            max_rul = config.max_rul,
-            keep_long_rul_prob= config.keep_long_rul_prob
-        )
+        val_datasets.select_windows(keep_long_rul_prob= config.keep_long_rul_prob)
 
         test_datasets = SSMWindowRegressionDataset(
             lifes=test_lifes,
             sequence_length=config.sequence_length,
-            stride=config.stride
+            stride=config.stride,
+            max_rul = MAX_RUL,
+            normalize_rul = config.normalize_rul
         )
-        test_datasets.select_windows(
-            max_rul = config.max_rul,
-            keep_long_rul_prob= config.keep_long_rul_prob
-        )
+        test_datasets.select_windows(keep_long_rul_prob= config.keep_long_rul_prob)
 
         train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
         val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=True)
@@ -941,7 +956,7 @@ def load_phm_data(
     if os.path.exists(PHM_PATH_ACQ4):
 
       print("-"*50)
-      print(f"{PHM_PATH_ACQ4} exists so we download the PHM dataset here")
+      print(f"Loading PHM data from {PHM_PATH_ACQ4}")
       print("-"*50)
 
       train_phm_data = PHMDataset2018(
@@ -959,6 +974,10 @@ def load_phm_data(
       )
 
     else:
+
+      print("-"*50)
+      print(f"Loading PHM data from {PHM_PATH}")
+      print("-"*50)
 
       train_phm_data = PHMDataset2018(
           path = PHM_PATH,

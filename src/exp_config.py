@@ -71,6 +71,7 @@ class ExperimentConfig:
     # select_windows parameters
     max_rul: int = 500
     keep_long_rul_prob: float = 0.2
+    normalize_rul: bool = False
     # wandb sweep
     sweep_method: str = "random"
     sweep_param_names: List[str] = field(default_factory=lambda: ["batch_size", "lr"])

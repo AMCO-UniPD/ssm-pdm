@@ -46,12 +46,10 @@ from utils import (
     combine_values,
 )
 
+from config_vars import MAX_RUL
 from ssm_models import ModelConfig, load_ssm_model
-
 from loss import load_loss_functions
-
 from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_table
-
 from plots import plot_predictions_grid
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -764,6 +762,11 @@ def best_model_perf(
             use_tqdm=False,
             tau=tau,
         )
+
+        if config.normalize_rul:
+
+            y_pred = y_pred*MAX_RUL
+            y_true = y_true*MAX_RUL
 
         if config.approach == "padding":
 

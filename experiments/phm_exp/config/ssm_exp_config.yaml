@@ -28,10 +28,12 @@ quantile_run: 0.25
 # select_windows
 max_rul: 500
 keep_long_rul_prob: 0.2
+# normalize_rul: true
+normalize_rul: false
 
 batch_size: 16
-sequence_length: 5000
-stride: 3000
+sequence_length: 500
+stride: 500
 epochs: 20
 lr: 0.007391094605732542
 weight_decay: 1.0e-4
