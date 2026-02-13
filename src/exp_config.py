@@ -6,8 +6,9 @@ import argparse
 from argparse import Namespace
 import ipdb
 from dataclasses import dataclass, field, fields
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 import torch
+from wandb.sdk.wandb_config import Config as WandbConfig
 # from utils import load_yaml_to_dict
 # from ssm_models import ModelConfig
 
@@ -362,7 +363,7 @@ def define_arguments() -> Namespace:
 
     return args
 
-def check_arguments(args: ExperimentConfig) -> None:
+def check_arguments(args: Union[ExperimentConfig, WandbConfig]) -> None:
     """
     This functions checks the validity of the experiment configuration through some assert statements
 
@@ -374,6 +375,7 @@ def check_arguments(args: ExperimentConfig) -> None:
     """
 
     assert args.stride <= args.sequence_length, f"The stride must be less or equal to the sequence length but got stride={args.stride} and sequence_length={args.sequence_length}"
+
 
 def set_exp_name(config: ExperimentConfig) -> str:
     """

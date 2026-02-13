@@ -35,7 +35,7 @@ normalize_rul: true
 batch_size: 16
 sequence_length: 500
 stride: 500
-epochs: 3
+epochs: 20
 lr: 0.007391094605732542
 weight_decay: 1.0e-4
 

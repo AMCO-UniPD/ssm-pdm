@@ -1,14 +1,17 @@
 # Configuration file for wandb sweep experiments
 
-sweep_method: grid
+sweep_method: random
 sweep_param_names:
   - n_const_win
   - sequence_length
+  - stride
 
 # lr_vals: [0.001, 0.01]
 # dropout_vals: [0.1, 0.5]
 # d_model_vals: [64, 128]
 # batch_size_vals: [16, 32, 48]
 n_const_win_vals: [10, 50, 100, 200]
-sequence_length_vals: [200, 500, 1000]
-stride_vals: [200, 500, 1000]
+# sequence_length_vals: [200, 500, 1000]
+# stride_vals: [200, 500, 1000]
+sequence_length_vals: [100]
+stride_vals: [200]

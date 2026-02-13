@@ -14,6 +14,7 @@ from exp_config import (
     setup_exp,
     ExperimentConfig,
     define_arguments,
+    check_arguments
 )
 from ssm_models import ModelConfig
 from models import (
@@ -29,6 +30,7 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 
 experiment_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),"experiments","phm_exp")
+script_path = os.path.join(experiment_path, "train_phm_sweep.py")
 sweep_config_path = os.path.join(experiment_path,"config","sweep_config.yaml")
 
 def define_sweep_config(
@@ -284,7 +286,10 @@ def wandb_run_sweep():
     """
 
     exp_config, model_config, device, _ = setup_exp()
-    sweep_config = define_sweep_config(sweep_config_path)
+    sweep_config = define_sweep_config(
+            sweep_config_path = sweep_config_path,
+            script_path = script_path
+    )
 
     with wandb.init(project=exp_config.project_name) as sweep_run:
 
@@ -292,6 +297,8 @@ def wandb_run_sweep():
             exp_config = exp_config,
             wandb_config = sweep_run.config
         )
+
+        check_arguments(args=sweep_run.config)
 
         setproctitle.setproctitle(sweep_run.name)
 

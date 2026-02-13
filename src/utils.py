@@ -503,7 +503,7 @@ class SSMWindowRegressionDataset(Dataset):
         seq_to_keep = seq_to_keep[-n_const_win:]
 
         print("-"*50)
-        print(f"Number of constant windows (with keep_long_rul_prob = {keep_long_rul_prob}): {len(seq_to_keep)}")
+        print(f"Number of constant windows: {len(seq_to_keep)}")
         print(f"Number of decreasing windows: {len(filtered_indices)}")
         print("-"*50)
 
