@@ -15,6 +15,7 @@ sys.path.append(src_path)
 
 from exp_config import setup_exp
 from utils import generate_path
+from config_vars import MAX_RUL
 from plots import plot_prediction_interval
 from models import wandb_data
 
@@ -56,4 +57,5 @@ _ = plot_prediction_interval(
     config = exp_config,
     outputs_path = outputs_path,
     plot_path = plot_path,
+    n_last_samples = MAX_RUL
 )

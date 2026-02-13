@@ -68,6 +68,7 @@ class ExperimentConfig:
     plot_run_id: int = 1
     quantile_plot: float = 0.25
     save_plot: bool = False
+    show_plot: bool = False
     # select_windows parameters
     max_rul: int = 500
     keep_long_rul_prob: float = 0.2

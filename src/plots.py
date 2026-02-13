@@ -208,6 +208,7 @@ def plot_prediction_interval(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
+    n_last_samples:int = 0
 ) -> None:
     """
     Function to plot in a grid the `RUL` predictions of each life compared to the true `RUL`,M
@@ -221,6 +222,8 @@ def plot_prediction_interval(
         Path to the outputs dictionary
     plot_path: str
         Path to save the plot
+    n_last_samples: int
+        Number of last samples to show. If you pass 500 it will show the last 500 samples. By default it's 0 meaning that all the samples are shown
 
     Returns:
     --------
@@ -236,15 +239,15 @@ def plot_prediction_interval(
 
     y_pred = outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    true = [y_pred[i] for i in life_idxs]
+    true = [y_pred[i][-n_last_samples:] for i in life_idxs]
 
     try:
 
-        quantile_0_5 = [outputs_dict["quantile_0.5"][i] for i in life_idxs]
-        quantile_0_25 = [outputs_dict["quantile_0.25"][i] for i in life_idxs]
-        quantile_0_75 = [outputs_dict["quantile_0.75"][i] for i in life_idxs]
-        quantile_0_1 = [outputs_dict["quantile_0.1"][i] for i in life_idxs]
-        quantile_0_9 = [outputs_dict["quantile_0.9"][i] for i in life_idxs]
+        quantile_0_5 = [outputs_dict["quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
+        quantile_0_25 = [outputs_dict["quantile_0.25"][i][-n_last_samples:] for i in life_idxs]
+        quantile_0_75 = [outputs_dict["quantile_0.75"][i][-n_last_samples:] for i in life_idxs]
+        quantile_0_1 = [outputs_dict["quantile_0.1"][i][-n_last_samples:] for i in life_idxs]
+        quantile_0_9 = [outputs_dict["quantile_0.9"][i][-n_last_samples:] for i in life_idxs]
 
     except Exception as e:
 
@@ -320,6 +323,12 @@ def plot_prediction_interval(
                 ax.set_ylabel("RUL")
                 ax.legend()
 
+    if config.show_plot:
+        print("-"*50)
+        print("Showing the plot")
+        print("-"*50)
+        plt.show()
+
     if config.save_plot:
         if config.full_life:
             filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot_full_life" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot_full_life"
@@ -327,7 +336,7 @@ def plot_prediction_interval(
             filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot"
 
         life_idx_str = "_".join(str(x) for x in config.life_idx)
-        filename = f"{filename}_life_{life_idx_str}.png"
+        filename = f"{filename}_life_{life_idx_str}_last_{n_last_samples}_samples.png"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
         print("#" * 50)

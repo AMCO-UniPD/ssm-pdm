@@ -61,7 +61,9 @@ nrows: 2
 ncols: 2
 # ncols: 3
 full_life: false
-save_plot: true
+# save_plot: true
+save_plot: false
+show_plot: true
 
 #NOTE: The following parameters are all set through the command line
 # with the define_arguments function
