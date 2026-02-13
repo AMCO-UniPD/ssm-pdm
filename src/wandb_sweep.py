@@ -293,22 +293,44 @@ def wandb_run_sweep():
 
     with wandb.init(project=exp_config.project_name) as sweep_run:
 
-        sweep_run.name = set_sweep_exp_name(
-            exp_config = exp_config,
-            wandb_config = sweep_run.config
-        )
+        try:
 
-        check_arguments(args=sweep_run.config)
+            sweep_run.name = set_sweep_exp_name(
+                exp_config = exp_config,
+                wandb_config = sweep_run.config
+            )
 
-        setproctitle.setproctitle(sweep_run.name)
+            check_arguments(args=sweep_run.config)
 
-        score = exp_run_sweep(
-            sweep_config = sweep_config,
-            wandb_config = sweep_run.config,
-            exp_config = exp_config,
-            model_config = model_config,
-            device = device
-        )
-        sweep_run.log({"score": score})
+            setproctitle.setproctitle(sweep_run.name)
+
+            score = exp_run_sweep(
+                sweep_config = sweep_config,
+                wandb_config = sweep_run.config,
+                exp_config = exp_config,
+                model_config = model_config,
+                device = device
+            )
+            sweep_run.log({"score": score})
+
+        except AssertionError as e:
+
+            print("-"*50)
+            print("Skipping run due to an invalid configuration")
+            print("-"*50)
+
+            return
+
+        except Exception as e:
+
+            print("-"*50)
+            print(f"An unexpected error occured: {e}")
+            print("-"*50)
+
+            sweep_run.finish(exit_code=1)
+
+            raise e
+
+
 
 
