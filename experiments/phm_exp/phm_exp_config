@@ -8,7 +8,7 @@ train_phm_tools=("01M01" "01M02" "02M01" "02M02" "03M01" "03M02" "04M01" "04M02"
 test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 
 model_name="S5"
-device_num=1
+device_num=0
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_id="t86x1hw1"
@@ -30,8 +30,11 @@ sweep_runs=10
 # exp_name="M01_flow_low_windowed_S5_ff_attn_dropout"
 # exp_name="M01_flow_low_windowed_S5_norm_dropout"
 # exp_name="quantile_exp_flow_low_windowed_S5"
-exp_name="quantile_exp_flow_low_windowed_S5_seq_500"
+# exp_name="quantile_exp_flow_low_windowed_S5_seq_500"
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_tau_feat"
+# exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul"
+# exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_no_shuffle"
+exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_norm"
 
 #NOTE: Experiment names S4D
 # exp_name="exp"

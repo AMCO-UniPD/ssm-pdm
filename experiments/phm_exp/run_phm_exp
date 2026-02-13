@@ -23,11 +23,11 @@ echo "-------------------------------------------"
 
 ./launch_train_phm quantile_metrics
 
-# echo "-------------------------------------------"
-# echo "Step 4: Produce the quantile plots"
-# echo "-------------------------------------------"
-#
-# ./launch_train_phm quantile_plots
+echo "-------------------------------------------"
+echo "Step 4: Produce the quantile plots"
+echo "-------------------------------------------"
+
+./launch_train_phm quantile_plots
 
 
 
