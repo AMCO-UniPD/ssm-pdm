@@ -145,6 +145,11 @@ def wandb_train_test_sweep(
     """
 
     wandb.watch(model, criterion, log="all", log_freq=10)
+    wandb.define_metric("epoch")
+    wandb.define_metric("loss/*", step_metric="epoch")
+    wandb.define_metric("times/*", step_metric="epoch")
+    wandb.define_metric("eval_loss/*", step_metric="epoch")
+
     train_times, val_times = [], []
     min_val_loss = np.inf
     pbar = tqdm(range(config.epochs))
@@ -195,11 +200,11 @@ def wandb_train_test_sweep(
         val_times.append(val_time)
 
         model_info = {
-                "train_time": train_time,
-                "val_time": val_time,
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "eval_val_loss": eval_val_loss,
+                "times/train_time": train_time,
+                "times/val_time": val_time,
+                "loss/train_loss": train_loss,
+                "loss/val_loss": val_loss,
+                "eval_loss/eval_val_loss": eval_val_loss,
             }
 
         wandb.log(model_info)
