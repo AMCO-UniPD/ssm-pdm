@@ -510,9 +510,9 @@ def wandb_train_test(
     if config.use_wandb:
         wandb.watch(model, criterion, log="all", log_freq=10)
         wandb.define_metric("epoch")
-        wandb.define_metric("loss/*", step_metic="epoch")
-        wandb.define_metric("times/*", step_metic="epoch")
-        wandb.define_metric("eval_loss/*", step_metic="epoch")
+        wandb.define_metric("loss/*", step_metric="epoch")
+        wandb.define_metric("times/*", step_metric="epoch")
+        wandb.define_metric("eval_loss/*", step_metric="epoch")
 
     error = False
     # preds, true_vals = [], []

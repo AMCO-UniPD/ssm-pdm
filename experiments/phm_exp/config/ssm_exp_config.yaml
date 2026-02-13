@@ -28,13 +28,14 @@ quantile_run: 0.25
 # select_windows
 max_rul: 500
 keep_long_rul_prob: 0.2
+n_const_win: 10
 normalize_rul: true
 # normalize_rul: false
 
 batch_size: 16
 sequence_length: 500
 stride: 500
-epochs: 20
+epochs: 3
 lr: 0.007391094605732542
 weight_decay: 1.0e-4
 
@@ -61,9 +62,9 @@ nrows: 2
 ncols: 2
 # ncols: 3
 full_life: false
-# save_plot: true
-save_plot: false
-show_plot: true
+save_plot: true
+# save_plot: false
+show_plot: false
 
 #NOTE: The following parameters are all set through the command line
 # with the define_arguments function

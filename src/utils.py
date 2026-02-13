@@ -467,14 +467,14 @@ class SSMWindowRegressionDataset(Dataset):
 
     def select_windows(
         self,
-        keep_long_rul_prob:float = 0.2,
+        n_const_win:int = 10,
     ):
         """
         Function to select only the windows with at least one RUL value
         lower than MAX RUL and keep the others with probability keep_long_rul_prob
 
         Args:
-            keep_long_rul_prob (float): probability with which long RUL lifes are kept
+            n_const_win (int): number of constant windows to keep
 
         Returns:
             None: the method filters the class attributes self.lifes and self.targets
@@ -500,7 +500,7 @@ class SSMWindowRegressionDataset(Dataset):
         constant_seq = list(set(self.data_indices) - set(filtered_indices))
         seq_to_keep = constant_seq.copy()
         # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
-        seq_to_keep = seq_to_keep[-10:]
+        seq_to_keep = seq_to_keep[-n_const_win:]
 
         print("-"*50)
         print(f"Number of constant windows (with keep_long_rul_prob = {keep_long_rul_prob}): {len(seq_to_keep)}")
@@ -875,7 +875,7 @@ def create_window_loaders(
             max_rul = MAX_RUL,
             normalize_rul = config.normalize_rul
         )
-        train_datasets.select_windows(keep_long_rul_prob=config.keep_long_rul_prob)
+        train_datasets.select_windows(n_const_win=config.n_const_win)
 
         val_datasets = SSMWindowRegressionDataset(
             lifes=val_lifes,
@@ -884,7 +884,7 @@ def create_window_loaders(
             max_rul = MAX_RUL,
             normalize_rul = config.normalize_rul
         )
-        val_datasets.select_windows(keep_long_rul_prob= config.keep_long_rul_prob)
+        val_datasets.select_windows(n_const_win=config.n_const_win)
 
         test_datasets = SSMWindowRegressionDataset(
             lifes=test_lifes,
@@ -893,7 +893,7 @@ def create_window_loaders(
             max_rul = MAX_RUL,
             normalize_rul = config.normalize_rul
         )
-        test_datasets.select_windows(keep_long_rul_prob= config.keep_long_rul_prob)
+        test_datasets.select_windows(n_const_win=config.n_const_win)
 
         train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
         val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=True)

@@ -57,5 +57,5 @@ _ = plot_prediction_interval(
     config = exp_config,
     outputs_path = outputs_path,
     plot_path = plot_path,
-    n_last_samples = MAX_RUL
+    n_last_samples = MAX_RUL*2
 )

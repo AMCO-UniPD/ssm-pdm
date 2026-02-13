@@ -72,14 +72,17 @@ class ExperimentConfig:
     # select_windows parameters
     max_rul: int = 500
     keep_long_rul_prob: float = 0.2
+    n_const_win: int = 10
     normalize_rul: bool = False
     # wandb sweep
     sweep_method: str = "random"
     sweep_param_names: List[str] = field(default_factory=lambda: ["batch_size", "lr"])
     batch_size_vals: List[int] = field(default_factory=lambda: [16, 32, 48])
+    n_const_win_vals: List[int] = field(default_factory=lambda: [10, 100, 200])
     lr_vals: List[float] = field(default_factory=lambda: [1e-04, 1e-02])
     dropout_vals: List[float] = field(default_factory=lambda: [0.1, 0.2])
     sequence_length_vals: List[int] = field(default_factory=lambda: [10000, 20000])
+    stride_vals: List[int] = field(default_factory=lambda: [100, 200])
     d_model_vals: List[float] = field(default_factory=lambda: [32, 64])
 
     @classmethod
