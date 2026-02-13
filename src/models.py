@@ -509,6 +509,10 @@ def wandb_train_test(
 
     if config.use_wandb:
         wandb.watch(model, criterion, log="all", log_freq=10)
+        wandb.define_metric("epoch")
+        wandb.define_metric("loss/*", step_metic="epoch")
+        wandb.define_metric("times/*", step_metic="epoch")
+        wandb.define_metric("eval_loss/*", step_metic="epoch")
 
     error = False
     # preds, true_vals = [], []
@@ -587,14 +591,15 @@ def wandb_train_test(
             test_times.append(test_time)
 
             model_info = {
-                    "train_time": train_time,
-                    "val_time": val_time,
-                    "test_time": test_time,
-                    "train_loss": train_loss,
-                    "val_loss": val_loss,
-                    "eval_val_loss": eval_val_loss,
-                    "test_loss": test_loss,
-                    "eval_test_loss": eval_test_loss,
+                "epoch": epoch,
+                "times/train_time": train_time,
+                "times/val_time": val_time,
+                "times/test_time": test_time,
+                "loss/train_loss": train_loss,
+                "loss/val_loss": val_loss,
+                "eval_loss/eval_val_loss": eval_val_loss,
+                "loss/test_loss": test_loss,
+                "eval_loss/eval_test_loss": eval_test_loss,
                 }
 
             if config.use_wandb:
