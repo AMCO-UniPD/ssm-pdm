@@ -10,7 +10,6 @@ import torch
 import argparse
 import setproctitle
 
-
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 

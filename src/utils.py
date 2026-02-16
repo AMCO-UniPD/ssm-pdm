@@ -499,13 +499,17 @@ class SSMWindowRegressionDataset(Dataset):
 
         constant_seq = list(set(self.data_indices) - set(filtered_indices))
         seq_to_keep = constant_seq.copy()
+        self.normal_seq = constant_seq
+        self.anomalous_seq = seq_to_keep
         # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
         seq_to_keep = seq_to_keep[-n_const_win:]
 
         print("-"*50)
-        print(f"Number of constant windows: {len(seq_to_keep)}")
-        print(f"Number of decreasing windows: {len(filtered_indices)}")
+        print(f"Number of normal windows: {len(self.normal_seq)}")
+        print(f"Number of anomalous windows: {len(self.anomalous_seq)}")
         print("-"*50)
+
+        #TODO: For the AD model training I have to use just the normal_seq
 
         seq_to_keep.extend(filtered_indices)
         self.data_indices = seq_to_keep
@@ -848,10 +852,6 @@ def create_window_loaders(
                     max_rul = MAX_RUL,
                     normalize_rul = config.normalize_rul
                 )
-            # test_dataset.select_windows(
-            #     max_rul = config.max_rul,
-            #     keep_long_rul_prob= config.keep_long_rul_prob
-            # )
             test_datasets.append(test_dataset)
 
         test_loaders = [DataLoader(test_dataset , batch_size = config.batch_size) for test_dataset in test_datasets]

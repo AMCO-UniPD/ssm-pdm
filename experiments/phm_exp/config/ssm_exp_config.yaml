@@ -28,7 +28,7 @@ quantile_run: 0.25
 # select_windows
 max_rul: 500
 keep_long_rul_prob: 0.1
-n_const_win: 10
+n_const_win: 0
 normalize_rul: true
 # normalize_rul: false
 
