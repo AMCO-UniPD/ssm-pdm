@@ -1213,7 +1213,9 @@ def set_seed(seed: int = 0) -> None:
     )
 
 
-def extract_number(text):
+def extract_number(
+    text: str,
+) -> Union[float, None]:
     """
     Extracts the first floating point number from a string.
 
@@ -1229,3 +1231,27 @@ def extract_number(text):
         return float(match.group(0))
     else:
         return None
+
+def an_score_to_rul(
+    an_scores: np.ndarray,
+    max_rul: int = MAX_RUL
+) -> np.ndarray:
+    """
+    This function converts an array containing the anomaly scores over the samples
+    of a life into a RUL signal. The current formula used to convert to the RUL is
+    the following:
+    - subtract the maximum anomaly score from all samples
+    - multiply by max_rul
+
+    Args:
+        an_scores (np.ndarray): array with the anomaly scores
+        max_rul (int): maximum RUL value
+
+    Returns:
+        rul_scores (np.ndarray): array of converted RUL scores
+    """
+
+    an_scores_norm = np.max(an_scores) - an_scores
+    rul_scores = an_scores_norm * max_rul
+
+    return rul_scores
