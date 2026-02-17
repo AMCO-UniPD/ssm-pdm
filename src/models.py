@@ -167,7 +167,9 @@ def train_loop(
             tau = 0.5
             print(f"No quantile regression so tau={tau}")
 
+        ipdb.set_trace()
         output = model(life, tau=tau)
+        ipdb.set_trace()
 
         loss = (
             criterion(output, rul, mask)
@@ -201,7 +203,7 @@ def eval_loop(
     device: torch.device = torch.device("cpu"),
     use_tqdm: bool = True,
     tau: float = 0.5,
-) -> Tuple[float, float, np.ndarray, np.ndarray]:
+) -> Tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
     """
     Evaluation loop for one epoch
 
@@ -218,14 +220,18 @@ def eval_loop(
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
-        loss (float): The loss value
+        eval_loss (float): The evaluation loss value
+        eval_rmse_loss (float): The evaluation RMSE loss value
+        y_pred (np.ndarray): predictions over the different windows
+        y_true (np.ndarray): true values overt the different windows
+        an_scores (np.ndarray): anomaly scores over the different windows for the AD approach
     """
 
     model.eval()
     eval_loss, eval_rmse_loss = 0.0, 0.0
     num_batches = len(dataloader)
     pbar = tqdm(dataloader) if use_tqdm else dataloader
-    y_pred, y_true = [], []
+    y_pred, y_true, an_scores = [], [], []
 
     with torch.no_grad():
         for life, rul, mask in pbar:
@@ -245,6 +251,7 @@ def eval_loop(
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
+            ipdb.set_trace()
 
             y_pred.append(batch_out) if config.approach == "padding" else y_pred.extend(
                 batch_out
@@ -252,6 +259,7 @@ def eval_loop(
             y_true.append(
                 batch_target
             ) if config.approach == "padding" else y_true.extend(batch_target)
+            ipdb.set_trace()
 
             loss = (
                 criterion(output, rul, mask)
@@ -262,14 +270,23 @@ def eval_loop(
             eval_loss += loss.item()
             eval_rmse_loss += rmse_loss.item()
 
+            #NOTE: In the AD case I have to compute the difference sample per sample
+            # between the input life and the reconstructed one so that I have an anomaly
+            # score for each sample (same dimension of the batch_out and batch_pred
+            # that I insert in y_pred and y_true)
+            # array to have the anomaly scores over all windows
+
+            if config.ad:
+                an_score = np.mean((batch_out-batch_target)**2,axis=2)
+                an_scores.append(an_score)
+
+            ipdb.set_trace()
+
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
-        print(
-            f"Avg {mode} Loss: {eval_loss:.4f} | \
-                Avg {mode} eval Loss: {eval_rmse_loss:.4f}"
-        )
+        print(f"Avg {mode} Loss: {eval_loss:.4f} | \ Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
 
-    return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
+    return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true), np.array(an_scores)
 
 
 # Save the best model
@@ -748,7 +765,7 @@ def best_model_perf(
     print("Evaluating the best model on the test set")
     print("#" * 50)
 
-    preds, true_vals = [], []
+    preds, true_vals, anomaly_scores = [], [], []
 
     for i, test_loader in enumerate(test_loaders):
 
@@ -756,7 +773,7 @@ def best_model_perf(
         print(f"Testing on life {i+1+config.test_idx[0]}") if config.data_name == "CMAPSS" else print(f"Testing on life {test_idx[i]}")
         print("#" * 50)
 
-        _, _, y_pred, y_true = eval_loop(
+        _, _, y_pred, y_true, an_scores = eval_loop(
             dataloader=test_loader,
             model=model,
             config=config,
@@ -780,9 +797,10 @@ def best_model_perf(
 
         else:
 
-            combined_preds, combined_true_vals = combine_values(
+            combined_preds, combined_true_vals, combined_an_scores = combine_values(
                 predictions=y_pred,
                 true_values=y_true,
+                an_scores = an_scores,
                 original_shape=test_lifes[test_idx[i]].shape[0],
                 sequence_length=config.sequence_length,
                 stride = config.stride
@@ -790,8 +808,13 @@ def best_model_perf(
 
             preds.append(combined_preds)
             true_vals.append(combined_true_vals)
+            anomaly_scores.append(combined_an_scores)
 
-    outputs_dict = {"y_pred": preds, "y_true": true_vals}
+    outputs_dict = {
+        "y_pred": preds,
+        "y_true": true_vals,
+        "an_scores": anomaly_scores
+    }
 
     filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
 

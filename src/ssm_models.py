@@ -493,6 +493,7 @@ class S5Model(nn.Module):
         config: ModelConfig,
         d_input: int,
         d_output: int,
+        ad: bool = False
     ):
         super().__init__()
 
@@ -501,6 +502,7 @@ class S5Model(nn.Module):
         self.tau_feat = config.tau_feat
         self.quantile_reg = config.quantile_reg
         self.device = config.device
+        self.ad = ad
 
         self.encoder = nn.Linear(d_input, config.d_model)
 
@@ -521,7 +523,10 @@ class S5Model(nn.Module):
             self.norms.append(nn.LayerNorm(config.d_model))
             self.dropouts.append(nn.Dropout(config.dropout))
 
-        self.decoder = nn.Linear(config.d_model, d_output)
+        if self.ad:
+            self.decoder = nn.Linear(config.d_model, d_input) if not self.quantile_reg else nn.Linear(config.d_model, d_input-1)
+        else:
+            self.decoder = nn.Linear(config.d_model, d_output)
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -552,6 +557,13 @@ class S5Model(nn.Module):
             # 3. norm
             x = norm(x)
 
+        #NOTE: In the AD case we want to use the model as an AutoEncoder and so we have to reconstruct the input
+        # so we need to downproject to the input dimension
+
+        if self.ad:
+            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L,d_input)
+            return x
+
         if self.gap:
             x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
 
@@ -561,6 +573,7 @@ class S5Model(nn.Module):
 
         # Decode the outputs
         x = self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
+
         return x
 
 
@@ -793,6 +806,7 @@ def load_ssm_model(
             config=model_config,
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
+            ad=exp_config.ad
         )
     elif exp_config.model_name == "MLP":
         model = MLPModel(
