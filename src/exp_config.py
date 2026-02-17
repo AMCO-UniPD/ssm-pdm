@@ -75,6 +75,7 @@ class ExperimentConfig:
     keep_long_rul_prob: float = 0.2
     n_const_win: int = 10
     normalize_rul: bool = False
+    ad: bool = False
     # wandb sweep
     sweep_method: str = "random"
     sweep_param_names: List[str] = field(default_factory=lambda: ["batch_size", "lr"])

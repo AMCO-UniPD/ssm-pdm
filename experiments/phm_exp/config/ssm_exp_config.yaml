@@ -31,6 +31,8 @@ keep_long_rul_prob: 0.1
 n_const_win: 0
 normalize_rul: true
 # normalize_rul: false
+#NOTE: test AD approach
+ad: true
 
 batch_size: 16
 sequence_length: 500

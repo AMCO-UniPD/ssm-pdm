@@ -84,9 +84,11 @@ train_datasets = SSMWindowRegressionDataset(
     sequence_length=exp_config.sequence_length,
     stride=exp_config.stride,
     max_rul = MAX_RUL,
-    normalize_rul = exp_config.normalize_rul
+    normalize_rul = exp_config.normalize_rul,
+    ad = exp_config.ad
 )
 train_datasets.select_windows(n_const_win=exp_config.n_const_win)
+ipdb.set_trace()
 
 print("-"*50)
 print("Creating val dataset")
@@ -97,7 +99,8 @@ val_datasets = SSMWindowRegressionDataset(
     sequence_length=exp_config.sequence_length,
     stride=exp_config.stride,
     max_rul = MAX_RUL,
-    normalize_rul = exp_config.normalize_rul
+    normalize_rul = exp_config.normalize_rul,
+    ad = exp_config.ad
 )
 val_datasets.select_windows(n_const_win=exp_config.n_const_win)
 
@@ -110,6 +113,7 @@ test_datasets = SSMWindowRegressionDataset(
     sequence_length=exp_config.sequence_length,
     stride=exp_config.stride,
     max_rul = MAX_RUL,
-    normalize_rul = exp_config.normalize_rul
+    normalize_rul = exp_config.normalize_rul,
+    ad = exp_config.ad
 )
 test_datasets.select_windows(n_const_win=exp_config.n_const_win)
