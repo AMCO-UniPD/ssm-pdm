@@ -374,7 +374,8 @@ class SSMWindowRegressionDataset(Dataset):
         sequence_length: int = 500,
         stride: int = 1,
         max_rul: int = MAX_RUL,
-        normalize_rul: bool = False
+        normalize_rul: bool = False,
+        ad: bool = False
     ):
         """
         This class implements the dataset for the windowed approach.
@@ -382,7 +383,8 @@ class SSMWindowRegressionDataset(Dataset):
         equal to sequence length. In case a sequence is too small
         it is padded with zeros and a mask keeps track of that to not
         consider the predictions done on the padded indexes in the loss
-        computation
+        computation. The dataset can be turned into an AD dataset using the
+        ad boolean flag argument.
 
         Args:
             lifes (TransData): lifes transformed with a transformer ceruelo object
@@ -390,14 +392,17 @@ class SSMWindowRegressionDataset(Dataset):
             stride (int): stride between two consecutive windows
             max_rul (int): maximum RUL value used to select the windows and to normalize the RUL
             normalize_rul (bool): weather to normalize the RUL
+            ad (bool): weather to use AD version or not
         """
 
         self.lifes = [life.iloc[:,:-1] for life in lifes]
-        self.targets = [life["RUL"] for life in lifes]
+        self.ruls = [life["RUL"] for life in lifes]
+        self.targets = self.ruls if not ad else self.lifes
         self.sequence_length = sequence_length
         self.stride = stride
         self.max_rul = max_rul
         self.normalize_rul = normalize_rul
+        self.ad = ad
 
         self.data_indices = []
         for i, df in enumerate(self.lifes):
@@ -447,19 +452,29 @@ class SSMWindowRegressionDataset(Dataset):
                 np.zeros(shape=(pad_idx,inputs.shape[1]))
             ))
 
-            targets = np.concatenate((
-                targets,
-                np.zeros(shape=(pad_idx,))
-            ))
+            if self.ad:
+
+                targets = np.concatenate((
+                    targets,
+                    np.zeros(shape=(pad_idx,inputs.shape[1]))
+                ))
+
+            else:
+
+                targets = np.concatenate((
+                    targets,
+                    np.zeros(shape=(pad_idx,))
+                ))
 
             #NOTE: From pad_idx to the end the mask becomes 0
 
             mask[pad_idx:] = 0
 
         #NOTE: Normalize the RUL if self.normalize_rul is true
-        targets = targets / self.max_rul if self.normalize_rul else targets
+        if not self.ad:
+            targets = targets / self.max_rul if self.normalize_rul else targets
+            targets = np.expand_dims(targets,axis=-1)
 
-        targets = np.expand_dims(targets,axis=-1)
         sequence = torch.tensor(inputs, dtype=torch.float32)
         target = torch.tensor(targets, dtype=torch.float32)
         mask = torch.tensor(mask, dtype=torch.float32)
@@ -484,7 +499,7 @@ class SSMWindowRegressionDataset(Dataset):
 
         for idx in range(len(self.data_indices)):
             life_idx, start_idx = self.data_indices[idx]
-            rul = self.targets[life_idx]
+            rul = self.ruls[life_idx]
 
             # Determine the target window values for this specific index
             end_idx = start_idx + self.sequence_length
@@ -500,19 +515,14 @@ class SSMWindowRegressionDataset(Dataset):
         constant_seq = list(set(self.data_indices) - set(filtered_indices))
         seq_to_keep = constant_seq.copy()
         self.normal_seq = constant_seq
-        self.anomalous_seq = seq_to_keep
-        # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
-        seq_to_keep = seq_to_keep[-n_const_win:]
+        self.anomalous_seq = filtered_indices
 
-        print("-"*50)
-        print(f"Number of normal windows: {len(self.normal_seq)}")
-        print(f"Number of anomalous windows: {len(self.anomalous_seq)}")
-        print("-"*50)
+        if not self.ad:
+            # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
+            seq_to_keep = seq_to_keep[-n_const_win:]
 
-        #TODO: For the AD model training I have to use just the normal_seq
-
-        seq_to_keep.extend(filtered_indices)
-        self.data_indices = seq_to_keep
+            seq_to_keep.extend(filtered_indices)
+            self.data_indices = seq_to_keep
 
 def get_transformer(
     config: ExperimentConfig,
@@ -596,16 +606,18 @@ def get_transformer(
 def combine_values(
     predictions: np.ndarray,
     true_values: np.ndarray,
+    an_scores: np.ndarray,
     original_shape: int,
     sequence_length: int,
     stride: int
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Combine the predictions done by the model on the different sub sequences in which each life was divided in the `seq_to_seq` approach
 
     Args:
         predictions: np.array containing the predictions for each sub sequence
         true_values: np.array containing the true values for each sub sequence
+        an_scores: np.array containing the anomaly scores for each sub sequence
         original_shape: shape of the signal before applying the sliding windows approach
         sequence_length: length of the sequences
         stride: stride used to construct the sliding windows
@@ -613,6 +625,8 @@ def combine_values(
     Returns:
         combined_predictions: np.array containing the combined
         combined_true_vals: np.array containing the combined true values
+        combined_an_scores: np.array containing the combined anomaly scores.
+        In case there are no anomaly scores the function returns an array of ones
     """
 
     #NOTE: In case we have non overlapping windows we just need
@@ -622,33 +636,38 @@ def combine_values(
 
         combined_predictions = np.concatenate(predictions)
         combined_true_vals = np.concatenate(true_values)
+        combined_an_scores = np.concatenate(an_scores) if len(an_scores) != 0 else np.ones_like(combined_true_vals)
 
-        return combined_predictions, combined_true_vals
+        return combined_predictions, combined_true_vals, combined_an_scores
 
     n_samples = (len(predictions) * stride) + sequence_length
     combined_predictions = np.zeros(n_samples)
     combined_true_vals = np.zeros(n_samples)
+    combined_an_scores = np.zeros(n_samples)
     counts = np.zeros(n_samples)
 
-    for i, (preds, true) in enumerate(zip(predictions, true_values)):
+
+    for i, (preds, true, an_score) in enumerate(zip(predictions, true_values, an_scores)):
         start_index = i * stride
         end_index = start_index + sequence_length
         combined_predictions[start_index:end_index] += preds
         combined_true_vals[start_index:end_index] += true
+        combined_an_scores[start_index:end_index] += an_score if len(an_scores) != 0 else 1
         counts[start_index:end_index] += 1
 
     nonzero_counts = counts != 0
     combined_predictions[nonzero_counts] /= counts[nonzero_counts]
     combined_true_vals[nonzero_counts] /= counts[nonzero_counts]
+    combined_an_scores[nonzero_counts] /= counts[nonzero_counts]
 
     if n_samples > original_shape:
         print("-"*50)
         print(f"{n_samples} grater than the original shape {original_shape} so removing the last {n_samples-original_shape} samples")
         print("-"*50)
 
-        return combined_predictions[:-(n_samples-original_shape)], combined_true_vals[:-(n_samples-original_shape)]
+        return combined_predictions[:-(n_samples-original_shape)], combined_true_vals[:-(n_samples-original_shape)], combined_an_scores[:-(n_samples-original_shape)]
 
-    return combined_predictions, combined_true_vals
+    return combined_predictions, combined_true_vals, combined_an_scores
 
 
 def load_reg_data(config: ExperimentConfig) -> dict:
@@ -850,8 +869,10 @@ def create_window_loaders(
                     sequence_length=config.sequence_length,
                     stride=config.stride,
                     max_rul = MAX_RUL,
-                    normalize_rul = config.normalize_rul
+                    normalize_rul = config.normalize_rul,
+                    ad = config.ad
                 )
+            test_dataset.select_windows()
             test_datasets.append(test_dataset)
 
         test_loaders = [DataLoader(test_dataset , batch_size = config.batch_size) for test_dataset in test_datasets]
@@ -873,7 +894,8 @@ def create_window_loaders(
             sequence_length=config.sequence_length,
             stride=config.stride,
             max_rul = MAX_RUL,
-            normalize_rul = config.normalize_rul
+            normalize_rul = config.normalize_rul,
+            ad = config.ad
         )
         train_datasets.select_windows(n_const_win=config.n_const_win)
 
@@ -882,7 +904,8 @@ def create_window_loaders(
             sequence_length=config.sequence_length,
             stride=config.stride,
             max_rul = MAX_RUL,
-            normalize_rul = config.normalize_rul
+            normalize_rul = config.normalize_rul,
+            ad = config.ad
         )
         val_datasets.select_windows(n_const_win=config.n_const_win)
 
@@ -891,14 +914,15 @@ def create_window_loaders(
             sequence_length=config.sequence_length,
             stride=config.stride,
             max_rul = MAX_RUL,
-            normalize_rul = config.normalize_rul
+            normalize_rul = config.normalize_rul,
+            ad = config.ad
         )
         test_datasets.select_windows(n_const_win=config.n_const_win)
 
         train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
         val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=True)
         test_loader = DataLoader(test_datasets, batch_size=config.batch_size, shuffle=True)
-        test_loaders = [DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True) for test_dataset in test_datasets]
+        test_loaders = [DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False) for test_dataset in test_datasets]
 
         print("-"*50)
         print("window dataloaders created successfully")
