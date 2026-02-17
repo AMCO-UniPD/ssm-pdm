@@ -34,7 +34,10 @@ sweep_runs=10
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_tau_feat"
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul"
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_no_shuffle"
-exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_norm_test"
+# exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_norm_test"
+
+#NOTE: AD approach experiments
+exp_name="ad_exp_flow_low_windowed_S5"
 
 #NOTE: Experiment names S4D
 # exp_name="exp"

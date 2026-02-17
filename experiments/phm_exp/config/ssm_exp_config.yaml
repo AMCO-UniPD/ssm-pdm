@@ -21,16 +21,16 @@ approach: windowed
 quantile_reg: true
 quantile_dist: uniform
 bounds: [0.1, 0.9]
-quantiles: [0.1,0.25,0.5,0.75,0.9]
-# quantiles: [0.5]
+# quantiles: [0.1,0.25,0.5,0.75,0.9]
+quantiles: [0.5] #NOTE: test for AD approach
 quantile_run: 0.25
 
 # select_windows
 max_rul: 500
 keep_long_rul_prob: 0.1
 n_const_win: 0
-normalize_rul: true
-# normalize_rul: false
+# normalize_rul: true
+normalize_rul: false
 #NOTE: test AD approach
 ad: true
 

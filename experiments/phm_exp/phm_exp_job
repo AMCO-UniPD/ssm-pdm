@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_quantile_exp_10_const_rul_norm
-#SBATCH --output=slurm_logs/S5_quantile_exp_10_const_rul_norm_%j.txt
-#SBATCH --error=slurm_logs/S5_quantile_exp_10_const_rul_norm_error_%j.txt
+#SBATCH --job-name=S5_ad_exp
+#SBATCH --output=slurm_logs/S5_ad_exp_%j.txt
+#SBATCH --error=slurm_logs/S5_ad_exp_error_%j.txt
 #SBATCH --time=03:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
