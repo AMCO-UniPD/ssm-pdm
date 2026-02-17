@@ -81,12 +81,13 @@ for run in range(exp_config.n_runs):
         outputs_dict_path = get_most_recent_file(os.path.join(run_outputs_path,f"quantile_{quantile}"),file_pos=exp_config.file_pos)
         outputs_dict = open_element(outputs_dict_path,filetype="pickle")
 
-        y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
+        y_pred, y_true, an_scores = outputs_dict["y_pred"], outputs_dict["y_true"], output_dict["an_scores"]
 
         if i == 0:
             run_outputs_dict["y_true"] = y_true
 
-        run_outputs_dict[f"quantile_{quantile}"] = y_pred
+        run_outputs_dict[f"pred_quantile_{quantile}"] = y_pred
+        run_outputs_dict[f"an_scores_quantile_{quantile}"] = an_scores
 
     filename = f"{get_current_time()}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs" if exp_config.data_name == "CMAPSS" else f"{get_current_time()}_{exp_config.model_name}_{exp_config.approach}_run_{run+1}_outputs"
 
