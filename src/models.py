@@ -167,9 +167,7 @@ def train_loop(
             tau = 0.5
             print(f"No quantile regression so tau={tau}")
 
-        ipdb.set_trace()
         output = model(life, tau=tau)
-        ipdb.set_trace()
 
         loss = (
             criterion(output, rul, mask)
@@ -251,7 +249,6 @@ def eval_loop(
 
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
-            ipdb.set_trace()
 
             y_pred.append(batch_out) if config.approach == "padding" else y_pred.extend(
                 batch_out
@@ -259,7 +256,6 @@ def eval_loop(
             y_true.append(
                 batch_target
             ) if config.approach == "padding" else y_true.extend(batch_target)
-            ipdb.set_trace()
 
             loss = (
                 criterion(output, rul, mask)
@@ -278,9 +274,7 @@ def eval_loop(
 
             if config.ad:
                 an_score = np.mean((batch_out-batch_target)**2,axis=2)
-                an_scores.append(an_score)
-
-            ipdb.set_trace()
+                an_scores.extend(an_score)
 
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
@@ -532,7 +526,6 @@ def wandb_train_test(
         wandb.define_metric("eval_loss/*", step_metric="epoch")
 
     error = False
-    # preds, true_vals = [], []
     train_times, val_times, test_times = [], [], []
     min_val_loss = np.inf
     best_model_state_dict = model.state_dict()
@@ -563,7 +556,7 @@ def wandb_train_test(
             train_time = time.time() - train_time
 
             val_time = time.time()
-            val_loss, eval_val_loss, y_pred, y_true = eval_loop(
+            val_loss, eval_val_loss, y_pred, y_true, _ = eval_loop(
                 dataloader=val_loader,
                 model=model,
                 config=config,
@@ -576,7 +569,7 @@ def wandb_train_test(
             val_time = time.time() - val_time
 
             test_time = time.time()
-            test_loss, eval_test_loss, y_pred, y_true = eval_loop(
+            test_loss, eval_test_loss, y_pred, y_true, _ = eval_loop(
                 dataloader=test_loader,
                 model=model,
                 config=config,
@@ -597,11 +590,6 @@ def wandb_train_test(
                 print(f"Epoch {epoch} | New best model found with val loss: {min_val_loss}")
                 print("#" * 50)
                 best_model_state_dict = model.state_dict().copy()
-
-            # Save the predictions and true values only for the last epoch
-            # if epoch == config.epochs - 1:
-            #     preds.append(y_pred)
-            #     true_vals.append(y_true)
 
             train_times.append(train_time)
             val_times.append(val_time)
@@ -798,11 +786,11 @@ def best_model_perf(
         else:
 
             combined_preds, combined_true_vals, combined_an_scores = combine_values(
-                predictions=y_pred,
-                true_values=y_true,
+                predictions = y_pred,
+                true_values = y_true,
                 an_scores = an_scores,
-                original_shape=test_lifes[test_idx[i]].shape[0],
-                sequence_length=config.sequence_length,
+                original_shape = test_lifes[test_idx[i]].shape[0],
+                sequence_length = config.sequence_length,
                 stride = config.stride
             )
 
