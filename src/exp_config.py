@@ -406,7 +406,8 @@ def set_sweep_name(config: ExperimentConfig) -> str:
         sweep_name (str): string containing the sweep name
     """
 
-    sweep_name = f"sweep_{config.model_name}_{config.failure_type}_{config.approach}_{config.sweep_method}"
+    sweep_name = "ad_sweep" if config.ad else "sweep"
+    sweep_name = f"{sweep_name}_{config.model_name}_{config.failure_type}_{config.approach}_{config.sweep_method}"
 
     for param_name in config.sweep_param_names:
         sweep_name = f"{sweep_name}_{param_name}"

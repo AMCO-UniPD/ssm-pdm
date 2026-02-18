@@ -99,7 +99,7 @@ def set_sweep_exp_name(
         sweep_run_name (str): name of the current run in the wandb sweep
     """
 
-    sweep_run_name = exp_config.sweep_name
+    sweep_run_name = "ad_sweep" if exp_config.ad else "sweep"
 
     for key in wandb_config.keys():
 
@@ -177,7 +177,7 @@ def wandb_train_test_sweep(
         train_time = time.time() - train_time
 
         val_time = time.time()
-        val_loss, eval_val_loss, _, _ = eval_loop(
+        val_loss, eval_val_loss, _, _, _ = eval_loop(
             dataloader=val_loader,
             model=model,
             config=config,

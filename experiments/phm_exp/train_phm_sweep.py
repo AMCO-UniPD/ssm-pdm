@@ -22,7 +22,7 @@ def main() -> None:
     #NOTE: If I resume the wandb agent with the CLI I
     # just need to call the function running the sweep otherwise it
     # tries to re initialize the sweep and follow all the logic
-    # after this if
+    # after this if block
 
     if wandb.run is not None:
 

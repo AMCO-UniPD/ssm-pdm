@@ -524,6 +524,52 @@ class SSMWindowRegressionDataset(Dataset):
             seq_to_keep.extend(filtered_indices)
             self.data_indices = seq_to_keep
 
+    def get_normal_wins(self) -> List:
+        """
+        Function that returns a list with the raw signal in the normal
+        windows
+
+        Args:
+            no input arguments required
+
+        Returns:
+            normal_wins (np.ndarray): array containing all the normal windows
+        """
+
+        normal_wins = []
+
+        for life_idx, start_idx in self.normal_seq:
+
+            life = self.lifes[life_idx]
+            end_idx = start_idx + self.sequence_length
+            normal_win = life[start_idx:min(end_idx,life.shape[0])]
+            normal_wins.append(normal_win)
+
+        return normal_wins
+
+    def get_anomalous_wins(self) -> List:
+        """
+        Function that returns a list with the raw signal in the anomalous
+        windows
+
+        Args:
+            no input arguments required
+
+        Returns:
+            anomalous_wins (np.ndarray): array containing all the anomalous windows
+        """
+
+        anomalous_wins = []
+
+        for life_idx, start_idx in self.anomalous_seq:
+
+            life = self.lifes[life_idx]
+            end_idx = start_idx + self.sequence_length
+            anomalous_win = life[start_idx:min(end_idx,life.shape[0])]
+            anomalous_wins.append(anomalous_win)
+
+        return anomalous_wins
+
 def get_transformer(
     config: ExperimentConfig,
     df: Union[CMAPSSDataset,PHMDataset2018],
