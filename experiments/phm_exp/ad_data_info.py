@@ -26,6 +26,7 @@ from utils import (
     get_transformer,
     TransData,
     SSMWindowRegressionDataset,
+    create_window_dataset
 )
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
@@ -79,41 +80,25 @@ print("-"*50)
 print("Creating train dataset")
 print("-"*50)
 
-train_datasets = SSMWindowRegressionDataset(
-    lifes=train_lifes,
-    sequence_length=exp_config.sequence_length,
-    stride=exp_config.stride,
-    max_rul = MAX_RUL,
-    normalize_rul = exp_config.normalize_rul,
-    ad = exp_config.ad
+train_datasets = create_window_dataset(
+    config = exp_config,
+    lifes = train_lifes
 )
-train_datasets.select_windows(n_const_win=exp_config.n_const_win)
-ipdb.set_trace()
 
 print("-"*50)
 print("Creating val dataset")
 print("-"*50)
 
-val_datasets = SSMWindowRegressionDataset(
-    lifes=val_lifes,
-    sequence_length=exp_config.sequence_length,
-    stride=exp_config.stride,
-    max_rul = MAX_RUL,
-    normalize_rul = exp_config.normalize_rul,
-    ad = exp_config.ad
+val_datasets = create_window_dataset(
+    config = exp_config,
+    lifes = val_lifes
 )
-val_datasets.select_windows(n_const_win=exp_config.n_const_win)
 
 print("-"*50)
 print("Creating test dataset")
 print("-"*50)
 
-test_datasets = SSMWindowRegressionDataset(
-    lifes=test_lifes,
-    sequence_length=exp_config.sequence_length,
-    stride=exp_config.stride,
-    max_rul = MAX_RUL,
-    normalize_rul = exp_config.normalize_rul,
-    ad = exp_config.ad
+test_datasets = create_window_dataset(
+    config = exp_config,
+    lifes = test_lifes
 )
-test_datasets.select_windows(n_const_win=exp_config.n_const_win)

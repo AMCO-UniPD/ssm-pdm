@@ -830,6 +830,34 @@ def create_padding_loaders(
 
     return loaders_dict
 
+def create_window_dataset(
+    config: ExperimentConfig,
+    lifes: TransData
+) -> SSMWindowRegressionDataset:
+    """
+    Function to create a SSMWindowRegressionDataset object starting from a set of
+    run to failure cycles
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        lifes (TransData): list of lifes
+
+    Returns:
+        dataset (SSMWindowRegressionDataset): dataset object
+    """
+
+    dataset = SSMWindowRegressionDataset(
+        lifes=lifes,
+        sequence_length=config.sequence_length,
+        stride=config.stride,
+        max_rul = MAX_RUL,
+        normalize_rul = config.normalize_rul,
+        ad = config.ad
+    )
+    dataset.select_windows(n_const_win=config.n_const_win)
+
+    return dataset
+
 def create_window_loaders(
     config: ExperimentConfig,
     train_lifes: TransData,
@@ -864,15 +892,10 @@ def create_window_loaders(
 
         test_datasets = []
         for test_life in test_lifes:
-            test_dataset = SSMWindowRegressionDataset(
-                    lifes=[test_life],
-                    sequence_length=config.sequence_length,
-                    stride=config.stride,
-                    max_rul = MAX_RUL,
-                    normalize_rul = config.normalize_rul,
-                    ad = config.ad
-                )
-            test_dataset.select_windows()
+            test_dataset = create_window_dataset(
+                config = config,
+                lifes = test_life
+            )
             test_datasets.append(test_dataset)
 
         test_loaders = [DataLoader(test_dataset , batch_size = config.batch_size) for test_dataset in test_datasets]
@@ -889,35 +912,20 @@ def create_window_loaders(
         print("Creating window dataloaders in training mode")
         print("-"*50)
 
-        train_datasets = SSMWindowRegressionDataset(
-            lifes=train_lifes,
-            sequence_length=config.sequence_length,
-            stride=config.stride,
-            max_rul = MAX_RUL,
-            normalize_rul = config.normalize_rul,
-            ad = config.ad
+        train_datasets = create_window_dataset(
+            config = config,
+            lifes = train_lifes
         )
-        train_datasets.select_windows(n_const_win=config.n_const_win)
 
-        val_datasets = SSMWindowRegressionDataset(
-            lifes=val_lifes,
-            sequence_length=config.sequence_length,
-            stride=config.stride,
-            max_rul = MAX_RUL,
-            normalize_rul = config.normalize_rul,
-            ad = config.ad
+        val_datasets = create_window_dataset(
+            config = config,
+            lifes = val_lifes
         )
-        val_datasets.select_windows(n_const_win=config.n_const_win)
 
-        test_datasets = SSMWindowRegressionDataset(
-            lifes=test_lifes,
-            sequence_length=config.sequence_length,
-            stride=config.stride,
-            max_rul = MAX_RUL,
-            normalize_rul = config.normalize_rul,
-            ad = config.ad
+        test_datasets = create_window_dataset(
+            config = config,
+            lifes = test_lifes
         )
-        test_datasets.select_windows(n_const_win=config.n_const_win)
 
         train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
         val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=True)
