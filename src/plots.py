@@ -238,9 +238,9 @@ def plot_prediction_interval(
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
-    y_pred = outputs_dict["y_true"]
+    y_true = outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    true = [y_pred[i][-n_last_samples:] for i in life_idxs]
+    true = [y_true[i][-n_last_samples:] for i in life_idxs]
 
     try:
 
@@ -370,12 +370,7 @@ def plot_an_scores(
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
-    # an_scores = outputs_dict["an_scores"][-n_last_samples:]
-    y_pred = outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    true = [y_pred[i][-n_last_samples:] for i in life_idxs]
-    mask = [true[i]!=0 for i in range(len(true))]
-
     quantile_0_5 = [outputs_dict["an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
     rul_quantile_0_5 = [an_score_to_rul(quantile_0_5[i]) for i in life_idxs]
 
@@ -398,27 +393,21 @@ def plot_an_scores(
                     ax = axs[i, j]
 
                 ax.plot(
-                    true[i * config.ncols + j][mask[i * config.ncols + j]],
-                    color="#00008B",
-                    label="True RUL",
-                )
-
-                ax.plot(
-                    quantile_0_5[i * config.ncols + j][mask[i * config.ncols + j]],
+                    quantile_0_5[i * config.ncols + j],
                     color="orange",
                     label="Anomaly Score quantile 0.5",
                 )
 
-                ax.plot(
-                    rul_quantile_0_5[i * config.ncols + j][mask[i * config.ncols + j]],
-                    color="green",
-                    label="RUL from Anomaly Score quantile 0.5",
-                )
+                # ax.plot(
+                #     rul_quantile_0_5[i * config.ncols + j],
+                #     color="green",
+                #     label="RUL from Anomaly Score quantile 0.5",
+                # )
 
                 plot_title = f"Life {config.life_idx[i*config.ncols+j]}" if config.data_name == "CMAPSS" else f"Life {config.life_idx[i*config.ncols+j]}"
                 ax.set_title(plot_title)
                 ax.set_xticks([])
-                ax.set_ylabel("RUL")
+                ax.set_ylabel("Anomaly Score")
                 ax.legend()
 
     if config.save_plot:

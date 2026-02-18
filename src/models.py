@@ -278,7 +278,7 @@ def eval_loop(
 
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
-        print(f"Avg {mode} Loss: {eval_loss:.4f} | \ Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+        print(f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
 
     return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true), np.array(an_scores)
 

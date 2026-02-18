@@ -403,6 +403,7 @@ class S4DModel(nn.Module):
         config: ModelConfig,
         d_input: int,
         d_output: int,
+        ad: bool = False
     ):
         super().__init__()
 
@@ -411,6 +412,8 @@ class S4DModel(nn.Module):
         self.tau_feat = config.tau_feat
         self.quantile_reg = config.quantile_reg
         self.device = config.device
+        self.ad = ad
+
         d_state = config.d_state
         act = config.act
         d_model = config.d_model
@@ -437,7 +440,10 @@ class S4DModel(nn.Module):
             self.norms.append(nn.LayerNorm(d_model))
             self.dropouts.append(nn.Dropout(dropout))
 
-        self.decoder = nn.Linear(d_model, d_output)
+        if self.ad:
+            self.decoder = nn.Linear(config.d_model, d_input) if not self.quantile_reg else nn.Linear(config.d_model, d_input-1)
+        else:
+            self.decoder = nn.Linear(config.d_model, d_output)
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -471,6 +477,10 @@ class S4DModel(nn.Module):
             x = norm(x.transpose(-1,-2)).transpose(-1,-2)
 
         x = x.transpose(-1, -2)
+
+        if self.ad:
+            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L,d_input)
+            return x
 
         if self.gap:
             x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
@@ -800,6 +810,7 @@ def load_ssm_model(
             config=model_config,
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
+            ad=exp_config.ad
         )
     elif exp_config.model_name == "S5":
         model = S5Model(

@@ -31,9 +31,11 @@ keep_long_rul_prob: 0.1
 n_const_win: 0
 # normalize_rul: true
 normalize_rul: false
-#NOTE: test AD approach
+
+#AD approach
 ad: true
 
+# training parameters
 batch_size: 16
 sequence_length: 500
 stride: 500
@@ -59,9 +61,9 @@ plot_run_id: 1
 quantile_plot: 0.5
 # life_idx: [0,1,5,11]
 # life_idx: [77,97,129,228]
-life_idx: [0,1,2,3]
+life_idx: [0,1,2,3,4,5,6,7,8,9]
 nrows: 2
-ncols: 2
+ncols: 5
 # ncols: 3
 full_life: false
 save_plot: true
