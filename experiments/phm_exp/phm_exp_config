@@ -12,6 +12,7 @@ model_name="S4D"
 device_num=0
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
+sweep_name="ad_sweep_test_acq4"
 sweep_id="t86x1hw1"
 wandb_entity="frizzo-davide-Univeristy of Padova"
 
