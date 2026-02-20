@@ -940,7 +940,7 @@ def create_window_loaders(
         for test_life in test_lifes:
             test_dataset = create_window_dataset(
                 config = config,
-                lifes = test_life
+                lifes = [test_life]
             )
             test_datasets.append(test_dataset)
 

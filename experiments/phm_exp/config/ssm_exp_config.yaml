@@ -37,10 +37,10 @@ ad: true
 
 # training parameters
 batch_size: 16
-sequence_length: 500
-stride: 500
-epochs: 50
-lr: 0.007391094605732542
+sequence_length: 1000
+stride: 200
+epochs: 20
+lr: 0.00671
 weight_decay: 1.0e-4
 
 # loss parameters
@@ -61,9 +61,9 @@ plot_run_id: 1
 quantile_plot: 0.5
 # life_idx: [0,1,5,11]
 # life_idx: [77,97,129,228]
-life_idx: [0,1,2,3,4,5,6,7,8,9]
+life_idx: [0,1,2,3]
 nrows: 2
-ncols: 5
+ncols: 2
 # ncols: 3
 full_life: false
 save_plot: true
