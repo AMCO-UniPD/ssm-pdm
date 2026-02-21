@@ -14,8 +14,8 @@ src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from exp_config import setup_exp
-from utils import generate_path
-from config_vars import MAX_RUL
+from utils import generate_path, print_life_info
+from config_vars import MAX_RUL, PHM_FEATURES
 from plots import (
     plot_prediction_interval,
     plot_an_scores,
@@ -83,11 +83,18 @@ if exp_config.ad:
             folders = ["combined_signal_plots"]
         )
 
-        plot_combined_signals(
-            config = exp_config,
-            outputs_path = outputs_path,
-            plot_path = plot_path,
-        )
+        for i in range(len(PHM_FEATURES)):
+
+            print("-"*50)
+            print(f"Producing combined signal plot for column {PHM_FEATURES[i]}")
+            print("-"*50)
+
+            plot_combined_signals(
+                config = exp_config,
+                outputs_path = outputs_path,
+                plot_path = plot_path,
+                col_idx = i,
+            )
 
 else:
 

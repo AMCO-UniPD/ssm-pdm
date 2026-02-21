@@ -46,7 +46,8 @@ sweep_runs=20
 # exp_name="M01_flow_low_windowed_S4D_best_sweep"
 
 #NOTE: AD approach experiments
-# exp_name="ad_exp_flow_low_windowed_S4D"
+exp_name="ad_exp_flow_low_windowed_S4D"
+# exp_name="ad_exp_flow_low_windowed_S4D_best_sweep"
 # exp_name="ad_exp_flow_low_windowed_S4D_d_model_10"
 # exp_name="ad_exp_flow_low_windowed_S4D_no_fixture_hutter_position"
-exp_name="ad_exp_flow_low_windowed_S4D_normalization"
+# exp_name="ad_exp_flow_low_windowed_S4D_normalization"

@@ -201,7 +201,7 @@ def eval_loop(
     device: torch.device = torch.device("cpu"),
     use_tqdm: bool = True,
     tau: float = 0.5,
-) -> Tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[float, float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Evaluation loop for one epoch
 
@@ -222,14 +222,15 @@ def eval_loop(
         eval_rmse_loss (float): The evaluation RMSE loss value
         y_pred (np.ndarray): predictions over the different windows
         y_true (np.ndarray): true values overt the different windows
-        an_scores (np.ndarray): anomaly scores over the different windows for the AD approach
+        mean_an_scores (np.ndarray): anomaly scores over the different windows for the AD approach computing the mean of the column differences
+        max_an_scores (np.ndarray): anomaly scores over the different windows for the AD approach computing the max of the column differences
     """
 
     model.eval()
     eval_loss, eval_rmse_loss = 0.0, 0.0
     num_batches = len(dataloader)
     pbar = tqdm(dataloader) if use_tqdm else dataloader
-    y_pred, y_true, an_scores = [], [], []
+    y_pred, y_true, mean_an_scores, max_an_scores = [], [], [], []
 
     with torch.no_grad():
         for life, rul, mask in pbar:
@@ -273,14 +274,16 @@ def eval_loop(
             # array to have the anomaly scores over all windows
 
             if config.ad:
-                an_score = np.mean((batch_out-batch_target)**2,axis=2)
-                an_scores.extend(an_score)
+                mean_an_score = np.mean((batch_out-batch_target)**2,axis=2)
+                max_an_score = np.max((batch_out-batch_target)**2,axis=2)
+                mean_an_scores.extend(mean_an_score)
+                max_an_scores.extend(max_an_score)
 
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
         print(f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
 
-    return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true), np.array(an_scores)
+    return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true), np.array(mean_an_scores), np.array(max_an_scores)
 
 
 # Save the best model
@@ -556,7 +559,7 @@ def wandb_train_test(
             train_time = time.time() - train_time
 
             val_time = time.time()
-            val_loss, eval_val_loss, y_pred, y_true, _ = eval_loop(
+            val_loss, eval_val_loss, y_pred, y_true, _, _ = eval_loop(
                 dataloader=val_loader,
                 model=model,
                 config=config,
@@ -569,7 +572,7 @@ def wandb_train_test(
             val_time = time.time() - val_time
 
             test_time = time.time()
-            test_loss, eval_test_loss, y_pred, y_true, _ = eval_loop(
+            test_loss, eval_test_loss, y_pred, y_true, _, _ = eval_loop(
                 dataloader=test_loader,
                 model=model,
                 config=config,
@@ -753,7 +756,7 @@ def best_model_perf(
     print("Evaluating the best model on the test set")
     print("#" * 50)
 
-    preds, true_vals, anomaly_scores = [], [], []
+    preds, true_vals, mean_anomaly_scores, max_anomaly_scores = [], [], [], []
 
     for i, test_loader in enumerate(test_loaders):
 
@@ -761,7 +764,7 @@ def best_model_perf(
         print(f"Testing on life {i+1+config.test_idx[0]}") if config.data_name == "CMAPSS" else print(f"Testing on life {test_idx[i]}")
         print("#" * 50)
 
-        _, _, y_pred, y_true, an_scores = eval_loop(
+        _, _, y_pred, y_true, mean_an_scores, max_an_scores = eval_loop(
             dataloader=test_loader,
             model=model,
             config=config,
@@ -785,10 +788,19 @@ def best_model_perf(
 
         else:
 
-            combined_preds, combined_true_vals, combined_an_scores = combine_values(
+            combined_preds, combined_true_vals, combined_mean_an_scores = combine_values(
                 predictions = y_pred,
                 true_values = y_true,
-                an_scores = an_scores,
+                an_scores = mean_an_scores,
+                original_shape = test_lifes[test_idx[i]].shape[0],
+                sequence_length = config.sequence_length,
+                stride = config.stride
+            )
+
+            _, _, combined_max_an_scores = combine_values(
+                predictions = y_pred,
+                true_values = y_true,
+                an_scores = max_an_scores,
                 original_shape = test_lifes[test_idx[i]].shape[0],
                 sequence_length = config.sequence_length,
                 stride = config.stride
@@ -796,15 +808,17 @@ def best_model_perf(
 
             preds.append(combined_preds)
             true_vals.append(combined_true_vals)
-            anomaly_scores.append(combined_an_scores)
+            mean_anomaly_scores.append(combined_mean_an_scores)
+            max_anomaly_scores.append(combined_max_an_scores)
 
     outputs_dict = {
         "y_pred": preds,
         "y_true": true_vals,
-        "an_scores": anomaly_scores
+        "mean_an_scores": mean_anomaly_scores,
+        "max_an_scores": max_anomaly_scores,
     }
 
-    filename=f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
+    filename=f"{get_current_time()}_outputs_mean_max_an_scores_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
 
     if config.save_outputs:
         save_element(

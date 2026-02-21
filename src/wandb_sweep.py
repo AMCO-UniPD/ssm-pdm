@@ -177,7 +177,7 @@ def wandb_train_test_sweep(
         train_time = time.time() - train_time
 
         val_time = time.time()
-        val_loss, eval_val_loss, _, _, _ = eval_loop(
+        val_loss, eval_val_loss, _, _, _, _ = eval_loop(
             dataloader=val_loader,
             model=model,
             config=config,

@@ -401,10 +401,8 @@ def plot_an_scores(
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    quantile_0_5 = [
-        outputs_dict["an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs
-    ]
-    rul_quantile_0_5 = [an_score_to_rul(quantile_0_5[i]) for i in life_idxs]
+    mean_quantile_0_5 = [outputs_dict["mean_an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
+    max_quantile_0_5 = [outputs_dict["max_an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
 
     # Produce the plot
     if config.nrows == config.ncols == 1:
@@ -425,9 +423,15 @@ def plot_an_scores(
                     ax = axs[i, j]
 
                 ax.plot(
-                    quantile_0_5[i * config.ncols + j],
+                    mean_quantile_0_5[i * config.ncols + j],
                     color="orange",
-                    label="Anomaly Score quantile 0.5",
+                    label="Mean Anomaly Score quantile 0.5",
+                )
+
+                ax.plot(
+                    max_quantile_0_5[i * config.ncols + j],
+                    color="blue",
+                    label="Max Anomaly Score quantile 0.5",
                 )
 
                 # ax.plot(
@@ -466,6 +470,7 @@ def plot_combined_signals(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
+    col_idx: int = 0,
     n_last_samples: int = 0,
 ) -> None:
     """
@@ -475,6 +480,7 @@ def plot_combined_signals(
         config (ExperimentConfig): experiment configuration object
         outputs_path (str): path where the outputs are saved
         plot_path (str): path where to save the plot
+        col_idx (int): index of the feature to plot
         n_last_samples (int): number of samples to show. If 0 all the life is shown, otherwise
         the n_last_samples samples are shown
 
@@ -491,10 +497,10 @@ def plot_combined_signals(
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    column = PHM_FEATURES[config.col_idx]
-    y_true = [outputs_dict["y_true"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
+    column = PHM_FEATURES[col_idx]
+    y_true = [outputs_dict["y_true"][i][-n_last_samples:, col_idx] for i in life_idxs]
 
-    y_pred_quantile_0_5 = [outputs_dict[f"pred_quantile_0.5"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
+    y_pred_quantile_0_5 = [outputs_dict[f"pred_quantile_0.5"][i][-n_last_samples:, col_idx] for i in life_idxs]
 
     # Produce the plot
     if config.nrows == config.ncols == 1:
