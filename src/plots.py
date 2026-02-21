@@ -32,6 +32,7 @@ from utils import (
     open_element,
     get_feature_names,
 )
+from config_vars import PHM_FEATURES
 
 
 def plot_forecast(
@@ -130,9 +131,9 @@ def plot_predictions_grid(
     if config.life_idx is None:
         config.life_idx = np.arange(config.nrows * config.ncols)
     else:
-        assert config.nrows * config.ncols == len(
-            config.life_idx
-        ), "Number of rows and columns must match the number of lives"
+        assert config.nrows * config.ncols == len(config.life_idx), (
+            "Number of rows and columns must match the number of lives"
+        )
 
     # Get the name of the sensor to plot
     feature_names = get_feature_names(config)
@@ -179,7 +180,7 @@ def plot_predictions_grid(
                     label="Predicted RUL",
                 )
                 ax.set_title(
-                    f"Life {config.life_idx[i*config.ncols+j]+config.cmapss_test_idx[0]+1}"
+                    f"Life {config.life_idx[i * config.ncols + j] + config.cmapss_test_idx[0] + 1}"
                 )
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
@@ -209,7 +210,7 @@ def plot_prediction_interval(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
-    n_last_samples:int = 0
+    n_last_samples: int = 0,
 ) -> None:
     """
     Function to plot in a grid the `RUL` predictions of each life compared to the true `RUL`,M
@@ -231,8 +232,12 @@ def plot_prediction_interval(
         None: the function produces the plot but does not return anything
     """
 
-    assert (config.approach == "windowed"), "The Quantile Regression experiments were don only on the windowed approach"
-    assert config.nrows * config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
+    assert config.approach == "windowed", (
+        "The Quantile Regression experiments were don only on the windowed approach"
+    )
+    assert config.nrows * config.ncols == len(config.life_idx), (
+        "Number of rows and columns must match the number of lives"
+    )
 
     # Get the outputs dictionary
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
@@ -243,18 +248,28 @@ def plot_prediction_interval(
     true = [y_true[i][-n_last_samples:] for i in life_idxs]
 
     try:
-
-        quantile_0_5 = [outputs_dict["quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
-        quantile_0_25 = [outputs_dict["quantile_0.25"][i][-n_last_samples:] for i in life_idxs]
-        quantile_0_75 = [outputs_dict["quantile_0.75"][i][-n_last_samples:] for i in life_idxs]
-        quantile_0_1 = [outputs_dict["quantile_0.1"][i][-n_last_samples:] for i in life_idxs]
-        quantile_0_9 = [outputs_dict["quantile_0.9"][i][-n_last_samples:] for i in life_idxs]
+        quantile_0_5 = [
+            outputs_dict["quantile_0.5"][i][-n_last_samples:] for i in life_idxs
+        ]
+        quantile_0_25 = [
+            outputs_dict["quantile_0.25"][i][-n_last_samples:] for i in life_idxs
+        ]
+        quantile_0_75 = [
+            outputs_dict["quantile_0.75"][i][-n_last_samples:] for i in life_idxs
+        ]
+        quantile_0_1 = [
+            outputs_dict["quantile_0.1"][i][-n_last_samples:] for i in life_idxs
+        ]
+        quantile_0_9 = [
+            outputs_dict["quantile_0.9"][i][-n_last_samples:] for i in life_idxs
+        ]
 
     except Exception as e:
-
-        print("-"*50)
-        print("Something is wrong, maybe you forgot to run the save_quantile_run script?")
-        print("-"*50)
+        print("-" * 50)
+        print(
+            "Something is wrong, maybe you forgot to run the save_quantile_run script?"
+        )
+        print("-" * 50)
         traceback.print_exc()
         quit()
 
@@ -318,23 +333,35 @@ def plot_prediction_interval(
                     label="Prediction Interval 0.1-0.9",
                 )
 
-                plot_title = f"Life {config.life_idx[i*config.ncols+j]}" if config.data_name == "CMAPSS" else f"Life {config.life_idx[i*config.ncols+j]}"
+                plot_title = (
+                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    if config.data_name == "CMAPSS"
+                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                )
                 ax.set_title(plot_title)
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
                 ax.legend()
 
     if config.show_plot:
-        print("-"*50)
+        print("-" * 50)
         print("Showing the plot")
-        print("-"*50)
+        print("-" * 50)
         plt.show()
 
     if config.save_plot:
         if config.full_life:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot_full_life" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot_full_life"
+            filename = (
+                f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot_full_life"
+                if config.data_name == "CMAPSS"
+                else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot_full_life"
+            )
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot"
+            filename = (
+                f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_interval_plot"
+                if config.data_name == "CMAPSS"
+                else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot"
+            )
 
         life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}_last_{n_last_samples}_samples.png"
@@ -344,11 +371,12 @@ def plot_prediction_interval(
         print(f"Plot saved at: {plot_path}")
         print("#" * 50)
 
+
 def plot_an_scores(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
-    n_last_samples:int = 0
+    n_last_samples: int = 0,
 ) -> None:
     """
     Function to plot the anomaly scores over the different samples.
@@ -364,14 +392,18 @@ def plot_an_scores(
         None: the function produces the plot but does not return anything
     """
 
-    assert config.nrows * config.ncols == len(config.life_idx), "Number of rows and columns must match the number of lives"
+    assert config.nrows * config.ncols == len(config.life_idx), (
+        "Number of rows and columns must match the number of lives"
+    )
 
     # Get the outputs dictionary
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    quantile_0_5 = [outputs_dict["an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
+    quantile_0_5 = [
+        outputs_dict["an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs
+    ]
     rul_quantile_0_5 = [an_score_to_rul(quantile_0_5[i]) for i in life_idxs]
 
     # Produce the plot
@@ -404,14 +436,22 @@ def plot_an_scores(
                 #     label="RUL from Anomaly Score quantile 0.5",
                 # )
 
-                plot_title = f"Life {config.life_idx[i*config.ncols+j]}" if config.data_name == "CMAPSS" else f"Life {config.life_idx[i*config.ncols+j]}"
+                plot_title = (
+                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    if config.data_name == "CMAPSS"
+                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                )
                 ax.set_title(plot_title)
                 ax.set_xticks([])
                 ax.set_ylabel("Anomaly Score")
                 ax.legend()
 
     if config.save_plot:
-        filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_an_scores_plot" if config.data_name == "CMAPSS" else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_an_scores_plot"
+        filename = (
+            f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_an_scores_plot"
+            if config.data_name == "CMAPSS"
+            else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_an_scores_plot"
+        )
 
         life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}_last_{n_last_samples}_samples.png"
@@ -420,6 +460,101 @@ def plot_an_scores(
         print("-" * 50)
         print(f"Plot saved at: {plot_path}")
         print("-" * 50)
+
+
+def plot_combined_signals(
+    config: ExperimentConfig,
+    outputs_path: str = experiment_path,
+    plot_path: str = experiment_path,
+    n_last_samples: int = 0,
+) -> None:
+    """
+    Function to plot the predicted and true signals for a specific column.
+
+    Parameters:
+        config (ExperimentConfig): experiment configuration object
+        outputs_path (str): path where the outputs are saved
+        plot_path (str): path where to save the plot
+        n_last_samples (int): number of samples to show. If 0 all the life is shown, otherwise
+        the n_last_samples samples are shown
+
+    Returns:
+        None: the function produces the plot but does not return anything
+    """
+
+    assert config.nrows * config.ncols == len(config.life_idx), (
+        "Number of rows and columns must match the number of lives"
+    )
+
+    # Get the outputs dictionary
+    outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
+    outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
+
+    ipdb.set_trace()
+
+    #TODO: Check weather I have y_true or quantile_0.5, quantile_0.25, ...
+    # inside outputs_dict
+
+    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
+    y_pred = [outputs_dict["y_pred"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
+    y_true = [outputs_dict["y_true"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
+    column = PHM_FEATURES[config.col_idx]
+
+    # Produce the plot
+    if config.nrows == config.ncols == 1:
+        _, axs = plt.subplots(config.nrows, config.ncols, figsize=(10, 8))
+    else:
+        _, axs = plt.subplots(config.nrows, config.ncols, figsize=(50, 20))
+
+    for i in range(config.nrows):
+        for j in range(config.ncols):
+            if i * config.ncols + j < (config.nrows * config.ncols):
+                if config.nrows == 1 and config.ncols == 1:
+                    ax = axs
+                elif config.nrows == 1:
+                    ax = axs[j]
+                elif config.ncols == 1:
+                    ax = axs[i]
+                else:
+                    ax = axs[i, j]
+
+                ax.plot(
+                    y_true[i * config.ncols + j],
+                    color="blue",
+                    label="True Signal",
+                )
+
+                ax.plot(
+                    y_pred[i * config.ncols + j],
+                    color="orange",
+                    label="Predicted Signal",
+                )
+
+                plot_title = (
+                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    if config.data_name == "CMAPSS"
+                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                )
+                ax.set_title(plot_title)
+                ax.set_xticks([])
+                ax.set_ylabel(f"Signal Column {column}")
+                ax.legend()
+
+    if config.save_plot:
+        filename = (
+            f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_run_{config.run_id}_{column}_plot"
+            if config.data_name == "CMAPSS"
+            else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_signals_col_{column}_plot"
+        )
+
+        life_idx_str = "_".join(str(x) for x in config.life_idx)
+        filename = f"{filename}_life_{life_idx_str}_last_{n_last_samples}_samples.png"
+        plot_path = os.path.join(plot_path, filename)
+        plt.savefig(plot_path, bbox_inches="tight")
+        print("-" * 50)
+        print(f"Plot saved at: {plot_path}")
+        print("-" * 50)
+
 
 # Blob plot
 

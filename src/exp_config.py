@@ -66,6 +66,7 @@ class ExperimentConfig:
     ncols: int = 1
     nrows: int = 1
     life_idx: List[int] = field(default_factory=lambda: [3])
+    col_idx: int = 0
     plot_run_id: int = 1
     quantile_plot: float = 0.25
     save_plot: bool = False
@@ -358,6 +359,18 @@ def define_arguments() -> Namespace:
         type = str,
         default = "frizzo-davide-Univeristy of Padova",
         help = "entity name of wandb"
+    )
+
+    parser.add_argument(
+        "--an_score_plots",
+        action="store_true",
+        help="If set, produce the anomaly score plots"
+    )
+
+    parser.add_argument(
+        "--combined_signal_plots",
+        action="store_true",
+        help="If set, produce the combined signals plots"
     )
 
     args = parser.parse_args()

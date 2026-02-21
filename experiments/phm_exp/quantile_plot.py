@@ -16,12 +16,18 @@ sys.path.append(src_path)
 from exp_config import setup_exp
 from utils import generate_path
 from config_vars import MAX_RUL
-from plots import plot_prediction_interval, plot_an_scores
+from plots import (
+    plot_prediction_interval,
+    plot_an_scores,
+    plot_combined_signals,
+)
 from models import wandb_data
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
+
+ipdb.set_trace()
 
 wandb_data(config=exp_config, model_config=model_config)
 
@@ -51,15 +57,29 @@ plot_path = generate_path(
 
 if exp_config.ad:
 
-    print("-"*50)
-    print(f"Producing anomaly score plot for run {exp_config.run_id}")
-    print("-"*50)
+    if exp_config.an_score_plots:
 
-    plot_an_scores(
-        config = exp_config,
-        outputs_path = outputs_path,
-        plot_path = plot_path,
-    )
+        print("-"*50)
+        print(f"Producing anomaly score plot for run {exp_config.run_id}")
+        print("-"*50)
+
+        plot_an_scores(
+            config = exp_config,
+            outputs_path = outputs_path,
+            plot_path = plot_path,
+        )
+
+    if exp_config.combined_signal_plots:
+
+        print("-"*50)
+        print(f"Producing combined signals plots for run {exp_config.run_id}")
+        print("-"*50)
+
+        plot_combined_signals(
+            config = exp_config,
+            outputs_path = outputs_path,
+            plot_path = plot_path,
+        )
 
 else:
 
