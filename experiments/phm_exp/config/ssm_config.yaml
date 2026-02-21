@@ -7,7 +7,9 @@ d_model: 64
 # d_model: 10
 n_layers: 5
 dropout: 0.304939
-gap: true # Global Average Pooling in the Regression Head
+
+# Global Average Pooling in the Regression Head
+gap: false
 
 # Quantile Regression config
 quantile_reg: true

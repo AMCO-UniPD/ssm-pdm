@@ -221,11 +221,11 @@ class MLPModel(nn.Module):
             x = dropout(x)
 
         if self.gap:
-            x = x.mean(dim=1) # (B,L,H) → (B,H)
-            x = self.fc_out(x) * tau if self.tau_mult else self.fc_out(x)
-            return x
+            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+        else:
+            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
 
-        x = self.fc_out(x).squeeze(-1) * tau if self.tau_mult else self.fc_out(x)
+        x = self.fc_out(x) * tau if self.tau_mult else self.fc_out(x)  # (B, d_model) -> (B, d_output)
 
         return x
 
@@ -288,11 +288,15 @@ class Recurrent_PDM(nn.Module):
                 )
 
         out = self.recurrent(x)  # (B, L, D) -> (B, L, H)
-        out = out[0].mean(dim=1)  # (B, L, H) -> (B, H)
-        out = self.fc(out) * tau if self.tau_mult else self.fc(out)  # (B, H) -> (B, L)
-        # out = self.fc(out[0]).squeeze(-1) # (B, L, H) -> (B, L)
-        return out
 
+        if self.gap:
+            out = out[0].mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+        else:
+            out = out[0][:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
+
+        x = self.fc(x) * tau if self.tau_mult else self.fc(x)  # (B, d_model) -> (B, d_output)
+
+        return x
 
 # SSM model classes
 
@@ -385,15 +389,11 @@ class S4Model(nn.Module):
 
         if self.gap:
             x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-            x = (
-                self.decoder(x) * tau if self.tau_mult else self.decoder(x)
-            )  # (B, d_model) -> (B, d_output)
-            return x
+        else:
+            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
 
-        # Decode the outputs
-        x = (
-            self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)
-        )  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+
         return x
 
 
@@ -484,18 +484,14 @@ class S4DModel(nn.Module):
 
         if self.gap:
             x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-            x = (
-                self.decoder(x) * tau if self.tau_mult else self.decoder(x)
-            )  # (B, d_model) -> (B, d_output)
-            return x
+        else:
+            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
 
-        # Decode the outputs
-        # x = self.decoder(x).squeeze(-1) * tau  # (B,L,d_model) -> (B,L)
-        x = (
-            self.decoder(x).squeeze(-1) if self.tau_mult else self.decoder(x)
-        )  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
         return x
 
+        #NOTE: I don't know how much sense this thing has
+        # x = self.decoder(x).squeeze(-1) if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
 
 class S5Model(nn.Module):
     def __init__(
@@ -576,15 +572,13 @@ class S5Model(nn.Module):
 
         if self.gap:
             x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+        else:
+            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
 
-            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
-
-            return x
-
-        # Decode the outputs
-        x = self.decoder(x).squeeze(-1) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
 
         return x
+
 
 
 # Transformer based models
@@ -638,11 +632,14 @@ class RULTransformer(nn.Module):
         x = x.argmax(dim=-1)  # (B, L, d_input) -> (B, L)
         x = self.embedding(x)  # (B, L) -> (B, L, d_model)
         x = self.encoder(x, mask)  # (B, L, d_model) -> (B, L, d_model)
-        x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        x = (
-            self.decoder(x) * tau if self.tau_mult else self.decoder(x)
-        )  # (B, d_model) -> (B, d_output)
-        # x = self.decoder(x).squeeze(-1) # (B, L, d_model) -> (B, L)
+
+        if self.gap:
+            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+        else:
+            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
+
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+
         return x
 
 
@@ -722,11 +719,13 @@ class RULInformer(nn.Module):
         )  # [B,L,H] -> [B,L,H]
 
         enc_out = enc_out.mean(dim=1)  # [B,L,H] -> [B,H]
-        dec_out = (
-            self.projection(enc_out) * tau
-            if self.tau_mult
-            else self.projection(enc_out)
-        )  # [B,L,H] -> [B,L]
+
+        if self.gap:
+            enc_out = enc_out.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
+        else:
+            enc_out = enc_out[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
+
+        dec_out = self.projection(enc_out) * tau if self.tau_mult else self.projection(enc_out)  # [B,L,H] -> [B,L]
 
         if output_attention:
             return dec_out, attns
