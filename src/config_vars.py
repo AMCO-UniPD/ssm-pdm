@@ -54,6 +54,12 @@ PHM_IN_FEATURES = [
     "FIXTURESHUTTERPOSITION"
 ]
 
+PHM_ETCH_FEATURES = [
+ "ETCHSOURCEUSAGE"
+ "ETCHSOURCETIMER"
+ "ETCHAUX2SOURCETIMER"
+]
+
 #NOTE: These names are without the _ because are needed to
 # be passed as arguments to PHMDataset2018 which accepts only
 # names without the underscore
