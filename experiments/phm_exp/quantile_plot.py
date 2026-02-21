@@ -61,7 +61,7 @@ if exp_config.ad:
         print(f"Producing anomaly score plot for run {exp_config.run_id}")
         print("-"*50)
 
-        plot_path = generate_path(
+        an_score_plot_path = generate_path(
             basepath = plot_path,
             folders = ["an_score_plots"]
         )
@@ -69,7 +69,7 @@ if exp_config.ad:
         plot_an_scores(
             config = exp_config,
             outputs_path = outputs_path,
-            plot_path = plot_path,
+            plot_path = an_score_plot_path,
         )
 
     if exp_config.combined_signal_plots:
@@ -78,7 +78,7 @@ if exp_config.ad:
         print(f"Producing combined signals plots for run {exp_config.run_id}")
         print("-"*50)
 
-        plot_path = generate_path(
+        signal_plot_path = generate_path(
             basepath = plot_path,
             folders = ["combined_signal_plots"]
         )
@@ -92,7 +92,7 @@ if exp_config.ad:
             plot_combined_signals(
                 config = exp_config,
                 outputs_path = outputs_path,
-                plot_path = plot_path,
+                plot_path = signal_plot_path,
                 col_idx = i,
             )
 

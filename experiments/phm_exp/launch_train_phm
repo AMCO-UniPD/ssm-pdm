@@ -179,7 +179,7 @@ case "$mode" in
     --device_num $device_num \
     --get_test_idx \
     --combined_signal_plots \
-    --an_scores_plot
+    --an_score_plot
 
   ;;
   *)
