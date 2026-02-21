@@ -27,8 +27,6 @@ experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
 
-ipdb.set_trace()
-
 wandb_data(config=exp_config, model_config=model_config)
 
 outputs_path = generate_path(
@@ -63,6 +61,11 @@ if exp_config.ad:
         print(f"Producing anomaly score plot for run {exp_config.run_id}")
         print("-"*50)
 
+        plot_path = generate_path(
+            basepath = plot_path,
+            folders = ["an_score_plots"]
+        )
+
         plot_an_scores(
             config = exp_config,
             outputs_path = outputs_path,
@@ -75,6 +78,11 @@ if exp_config.ad:
         print(f"Producing combined signals plots for run {exp_config.run_id}")
         print("-"*50)
 
+        plot_path = generate_path(
+            basepath = plot_path,
+            folders = ["combined_signal_plots"]
+        )
+
         plot_combined_signals(
             config = exp_config,
             outputs_path = outputs_path,
@@ -86,6 +94,11 @@ else:
     print("-"*50)
     print(f"Producing quantile plot for run {exp_config.run_id}")
     print("-"*50)
+
+    plot_path = generate_path(
+        basepath = plot_path,
+        folders = ["prediction_interval_plots"]
+    )
 
     _ = plot_prediction_interval(
         config = exp_config,

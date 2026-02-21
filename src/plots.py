@@ -490,15 +490,11 @@ def plot_combined_signals(
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
-    ipdb.set_trace()
-
-    #TODO: Check weather I have y_true or quantile_0.5, quantile_0.25, ...
-    # inside outputs_dict
-
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    y_pred = [outputs_dict["y_pred"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
-    y_true = [outputs_dict["y_true"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
     column = PHM_FEATURES[config.col_idx]
+    y_true = [outputs_dict["y_true"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
+
+    y_pred_quantile_0_5 = [outputs_dict[f"pred_quantile_0.5"][i][-n_last_samples:, config.col_idx] for i in life_idxs]
 
     # Produce the plot
     if config.nrows == config.ncols == 1:
@@ -525,9 +521,9 @@ def plot_combined_signals(
                 )
 
                 ax.plot(
-                    y_pred[i * config.ncols + j],
+                    y_pred_quantile_0_5[i * config.ncols + j],
                     color="orange",
-                    label="Predicted Signal",
+                    label="Predicted Signal quantile 0.5",
                 )
 
                 plot_title = (

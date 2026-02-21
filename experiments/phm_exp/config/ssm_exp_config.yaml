@@ -6,7 +6,7 @@ test_size: 0.2
 val_size: 0.1
 
 # dataset transformations
-transformer_type: 2
+transformer_type: 1
 # scaler: standard
 scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
 scaler_kwargs:
@@ -48,7 +48,7 @@ loss: quantile_reg
 eval_loss: rmse
 
 # multi run parameters
-n_runs: 2 #NOTE: test
+n_runs: 2 
 # n_runs: 5
 start_run_id: 0
 
@@ -62,6 +62,7 @@ quantile_plot: 0.5
 # life_idx: [0,1,5,11]
 # life_idx: [77,97,129,228]
 life_idx: [0,1,2,3]
+col_idx: 0
 nrows: 2
 ncols: 2
 # ncols: 3

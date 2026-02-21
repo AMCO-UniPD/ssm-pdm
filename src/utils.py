@@ -612,7 +612,10 @@ def get_transformer(
                 MeanImputer(),
                 scaler,
             ),
-            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"])),
+            pipelineY=make_pipeline(
+                ByNameFeatureSelector(features=["RUL"]),
+                Clip(lower = 0.0, upper = 500.0)
+             ),
         )
 
     elif config.transformer_type == 2:
@@ -687,11 +690,10 @@ def combine_values(
         return combined_predictions, combined_true_vals, combined_an_scores
 
     n_samples = (len(predictions) * stride) + sequence_length
-    combined_predictions = np.zeros(n_samples)
-    combined_true_vals = np.zeros(n_samples)
+    combined_predictions = np.zeros((n_samples, predictions.shape[-1])) if len(an_scores) != 0 else np.zeros(n_samples)
+    combined_true_vals = np.zeros((n_samples, predictions.shape[-1])) if len(an_scores) != 0 else np.zeros(n_samples)
     combined_an_scores = np.zeros(n_samples)
     counts = np.zeros(n_samples)
-
 
     for i, (preds, true, an_score) in enumerate(zip(predictions, true_values, an_scores)):
         start_index = i * stride
@@ -702,8 +704,8 @@ def combine_values(
         counts[start_index:end_index] += 1
 
     nonzero_counts = counts != 0
-    combined_predictions[nonzero_counts] /= counts[nonzero_counts]
-    combined_true_vals[nonzero_counts] /= counts[nonzero_counts]
+    combined_predictions[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
+    combined_true_vals[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
     combined_an_scores[nonzero_counts] /= counts[nonzero_counts]
 
     if n_samples > original_shape:
