@@ -38,6 +38,9 @@ sweep_runs=20
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_no_shuffle"
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_norm_test"
 
+#NOTE: Experiment names S4D
+exp_name="quantile_exp_flow_low_windowed_S4D_no_gap"
+
 #NOTE: AD approach experiments
 # exp_name="ad_exp_flow_low_windowed_S5"
 
@@ -48,6 +51,6 @@ sweep_runs=20
 #NOTE: AD approach experiments
 # exp_name="ad_exp_flow_low_windowed_S4D"
 # exp_name="ad_exp_flow_low_windowed_S4D_d_model_10"
-exp_name="ad_exp_flow_low_windowed_S4D_best_sweep"
+# exp_name="ad_exp_flow_low_windowed_S4D_best_sweep"
 # exp_name="ad_exp_flow_low_windowed_S4D_no_fixture_hutter_position"
 # exp_name="ad_exp_flow_low_windowed_S4D_normalization"

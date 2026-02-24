@@ -704,8 +704,14 @@ def combine_values(
         counts[start_index:end_index] += 1
 
     nonzero_counts = counts != 0
-    combined_predictions[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
-    combined_true_vals[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
+
+    if combined_predictions[nonzero_counts].ndim == counts[nonzero_counts].ndim:
+        combined_predictions[nonzero_counts] /= counts[nonzero_counts]
+        combined_true_vals[nonzero_counts] /= counts[nonzero_counts]
+    else:
+        combined_predictions[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
+        combined_true_vals[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
+
     combined_an_scores[nonzero_counts] /= counts[nonzero_counts]
 
     if n_samples > original_shape:

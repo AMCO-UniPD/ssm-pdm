@@ -403,6 +403,7 @@ class S4DModel(nn.Module):
         config: ModelConfig,
         d_input: int,
         d_output: int,
+        sequence_length: int,
         ad: bool = False
     ):
         super().__init__()
@@ -442,8 +443,11 @@ class S4DModel(nn.Module):
 
         if self.ad:
             self.decoder = nn.Linear(config.d_model, d_input) if not self.quantile_reg else nn.Linear(config.d_model, d_input-1)
-        else:
+
+        if self.gap:
             self.decoder = nn.Linear(config.d_model, d_output)
+        else:
+            self.decoder = nn.Linear(config.d_model, sequence_length)
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -809,6 +813,7 @@ def load_ssm_model(
             config=model_config,
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
+            sequence_length = exp_config.sequence_length,
             ad=exp_config.ad
         )
     elif exp_config.model_name == "S5":

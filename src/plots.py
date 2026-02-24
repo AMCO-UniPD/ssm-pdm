@@ -247,31 +247,11 @@ def plot_prediction_interval(
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
     true = [y_true[i][-n_last_samples:] for i in life_idxs]
 
-    try:
-        quantile_0_5 = [
-            outputs_dict["quantile_0.5"][i][-n_last_samples:] for i in life_idxs
-        ]
-        quantile_0_25 = [
-            outputs_dict["quantile_0.25"][i][-n_last_samples:] for i in life_idxs
-        ]
-        quantile_0_75 = [
-            outputs_dict["quantile_0.75"][i][-n_last_samples:] for i in life_idxs
-        ]
-        quantile_0_1 = [
-            outputs_dict["quantile_0.1"][i][-n_last_samples:] for i in life_idxs
-        ]
-        quantile_0_9 = [
-            outputs_dict["quantile_0.9"][i][-n_last_samples:] for i in life_idxs
-        ]
+    quantile_signals = {}
 
-    except Exception as e:
-        print("-" * 50)
-        print(
-            "Something is wrong, maybe you forgot to run the save_quantile_run script?"
-        )
-        print("-" * 50)
-        traceback.print_exc()
-        quit()
+    #TODO: Refactor → make this function more general in order to
+    # make it work on different number of evaluation quantiles depending
+    # on the quantiles field of the exp_config
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
@@ -302,46 +282,44 @@ def plot_prediction_interval(
                     color="#00008B",
                     label="True RUL",
                 )
-                # Predicted RUL with quantile 0.5 as a solid orange line
-                ax.plot(
-                    quantile_0_5[i * config.ncols + j][mask[i * config.ncols + j]],
-                    color="orange",
-                    label="Predicted RUL 0.5",
-                )
-                # Predicted RUL with quantile 0.25 and 0.75 as dashed orange lines
-                ax.plot(
-                    quantile_0_25[i * config.ncols + j][mask[i * config.ncols + j]],
-                    color="#007BFF",
-                    linestyle="--",
-                    label="Predicted RUL 0.25",
-                )
-                ax.plot(
-                    quantile_0_75[i * config.ncols + j][mask[i * config.ncols + j]],
-                    color="#007BFF",
-                    linestyle="-.",
-                    label="Predicted RUL 0.75",
-                )
-                # Use plt.fill_between to create the prediction interval using predictions on quantile 0.1 and 0.9
-                ax.fill_between(
-                    np.arange(
-                        len(true[i * config.ncols + j][mask[i * config.ncols + j]])
-                    ),
-                    quantile_0_1[i * config.ncols + j][mask[i * config.ncols + j]],
-                    quantile_0_9[i * config.ncols + j][mask[i * config.ncols + j]],
-                    color="#ADD8E6",
-                    alpha=0.5,
-                    label="Prediction Interval 0.1-0.9",
-                )
 
-                plot_title = (
-                    f"Life {config.life_idx[i * config.ncols + j]}"
-                    if config.data_name == "CMAPSS"
-                    else f"Life {config.life_idx[i * config.ncols + j]}"
-                )
-                ax.set_title(plot_title)
-                ax.set_xticks([])
-                ax.set_ylabel("RUL")
-                ax.legend()
+                for quantile in config.quantiles:
+
+                    quantile_signals[f"pred_quantile_{quantile}"] = [outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:] for i in life_idxs]
+
+                    ax.plot(
+                        quantile_signals[f"pred_quantile_{quantile}"][i * config.ncols + j][mask[i * config.ncols + j]],
+                        color="orange",
+                        label=f"Predicted RUL {quantile}",
+                    )
+                
+                # Use plt.fill_between to create the prediction interval using predictions 
+                # from the max and min quantile levels contained in quantiles
+
+                if len(config.quantiles) == 2:
+
+                    quantile_min, quantile_max = np.min(config.quantiles), np.max(config.quantiles)
+
+                    ax.fill_between(
+                        np.arange(
+                            len(true[i * config.ncols + j][mask[i * config.ncols + j]])
+                        ),
+                        quantile_signals[f"pred_quantile_{quantile_min}"][i * config.ncols + j][mask[i * config.ncols + j]],
+                        quantile_signals[f"pred_quantile_{quantile_max}"][i * config.ncols + j][mask[i * config.ncols + j]],
+                        color="#ADD8E6",
+                        alpha=0.5,
+                        label="Prediction Interval {quantile_min}-{quantile_max}",
+                    )
+
+    plot_title = (
+        f"Life {config.life_idx[i * config.ncols + j]}"
+        if config.data_name == "CMAPSS"
+        else f"Life {config.life_idx[i * config.ncols + j]}"
+    )
+    ax.set_title(plot_title)
+    ax.set_xticks([])
+    ax.set_ylabel("RUL")
+    ax.legend()
 
     if config.show_plot:
         print("-" * 50)

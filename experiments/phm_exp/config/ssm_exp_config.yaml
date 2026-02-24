@@ -48,7 +48,7 @@ loss: quantile_reg
 eval_loss: rmse
 
 # multi run parameters
-n_runs: 1
+n_runs: 2
 # n_runs: 5
 start_run_id: 0
 
