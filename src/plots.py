@@ -245,18 +245,17 @@ def plot_prediction_interval(
 
     y_true = outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    true = [y_true[i][-n_last_samples:] for i in life_idxs]
+    if n_last_samples > 0:
+        true = [y_true[i][-n_last_samples:] for i in life_idxs]
+    else:
+        true = [y_true[i] for i in life_idxs]
 
     quantile_signals = {}
-
-    #TODO: Refactor → make this function more general in order to
-    # make it work on different number of evaluation quantiles depending
-    # on the quantiles field of the exp_config
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
     else:
-        np.ones(true.shape, dtype=int)
+        mask = [np.ones(len(t), dtype=bool) for t in true]
 
     # Produce the plot
     if config.nrows == config.ncols == 1:
@@ -284,28 +283,38 @@ def plot_prediction_interval(
                 )
 
                 for quantile in config.quantiles:
-
-                    quantile_signals[f"pred_quantile_{quantile}"] = [outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:] for i in life_idxs]
+                    quantile_signals[f"pred_quantile_{quantile}"] = [
+                        outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:]
+                        for i in life_idxs
+                    ]
 
                     ax.plot(
-                        quantile_signals[f"pred_quantile_{quantile}"][i * config.ncols + j][mask[i * config.ncols + j]],
+                        quantile_signals[f"pred_quantile_{quantile}"][
+                            i * config.ncols + j
+                        ][mask[i * config.ncols + j]],
                         color="orange",
                         label=f"Predicted RUL {quantile}",
                     )
-                
-                # Use plt.fill_between to create the prediction interval using predictions 
+
+                # Use plt.fill_between to create the prediction interval using predictions
                 # from the max and min quantile levels contained in quantiles
 
                 if len(config.quantiles) == 2:
-
-                    quantile_min, quantile_max = np.min(config.quantiles), np.max(config.quantiles)
+                    quantile_min, quantile_max = (
+                        np.min(config.quantiles),
+                        np.max(config.quantiles),
+                    )
 
                     ax.fill_between(
                         np.arange(
                             len(true[i * config.ncols + j][mask[i * config.ncols + j]])
                         ),
-                        quantile_signals[f"pred_quantile_{quantile_min}"][i * config.ncols + j][mask[i * config.ncols + j]],
-                        quantile_signals[f"pred_quantile_{quantile_max}"][i * config.ncols + j][mask[i * config.ncols + j]],
+                        quantile_signals[f"pred_quantile_{quantile_min}"][
+                            i * config.ncols + j
+                        ][mask[i * config.ncols + j]],
+                        quantile_signals[f"pred_quantile_{quantile_max}"][
+                            i * config.ncols + j
+                        ][mask[i * config.ncols + j]],
                         color="#ADD8E6",
                         alpha=0.5,
                         label="Prediction Interval {quantile_min}-{quantile_max}",
@@ -379,8 +388,14 @@ def plot_an_scores(
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    mean_quantile_0_5 = [outputs_dict["mean_an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
-    max_quantile_0_5 = [outputs_dict["max_an_scores_quantile_0.5"][i][-n_last_samples:] for i in life_idxs]
+    mean_quantile_0_5 = [
+        outputs_dict["mean_an_scores_quantile_0.5"][i][-n_last_samples:]
+        for i in life_idxs
+    ]
+    max_quantile_0_5 = [
+        outputs_dict["max_an_scores_quantile_0.5"][i][-n_last_samples:]
+        for i in life_idxs
+    ]
 
     # Produce the plot
     if config.nrows == config.ncols == 1:
@@ -478,7 +493,10 @@ def plot_combined_signals(
     column = PHM_FEATURES[col_idx]
     y_true = [outputs_dict["y_true"][i][-n_last_samples:, col_idx] for i in life_idxs]
 
-    y_pred_quantile_0_5 = [outputs_dict[f"pred_quantile_0.5"][i][-n_last_samples:, col_idx] for i in life_idxs]
+    y_pred_quantile_0_5 = [
+        outputs_dict[f"pred_quantile_0.5"][i][-n_last_samples:, col_idx]
+        for i in life_idxs
+    ]
 
     # Produce the plot
     if config.nrows == config.ncols == 1:
