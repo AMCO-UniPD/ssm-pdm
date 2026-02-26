@@ -157,6 +157,8 @@ def train_loop(
             else mask.to(device).squeeze(-1)
         )
 
+        ipdb.set_trace()
+
         if config.quantile_reg:
             tau = sample_quantile(
                 quantile_dist=config.quantile_dist,
@@ -168,12 +170,14 @@ def train_loop(
             print(f"No quantile regression so tau={tau}")
 
         output = model(life, tau=tau)
+        ipdb.set_trace()
 
         loss = (
             criterion(output, rul, mask)
             if not config.quantile_reg
             else criterion(output, rul, mask, tau)
         )
+        ipdb.set_trace()
 
         optimizer.zero_grad()
         loss.backward()

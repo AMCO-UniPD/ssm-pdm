@@ -404,7 +404,8 @@ class S4DModel(nn.Module):
         d_input: int,
         d_output: int,
         sequence_length: int,
-        ad: bool = False
+        ad: bool = False,
+        full_life: bool = False
     ):
         super().__init__()
 
@@ -414,6 +415,7 @@ class S4DModel(nn.Module):
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         self.ad = ad
+        self.full_life = full_life
 
         d_state = config.d_state
         act = config.act
@@ -444,7 +446,7 @@ class S4DModel(nn.Module):
         if self.ad:
             self.decoder = nn.Linear(config.d_model, d_input) if not self.quantile_reg else nn.Linear(config.d_model, d_input-1)
 
-        if self.gap:
+        if self.gap or self.full_life:
             self.decoder = nn.Linear(config.d_model, d_output)
         else:
             self.decoder = nn.Linear(config.d_model, sequence_length)
@@ -492,6 +494,10 @@ class S4DModel(nn.Module):
             x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
 
         x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+
+        if self.full_life:
+            return x.squeeze(-1)
+
         return x
 
         #NOTE: I don't know how much sense this thing has
@@ -814,7 +820,8 @@ def load_ssm_model(
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
-            ad=exp_config.ad
+            ad=exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "S5":
         model = S5Model(

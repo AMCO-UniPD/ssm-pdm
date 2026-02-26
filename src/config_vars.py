@@ -104,6 +104,10 @@ PHM_FAILURES = {
 
 PHM_FAIL_TYPES = list(PHM_FAILURES.keys())
 
-APPROACHES = ["padding", "windowed"]
+APPROACHES = [
+    "padding",
+    "windowed",
+    "full_life"
+]
 
 MAX_RUL = 500

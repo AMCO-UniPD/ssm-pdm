@@ -920,6 +920,64 @@ def create_padding_loaders(
 
     return loaders_dict
 
+def create_full_life_loaders(
+    config: ExperimentConfig,
+    train_lifes: TransData,
+    val_lifes: TransData,
+    test_lifes: TransData,
+) -> dict:
+    """
+    Function to create the dataloaders for the full life approach.
+    The function is very similar to create_padding_loaders but in this
+    case we use the length of the life as the sequence_length parameter
+    and we have to set the batch_size to 1 because each life has a different
+    length
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        train_lifes (TransData): transformed training lifes
+        val_lifes (TransData): transformed validation lifes
+        test_lifes (TransData): transformed test lifes
+
+    Returns:
+        loaders_dict (dict): dictionary containing the dataloaders
+    """
+
+    train_datasets = [SSMRegressionDataset(
+        life=life,
+        sequence_length=life.shape[0],
+        max_rul = config.max_rul,
+        normalize_rul = config.normalize_rul
+    ) for life in train_lifes]
+    val_datasets = [SSMRegressionDataset(
+        life=life,
+        sequence_length=life.shape[0],
+        max_rul = config.max_rul,
+        normalize_rul = config.normalize_rul
+    ) for life in val_lifes]
+    test_datasets = [SSMRegressionDataset(
+        life=life,
+        sequence_length=life.shape[0],
+        max_rul = config.max_rul,
+        normalize_rul = config.normalize_rul
+    ) for life in test_lifes]
+
+    batch_size = 1
+
+    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=True)
+    test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
+
+    loaders_dict = {
+        "train_loader": train_loader,
+        "val_loader": val_loader,
+        "test_loader": test_loader,
+        "test_loaders": test_loaders,
+    }
+
+    return loaders_dict
+
 def create_window_dataset(
     config: ExperimentConfig,
     lifes: TransData,
@@ -1146,6 +1204,15 @@ def load_phm_data(
     if config.approach == "padding":
 
         loaders_dict = create_padding_loaders(
+            config = config,
+            train_lifes = train_lifes,
+            val_lifes = val_lifes,
+            test_lifes = test_lifes,
+        )
+
+    elif config.approach == "full_life":
+
+        loaders_dict = create_full_life_loaders(
             config = config,
             train_lifes = train_lifes,
             val_lifes = val_lifes,
