@@ -10,6 +10,7 @@ echo "-------------------------------------------"
 
 python $script_path \
   --exp_config_path "config/ssm_exp_config.yaml" \
+  --sweep_name "$sweep_name" \
   --wandb_entity "$wandb_entity" \
   --project_name "$project_name" \
   --sweep_runs $sweep_runs \

@@ -232,9 +232,9 @@ def plot_prediction_interval(
         None: the function produces the plot but does not return anything
     """
 
-    assert config.approach == "windowed", (
-        "The Quantile Regression experiments were don only on the windowed approach"
-    )
+    # assert config.approach == "windowed", (
+    #     "The Quantile Regression experiments were don only on the windowed approach"
+    # )
     assert config.nrows * config.ncols == len(config.life_idx), (
         "Number of rows and columns must match the number of lives"
     )
@@ -277,16 +277,15 @@ def plot_prediction_interval(
                 else:
                     ax = axs[i, j]
 
-                # True RUL as a solid blue line
                 ax.plot(
-                    true[i * config.ncols + j],
+                    np.squeeze(true[i * config.ncols + j],axis=0) if config.approach == "padding" else true[i * config.ncols +j],
                     color="#00008B",
                     label="True RUL",
                 )
 
                 for quantile,color in zip(config.quantiles,colors):
                     quantile_signals[f"pred_quantile_{quantile}"] = [
-                        outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:]
+                        np.squeeze(outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:],axis=0) if config.approach == "padding" else outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:]
                         for i in life_idxs
                     ]
 
@@ -295,6 +294,16 @@ def plot_prediction_interval(
                         color=color,
                         label=f"Predicted RUL {quantile}",
                     )
+
+                plot_title = (
+                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    if config.data_name == "CMAPSS"
+                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                )
+                ax.set_title(plot_title)
+                ax.set_xticks([])
+                ax.set_ylabel("RUL")
+                ax.legend()
 
                 # Use plt.fill_between to create the prediction interval using predictions
                 # from the max and min quantile levels contained in quantiles
@@ -314,15 +323,6 @@ def plot_prediction_interval(
                         label="Prediction Interval {quantile_min}-{quantile_max}",
                     )
 
-    plot_title = (
-        f"Life {config.life_idx[i * config.ncols + j]}"
-        if config.data_name == "CMAPSS"
-        else f"Life {config.life_idx[i * config.ncols + j]}"
-    )
-    ax.set_title(plot_title)
-    ax.set_xticks([])
-    ax.set_ylabel("RUL")
-    ax.legend()
 
     if config.show_plot:
         print("-" * 50)

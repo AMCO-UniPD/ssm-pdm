@@ -316,6 +316,8 @@ class SSMRegressionDataset(Dataset):
         self,
         life: pd.DataFrame,
         sequence_length: int = 500,
+        max_rul: int = MAX_RUL,
+        normalize_rul: bool = False,
     ):
         """
         This class implements the dataset for the padding approach. In
@@ -330,7 +332,12 @@ class SSMRegressionDataset(Dataset):
         Args:
             life (pd.DataFrame): input life
             sequence_length (int): length to use for this life
+            max_rul (int): maximum RUL value used to select the windows and to normalize the RUL
+            normalize_rul (bool): weather to normalize the RUL
         """
+
+        self.max_rul = max_rul
+        self.normalize_rul = normalize_rul
 
         life, rul = life.iloc[:, :-1], life["RUL"]
 
@@ -355,6 +362,8 @@ class SSMRegressionDataset(Dataset):
             sequences = life.values[life.shape[0] - sequence_length :, :]
             mask = np.ones(shape=(sequence_length))
             targets = rul[life.shape[0] - sequence_length:]
+
+        targets = targets / self.max_rul if self.normalize_rul else targets
 
         self.sequences = np.expand_dims(sequences,axis=0)
         self.targets = np.expand_dims(targets,axis=0)
@@ -876,9 +885,24 @@ def create_padding_loaders(
         loaders_dict (dict): dictionary containing the dataloaders
     """
 
-    train_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in train_lifes]
-    val_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
-    test_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
+    train_datasets = [SSMRegressionDataset(
+        life=life,
+        sequence_length=config.sequence_length,
+        max_rul = config.max_rul,
+        normalize_rul = config.normalize_rul
+    ) for life in train_lifes]
+    val_datasets = [SSMRegressionDataset(
+        life=life,
+        sequence_length=config.sequence_length,
+        max_rul = config.max_rul,
+        normalize_rul = config.normalize_rul
+    ) for life in val_lifes]
+    test_datasets = [SSMRegressionDataset(
+        life=life,
+        sequence_length=config.sequence_length,
+        max_rul = config.max_rul,
+        normalize_rul = config.normalize_rul
+    ) for life in test_lifes]
 
     batch_size = config.batch_size
 

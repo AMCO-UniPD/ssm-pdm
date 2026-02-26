@@ -2,8 +2,8 @@
 # NOTE: See default parameters on the definition of ModelConfig class
 
 # General model parametrers
-# d_model: 128
-d_model: 64
+d_model: 128
+# d_model: 64
 # d_model: 10
 n_layers: 5
 dropout: 0.304939

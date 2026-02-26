@@ -99,7 +99,8 @@ def set_sweep_exp_name(
         sweep_run_name (str): name of the current run in the wandb sweep
     """
 
-    sweep_run_name = "ad_sweep" if exp_config.ad else "sweep"
+    # sweep_run_name = "ad_sweep" if exp_config.ad else "sweep"
+    sweep_run_name = exp_config.sweep_name
 
     for key in wandb_config.keys():
 

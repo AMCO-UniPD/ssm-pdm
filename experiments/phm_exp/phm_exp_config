@@ -12,7 +12,7 @@ model_name="S4D"
 device_num=2
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
-sweep_name="ad_sweep_test_acq4"
+sweep_name="padding_sweep"
 sweep_id="t86x1hw1"
 wandb_entity="frizzo-davide-Univeristy of Padova"
 
@@ -49,7 +49,10 @@ sweep_runs=20
 # exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_1000_const_wins"
 
 #NOTE: Experiment names S4D padding approach
-exp_name="quantile_exp_flow_low_padding_S4D_seq_len_1000"
+# exp_name="quantile_exp_flow_low_padding_S4D_seq_len_1000"
+# exp_name="quantile_exp_flow_low_padding_S4D_best_sweep"
+# exp_name="quantile_exp_flow_low_padding_S4D_seq_len_10000"
+exp_name="quantile_exp_flow_low_padding_S4D_seq_len_1000_norm"
 
 #NOTE: AD approach experiments
 # exp_name="ad_exp_flow_low_windowed_S5"

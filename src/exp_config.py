@@ -389,7 +389,8 @@ def check_arguments(args: Union[ExperimentConfig, WandbConfig]) -> None:
         None: the function does not return nothing but can throw some exception if the arguments are not passed correctly
     """
 
-    assert args.stride <= args.sequence_length, f"The stride must be less or equal to the sequence length but got stride={args.stride} and sequence_length={args.sequence_length}"
+    if hasattr(args, "stride"):
+        assert args.stride <= args.sequence_length, f"The stride must be less or equal to the sequence length but got stride={args.stride} and sequence_length={args.sequence_length}"
 
 
 def set_exp_name(config: ExperimentConfig) -> str:
