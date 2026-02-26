@@ -38,7 +38,7 @@ sweep_runs=20
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_no_shuffle"
 # exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_norm_test"
 
-#NOTE: Experiment names S4D
+#NOTE: Experiment names S4D windowed approach
 # exp_name="quantile_exp_flow_low_windowed_S4D_no_gap"
 # exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_10_const_wins_norm"
 # exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_10_const_wins_norm_stride_1000_all_quantiles"
@@ -46,7 +46,10 @@ sweep_runs=20
 # exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_phm_etch_features"
 # exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_500"
 # exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_100_const_wins"
-exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_1000_const_wins"
+# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_1000_const_wins"
+
+#NOTE: Experiment names S4D padding approach
+exp_name="quantile_exp_flow_low_padding_S4D_seq_len_1000"
 
 #NOTE: AD approach experiments
 # exp_name="ad_exp_flow_low_windowed_S5"

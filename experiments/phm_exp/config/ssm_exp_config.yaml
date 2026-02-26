@@ -15,8 +15,8 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-approach: windowed
-# approach: padding
+# approach: windowed
+approach: padding
 
 # quantile_reg config
 quantile_reg: true
@@ -37,8 +37,9 @@ normalize_rul: true
 ad: false
 
 # training parameters
-batch_size: 16
-sequence_length: 500
+# batch_size: 16
+batch_size: 1
+sequence_length: 1000
 stride: 500
 epochs: 20
 lr: 0.00671

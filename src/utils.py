@@ -326,6 +326,10 @@ class SSMRegressionDataset(Dataset):
         series and we use 0 padding to cover for the sequence_length - life.shape[0]
         missing samples. As usual we have to use a mask to keep track of the samples
         that are padded as zeros.
+
+        Args:
+            life (pd.DataFrame): input life
+            sequence_length (int): length to use for this life
         """
 
         life, rul = life.iloc[:, :-1], life["RUL"]
@@ -876,11 +880,9 @@ def create_padding_loaders(
     val_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
     test_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
 
-    batch_size = 1
-
-    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=False)
-    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=config.batch_size, shuffle=True)
+    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=config.batch_size, shuffle=True)
+    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=config.batch_size, shuffle=True)
     test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
 
     loaders_dict = {
