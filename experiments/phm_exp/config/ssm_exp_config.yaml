@@ -17,6 +17,7 @@ scaler_kwargs:
 # approach
 # approach: windowed
 approach: padding
+# approach: full_life
 
 # quantile_reg config
 quantile_reg: true
