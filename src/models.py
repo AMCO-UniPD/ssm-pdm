@@ -251,12 +251,17 @@ def eval_loop(
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
 
-            y_pred.append(batch_out) if config.approach == "padding" else y_pred.extend(
-                batch_out
-            )
-            y_true.append(
-                batch_target
-            ) if config.approach == "padding" else y_true.extend(batch_target)
+            # y_pred.append(batch_out) if config.approach == "padding" else y_pred.extend(
+            #     batch_out
+            # )
+            # y_true.append(
+            #     batch_target
+            # ) if config.approach == "padding" else y_true.extend(batch_target)
+
+            #NOTE: Since in both the padding and windowed approach we have
+            # mini batches of size > 1 we have to use extend and not append
+            y_pred.extend(batch_out)
+            y_true.extend(batch_target)
 
             loss = (
                 criterion(output, rul, mask)

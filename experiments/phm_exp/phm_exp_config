@@ -9,7 +9,7 @@ test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 # test_phm_tools=("01M02") #NOTE: test for AD approach
 
 model_name="S4D"
-device_num=0
+device_num=2
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_name="ad_sweep_test_acq4"

@@ -353,7 +353,7 @@ class SSMRegressionDataset(Dataset):
         else:
 
             sequences = life.values[life.shape[0] - sequence_length :, :]
-            mask = np.ones(shape=(sequence_length, life.shape[1]))
+            mask = np.ones(shape=(sequence_length))
             targets = rul[life.shape[0] - sequence_length:]
 
         self.sequences = np.expand_dims(sequences,axis=0)
@@ -880,9 +880,11 @@ def create_padding_loaders(
     val_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in val_lifes]
     test_datasets = [SSMRegressionDataset(life=life, sequence_length=config.sequence_length) for life in test_lifes]
 
-    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=config.batch_size, shuffle=True)
-    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=config.batch_size, shuffle=True)
-    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=config.batch_size, shuffle=True)
+    batch_size = config.batch_size
+
+    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=True)
     test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
 
     loaders_dict = {
@@ -1136,16 +1138,16 @@ def load_phm_data(
             eval = eval
         )
 
-        if eval:
-            return {
-                "test_lifes": test_lifes,
-                "test_loaders": loaders_dict,
-                "test_idx": test_phm_idx,
-            }
-
     else:
 
         raise ValueError(f"Approach {config.approach} not supported. Supported approaches are {APPROACHES}")
+
+    if eval:
+        return {
+            "test_lifes": test_lifes,
+            "test_loaders": loaders_dict["test_loaders"],
+            "test_idx": test_phm_idx,
+        }
 
     loaders_dict["train_idx"] = train_idx
     loaders_dict["val_idx"] = val_idx

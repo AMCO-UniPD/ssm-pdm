@@ -37,8 +37,7 @@ normalize_rul: true
 ad: false
 
 # training parameters
-# batch_size: 16
-batch_size: 1
+batch_size: 16
 sequence_length: 1000
 stride: 500
 epochs: 20
