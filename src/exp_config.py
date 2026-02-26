@@ -28,6 +28,7 @@ class ExperimentConfig:
     test_idx: List[int] = field(default_factory=lambda: [0])
     # transformer params
     transformer_type: int = 1
+    feature_type: str = "phm"
     scaler: str = "standard"
     scaler_kwargs: Dict[str, float] = field(
         default_factory=lambda: {

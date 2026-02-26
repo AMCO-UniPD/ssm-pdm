@@ -7,6 +7,7 @@ val_size: 0.1
 
 # dataset transformations
 transformer_type: 2
+feature_type: phm
 # scaler: standard
 scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
 scaler_kwargs:
@@ -21,24 +22,24 @@ approach: windowed
 quantile_reg: true
 quantile_dist: uniform
 bounds: [0.1, 0.9]
-# quantiles: [0.1,0.25,0.5,0.75,0.9]
-quantiles: [0.5] #NOTE: test for AD approach
+quantiles: [0.1,0.25,0.5,0.75,0.9]
+# quantiles: [0.5]
 quantile_run: 0.25
 
 # select_windows
 max_rul: 500
 keep_long_rul_prob: 0.1
-n_const_win: 0
-# normalize_rul: true
-normalize_rul: false
+n_const_win: 1000
+normalize_rul: true
+# normalize_rul: false
 
 #AD approach
 ad: false
 
 # training parameters
 batch_size: 16
-sequence_length: 1000
-stride: 200
+sequence_length: 500
+stride: 500
 epochs: 20
 lr: 0.00671
 weight_decay: 1.0e-4

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S4D_no_gap
-#SBATCH --output=slurm_logs/S4D/S4D_no_gap_%j.txt
-#SBATCH --error=slurm_logs/S4D/S4D_no_gap_error_%j.txt
+#SBATCH --job-name=quantile_exp_flow_low_windowed_S4D_no_gap_1000_const_wins
+#SBATCH --output=slurm_logs/S4D/S4D_no_gap_1000_const_wins_%j.txt
+#SBATCH --error=slurm_logs/S4D/S4D_no_gap_1000_const_wins_error_%j.txt
 #SBATCH --time=03:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
