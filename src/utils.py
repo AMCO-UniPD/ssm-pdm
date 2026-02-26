@@ -56,6 +56,8 @@ from config_vars import (
     CMAPSS_MODELS,
     PHM_TOOLS,
     PHM_FAILURES,
+    PHM_IN_FEATURES,
+    PHM_ETCH_FEATURES,
     PHM_FAIL_TYPES,
     PHM_FEATURES,
     APPROACHES,
@@ -582,13 +584,18 @@ def get_transformer(
         df (CMAPSSDataset): The CMAPSS dataset
 
     Returns:
-        transformer (Transformer): The transformer object
+        transformer (Transformer): The ceruleo transformer object
     """
 
     if config.data_name == "CMAPSS":
         FEATURES = [df[0].columns[i] for i in sensor_indices]
     else:
-        FEATURES = PHM_FEATURES
+        if config.feature_type == "etch":
+            FEATURES = PHM_ETCH_FEATURES
+        elif config.feature_type == "phm_in":
+            FEATURES = PHM_IN_FEATURES
+        else:
+            FEATURES = PHM_FEATURES
 
     if config.scaler == "minmax":
         scaler = MinMaxScaler(
@@ -695,7 +702,8 @@ def combine_values(
     combined_an_scores = np.zeros(n_samples)
     counts = np.zeros(n_samples)
 
-    for i, (preds, true, an_score) in enumerate(zip(predictions, true_values, an_scores)):
+    # for i, (preds, true, an_score) in enumerate(zip(predictions, true_values, an_scores)):
+    for i, (preds, true) in enumerate(zip(predictions, true_values)):
         start_index = i * stride
         end_index = start_index + sequence_length
         combined_predictions[start_index:end_index] += preds
@@ -886,7 +894,8 @@ def create_padding_loaders(
 
 def create_window_dataset(
     config: ExperimentConfig,
-    lifes: TransData
+    lifes: TransData,
+    eval: bool = False
 ) -> SSMWindowRegressionDataset:
     """
     Function to create a SSMWindowRegressionDataset object starting from a set of
@@ -895,6 +904,7 @@ def create_window_dataset(
     Args:
         config (ExperimentConfig): experiment configuration object
         lifes (TransData): list of lifes
+        eval (bool): weather to create the dataset in evaluation mode or not
 
     Returns:
         dataset (SSMWindowRegressionDataset): dataset object
@@ -908,7 +918,8 @@ def create_window_dataset(
         normalize_rul = config.normalize_rul,
         ad = config.ad
     )
-    dataset.select_windows(n_const_win=config.n_const_win)
+    if not eval:
+        dataset.select_windows(n_const_win=config.n_const_win)
 
     return dataset
 
@@ -1091,7 +1102,10 @@ def load_phm_data(
         random_state = 42
     )
 
-    transformer = get_transformer(config, train_phm_data)
+    transformer = get_transformer(
+        config = config,
+        df = train_phm_data,
+    )
     transformer.fit(train_data)
     transformed_train_data = train_data.map(transformer)
     transformed_val_data = val_data.map(transformer)

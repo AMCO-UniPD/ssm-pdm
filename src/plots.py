@@ -251,6 +251,8 @@ def plot_prediction_interval(
         true = [y_true[i] for i in life_idxs]
 
     quantile_signals = {}
+    cmap = plt.get_cmap("Set1")
+    colors = cmap.colors
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
@@ -277,22 +279,20 @@ def plot_prediction_interval(
 
                 # True RUL as a solid blue line
                 ax.plot(
-                    true[i * config.ncols + j][mask[i * config.ncols + j]],
+                    true[i * config.ncols + j],
                     color="#00008B",
                     label="True RUL",
                 )
 
-                for quantile in config.quantiles:
+                for quantile,color in zip(config.quantiles,colors):
                     quantile_signals[f"pred_quantile_{quantile}"] = [
                         outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:]
                         for i in life_idxs
                     ]
 
                     ax.plot(
-                        quantile_signals[f"pred_quantile_{quantile}"][
-                            i * config.ncols + j
-                        ][mask[i * config.ncols + j]],
-                        color="orange",
+                        quantile_signals[f"pred_quantile_{quantile}"][i * config.ncols + j],
+                        color=color,
                         label=f"Predicted RUL {quantile}",
                     )
 
@@ -306,15 +306,9 @@ def plot_prediction_interval(
                     )
 
                     ax.fill_between(
-                        np.arange(
-                            len(true[i * config.ncols + j][mask[i * config.ncols + j]])
-                        ),
-                        quantile_signals[f"pred_quantile_{quantile_min}"][
-                            i * config.ncols + j
-                        ][mask[i * config.ncols + j]],
-                        quantile_signals[f"pred_quantile_{quantile_max}"][
-                            i * config.ncols + j
-                        ][mask[i * config.ncols + j]],
+                        np.arange(len(true[i * config.ncols + j][mask[i * config.ncols + j]])),
+                        quantile_signals[f"pred_quantile_{quantile_min}"][i * config.ncols + j],
+                        quantile_signals[f"pred_quantile_{quantile_max}"][i * config.ncols + j],
                         color="#ADD8E6",
                         alpha=0.5,
                         label="Prediction Interval {quantile_min}-{quantile_max}",
