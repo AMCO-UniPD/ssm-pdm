@@ -98,6 +98,7 @@ class ModelConfig:
     attn: str = "prob"
     inf_activation: str = "gelu"
     distil: bool = True
+    output_attention: bool = False
     device: torch.device = torch.device("cpu")
 
     @classmethod
@@ -166,7 +167,6 @@ class GapHead(nn.Module):
     def __init__(
         self,
         config: ModelConfig,
-        d_model: int,
         d_output: int,
     ):
         """
@@ -174,7 +174,7 @@ class GapHead(nn.Module):
         """
         super().__init__()
 
-        self.decoder = nn.Linear(d_model, d_output)
+        self.decoder = nn.Linear(config.d_model, d_output)
         self.tau_mult = config.tau_mult
 
     def forward(self,x, tau=0.5):
@@ -188,7 +188,6 @@ class ADHead(nn.Module):
     def __init__(
         self,
         config: ModelConfig,
-        d_model: int,
         d_input: int,
     ):
         """
@@ -196,12 +195,114 @@ class ADHead(nn.Module):
         """
         super().__init__()
 
+        self.decoder = nn.Linear(config.d_model, d_input) if not config.quantile_reg else nn.Linear(config.d_model, d_input-1)
+        self.tau_mult = config.tau_mult
+
+    def forward(self, x, tau=0.5):
+
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L,d_input)
+        return x
+
+class ModelHead(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        sequence_length: int,
+    ):
+        """
+        Model Regression head for all the padding and window approaches
+        that are not using the gap approach. In this case the embedding of the
+        last time stamp is used to produce the output
+        """
+        super().__init__()
+
+        self.decoder = nn.Linear(config.d_model, sequence_length)
+        self.tau_mult = config.tau_mult
+
+    def forward(self, x, tau=0.5):
+
+        x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        return x
+
+class FullLifeHead(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        d_output: int,
+    ):
+        """
+        Model Regression head for the full_life approach
+        """
+        super().__init__()
+
+        self.decoder = nn.Linear(config.d_model, d_output)
+        self.tau_mult = config.tau_mult
+
+    def forward(self, x, tau=0.5):
+
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        return x.squeeze(-1)
+
+def select_model_head(
+    config: ModelConfig,
+    d_input: int,
+    d_output: int,
+    sequence_length: int,
+    ad: bool,
+    gap: bool,
+    full_life: bool
+) -> nn.Module:
+    """
+    Function used to select the model head depending on the approach
+    used.
+
+    Args:
+        ad (bool): weather to use the AD approach
+        gap (bool): weather to use Global Average Pooling (GAP)
+        full_life (bool): weather to use the full_life approach
+        d_input (int): number of input features of the model
+        d_output (int): number of output features of the model
+        sequence_length (int): length of the sequences used
+
+    Returns:
+        head (nn.Module): One of the possible model heads
+    """
+
+    if ad:
+        head = ADHead(
+            config = config,
+            d_input = d_input
+        )
+
+    if gap:
+        head = GapHead(
+            config = config,
+            d_output = d_output
+        )
+    else:
+        head = ModelHead(
+            config = config,
+            sequence_length = sequence_length
+        )
+
+    if full_life:
+        head = FullLifeHead(
+            config = config,
+            d_output = d_output
+        )
+
+    return head
+
 class MLPModel(nn.Module):
     def __init__(
         self,
         config: ModelConfig,
         input_size: int,
         output_size: int,
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
     ):
         super(MLPModel, self).__init__()
         self.quantile_reg = config.quantile_reg
@@ -209,6 +310,8 @@ class MLPModel(nn.Module):
         self.tau_mult = config.tau_mult
         self.gap = config.gap
         self.device = config.device
+        self.ad = ad
+        self.full_life = full_life
 
         self.fc1 = nn.Linear(input_size, config.d_model)
         self.hidden_layers = nn.ModuleList()
@@ -230,7 +333,15 @@ class MLPModel(nn.Module):
             self.dropouts.append(nn.Dropout(config.dropout))
             self.hidden_layers.append(self.activation)
 
-        self.fc_out = nn.Linear(config.d_model, output_size)
+        self.head = select_model_head(
+            config = config,
+            d_input = input_size,
+            d_output = output_size,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -254,18 +365,11 @@ class MLPModel(nn.Module):
             x = act(x)
             x = dropout(x)
 
-        if self.gap:
-            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        else:
-            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
-
-        x = self.fc_out(x) * tau if self.tau_mult else self.fc_out(x)  # (B, d_model) -> (B, d_output)
+        x = self.head(x, tau=tau) # (B, L, d_model) -> (B, L)
 
         return x
 
-
 # RNN based models
-
 
 class Recurrent_PDM(nn.Module):
     def __init__(
@@ -274,6 +378,9 @@ class Recurrent_PDM(nn.Module):
         model_name: str,
         input_size: int,
         output_size: int,
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
     ):
         super(Recurrent_PDM, self).__init__()
 
@@ -281,6 +388,8 @@ class Recurrent_PDM(nn.Module):
         self.tau_feat = config.tau_feat
         self.tau_mult = config.tau_mult
         self.device = config.device
+        self.ad = ad
+        self.full_life = full_life
 
         if model_name == "LSTM":
             self.recurrent = nn.LSTM(
@@ -290,7 +399,6 @@ class Recurrent_PDM(nn.Module):
                 batch_first=True,
                 dropout=config.dropout,
             )
-            # self.bn = nn.BatchNorm1d(hidden_size)
         elif model_name == "GRU":
             self.recurrent = nn.GRU(
                 input_size=input_size,
@@ -308,7 +416,17 @@ class Recurrent_PDM(nn.Module):
                 dropout=config.dropout,
             )
 
-        self.fc = nn.Linear(config.d_model, output_size)
+        self.norm = nn.LayerNorm(config.d_model)
+
+        self.head = select_model_head(
+            config = config,
+            d_input = input_size,
+            d_output = output_size,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -321,14 +439,9 @@ class Recurrent_PDM(nn.Module):
                     dim=-1,
                 )
 
-        out = self.recurrent(x)  # (B, L, D) -> (B, L, H)
-
-        if self.gap:
-            out = out[0].mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        else:
-            out = out[0][:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
-
-        x = self.fc(x) * tau if self.tau_mult else self.fc(x)  # (B, d_model) -> (B, d_output)
+        x = self.recurrent(x)  # (B, L, D) -> (B, L, H)
+        x = self.norm(x) # (B, L, H) -> (B, L, H)
+        x = self.head(x, tau=tau) # (B, L, H) → (B, L)
 
         return x
 
@@ -341,7 +454,9 @@ class S4Model(nn.Module):
         config: ModelConfig,
         d_input: int,
         d_output: int,
-        lr,
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
     ):
         super().__init__()
 
@@ -351,6 +466,8 @@ class S4Model(nn.Module):
         self.tau_feat = config.tau_feat
         self.quantile_reg = config.quantile_reg
         self.device = config.device
+        self.ad = ad
+        self.full_life = full_life
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
@@ -375,13 +492,21 @@ class S4Model(nn.Module):
                     mult_act=mult_act,
                     final_act=final_act,
                     transposed=True,
-                    lr=min(0.001, lr),
+                    lr=min(0.001, config.lr),
                 )
             )
             self.norms.append(nn.LayerNorm(d_model))
             self.dropouts.append(nn.Dropout(dropout))
 
-        self.decoder = nn.Linear(d_model, d_output)
+        self.head = select_model_head(
+            config = config,
+            d_input = d_input,
+            d_output = d_output,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -421,15 +546,9 @@ class S4Model(nn.Module):
 
         x = x.transpose(-1, -2)  # (B, d_model, L) -> (B, L, d_model)
 
-        if self.gap:
-            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        else:
-            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
-
-        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        x = self.head(x,tau=tau)
 
         return x
-
 
 class S4DModel(nn.Module):
     def __init__(
@@ -477,14 +596,15 @@ class S4DModel(nn.Module):
             self.norms.append(nn.LayerNorm(d_model))
             self.dropouts.append(nn.Dropout(dropout))
 
-        #TODO: Substitute this part with the different model heads
-        if self.ad:
-            self.decoder = nn.Linear(config.d_model, d_input) if not self.quantile_reg else nn.Linear(config.d_model, d_input-1)
-
-        if self.gap or self.full_life:
-            self.decoder = nn.Linear(config.d_model, d_output)
-        else:
-            self.decoder = nn.Linear(config.d_model, sequence_length)
+        self.head = select_model_head(
+            config = config,
+            d_input = d_input,
+            d_output = d_output,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -519,25 +639,11 @@ class S4DModel(nn.Module):
 
         x = x.transpose(-1, -2)
 
-        if self.ad:
-            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L,d_input)
-            return x
-
-        if self.gap:
-            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        else:
-            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
-
-        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        ipdb.set_trace()
+        x = self.head(x, tau = tau)
         ipdb.set_trace()
 
-        if self.full_life:
-            return x.squeeze(-1)
-
         return x
-
-        #NOTE: I don't know how much sense this thing has
-        # x = self.decoder(x).squeeze(-1) if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L)
 
 class S5Model(nn.Module):
     def __init__(
@@ -545,7 +651,9 @@ class S5Model(nn.Module):
         config: ModelConfig,
         d_input: int,
         d_output: int,
-        ad: bool = False
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
     ):
         super().__init__()
 
@@ -555,6 +663,7 @@ class S5Model(nn.Module):
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         self.ad = ad
+        self.full_life = full_life
 
         self.encoder = nn.Linear(d_input, config.d_model)
 
@@ -575,10 +684,15 @@ class S5Model(nn.Module):
             self.norms.append(nn.LayerNorm(config.d_model))
             self.dropouts.append(nn.Dropout(config.dropout))
 
-        if self.ad:
-            self.decoder = nn.Linear(config.d_model, d_input) if not self.quantile_reg else nn.Linear(config.d_model, d_input-1)
-        else:
-            self.decoder = nn.Linear(config.d_model, d_output)
+        self.head = select_model_head(
+            config = config,
+            d_input = d_input,
+            d_output = d_output,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
@@ -609,26 +723,11 @@ class S5Model(nn.Module):
             # 3. norm
             x = norm(x)
 
-        #NOTE: In the AD case we want to use the model as an AutoEncoder and so we have to reconstruct the input
-        # so we need to downproject to the input dimension
-
-        if self.ad:
-            x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B,L,d_model) -> (B,L,d_input)
-            return x
-
-        if self.gap:
-            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        else:
-            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
-
-        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        x = self.head(x, tau=tau)
 
         return x
 
-
-
 # Transformer based models
-
 
 class RULTransformer(nn.Module):
     def __init__(
@@ -636,6 +735,9 @@ class RULTransformer(nn.Module):
         config: ModelConfig,
         input_size: int,
         output_size: int,
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
     ):
         super(RULTransformer, self).__init__()
 
@@ -643,6 +745,8 @@ class RULTransformer(nn.Module):
         self.tau_feat = config.tau_feat
         self.tau_mult = config.tau_mult
         self.device = config.device
+        self.ad = ad
+        self.full_life = full_life
 
         self.embedding = nn.Sequential(
             nn.Embedding(num_embeddings=input_size, embedding_dim=config.d_model),
@@ -659,7 +763,15 @@ class RULTransformer(nn.Module):
             dropout=config.dropout,
         )
 
-        self.decoder = nn.Linear(in_features=config.d_model, out_features=output_size)
+        self.head = select_model_head(
+            config = config,
+            d_input = input_size,
+            d_output = output_size,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
 
     def forward(self, x, mask=None, tau=0.5):
         if mask is None:
@@ -678,13 +790,7 @@ class RULTransformer(nn.Module):
         x = x.argmax(dim=-1)  # (B, L, d_input) -> (B, L)
         x = self.embedding(x)  # (B, L) -> (B, L, d_model)
         x = self.encoder(x, mask)  # (B, L, d_model) -> (B, L, d_model)
-
-        if self.gap:
-            x = x.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        else:
-            x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
-
-        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        x = self.head(x, tau=tau) # (B, L, H) → (B, L)
 
         return x
 
@@ -698,7 +804,9 @@ class RULInformer(nn.Module):
         config: ModelConfig,
         d_input: int,
         d_output: int,
-        output_attention: bool = False,
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
     ):
         super(RULInformer, self).__init__()
 
@@ -706,7 +814,9 @@ class RULInformer(nn.Module):
         self.tau_feat = config.tau_feat
         self.tau_mult = config.tau_mult
         self.device = config.device
-        self.output_attention = output_attention
+        self.output_attention = config.output_attention
+        self.ad = ad
+        self.full_life = full_life
 
         # Encoding
         self.enc_embedding = DataEmbedding(
@@ -742,7 +852,15 @@ class RULInformer(nn.Module):
             norm_layer=torch.nn.LayerNorm(config.d_model),
         )
 
-        self.projection = nn.Linear(config.d_model, d_output)
+        self.head = select_model_head(
+            config = config,
+            d_input = d_input,
+            d_output = d_output,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
 
     def forward(self, x_enc, output_attention=False, enc_self_mask=None, tau=0.5):
         if self.quantile_reg:
@@ -764,23 +882,16 @@ class RULInformer(nn.Module):
             enc_out, attn_mask=enc_self_mask
         )  # [B,L,H] -> [B,L,H]
 
-        enc_out = enc_out.mean(dim=1)  # [B,L,H] -> [B,H]
+        # enc_out = enc_out.mean(dim=1)  # [B,L,H] -> [B,H]
 
-        if self.gap:
-            enc_out = enc_out.mean(dim=1)  # (B, L, d_model) -> (B, d_model)
-        else:
-            enc_out = enc_out[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
-
-        dec_out = self.projection(enc_out) * tau if self.tau_mult else self.projection(enc_out)  # [B,L,H] -> [B,L]
+        dec_out = self.head(enc_out, tau=tau) # (B, L, H) → (B, L)
 
         if output_attention:
             return dec_out, attns
         else:
             return dec_out
 
-
 # Manual parameter count computation in case torchinfo does not work
-
 
 def model_summary_manual(model: nn.Module) -> int:
     """
@@ -848,7 +959,9 @@ def load_ssm_model(
             config=model_config,
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
-            lr=model_config.lr,
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "S4D":
         model = S4DModel(
@@ -864,13 +977,18 @@ def load_ssm_model(
             config=model_config,
             d_input=d_input,
             d_output=1 if not model_config.gap else exp_config.sequence_length,
-            ad=exp_config.ad
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "MLP":
         model = MLPModel(
             config=model_config,
             input_size=d_input,
             output_size=1 if not model_config.gap else exp_config.sequence_length,
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name in ["RNN", "LSTM", "GRU"]:
         model = Recurrent_PDM(
@@ -878,19 +996,27 @@ def load_ssm_model(
             model_name=exp_config.model_name,
             input_size=d_input,
             output_size=exp_config.sequence_length,
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "RULTransformer":
         model = RULTransformer(
             config=model_config,
             input_size=d_input,
             output_size=exp_config.sequence_length,
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "RULInformer":
         model = RULInformer(
             config=model_config,
             d_input=d_input,
             d_output=exp_config.sequence_length,
-            output_attention=exp_config.output_attention,
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
         )
     else:
         raise ValueError(f"Model {exp_config.model_name} not recognized")
