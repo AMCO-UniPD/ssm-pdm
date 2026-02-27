@@ -162,6 +162,40 @@ def setup_optimizer(model, lr, weight_decay, epochs):
 
     return optimizer, scheduler
 
+class GapHead(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        d_model: int,
+        d_output: int,
+    ):
+        """
+        Model Regression head for the GAP approach
+        """
+        super().__init__()
+
+        self.decoder = nn.Linear(d_model, d_output)
+        self.tau_mult = config.tau_mult
+
+    def forward(self,x, tau=0.5):
+
+        x = x.mean(dim=1) # (B,L,d_model) → (B,d_model)
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)
+
+        return x
+
+class ADHead(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        d_model: int,
+        d_input: int,
+    ):
+        """
+        Model Regression head for the AD approach
+        """
+        super().__init__()
+
 class MLPModel(nn.Module):
     def __init__(
         self,
@@ -443,6 +477,7 @@ class S4DModel(nn.Module):
             self.norms.append(nn.LayerNorm(d_model))
             self.dropouts.append(nn.Dropout(dropout))
 
+        #TODO: Substitute this part with the different model heads
         if self.ad:
             self.decoder = nn.Linear(config.d_model, d_input) if not self.quantile_reg else nn.Linear(config.d_model, d_input-1)
 
@@ -494,6 +529,7 @@ class S4DModel(nn.Module):
             x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
 
         x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        ipdb.set_trace()
 
         if self.full_life:
             return x.squeeze(-1)

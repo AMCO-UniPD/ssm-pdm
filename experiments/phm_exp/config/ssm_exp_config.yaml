@@ -16,15 +16,15 @@ scaler_kwargs:
 
 # approach
 # approach: windowed
-approach: padding
-# approach: full_life
+# approach: padding
+approach: full_life
 
 # quantile_reg config
 quantile_reg: true
 quantile_dist: uniform
 bounds: [0.1, 0.9]
-quantiles: [0.1,0.25,0.5,0.75,0.9]
-# quantiles: [0.5]
+# quantiles: [0.1,0.25,0.5,0.75,0.9]
+quantiles: [0.5]
 quantile_run: 0.25
 
 # select_windows
@@ -50,7 +50,7 @@ loss: quantile_reg
 eval_loss: rmse
 
 # multi run parameters
-n_runs: 2
+n_runs: 1
 # n_runs: 5
 start_run_id: 0
 
