@@ -534,7 +534,8 @@ class SSMWindowRegressionDataset(Dataset):
 
         if not self.ad:
             # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
-            seq_to_keep = seq_to_keep[-n_const_win:]
+            # seq_to_keep = seq_to_keep[-n_const_win:]
+            seq_to_keep = seq_to_keep[-len(self.anomalous_seq):]
 
             seq_to_keep.extend(filtered_indices)
             self.data_indices = seq_to_keep
