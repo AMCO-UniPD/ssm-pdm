@@ -11,23 +11,23 @@ echo "-------------------------------------------"
 
 ./launch_train_phm training
 
-echo "-------------------------------------------"
-echo "Step 2: Group the outputs from different quantiles"
-echo "-------------------------------------------"
+# echo "-------------------------------------------"
+# echo "Step 2: Group the outputs from different quantiles"
+# echo "-------------------------------------------"
 
-./launch_train_phm save_outputs_run
+# ./launch_train_phm save_outputs_run
 
-echo "-------------------------------------------"
-echo "Step 3: Group the metrics from different quantiles"
-echo "-------------------------------------------"
+# echo "-------------------------------------------"
+# echo "Step 3: Group the metrics from different quantiles"
+# echo "-------------------------------------------"
 
-./launch_train_phm quantile_metrics
+# ./launch_train_phm quantile_metrics
 
-echo "-------------------------------------------"
-echo "Step 4: Produce the quantile plots"
-echo "-------------------------------------------"
+# echo "-------------------------------------------"
+# echo "Step 4: Produce the quantile plots"
+# echo "-------------------------------------------"
 
-./launch_train_phm quantile_plots
+# ./launch_train_phm quantile_plots
 
 
 
