@@ -29,6 +29,7 @@ from ceruleo.transformation.features.selection import (
     ByNameFeatureSelector,
     PandasVarianceThreshold,
 )
+
 # from ceruleo.transformation.features.extraction import RollingStatistics
 from ceruleo.transformation.functional.pipeline.pipeline import make_pipeline
 from ceruleo.transformation.features.scalers import (
@@ -63,6 +64,7 @@ from config_vars import (
     APPROACHES,
 )
 from exp_config import ExperimentConfig
+
 
 def get_current_time() -> str:
     """
@@ -140,7 +142,9 @@ def open_element(
         "pth",
         "json",
     ]
-    assert filetype in FILETYPES , f"filetype must be one of {FILETYPES}, but got {filetype}"
+    assert filetype in FILETYPES, (
+        f"filetype must be one of {FILETYPES}, but got {filetype}"
+    )
 
     if filetype == "pickle":
         with open(file_path, "rb") as fl:
@@ -167,12 +171,15 @@ def load_yaml_to_dict(file_path: str) -> dict:
     """
     try:
         with open(file_path, "r") as file:
-            data = yaml.safe_load(file)  # Use safe_load to prevent arbitrary code execution
+            data = yaml.safe_load(
+                file
+            )  # Use safe_load to prevent arbitrary code execution
         return data
     except FileNotFoundError:
         print(f"Error: File not found at path: {file_path}")
     except yaml.YAMLError as e:
         print(f"Error parsing YAML file: {e}")
+
 
 def save_element(
     element: Union[dict, nn.Module, pd.DataFrame, List],
@@ -282,7 +289,7 @@ class RegressionDataset(Dataset):
         else:
             print("*" * 50)
             print(
-                f"Warning: This life is longer than {sequence_length}, removing the first {life.shape[0]-sequence_length} timesteps"
+                f"Warning: This life is longer than {sequence_length}, removing the first {life.shape[0] - sequence_length} timesteps"
             )
             print("*" * 50)
             sequences = [
@@ -341,10 +348,9 @@ class SSMRegressionDataset(Dataset):
 
         life, rul = life.iloc[:, :-1], life["RUL"]
 
-        #NOTE: Time series shorter than sequence_length, we use 0 padding
+        # NOTE: Time series shorter than sequence_length, we use 0 padding
 
         if sequence_length > life.shape[0]:
-
             pad_arr = np.zeros(shape=(sequence_length - life.shape[0], life.shape[1]))
             mask = np.concatenate(
                 (
@@ -355,19 +361,18 @@ class SSMRegressionDataset(Dataset):
             sequences = np.concatenate((life.values, pad_arr))
             targets = np.concatenate((rul.values, pad_arr[:, -1]))
 
-        #NOTE: Time series longer than sequence_length we take the last sequence_length samples
+        # NOTE: Time series longer than sequence_length we take the last sequence_length samples
 
         else:
-
             sequences = life.values[life.shape[0] - sequence_length :, :]
             mask = np.ones(shape=(sequence_length))
-            targets = rul[life.shape[0] - sequence_length:]
+            targets = rul[life.shape[0] - sequence_length :]
 
         targets = targets / self.max_rul if self.normalize_rul else targets
 
-        self.sequences = np.expand_dims(sequences,axis=0)
-        self.targets = np.expand_dims(targets,axis=0)
-        self.mask = np.expand_dims(mask,axis=0)
+        self.sequences = np.expand_dims(sequences, axis=0)
+        self.targets = np.expand_dims(targets, axis=0)
+        self.mask = np.expand_dims(mask, axis=0)
 
     def __len__(self):
         return len(self.sequences)
@@ -390,7 +395,7 @@ class SSMWindowRegressionDataset(Dataset):
         stride: int = 1,
         max_rul: int = MAX_RUL,
         normalize_rul: bool = False,
-        ad: bool = False
+        ad: bool = False,
     ):
         """
         This class implements the dataset for the windowed approach.
@@ -410,7 +415,7 @@ class SSMWindowRegressionDataset(Dataset):
             ad (bool): weather to use AD version or not
         """
 
-        self.lifes = [life.iloc[:,:-1] for life in lifes]
+        self.lifes = [life.iloc[:, :-1] for life in lifes]
         self.ruls = [life["RUL"] for life in lifes]
         self.targets = self.ruls if not ad else self.lifes
         self.sequence_length = sequence_length
@@ -421,74 +426,65 @@ class SSMWindowRegressionDataset(Dataset):
 
         self.data_indices = []
         for i, df in enumerate(self.lifes):
-            self.num_sequences = max(0, math.ceil((len(df) - self.sequence_length) / self.stride) + 1)
+            self.num_sequences = max(
+                0, math.ceil((len(df) - self.sequence_length) / self.stride) + 1
+            )
 
             if self.num_sequences > 0:
-
                 # Store tuples of (life_index, start_index_of_window)
                 self.data_indices.extend(
                     [(i, j * self.stride) for j in range(self.num_sequences)]
                 )
 
             else:
-
                 # If the signal is too short we'll create a single sub sequence starting from 0 and we'll add padding
-                self.data_indices.extend([(i,0)])
+                self.data_indices.extend([(i, 0)])
 
     def __len__(self):
         return len(self.data_indices)
 
     def __getitem__(self, idx):
-
         life_idx, start_idx = self.data_indices[idx]
         life = self.lifes[life_idx]
         rul = self.targets[life_idx]
-        mask = np.ones(shape=(self.sequence_length,1))
+        mask = np.ones(shape=(self.sequence_length, 1))
 
-        #NOTE: Life longer than sequence_length: we create the sub sequence
+        # NOTE: Life longer than sequence_length: we create the sub sequence
 
         end_idx = start_idx + self.sequence_length
         if end_idx <= life.shape[0]:
             inputs = life.iloc[start_idx:end_idx].values
             targets = rul.iloc[start_idx:end_idx].values
 
-        #NOTE: Life shorter than sequence_length: we use 0 padding
+        # NOTE: Life shorter than sequence_length: we use 0 padding
 
         else:
-
-            inputs = life.iloc[start_idx:life.shape[0]].values
-            targets = rul.iloc[start_idx:rul.shape[0]].values
+            inputs = life.iloc[start_idx : life.shape[0]].values
+            targets = rul.iloc[start_idx : rul.shape[0]].values
             pad_idx = self.sequence_length - (life.shape[0] - start_idx)
 
-            #NOTE: Concatenate inputs and targets with pad_idx
+            # NOTE: Concatenate inputs and targets with pad_idx
 
-            inputs = np.concatenate((
-                inputs,
-                np.zeros(shape=(pad_idx,inputs.shape[1]))
-            ))
+            inputs = np.concatenate(
+                (inputs, np.zeros(shape=(pad_idx, inputs.shape[1])))
+            )
 
             if self.ad:
-
-                targets = np.concatenate((
-                    targets,
-                    np.zeros(shape=(pad_idx,inputs.shape[1]))
-                ))
+                targets = np.concatenate(
+                    (targets, np.zeros(shape=(pad_idx, inputs.shape[1])))
+                )
 
             else:
+                targets = np.concatenate((targets, np.zeros(shape=(pad_idx,))))
 
-                targets = np.concatenate((
-                    targets,
-                    np.zeros(shape=(pad_idx,))
-                ))
-
-            #NOTE: From pad_idx to the end the mask becomes 0
+            # NOTE: From pad_idx to the end the mask becomes 0
 
             mask[pad_idx:] = 0
 
-        #NOTE: Normalize the RUL if self.normalize_rul is true
+        # NOTE: Normalize the RUL if self.normalize_rul is true
         if not self.ad:
             targets = targets / self.max_rul if self.normalize_rul else targets
-            targets = np.expand_dims(targets,axis=-1)
+            targets = np.expand_dims(targets, axis=-1)
 
         sequence = torch.tensor(inputs, dtype=torch.float32)
         target = torch.tensor(targets, dtype=torch.float32)
@@ -497,7 +493,7 @@ class SSMWindowRegressionDataset(Dataset):
 
     def select_windows(
         self,
-        n_const_win:int = 10,
+        n_const_win: int = 10,
     ):
         """
         Function to select only the windows with at least one RUL value
@@ -554,10 +550,9 @@ class SSMWindowRegressionDataset(Dataset):
         normal_wins = []
 
         for life_idx, start_idx in self.normal_seq:
-
             life = self.lifes[life_idx]
             end_idx = start_idx + self.sequence_length
-            normal_win = life[start_idx:min(end_idx,life.shape[0])]
+            normal_win = life[start_idx : min(end_idx, life.shape[0])]
             normal_wins.append(normal_win)
 
         return normal_wins
@@ -577,17 +572,75 @@ class SSMWindowRegressionDataset(Dataset):
         anomalous_wins = []
 
         for life_idx, start_idx in self.anomalous_seq:
-
             life = self.lifes[life_idx]
             end_idx = start_idx + self.sequence_length
-            anomalous_win = life[start_idx:min(end_idx,life.shape[0])]
+            anomalous_win = life[start_idx : min(end_idx, life.shape[0])]
             anomalous_wins.append(anomalous_win)
 
         return anomalous_wins
 
+
+class SSMFullLifeRegressionDataset(Dataset):
+    def __init__(
+        self,
+        life: pd.DataFrame,
+        max_rul: int = MAX_RUL,
+        normalize_rul: bool = False,
+    ):
+        """
+        This class implements the dataset for the full life approach.
+        It uses the entire life and pads it to the closest power of 2 length.
+
+        Args:
+            life (pd.DataFrame): input life
+            max_rul (int): maximum RUL value used to normalize the RUL
+            normalize_rul (bool): weather to normalize the RUL
+        """
+
+        self.max_rul = max_rul
+        self.normalize_rul = normalize_rul
+
+        life, rul = life.iloc[:, :-1], life["RUL"]
+
+        life_length = life.shape[0]
+        padded_length = 2 ** math.ceil(math.log2(life_length))
+
+        if padded_length > life_length:
+            pad_arr = np.zeros(shape=(padded_length - life_length, life.shape[1]))
+            mask = np.concatenate(
+                (
+                    np.ones(shape=(life_length)),
+                    np.zeros(shape=(padded_length - life_length)),
+                )
+            )
+            sequences = np.concatenate((life.values, pad_arr))
+            targets = np.concatenate(
+                (rul.values, np.zeros(padded_length - life_length))
+            )
+        else:
+            sequences = life.values
+            targets = rul.values
+            mask = np.ones(shape=(padded_length))
+
+        targets = targets / self.max_rul if self.normalize_rul else targets
+
+        self.sequences = np.expand_dims(sequences, axis=0)
+        self.targets = np.expand_dims(targets, axis=0)
+        self.mask = np.expand_dims(mask, axis=0)
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32)
+        target = torch.tensor(self.targets[idx], dtype=torch.float32)
+        mask = torch.tensor(self.mask[idx], dtype=torch.float32)
+        return sequence, target, mask
+
+
 def get_transformer(
     config: ExperimentConfig,
-    df: Union[CMAPSSDataset,PHMDataset2018],
+    df: Union[CMAPSSDataset, PHMDataset2018],
 ) -> Tuple[Transformer, List[str]]:
     """
     Create a transformer object to preprocess the data from the CMAPSS dataset
@@ -633,9 +686,8 @@ def get_transformer(
                 scaler,
             ),
             pipelineY=make_pipeline(
-                ByNameFeatureSelector(features=["RUL"]),
-                Clip(lower = 0.0, upper = 500.0)
-             ),
+                ByNameFeatureSelector(features=["RUL"]), Clip(lower=0.0, upper=500.0)
+            ),
         )
 
     elif config.transformer_type == 2:
@@ -645,8 +697,7 @@ def get_transformer(
                 MeanImputer(),
             ),
             pipelineY=make_pipeline(
-                ByNameFeatureSelector(features=["RUL"]),
-                Clip(lower = 0.0, upper = 500.0)
+                ByNameFeatureSelector(features=["RUL"]), Clip(lower=0.0, upper=500.0)
             ),
         )
 
@@ -655,8 +706,8 @@ def get_transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
                 # RollingStatistics(
-#                     window=config.window_size, to_compute=config.features
-#                 ),
+                #                     window=config.window_size, to_compute=config.features
+                #                 ),
                 MeanImputer(),
                 # PandasVarianceThreshold(min_variance=config.min_variance),
                 scaler,
@@ -678,7 +729,7 @@ def combine_values(
     an_scores: np.ndarray,
     original_shape: int,
     sequence_length: int,
-    stride: int
+    stride: int,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Combine the predictions done by the model on the different sub sequences in which each life was divided in the `seq_to_seq` approach
@@ -698,20 +749,31 @@ def combine_values(
         In case there are no anomaly scores the function returns an array of ones
     """
 
-    #NOTE: In case we have non overlapping windows we just need
+    # NOTE: In case we have non overlapping windows we just need
     # to concatenate ther predictions and true values over the windows
 
     if sequence_length == stride:
-
         combined_predictions = np.concatenate(predictions)
         combined_true_vals = np.concatenate(true_values)
-        combined_an_scores = np.concatenate(an_scores) if len(an_scores) != 0 else np.ones_like(combined_true_vals)
+        combined_an_scores = (
+            np.concatenate(an_scores)
+            if len(an_scores) != 0
+            else np.ones_like(combined_true_vals)
+        )
 
         return combined_predictions, combined_true_vals, combined_an_scores
 
     n_samples = (len(predictions) * stride) + sequence_length
-    combined_predictions = np.zeros((n_samples, predictions.shape[-1])) if len(an_scores) != 0 else np.zeros(n_samples)
-    combined_true_vals = np.zeros((n_samples, predictions.shape[-1])) if len(an_scores) != 0 else np.zeros(n_samples)
+    combined_predictions = (
+        np.zeros((n_samples, predictions.shape[-1]))
+        if len(an_scores) != 0
+        else np.zeros(n_samples)
+    )
+    combined_true_vals = (
+        np.zeros((n_samples, predictions.shape[-1]))
+        if len(an_scores) != 0
+        else np.zeros(n_samples)
+    )
     combined_an_scores = np.zeros(n_samples)
     counts = np.zeros(n_samples)
 
@@ -721,7 +783,9 @@ def combine_values(
         end_index = start_index + sequence_length
         combined_predictions[start_index:end_index] += preds
         combined_true_vals[start_index:end_index] += true
-        combined_an_scores[start_index:end_index] += an_score if len(an_scores) != 0 else 1
+        combined_an_scores[start_index:end_index] += (
+            an_score if len(an_scores) != 0 else 1
+        )
         counts[start_index:end_index] += 1
 
     nonzero_counts = counts != 0
@@ -730,17 +794,27 @@ def combine_values(
         combined_predictions[nonzero_counts] /= counts[nonzero_counts]
         combined_true_vals[nonzero_counts] /= counts[nonzero_counts]
     else:
-        combined_predictions[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
-        combined_true_vals[nonzero_counts] /= np.expand_dims(counts[nonzero_counts],axis=1)
+        combined_predictions[nonzero_counts] /= np.expand_dims(
+            counts[nonzero_counts], axis=1
+        )
+        combined_true_vals[nonzero_counts] /= np.expand_dims(
+            counts[nonzero_counts], axis=1
+        )
 
     combined_an_scores[nonzero_counts] /= counts[nonzero_counts]
 
     if n_samples > original_shape:
-        print("-"*50)
-        print(f"{n_samples} grater than the original shape {original_shape} so removing the last {n_samples-original_shape} samples")
-        print("-"*50)
+        print("-" * 50)
+        print(
+            f"{n_samples} grater than the original shape {original_shape} so removing the last {n_samples - original_shape} samples"
+        )
+        print("-" * 50)
 
-        return combined_predictions[:-(n_samples-original_shape)], combined_true_vals[:-(n_samples-original_shape)], combined_an_scores[:-(n_samples-original_shape)]
+        return (
+            combined_predictions[: -(n_samples - original_shape)],
+            combined_true_vals[: -(n_samples - original_shape)],
+            combined_an_scores[: -(n_samples - original_shape)],
+        )
 
     return combined_predictions, combined_true_vals, combined_an_scores
 
@@ -758,8 +832,12 @@ def load_reg_data(config: ExperimentConfig) -> dict:
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
-    assert config.data_name == "CMAPSS", "This function works just with the CMAPSS dataset"
-    assert config.cmapss_models in CMAPSS_MODELS, f"The models must be one of {CMAPSS_MODELS}"
+    assert config.data_name == "CMAPSS", (
+        "This function works just with the CMAPSS dataset"
+    )
+    assert config.cmapss_models in CMAPSS_MODELS, (
+        f"The models must be one of {CMAPSS_MODELS}"
+    )
 
     train_data = CMAPSSDataset(train=True, models=config.cmapss_models)
     # train_data, val_data = train_test_split(train_data, test_size=config.val_size, shuffle=False)
@@ -821,7 +899,7 @@ def load_reg_data(config: ExperimentConfig) -> dict:
             SSMWindowRegressionDataset(
                 life=life,
                 sequence_length=config.sequence_length,
-                max_rul = MAX_RUL,
+                max_rul=MAX_RUL,
             )
             for life in train_lifes
         ]
@@ -866,6 +944,7 @@ def load_reg_data(config: ExperimentConfig) -> dict:
 
     return loaders_dict
 
+
 def create_padding_loaders(
     config: ExperimentConfig,
     train_lifes: TransData,
@@ -885,30 +964,45 @@ def create_padding_loaders(
         loaders_dict (dict): dictionary containing the dataloaders
     """
 
-    train_datasets = [SSMRegressionDataset(
-        life=life,
-        sequence_length=config.sequence_length,
-        max_rul = config.max_rul,
-        normalize_rul = config.normalize_rul
-    ) for life in train_lifes]
-    val_datasets = [SSMRegressionDataset(
-        life=life,
-        sequence_length=config.sequence_length,
-        max_rul = config.max_rul,
-        normalize_rul = config.normalize_rul
-    ) for life in val_lifes]
-    test_datasets = [SSMRegressionDataset(
-        life=life,
-        sequence_length=config.sequence_length,
-        max_rul = config.max_rul,
-        normalize_rul = config.normalize_rul
-    ) for life in test_lifes]
+    train_datasets = [
+        SSMRegressionDataset(
+            life=life,
+            sequence_length=config.sequence_length,
+            max_rul=config.max_rul,
+            normalize_rul=config.normalize_rul,
+        )
+        for life in train_lifes
+    ]
+    val_datasets = [
+        SSMRegressionDataset(
+            life=life,
+            sequence_length=config.sequence_length,
+            max_rul=config.max_rul,
+            normalize_rul=config.normalize_rul,
+        )
+        for life in val_lifes
+    ]
+    test_datasets = [
+        SSMRegressionDataset(
+            life=life,
+            sequence_length=config.sequence_length,
+            max_rul=config.max_rul,
+            normalize_rul=config.normalize_rul,
+        )
+        for life in test_lifes
+    ]
 
     batch_size = config.batch_size
 
-    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(
+        ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True
+    )
+    val_loader = DataLoader(
+        ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True
+    )
+    test_loader = DataLoader(
+        ConcatDataset(test_datasets), batch_size=batch_size, shuffle=True
+    )
     test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
 
     loaders_dict = {
@@ -920,6 +1014,7 @@ def create_padding_loaders(
 
     return loaders_dict
 
+
 def create_full_life_loaders(
     config: ExperimentConfig,
     train_lifes: TransData,
@@ -929,7 +1024,7 @@ def create_full_life_loaders(
     """
     Function to create the dataloaders for the full life approach.
     The function is very similar to create_padding_loaders but in this
-    case we use the length of the life as the sequence_length parameter
+    case we use the SSMFullLifeRegressionDataset class
     and we have to set the batch_size to 1 because each life has a different
     length
 
@@ -943,30 +1038,42 @@ def create_full_life_loaders(
         loaders_dict (dict): dictionary containing the dataloaders
     """
 
-    train_datasets = [SSMRegressionDataset(
-        life=life,
-        sequence_length=life.shape[0],
-        max_rul = config.max_rul,
-        normalize_rul = config.normalize_rul
-    ) for life in train_lifes]
-    val_datasets = [SSMRegressionDataset(
-        life=life,
-        sequence_length=life.shape[0],
-        max_rul = config.max_rul,
-        normalize_rul = config.normalize_rul
-    ) for life in val_lifes]
-    test_datasets = [SSMRegressionDataset(
-        life=life,
-        sequence_length=life.shape[0],
-        max_rul = config.max_rul,
-        normalize_rul = config.normalize_rul
-    ) for life in test_lifes]
+    train_datasets = [
+        SSMFullLifeRegressionDataset(
+            life=life,
+            max_rul=config.max_rul,
+            normalize_rul=config.normalize_rul,
+        )
+        for life in train_lifes
+    ]
+    val_datasets = [
+        SSMFullLifeRegressionDataset(
+            life=life,
+            max_rul=config.max_rul,
+            normalize_rul=config.normalize_rul,
+        )
+        for life in val_lifes
+    ]
+    test_datasets = [
+        SSMFullLifeRegressionDataset(
+            life=life,
+            max_rul=config.max_rul,
+            normalize_rul=config.normalize_rul,
+        )
+        for life in test_lifes
+    ]
 
     batch_size = 1
 
-    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(ConcatDataset(test_datasets), batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(
+        ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True
+    )
+    val_loader = DataLoader(
+        ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True
+    )
+    test_loader = DataLoader(
+        ConcatDataset(test_datasets), batch_size=batch_size, shuffle=True
+    )
     test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
 
     loaders_dict = {
@@ -978,10 +1085,9 @@ def create_full_life_loaders(
 
     return loaders_dict
 
+
 def create_window_dataset(
-    config: ExperimentConfig,
-    lifes: TransData,
-    eval: bool = False
+    config: ExperimentConfig, lifes: TransData, eval: bool = False
 ) -> SSMWindowRegressionDataset:
     """
     Function to create a SSMWindowRegressionDataset object starting from a set of
@@ -1000,22 +1106,23 @@ def create_window_dataset(
         lifes=lifes,
         sequence_length=config.sequence_length,
         stride=config.stride,
-        max_rul = MAX_RUL,
-        normalize_rul = config.normalize_rul,
-        ad = config.ad
+        max_rul=MAX_RUL,
+        normalize_rul=config.normalize_rul,
+        ad=config.ad,
     )
     if not eval:
         dataset.select_windows(n_const_win=config.n_const_win)
 
     return dataset
 
+
 def create_window_loaders(
     config: ExperimentConfig,
     train_lifes: TransData,
     val_lifes: TransData,
     test_lifes: TransData,
-    eval: bool = False
-) -> Union[List[DataLoader],dict]:
+    eval: bool = False,
+) -> Union[List[DataLoader], dict]:
     """
     Function to create the dataloaders for the window approach.
 
@@ -1033,59 +1140,57 @@ def create_window_loaders(
     """
 
     if eval:
-
-        print("-"*50)
+        print("-" * 50)
         print("Creating window dataloaders in evaluation mode")
-        print("-"*50)
+        print("-" * 50)
 
-        #NOTE: For the evaluation lifes we do not use select_windows because we want
+        # NOTE: For the evaluation lifes we do not use select_windows because we want
         # to test the model on the entire life
 
         test_datasets = []
         for test_life in test_lifes:
-            test_dataset = create_window_dataset(
-                config = config,
-                lifes = [test_life]
-            )
+            test_dataset = create_window_dataset(config=config, lifes=[test_life])
             test_datasets.append(test_dataset)
 
-        test_loaders = [DataLoader(test_dataset , batch_size = config.batch_size) for test_dataset in test_datasets]
+        test_loaders = [
+            DataLoader(test_dataset, batch_size=config.batch_size)
+            for test_dataset in test_datasets
+        ]
 
-        print("-"*50)
+        print("-" * 50)
         print("window dataloaders created successfully")
-        print("-"*50)
+        print("-" * 50)
 
         return test_loaders
 
     else:
-
-        print("-"*50)
+        print("-" * 50)
         print("Creating window dataloaders in training mode")
-        print("-"*50)
+        print("-" * 50)
 
-        train_datasets = create_window_dataset(
-            config = config,
-            lifes = train_lifes
+        train_datasets = create_window_dataset(config=config, lifes=train_lifes)
+
+        val_datasets = create_window_dataset(config=config, lifes=val_lifes)
+
+        test_datasets = create_window_dataset(config=config, lifes=test_lifes)
+
+        train_loader = DataLoader(
+            train_datasets, batch_size=config.batch_size, shuffle=True
         )
-
-        val_datasets = create_window_dataset(
-            config = config,
-            lifes = val_lifes
+        val_loader = DataLoader(
+            val_datasets, batch_size=config.batch_size, shuffle=True
         )
-
-        test_datasets = create_window_dataset(
-            config = config,
-            lifes = test_lifes
+        test_loader = DataLoader(
+            test_datasets, batch_size=config.batch_size, shuffle=True
         )
+        test_loaders = [
+            DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+            for test_dataset in test_datasets
+        ]
 
-        train_loader = DataLoader(train_datasets, batch_size=config.batch_size, shuffle=True)
-        val_loader = DataLoader(val_datasets, batch_size=config.batch_size, shuffle=True)
-        test_loader = DataLoader(test_datasets, batch_size=config.batch_size, shuffle=True)
-        test_loaders = [DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False) for test_dataset in test_datasets]
-
-        print("-"*50)
+        print("-" * 50)
         print("window dataloaders created successfully")
-        print("-"*50)
+        print("-" * 50)
 
         loaders_dict = {
             "train_loader": train_loader,
@@ -1096,9 +1201,8 @@ def create_window_loaders(
 
         return loaders_dict
 
-def print_life_info(
-    phm_data: PHMDataset2018
-) -> None:
+
+def print_life_info(phm_data: PHMDataset2018) -> None:
     """
     print statement with some information on the lifes durations
 
@@ -1110,15 +1214,13 @@ def print_life_info(
         lifes in the dataset
     """
 
-    for i,life in enumerate(phm_data):
-        print("-"*50)
+    for i, life in enumerate(phm_data):
+        print("-" * 50)
         print(f"Shape of life {i}: {life.shape}")
-        print("-"*50)
+        print("-" * 50)
 
-def load_phm_data(
-    config: ExperimentConfig,
-    eval: bool = False
-) -> dict:
+
+def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
     """
     Clone of the load_reg_data function but adapted for the PHM dataset.
 
@@ -1132,49 +1234,53 @@ def load_phm_data(
     """
 
     assert config.data_name == "PHM", "This function works just with the PHM dataset"
-    assert set(config.train_phm_tools).issubset(PHM_TOOLS), f"The set of train tools must be a subset of {PHM_TOOLS} but got {config.train_phm_tools}"
-    assert set(config.test_phm_tools).issubset(PHM_TOOLS), f"The set of test tools must be a subset of {PHM_TOOLS} but got {config.test_phm_tools}"
-    assert config.failure_type in PHM_FAIL_TYPES, f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
+    assert set(config.train_phm_tools).issubset(PHM_TOOLS), (
+        f"The set of train tools must be a subset of {PHM_TOOLS} but got {config.train_phm_tools}"
+    )
+    assert set(config.test_phm_tools).issubset(PHM_TOOLS), (
+        f"The set of test tools must be a subset of {PHM_TOOLS} but got {config.test_phm_tools}"
+    )
+    assert config.failure_type in PHM_FAIL_TYPES, (
+        f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
+    )
 
     if os.path.exists(PHM_PATH_ACQ4):
+        print("-" * 50)
+        print(f"Loading PHM data from {PHM_PATH_ACQ4}")
+        print("-" * 50)
 
-      print("-"*50)
-      print(f"Loading PHM data from {PHM_PATH_ACQ4}")
-      print("-"*50)
+        train_phm_data = PHMDataset2018(
+            path=PHM_PATH_ACQ4,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.train_phm_tools,
+            train=True,
+        )
 
-      train_phm_data = PHMDataset2018(
-          path = PHM_PATH_ACQ4,
-          failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.train_phm_tools,
-          train = True
-      )
-
-      test_phm_data = PHMDataset2018(
-          path = PHM_PATH_ACQ4,
-          failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.test_phm_tools,
-          train = False
-      )
+        test_phm_data = PHMDataset2018(
+            path=PHM_PATH_ACQ4,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.test_phm_tools,
+            train=False,
+        )
 
     else:
+        print("-" * 50)
+        print(f"Loading PHM data from {PHM_PATH}")
+        print("-" * 50)
 
-      print("-"*50)
-      print(f"Loading PHM data from {PHM_PATH}")
-      print("-"*50)
+        train_phm_data = PHMDataset2018(
+            path=PHM_PATH,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.train_phm_tools,
+            train=True,
+        )
 
-      train_phm_data = PHMDataset2018(
-          path = PHM_PATH,
-          failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.train_phm_tools,
-          train = True
-      )
-
-      test_phm_data = PHMDataset2018(
-          path = PHM_PATH,
-          failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.test_phm_tools,
-          train = False
-      )
+        test_phm_data = PHMDataset2018(
+            path=PHM_PATH,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.test_phm_tools,
+            train=False,
+        )
 
     print_life_info(phm_data=test_phm_data)
 
@@ -1182,15 +1288,12 @@ def load_phm_data(
     test_phm_idx = np.arange(len(test_phm_data))
 
     train_data, val_data, train_idx, val_idx = train_test_split(
-        train_phm_data,
-        train_phm_idx,
-        test_size=config.val_size,
-        random_state = 42
+        train_phm_data, train_phm_idx, test_size=config.val_size, random_state=42
     )
 
     transformer = get_transformer(
-        config = config,
-        df = train_phm_data,
+        config=config,
+        df=train_phm_data,
     )
     transformer.fit(train_data)
     transformed_train_data = train_data.map(transformer)
@@ -1202,36 +1305,34 @@ def load_phm_data(
     test_lifes = TransData(transformed_test_data)
 
     if config.approach == "padding":
-
         loaders_dict = create_padding_loaders(
-            config = config,
-            train_lifes = train_lifes,
-            val_lifes = val_lifes,
-            test_lifes = test_lifes,
+            config=config,
+            train_lifes=train_lifes,
+            val_lifes=val_lifes,
+            test_lifes=test_lifes,
         )
 
     elif config.approach == "full_life":
-
         loaders_dict = create_full_life_loaders(
-            config = config,
-            train_lifes = train_lifes,
-            val_lifes = val_lifes,
-            test_lifes = test_lifes,
+            config=config,
+            train_lifes=train_lifes,
+            val_lifes=val_lifes,
+            test_lifes=test_lifes,
         )
 
     elif config.approach == "windowed":
-
         loaders_dict = create_window_loaders(
-            config = config,
-            train_lifes = train_lifes,
-            val_lifes = val_lifes,
-            test_lifes = test_lifes,
-            eval = eval
+            config=config,
+            train_lifes=train_lifes,
+            val_lifes=val_lifes,
+            test_lifes=test_lifes,
+            eval=eval,
         )
 
     else:
-
-        raise ValueError(f"Approach {config.approach} not supported. Supported approaches are {APPROACHES}")
+        raise ValueError(
+            f"Approach {config.approach} not supported. Supported approaches are {APPROACHES}"
+        )
 
     if eval:
         return {
@@ -1269,6 +1370,7 @@ def get_feature_names(
     feature_names = transformer.columns()
     return feature_names
 
+
 def get_phm_feature_names(
     config: ExperimentConfig,
 ) -> List[str]:
@@ -1283,27 +1385,26 @@ def get_phm_feature_names(
     """
 
     if os.path.exists(PHM_PATH_ACQ4):
-
-      phm_data = PHMDataset2018(
-          path = PHM_PATH_ACQ4,
-          failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.test_phm_tools,
-          train = False
-      )
+        phm_data = PHMDataset2018(
+            path=PHM_PATH_ACQ4,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.test_phm_tools,
+            train=False,
+        )
 
     else:
-
-      phm_data = PHMDataset2018(
-          path = PHM_PATH,
-          failure_types = PHM_FAILURES[config.failure_type],
-          tools = config.test_phm_tools,
-          train = False
-      )
+        phm_data = PHMDataset2018(
+            path=PHM_PATH,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.test_phm_tools,
+            train=False,
+        )
 
     transformer = get_transformer(config, phm_data)
     transformer.fit(phm_data)
     feature_names = transformer.columns()
     return feature_names
+
 
 # Function to sample a quantile level for the quantile regression approach
 
@@ -1333,9 +1434,9 @@ def sample_quantile(
     if quantile_dist == "normal":
         assert bounds[1] > 0, "The standard deviation must be positive"
     if quantile_dist == "uniform":
-        assert (
-            bounds[0] < bounds[1]
-        ), "The lower bound must be less than the upper bound"
+        assert bounds[0] < bounds[1], (
+            "The lower bound must be less than the upper bound"
+        )
 
     quantile = 0.5
 
@@ -1403,10 +1504,8 @@ def extract_number(
     else:
         return None
 
-def an_score_to_rul(
-    an_scores: np.ndarray,
-    max_rul: int = MAX_RUL
-) -> np.ndarray:
+
+def an_score_to_rul(an_scores: np.ndarray, max_rul: int = MAX_RUL) -> np.ndarray:
     """
     This function converts an array containing the anomaly scores over the samples
     of a life into a RUL signal. The current formula used to convert to the RUL is
