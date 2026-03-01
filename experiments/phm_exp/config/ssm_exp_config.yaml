@@ -41,7 +41,8 @@ ad: false
 batch_size: 16
 sequence_length: 1000
 stride: 500
-epochs: 20
+# epochs: 20
+epochs: 1
 lr: 0.00671
 weight_decay: 1.0e-4
 

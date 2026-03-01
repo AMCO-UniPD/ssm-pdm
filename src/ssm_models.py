@@ -99,7 +99,7 @@ class ModelConfig:
     inf_activation: str = "gelu"
     distil: bool = True
     output_attention: bool = False
-    device: torch.device = torch.device("cpu")
+    device: str = "cpu"
 
     @classmethod
     def from_dict(cls, config: dict) -> "ModelConfig":
@@ -639,9 +639,7 @@ class S4DModel(nn.Module):
 
         x = x.transpose(-1, -2)
 
-        ipdb.set_trace()
         x = self.head(x, tau = tau)
-        ipdb.set_trace()
 
         return x
 

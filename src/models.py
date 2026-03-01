@@ -7,6 +7,7 @@ import os
 import sys
 import ipdb
 import traceback
+import gc
 import time
 import wandb
 import numpy as np
@@ -19,6 +20,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.optim as optim
+from torch.cuda.amp import GradScaler, autocast
 
 # from apex.optimizers import FusedAdam
 from torch.optim import AdamW, lr_scheduler
@@ -157,8 +159,6 @@ def train_loop(
             else mask.to(device).squeeze(-1)
         )
 
-        ipdb.set_trace()
-
         if config.quantile_reg:
             tau = sample_quantile(
                 quantile_dist=config.quantile_dist,
@@ -170,18 +170,99 @@ def train_loop(
             print(f"No quantile regression so tau={tau}")
 
         output = model(life, tau=tau)
-        ipdb.set_trace()
 
         loss = (
             criterion(output, rul, mask)
             if not config.quantile_reg
             else criterion(output, rul, mask, tau)
         )
-        ipdb.set_trace()
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        torch.cuda.empty_cache()
+        gc.collect()
+
+        train_loss += loss.item()
+
+        pbar.set_description(
+            f"Batch Idx: {batch_idx}/{len(dataloader)} | Train Loss: {train_loss / (batch_idx + 1):.4f}"
+        )
+
+    return train_loss / num_batches
+
+def mixed_train_loop(
+    dataloader: DataLoader,
+    model: nn.Module,
+    config: ExperimentConfig,
+    optimizer: optim.Optimizer,
+    criterion: nn.Module,
+    device: str = "cpu",
+) -> float:
+    """
+    Clone of train_loop adapted to mixed precision training.
+
+    Args:
+        dataloader (DataLoader): The DataLoader object
+        model (torch.nn.Module): The model object
+        config (ExperimentConfig): The configuration object
+        optimizer (torch.optim.Optimizer): The optimizer object
+        criterion (torch.nn.Module): The loss function
+        device (str): The device to use
+
+    Returns:
+        train_loss (float): training loss
+    """
+
+    model.train()
+    train_loss = 0.0
+    num_batches = len(dataloader)
+    pbar = tqdm(enumerate(dataloader))
+    scaler = torch.GradScaler("cuda")
+
+    for batch_idx, (life, rul, mask) in pbar:
+
+        life = (
+            life.to(device)
+            if config.approach == "padding"
+            else life.to(device).squeeze(-1)
+        )
+        rul = rul.to(device).squeeze(-1)
+        mask = (
+            mask.to(device)
+            if config.approach == "padding"
+            else mask.to(device).squeeze(-1)
+        )
+
+        if config.quantile_reg:
+            tau = sample_quantile(
+                quantile_dist=config.quantile_dist,
+                bounds=config.bounds,
+                print_quantile=True,
+            )
+        else:
+            tau = 0.5
+            print(f"No quantile regression so tau={tau}")
+
+        optimizer.zero_grad()
+
+        with torch.autocast(device_type=device, dtype=torch.float16):
+
+            output = model(life, tau=tau)
+
+            loss = (
+                criterion(output, rul, mask)
+                if not config.quantile_reg
+                else criterion(output, rul, mask, tau)
+            )
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+        torch.cuda.empty_cache()
+        gc.collect()
 
         train_loss += loss.item()
 
@@ -202,7 +283,7 @@ def eval_loop(
     criterion: nn.Module,
     eval_criterion: nn.Module,
     mode: str = "Test",
-    device: torch.device = torch.device("cpu"),
+    device: str = "cpu",
     use_tqdm: bool = True,
     tau: float = 0.5,
 ) -> Tuple[float, float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -255,13 +336,6 @@ def eval_loop(
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
 
-            # y_pred.append(batch_out) if config.approach == "padding" else y_pred.extend(
-            #     batch_out
-            # )
-            # y_true.append(
-            #     batch_target
-            # ) if config.approach == "padding" else y_true.extend(batch_target)
-
             #NOTE: Since in both the padding and windowed approach we have
             # mini batches of size > 1 we have to use extend and not append
             y_pred.extend(batch_out)
@@ -294,9 +368,89 @@ def eval_loop(
 
     return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true), np.array(mean_an_scores), np.array(max_an_scores)
 
+def mixed_eval_loop(
+    dataloader: DataLoader,
+    model: nn.Module,
+    config: ExperimentConfig,
+    criterion: nn.Module,
+    eval_criterion: nn.Module,
+    mode: str = "Test",
+    device: str = "cpu",
+    use_tqdm: bool = True,
+    tau: float = 0.5,
+) -> Tuple[float, float, np.ndarray, np.ndarray]:
+    """
+    Clone of eval_loop adapted to mixed precision training
+
+    Args:
+        dataloader (DataLoader): The DataLoader object
+        model (torch.nn.Module): The model object
+        config (ExperimentConfig): The configuration object
+        tokenizer (MeanScaleUniformBinsSensor): The tokenizer object
+        criterion (torch.nn.Module): The loss function
+        eval_criterion (torch.nn.Module): The evaluation loss function
+        mode (str): The mode of evaluation
+        device (str): The device to use
+        use_tqdm (bool): Whether to use tqdm or not
+        tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
+
+    Returns:
+        eval_loss (float): The evaluation loss value
+        eval_rmse_loss (float): The evaluation RMSE loss value
+        y_pred (np.ndarray): predictions over the different windows
+        y_true (np.ndarray): true values overt the different windows
+    """
+
+    model.eval()
+    eval_loss, eval_rmse_loss = 0.0, 0.0
+    num_batches = len(dataloader)
+    pbar = tqdm(dataloader) if use_tqdm else dataloader
+    y_pred, y_true= [], []
+
+    with torch.no_grad():
+        for life, rul, mask in pbar:
+            life = (
+                life.to(device)
+                if config.approach == "padding"
+                else life.to(device).squeeze(-1)
+            )
+            rul = rul.to(device).squeeze(-1)
+            mask = (
+                mask.to(device)
+                if config.approach == "padding"
+                else mask.to(device).squeeze(-1)
+            )
+
+            with torch.autocast(device_type=device, dtype=torch.float16):
+
+                output = model(life, tau=tau)
+                loss = (
+                    criterion(output, rul, mask)
+                    if not config.quantile_reg
+                    else criterion(output, rul, mask, tau)
+                )
+                rmse_loss = eval_criterion(output, rul, mask)
+
+            torch.cuda.empty_cache()
+            gc.collect()
+
+            eval_loss += loss.item()
+            eval_rmse_loss += rmse_loss.item()
+
+            #NOTE: Since in full_life we have batch_size=1
+            # we have to use append
+            batch_out = output.to("cpu").detach().numpy()
+            batch_target = rul.to("cpu").detach().numpy()
+            y_pred.append(batch_out)
+            y_true.append(batch_target)
+
+        eval_loss /= num_batches
+        eval_rmse_loss /= num_batches
+        print(f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+
+    return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
 
 # Save the best model
-
 
 def save_best_model(
     best_model_state_dict: dict,
@@ -392,7 +546,7 @@ def wandb_data(
 def exp_run(
     config: ExperimentConfig,
     model_config: ModelConfig,
-    device: torch.device = torch.device("cpu"),
+    device: str = "cpu",
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
@@ -506,7 +660,7 @@ def wandb_train_test(
     optimizer: optim.Optimizer,
     scheduler: optim.lr_scheduler._LRScheduler,
     config: ExperimentConfig,
-    device: torch.device = torch.device("cpu"),
+    device: str = "cpu",
     best_model_path: str = experiment_path,
     tau: float = 0.5,
 ) -> None:
@@ -557,40 +711,113 @@ def wandb_train_test(
                 )
 
             train_time = time.time()
-            train_loss = train_loop(
-                dataloader=train_loader,
-                model=model,
-                config=config,
-                optimizer=optimizer,
-                criterion=criterion,
-                device=device,
-            )
+
+            if config.approach == "full_life":
+
+                print("-"*50)
+                print(f"We are in approach {config.approach} so we use mixed train_loop")
+                print("-"*50)
+
+                train_loss = mixed_train_loop(
+                    dataloader=train_loader,
+                    model=model,
+                    config=config,
+                    optimizer=optimizer,
+                    criterion=criterion,
+                    device=device,
+                )
+
+            else:
+
+                print("-"*50)
+                print(f"We are in approach {config.approach} so we use train_loop")
+                print("-"*50)
+
+                train_loss = train_loop(
+                    dataloader=train_loader,
+                    model=model,
+                    config=config,
+                    optimizer=optimizer,
+                    criterion=criterion,
+                    device=device,
+                )
+
             train_time = time.time() - train_time
 
             val_time = time.time()
-            val_loss, eval_val_loss, y_pred, y_true, _, _ = eval_loop(
-                dataloader=val_loader,
-                model=model,
-                config=config,
-                criterion=criterion,
-                eval_criterion=eval_criterion,
-                mode="Val",
-                device=device,
-                tau=tau,
-            )
+
+            if config.approach == "full_life":
+
+                print("-"*50)
+                print(f"We are in approach {config.approach} so we use mixed_val_loop")
+                print("-"*50)
+
+                val_loss, eval_val_loss, y_pred, y_true = mixed_eval_loop(
+                    dataloader=val_loader,
+                    model=model,
+                    config=config,
+                    criterion=criterion,
+                    eval_criterion=eval_criterion,
+                    mode="Val",
+                    device=device,
+                    tau=tau,
+                )
+
+            else:
+
+                print("-"*50)
+                print(f"We are in approach {config.approach} so we use val_loop")
+                print("-"*50)
+
+                val_loss, eval_val_loss, y_pred, y_true, _, _ = eval_loop(
+                    dataloader=val_loader,
+                    model=model,
+                    config=config,
+                    criterion=criterion,
+                    eval_criterion=eval_criterion,
+                    mode="Val",
+                    device=device,
+                    tau=tau,
+                )
+
             val_time = time.time() - val_time
 
             test_time = time.time()
-            test_loss, eval_test_loss, y_pred, y_true, _, _ = eval_loop(
-                dataloader=test_loader,
-                model=model,
-                config=config,
-                criterion=criterion,
-                eval_criterion=eval_criterion,
-                mode="Test",
-                device=device,
-                tau=tau,
-            )
+
+            if config.approach == "full_life":
+
+                print("-"*50)
+                print(f"We are in approach {config.approach} so we use mixed_eval_loop")
+                print("-"*50)
+
+                test_loss, eval_test_loss, y_pred, y_true = mixed_eval_loop(
+                    dataloader=test_loader,
+                    model=model,
+                    config=config,
+                    criterion=criterion,
+                    eval_criterion=eval_criterion,
+                    mode="Test",
+                    device=device,
+                    tau=tau,
+                )
+
+            else:
+
+                print("-"*50)
+                print(f"We are in approach {config.approach} so we use eval_loop")
+                print("-"*50)
+
+                test_loss, eval_test_loss, y_pred, y_true, _, _ = eval_loop(
+                    dataloader=test_loader,
+                    model=model,
+                    config=config,
+                    criterion=criterion,
+                    eval_criterion=eval_criterion,
+                    mode="Test",
+                    device=device,
+                    tau=tau,
+                )
+
             test_time = time.time() - test_time
 
             if scheduler is not None:
@@ -846,7 +1073,7 @@ def wandb_run(
     run_name: str,
     config: ExperimentConfig,
     model_config: ModelConfig,
-    device: torch.device = torch.device("cpu"),
+    device: str = "cpu",
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
