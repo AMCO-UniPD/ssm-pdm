@@ -76,6 +76,7 @@ for run in range(exp_config.n_runs):
     metrics_dfs.append(metrics_df)
 
 mean_metrics_df=(sum(metrics_dfs)/len(metrics_dfs)).round(2)
+mean_metrics_df.index.name = "Lifes"
 
 if exp_config.print_summary_metrics:
     print_summary_metrics(metrics_df=mean_metrics_df,model_name=exp_config.model_name)
