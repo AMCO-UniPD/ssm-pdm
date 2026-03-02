@@ -321,7 +321,7 @@ class RegressionDataset(Dataset):
 class SSMRegressionDataset(Dataset):
     def __init__(
         self,
-        life: pd.DataFrame,
+        lifes: TransData,
         sequence_length: int = 500,
         max_rul: int = MAX_RUL,
         normalize_rul: bool = False,
@@ -343,19 +343,40 @@ class SSMRegressionDataset(Dataset):
             normalize_rul (bool): weather to normalize the RUL
         """
 
+        self.sequence_length = sequence_length
         self.max_rul = max_rul
         self.normalize_rul = normalize_rul
 
-        life, rul = life.iloc[:, :-1], life["RUL"]
+        self.lifes = [life.iloc[:, :-1] for life in lifes]
+        self.ruls = [life["RUL"] for life in lifes]
+
+        self.data_indices = []
+
+        for i,life in enumerate(self.lifes):
+
+            if sequence_length > life.shape[0]:
+                self.data_indices.append((i,sequence_length-life.shape[0]))
+            else:
+                self.data_indices.append((i,0))
+
+
+    def __len__(self):
+        return len(self.data_indices)
+
+    def __getitem__(self, idx):
+
+        life_idx, samples_to_pad = self.data_indices[idx]
+        life = self.lifes[life_idx]
+        rul = self.ruls[life_idx]
 
         #NOTE: Time series shorter than sequence_length, we use 0 padding
 
-        if sequence_length > life.shape[0]:
-            pad_arr = np.zeros(shape=(sequence_length - life.shape[0], life.shape[1]))
+        if self.sequence_length > life.shape[0]:
+            pad_arr = np.zeros(shape=(samples_to_pad, life.shape[1]))
             mask = np.concatenate(
                 (
                     np.ones(shape=(life.shape[0])),
-                    np.zeros(shape=(sequence_length - life.shape[0])),
+                    np.zeros(shape=(samples_to_pad)),
                 )
             )
             sequences = np.concatenate((life.values, pad_arr))
@@ -364,20 +385,15 @@ class SSMRegressionDataset(Dataset):
         #NOTE: Time series longer than sequence_length we take the last sequence_length samples
 
         else:
-            sequences = life.values[life.shape[0] - sequence_length :, :]
-            mask = np.ones(shape=(sequence_length))
-            targets = rul[life.shape[0] - sequence_length :]
+            sequences = life.values[life.shape[0] - self.sequence_length :, :]
+            mask = np.ones(shape=(self.sequence_length))
+            targets = rul[life.shape[0] - self.sequence_length :]
 
         targets = targets / self.max_rul if self.normalize_rul else targets
 
         self.sequences = np.expand_dims(sequences, axis=0)
         self.targets = np.expand_dims(targets, axis=0)
         self.mask = np.expand_dims(mask, axis=0)
-
-    def __len__(self):
-        return len(self.sequences)
-
-    def __getitem__(self, idx):
         sequence = torch.tensor(self.sequences[idx], dtype=torch.float32)
         target = torch.tensor(self.targets[idx], dtype=torch.float32)
         mask = torch.tensor(self.mask[idx], dtype=torch.float32)
@@ -529,9 +545,9 @@ class SSMWindowRegressionDataset(Dataset):
         self.anomalous_seq = filtered_indices
 
         if not self.ad:
-            # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):]
-            # seq_to_keep = seq_to_keep[-n_const_win:]
-            seq_to_keep = seq_to_keep[-len(self.anomalous_seq):]
+            # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):] # keep the last keep_long_rul_prob percentage of constant windows
+            # seq_to_keep = seq_to_keep[-len(self.anomalous_seq):] # balanced case → select the last len(self.anomalous_seq) constant windows
+            seq_to_keep = seq_to_keep[-n_const_win:] # keep the last n_const_win constant windows
 
             seq_to_keep.extend(filtered_indices)
             self.data_indices = seq_to_keep
@@ -965,46 +981,41 @@ def create_padding_loaders(
         loaders_dict (dict): dictionary containing the dataloaders
     """
 
-    train_datasets = [
-        SSMRegressionDataset(
-            life=life,
+    train_datasets = SSMRegressionDataset(
+            lifes=train_lifes,
             sequence_length=config.sequence_length,
             max_rul=config.max_rul,
             normalize_rul=config.normalize_rul,
-        )
-        for life in train_lifes
-    ]
-    val_datasets = [
-        SSMRegressionDataset(
-            life=life,
+    )
+    val_datasets = SSMRegressionDataset(
+            lifes=val_lifes,
             sequence_length=config.sequence_length,
             max_rul=config.max_rul,
             normalize_rul=config.normalize_rul,
-        )
-        for life in val_lifes
-    ]
-    test_datasets = [
-        SSMRegressionDataset(
-            life=life,
+    )
+    test_datasets = SSMRegressionDataset(
+            lifes=test_lifes,
             sequence_length=config.sequence_length,
             max_rul=config.max_rul,
             normalize_rul=config.normalize_rul,
-        )
-        for life in test_lifes
-    ]
+    )
 
     batch_size = config.batch_size
 
-    train_loader = DataLoader(
-        ConcatDataset(train_datasets), batch_size=batch_size, shuffle=True
-    )
-    val_loader = DataLoader(
-        ConcatDataset(val_datasets), batch_size=batch_size, shuffle=True
-    )
-    test_loader = DataLoader(
-        ConcatDataset(test_datasets), batch_size=batch_size, shuffle=True
-    )
-    test_loaders = [DataLoader(test_dataset) for test_dataset in test_datasets]
+    train_loader = DataLoader(train_datasets, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_datasets, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_datasets, batch_size=batch_size, shuffle=True)
+
+    eval_datasets = [
+        SSMRegressionDataset(
+            lifes=[test_life],
+            sequence_length=config.sequence_length,
+            max_rul=config.max_rul,
+            normalize_rul=config.normalize_rul,
+        )
+        for test_life in test_lifes
+    ]
+    test_loaders = [DataLoader(eval_dataset) for eval_dataset in eval_datasets]
 
     loaders_dict = {
         "train_loader": train_loader,
