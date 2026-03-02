@@ -1152,7 +1152,7 @@ def create_window_loaders(
 
         test_datasets = []
         for test_life in test_lifes:
-            test_dataset = create_window_dataset(config=config, lifes=[test_life])
+            test_dataset = create_window_dataset(config=config, lifes=[test_life], eval=True)
             test_datasets.append(test_dataset)
 
         test_loaders = [
