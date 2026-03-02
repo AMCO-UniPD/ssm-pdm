@@ -405,7 +405,7 @@ def set_exp_name(config: ExperimentConfig) -> str:
         exp_name (str): string containing the experiment name
     """
 
-    exp_name = f"{config.model_name}_{config.failure_type}_{config.approach}"
+    exp_name = f"super_benchmark_{config.model_name}_{config.failure_type}_{config.approach}"
 
     return exp_name
 

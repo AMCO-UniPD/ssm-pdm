@@ -348,7 +348,7 @@ class SSMRegressionDataset(Dataset):
 
         life, rul = life.iloc[:, :-1], life["RUL"]
 
-        # NOTE: Time series shorter than sequence_length, we use 0 padding
+        #NOTE: Time series shorter than sequence_length, we use 0 padding
 
         if sequence_length > life.shape[0]:
             pad_arr = np.zeros(shape=(sequence_length - life.shape[0], life.shape[1]))
@@ -361,7 +361,7 @@ class SSMRegressionDataset(Dataset):
             sequences = np.concatenate((life.values, pad_arr))
             targets = np.concatenate((rul.values, pad_arr[:, -1]))
 
-        # NOTE: Time series longer than sequence_length we take the last sequence_length samples
+        #NOTE: Time series longer than sequence_length we take the last sequence_length samples
 
         else:
             sequences = life.values[life.shape[0] - sequence_length :, :]
@@ -1088,7 +1088,9 @@ def create_full_life_loaders(
 
 
 def create_window_dataset(
-    config: ExperimentConfig, lifes: TransData, eval: bool = False
+    config: ExperimentConfig,
+    lifes: TransData,
+    eval: bool = False,
 ) -> SSMWindowRegressionDataset:
     """
     Function to create a SSMWindowRegressionDataset object starting from a set of
