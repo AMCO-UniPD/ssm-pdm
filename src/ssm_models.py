@@ -32,7 +32,7 @@ from transformer_encoder.utils import PositionalEncoding
 from torchinfo import summary
 from calflops import calculate_flops
 
-from utils import ExperimentConfig, save_element, generate_path
+from utils import ExperimentConfig, print_life_info, save_element, generate_path
 
 
 chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
@@ -294,6 +294,86 @@ def select_model_head(
 
     return head
 
+def concat_tau(
+    x: torch.Tensor,
+    tau: float = 0.5,
+    device: str = "cpu",
+    tau_feat: bool = False
+) -> torch.Tensor:
+    """
+    This function checks some stuff on the quantile level tau
+    and concatenates it to the input in case the tau_feat flag is true,
+    otherwise the tensor passed in input is returned.
+
+    Args:
+        x (torch.Tensor): input tensor
+        tau (float): quantile level
+        device (str): CUDA device
+        tau_feat (bool): boolean flag to decide weather to concatenate the quantile
+        level to the input or not
+
+    Returns:
+        x (torch.Tensor): input tensor if tau_feat=False, otherwise the input tensor
+        with tau added as an additional feature
+    """
+
+    assert tau is not None, "tau must be provided for quantile regression"
+    assert isinstance(tau, float), "tau must be a float"
+    assert 0 <= tau <= 1, "tau must be between 0 and 1"
+
+    if tau_feat:
+        x = torch.cat(
+            [x, torch.ones(x.shape[0], x.shape[1], 1).to(device) * tau],
+            dim=-1,
+        )
+
+    return x
+
+class LinearModel(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        input_size: int,
+        output_size: int,
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
+    ):
+        super(LinearModel, self).__init__()
+        self.quantile_reg = config.quantile_reg
+        self.tau_feat = config.tau_feat
+        self.tau_mult = config.tau_mult
+        self.gap = config.gap
+        self.device = config.device
+        self.ad = ad
+        self.full_life = full_life
+
+        self.fc1 = nn.Linear(input_size, config.d_model)
+
+        self.head = select_model_head(
+            config = config,
+            d_input = input_size,
+            d_output = output_size,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            full_life = self.full_life
+        )
+
+    def forward(self, x, tau=0.5):
+        if self.quantile_reg:
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
+
+        x = self.fc1(x) # (B,L,D) → (B,L,H)
+        x = self.head(x) # (B,L,H) -> (B,L)
+
+        return x
+
 class MLPModel(nn.Module):
     def __init__(
         self,
@@ -345,15 +425,12 @@ class MLPModel(nn.Module):
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
-            assert tau is not None, "tau must be provided for quantile regression"
-            assert isinstance(tau, float), "tau must be a float"
-            # assert 0 <= tau <= 1, "tau must be between 0 and 1"
-            # Concatenate the tau value to the inputs
-            if self.tau_feat:
-                x = torch.cat(
-                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
-                    dim=-1,
-                )
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
 
         x = self.fc1(x) # (B,L,D) → (B,L,H)
 
@@ -430,14 +507,12 @@ class Recurrent_PDM(nn.Module):
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
-            assert isinstance(tau, float), "tau must be a float"
-            assert 0 <= tau <= 1, "tau must be between 0 and 1"
-            # Concatenate the tau value to the inputs
-            if self.tau_feat:
-                x = torch.cat(
-                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
-                    dim=-1,
-                )
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
 
         x = self.recurrent(x)  # (B, L, D) -> (B, L, H)
         x = self.norm(x) # (B, L, H) -> (B, L, H)
@@ -510,14 +585,12 @@ class S4Model(nn.Module):
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
-            assert isinstance(tau, float), "tau must be a float"
-            assert 0 <= tau <= 1, "tau must be between 0 and 1"
-            # Concatenate the tau value to the inputs
-            if self.tau_feat:
-                x = torch.cat(
-                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
-                    dim=-1,
-                )
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -608,14 +681,12 @@ class S4DModel(nn.Module):
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
-            assert isinstance(tau, float), "tau must be a float"
-            assert 0 <= tau <= 1, "tau must be between 0 and 1"
-            # Concatenate the tau value to the inputs
-            if self.tau_feat:
-                x = torch.cat(
-                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
-                    dim=-1,
-                )
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -694,14 +765,12 @@ class S5Model(nn.Module):
 
     def forward(self, x, tau=0.5):
         if self.quantile_reg:
-            assert isinstance(tau, float), "tau must be a float"
-            assert 0 <= tau <= 1, "tau must be between 0 and 1"
-            # Concatenate the tau value to the inputs
-            if self.tau_feat:
-                x = torch.cat(
-                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
-                    dim=-1,
-                )
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
 
         x = self.encoder(x)  # (B, L, d_input) -> (B, L, d_model)
 
@@ -776,14 +845,12 @@ class RULTransformer(nn.Module):
             mask = torch.zeros(x.size(0), x.size(1)).to(x.device)
 
         if self.quantile_reg:
-            assert isinstance(tau, float), "tau must be a float"
-            assert 0 <= tau <= 1, "tau must be between 0 and 1"
-            # Concatenate the tau value to the inputs
-            if self.tau_feat:
-                x = torch.cat(
-                    [x, torch.ones(x.shape[0], x.shape[1], 1).to(self.device) * tau],
-                    dim=-1,
-                )
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
 
         x = x.argmax(dim=-1)  # (B, L, d_input) -> (B, L)
         x = self.embedding(x)  # (B, L) -> (B, L, d_model)
@@ -862,18 +929,12 @@ class RULInformer(nn.Module):
 
     def forward(self, x_enc, output_attention=False, enc_self_mask=None, tau=0.5):
         if self.quantile_reg:
-            assert isinstance(tau, float), "tau must be a float"
-            assert 0 <= tau <= 1, "tau must be between 0 and 1"
-            # Concatenate the tau value to the inputs
-            if self.tau_feat:
-                x_enc = torch.cat(
-                    [
-                        x_enc,
-                        torch.ones(x_enc.shape[0], x_enc.shape[1], 1).to(self.device)
-                        * tau,
-                    ],
-                    dim=-1,
-                )
+            x_enc = concat_tau(
+                x = x_enc,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
 
         enc_out = self.enc_embedding(x_enc)  # [B,L,D] -> [B,L,H]
         enc_out, attns = self.encoder(
@@ -982,6 +1043,15 @@ def load_ssm_model(
     elif exp_config.model_name == "MLP":
         model = MLPModel(
             config=model_config,
+            input_size=d_input,
+            output_size=1 if not model_config.gap else exp_config.sequence_length,
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
+            full_life = True if exp_config.approach == "full_life" else False
+        )
+    elif exp_config.model_name == "Linear":
+        model = LinearModel(
+            config = model_config,
             input_size=d_input,
             output_size=1 if not model_config.gap else exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
