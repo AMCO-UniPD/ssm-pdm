@@ -370,7 +370,7 @@ class LinearModel(nn.Module):
             )
 
         x = self.fc1(x) # (B,L,D) → (B,L,H)
-        x = self.head(x) # (B,L,H) -> (B,L)
+        x = self.head(x, tau = tau) # (B,L,H) -> (B,L)
 
         return x
 

@@ -387,16 +387,13 @@ class SSMRegressionDataset(Dataset):
         else:
             sequences = life.values[life.shape[0] - self.sequence_length :, :]
             mask = np.ones(shape=(self.sequence_length))
-            targets = rul[life.shape[0] - self.sequence_length :]
+            targets = rul.values[life.shape[0] - self.sequence_length :]
 
         targets = targets / self.max_rul if self.normalize_rul else targets
 
-        self.sequences = np.expand_dims(sequences, axis=0)
-        self.targets = np.expand_dims(targets, axis=0)
-        self.mask = np.expand_dims(mask, axis=0)
-        sequence = torch.tensor(self.sequences[idx], dtype=torch.float32)
-        target = torch.tensor(self.targets[idx], dtype=torch.float32)
-        mask = torch.tensor(self.mask[idx], dtype=torch.float32)
+        sequence = torch.tensor(sequences, dtype=torch.float32)
+        target = torch.tensor(targets, dtype=torch.float32)
+        mask = torch.tensor(mask, dtype=torch.float32)
         return sequence, target, mask
 
 
