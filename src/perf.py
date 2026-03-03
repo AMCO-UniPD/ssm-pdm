@@ -64,9 +64,9 @@ def lifes_metrics(
 
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
-    print("#" * 50)
+    print("-" * 50)
     print(f"Opened outputs_dict at path: {outputs_path}")
-    print("#" * 50)
+    print("-" * 50)
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
 
     _, eval_criterion = load_loss_functions(
@@ -114,7 +114,6 @@ def lifes_metrics(
         print("-"*50)
         print(f"Metrics df saved at {os.path.join(metrics_path,filename)}")
         print("-"*50)
-        ipdb.set_trace
 
     pd.options.display.float_format = None
 
