@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 echo "-------------------------------------------"
-echo "Producing anomaly scores and signal plots"
+echo "Computing outputs, metrics and producing quantile plots"
 echo "-------------------------------------------"
 
 echo "-------------------------------------------"
-echo "Step 1: save the outputs computing both mean"
-echo "and max anomaly scores"
+echo "Step 1: save the outputs"
 echo "-------------------------------------------"
 
 ./launch_train_phm save_outputs
