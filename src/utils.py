@@ -54,6 +54,7 @@ from config_vars import (
     MAX_RUL,
     PHM_PATH,
     PHM_PATH_ACQ4,
+    PHM_PATH_ACQ2,
     CMAPSS_MODELS,
     PHM_TOOLS,
     PHM_FAILURES,
@@ -1274,6 +1275,25 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
             train=False,
         )
 
+    elif os.path.exists(PHM_PATH_ACQ2):
+        print("-" * 50)
+        print(f"Loading PHM data from {PHM_PATH_ACQ2}")
+        print("-" * 50)
+
+        train_phm_data = PHMDataset2018(
+            path=PHM_PATH_ACQ2,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.train_phm_tools,
+            train=True,
+        )
+
+        test_phm_data = PHMDataset2018(
+            path=PHM_PATH_ACQ2,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.test_phm_tools,
+            train=False,
+        )
+
     else:
         print("-" * 50)
         print(f"Loading PHM data from {PHM_PATH}")
@@ -1398,6 +1418,14 @@ def get_phm_feature_names(
     if os.path.exists(PHM_PATH_ACQ4):
         phm_data = PHMDataset2018(
             path=PHM_PATH_ACQ4,
+            failure_types=PHM_FAILURES[config.failure_type],
+            tools=config.test_phm_tools,
+            train=False,
+        )
+
+    elif os.path.exists(PHM_PATH_ACQ2):
+        phm_data = PHMDataset2018(
+            path=PHM_PATH_ACQ2,
             failure_types=PHM_FAILURES[config.failure_type],
             tools=config.test_phm_tools,
             train=False,

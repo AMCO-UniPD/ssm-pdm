@@ -11,6 +11,7 @@ from pathlib import Path
 
 PHM_PATH_ACQ4 = Path(Path.home() / "datasets")
 PHM_PATH = Path("/mnt/disk1/davide_frizzo/datasets")
+PHM_PATH_ACQ2 = Path("/mnt/mydisk/datasets")
 
 CMAPSS_MODELS = [
     "FD001",

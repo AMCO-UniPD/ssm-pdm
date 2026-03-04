@@ -51,7 +51,7 @@ eval_loss: rmse
 
 # multi run parameters
 n_runs: 5
-start_run_id: 2
+start_run_id: 0
 
 # model summary
 summary_func: torchinfo

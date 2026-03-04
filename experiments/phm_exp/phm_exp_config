@@ -8,8 +8,8 @@ train_phm_tools=("01M01" "01M02" "02M01" "02M02" "03M01" "03M02" "04M01" "04M02"
 test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 # test_phm_tools=("01M02") #NOTE: test for AD approach
 
-model_name="S4D"
-device_num=2
+model_name="RNN"
+device_num=1
 exp_name="exp"
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
