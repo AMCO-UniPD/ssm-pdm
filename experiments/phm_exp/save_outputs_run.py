@@ -52,15 +52,15 @@ outputs_path = generate_path(
 
 setproctitle.setproctitle(f"save_outputs_run_{exp_name}")
 
-print("#" * 50)
+print("-" * 50)
 print("Save the prediction on the different quantiles of the same run together")
-print("#" * 50)
+print("-" * 50)
 
-for run in range(exp_config.n_runs):
+for run in range(exp_config.start_run_id, exp_config.n_runs):
 
-    print("#" * 50)
+    print("-" * 50)
     print(f"Saving outputs for run: {run+1}")
-    print("#" * 50)
+    print("-" * 50)
 
     run_folders = [f"run_{run+1}"]
     run_outputs_path = generate_path(
@@ -74,9 +74,9 @@ for run in range(exp_config.n_runs):
 
     for i, quantile in enumerate(exp_config.quantiles):
 
-        print("#" * 50)
+        print("-" * 50)
         print(f"Saving outputs for quantile: {quantile}")
-        print("#" * 50)
+        print("-" * 50)
 
         outputs_dict_path = get_most_recent_file(os.path.join(run_outputs_path,f"quantile_{quantile}"),file_pos=exp_config.file_pos)
         outputs_dict = open_element(outputs_dict_path,filetype="pickle")

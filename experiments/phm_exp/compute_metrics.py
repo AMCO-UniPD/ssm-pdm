@@ -52,7 +52,7 @@ setproctitle.setproctitle(f"compute_metrics_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
-for run in range(exp_config.n_runs):
+for run in range(exp_config.start_run_id, exp_config.n_runs):
 
     run_metrics_path = generate_path(
         basepath = metrics_path,

@@ -44,7 +44,7 @@ setproctitle.setproctitle(f"quantile_metrics_{exp_name}")
 
 metrics_dfs = []
 
-for run in range(exp_config.n_runs):
+for run in range(exp_config.start_run_id, exp_config.n_runs):
 
     print("#" * 50)
     print(f"Saving quantile metrics for run: {run+1}")

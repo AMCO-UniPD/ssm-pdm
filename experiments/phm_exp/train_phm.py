@@ -102,7 +102,7 @@ if exp_config.test_script:
 
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script")
 
-    for run in range(exp_config.n_runs):
+    for run in range(exp_config.start_run_id, exp_config.n_runs):
         for quantile in exp_config.quantiles:
 
             quantile_reg_folders = [
@@ -154,7 +154,7 @@ if exp_config.test_script:
 
     quit()
 
-for run in range(exp_config.start_run_id, exp_config.start_run_id + exp_config.n_runs):
+for run in range(exp_config.start_run_id, exp_config.n_runs):
 
     print("-"*50)
     print(f"Experiment run for run {run+1}")
