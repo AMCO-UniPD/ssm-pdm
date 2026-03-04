@@ -8,7 +8,7 @@ train_phm_tools=("01M01" "01M02" "02M01" "02M02" "03M01" "03M02" "04M01" "04M02"
 test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 # test_phm_tools=("01M02") #NOTE: test for AD approach
 
-model_name="RNN"
+model_name="RULTransformer"
 device_num=1
 exp_name="exp"
 
