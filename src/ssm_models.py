@@ -465,6 +465,7 @@ class Recurrent_PDM(nn.Module):
         self.tau_feat = config.tau_feat
         self.tau_mult = config.tau_mult
         self.device = config.device
+        self.gap = config.gap
         self.ad = ad
         self.full_life = full_life
 
@@ -514,7 +515,7 @@ class Recurrent_PDM(nn.Module):
                 tau_feat = self.tau_feat
             )
 
-        x = self.recurrent(x)  # (B, L, D) -> (B, L, H)
+        x = self.recurrent(x)[0]  # (B, L, D) -> (B, L, H)
         x = self.norm(x) # (B, L, H) -> (B, L, H)
         x = self.head(x, tau=tau) # (B, L, H) → (B, L)
 
@@ -812,6 +813,7 @@ class RULTransformer(nn.Module):
         self.tau_feat = config.tau_feat
         self.tau_mult = config.tau_mult
         self.device = config.device
+        self.gap = config.gap
         self.ad = ad
         self.full_life = full_life
 
@@ -880,6 +882,7 @@ class RULInformer(nn.Module):
         self.tau_mult = config.tau_mult
         self.device = config.device
         self.output_attention = config.output_attention
+        self.gap = config.gap
         self.ad = ad
         self.full_life = full_life
 
