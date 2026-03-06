@@ -468,6 +468,7 @@ def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
     print("-" * 50)
 
     if args.exp_name == "exp":
+
         exp_name = set_exp_name(exp_config)
 
         print("-" * 50)
