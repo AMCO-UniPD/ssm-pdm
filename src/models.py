@@ -155,7 +155,7 @@ def train_loop(
         rul = rul.to(device).squeeze(-1)
         mask = (
             mask.to(device)
-            if config.approach == "padding"
+            if "padding" in config.approach
             else mask.to(device).squeeze(-1)
         )
 
@@ -225,13 +225,13 @@ def mixed_train_loop(
 
         life = (
             life.to(device)
-            if config.approach == "padding"
+            if "padding" in config.approach
             else life.to(device).squeeze(-1)
         )
         rul = rul.to(device).squeeze(-1)
         mask = (
             mask.to(device)
-            if config.approach == "padding"
+            if "padding" in config.approach
             else mask.to(device).squeeze(-1)
         )
 
@@ -321,13 +321,13 @@ def eval_loop(
         for life, rul, mask in pbar:
             life = (
                 life.to(device)
-                if config.approach == "padding"
+                if "padding" in config.approach
                 else life.to(device).squeeze(-1)
             )
             rul = rul.to(device).squeeze(-1)
             mask = (
                 mask.to(device)
-                if config.approach == "padding"
+                if "padding" in config.approach
                 else mask.to(device).squeeze(-1)
             )
 
@@ -411,13 +411,13 @@ def mixed_eval_loop(
         for life, rul, mask in pbar:
             life = (
                 life.to(device)
-                if config.approach == "padding"
+                if "padding" in config.approach
                 else life.to(device).squeeze(-1)
             )
             rul = rul.to(device).squeeze(-1)
             mask = (
                 mask.to(device)
-                if config.approach == "padding"
+                if "padding" in config.approach
                 else mask.to(device).squeeze(-1)
             )
 
@@ -1018,7 +1018,7 @@ def best_model_perf(
             y_pred = y_pred*MAX_RUL
             y_true = y_true*MAX_RUL
 
-        if config.approach == "padding":
+        if "padding" in config.approach:
 
             preds.append(y_pred)
             true_vals.append(y_true)

@@ -907,7 +907,7 @@ def load_reg_data(config: ExperimentConfig) -> dict:
             )
             for life in test_lifes
         ]
-    elif config.approach == "padding":
+    elif "padding" in config.approach:
         train_datasets = [
             SSMRegressionDataset(life=life, sequence_length=config.sequence_length)
             for life in train_lifes
@@ -944,7 +944,7 @@ def load_reg_data(config: ExperimentConfig) -> dict:
 
     if config.model_name.startswith("chronos"):
         batch_size = len(feature_names)
-    elif config.approach == "padding":
+    elif "padding" in config.approach:
         batch_size = config.sequence_length
     else:
         batch_size = config.batch_size
