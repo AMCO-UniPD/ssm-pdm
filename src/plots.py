@@ -278,14 +278,14 @@ def plot_prediction_interval(
                     ax = axs[i, j]
 
                 ax.plot(
-                    np.squeeze(true[i * config.ncols + j],axis=0) if config.approach == "padding" else true[i * config.ncols +j],
+                    np.squeeze(true[i * config.ncols + j],axis=0) if "padding" in config.approach else true[i * config.ncols +j],
                     color="#00008B",
                     label="True RUL",
                 )
 
                 for quantile,color in zip(config.quantiles,colors):
                     quantile_signals[f"pred_quantile_{quantile}"] = [
-                        np.squeeze(outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:],axis=0) if config.approach == "padding" else outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:]
+                        np.squeeze(outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:],axis=0) if "padding" in config.approach else outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:]
                         for i in life_idxs
                     ]
 

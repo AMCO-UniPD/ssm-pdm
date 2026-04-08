@@ -107,6 +107,7 @@ PHM_FAIL_TYPES = list(PHM_FAILURES.keys())
 
 APPROACHES = [
     "padding",
+    "padding_monotonic",
     "windowed",
     "full_life"
 ]

@@ -723,11 +723,11 @@ def get_transformer(
                 MeanImputer(),
             ),
             pipelineY=make_pipeline(
-                ByNameFeatureSelector(features=["RUL"]))
+                ByNameFeatureSelector(features=["RUL"])
             ),
         )
 
-    elif config.transformer_type == 3:
+    elif config.transformer_type == 4:
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
@@ -1346,7 +1346,7 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
     val_lifes = TransData(transformed_val_data)
     test_lifes = TransData(transformed_test_data)
 
-    if config.approach == "padding":
+    if "padding" in config.approach:
         loaders_dict = create_padding_loaders(
             config=config,
             train_lifes=train_lifes,

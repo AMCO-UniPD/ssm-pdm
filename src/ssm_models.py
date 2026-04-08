@@ -1102,6 +1102,7 @@ def load_ssm_model(
             d_output=1 if not model_config.gap else exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "S4D":
@@ -1111,6 +1112,7 @@ def load_ssm_model(
             d_output=1 if not model_config.gap else exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad=exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "S5":
@@ -1120,6 +1122,7 @@ def load_ssm_model(
             d_output=1 if not model_config.gap else exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "MLP":
@@ -1129,6 +1132,7 @@ def load_ssm_model(
             output_size=1 if not model_config.gap else exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "Linear":
@@ -1138,6 +1142,7 @@ def load_ssm_model(
             output_size=1 if not model_config.gap else exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name in ["RNN", "LSTM", "GRU"]:
@@ -1148,6 +1153,7 @@ def load_ssm_model(
             output_size=exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "RULTransformer":
@@ -1157,6 +1163,7 @@ def load_ssm_model(
             output_size=exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "RULInformer":
@@ -1166,6 +1173,7 @@ def load_ssm_model(
             d_output=exp_config.sequence_length,
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
+            monotonic = exp_config.monotonic,
             full_life = True if exp_config.approach == "full_life" else False
         )
     else:

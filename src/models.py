@@ -149,7 +149,7 @@ def train_loop(
 
         life = (
             life.to(device)
-            if config.approach == "padding"
+            if "padding" in config.approach
             else life.to(device).squeeze(-1)
         )
         rul = rul.to(device).squeeze(-1)
@@ -535,6 +535,7 @@ def wandb_data(
         d_input=d_input
     )
     model = model.to(model_config.device)
+    ipdb.set_trace()
 
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
