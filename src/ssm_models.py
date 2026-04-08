@@ -259,12 +259,12 @@ class MonotonicHead(nn.Module):
 
         self.tau_mult = config.tau_mult
 
-        self.decoder = nn.Sequential([
+        self.decoder = nn.Sequential(
             MonotonicLinear(config.d_model, config.d_model, pre_activation=nn.Identity()),
             MonotonicLinear(config.d_model, config.d_model, pre_activation=nn.ReLU()),
             MonotonicLinear(config.d_model, config.d_model, pre_activation=nn.ReLU()),
             MonotonicLinear(config.d_model, sequence_length, pre_activation=nn.ReLU()),
-        ])
+        )
 
     def forward(self, x, tau=0.5):
 

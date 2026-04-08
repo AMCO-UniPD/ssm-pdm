@@ -535,7 +535,6 @@ def wandb_data(
         d_input=d_input
     )
     model = model.to(model_config.device)
-    ipdb.set_trace()
 
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
