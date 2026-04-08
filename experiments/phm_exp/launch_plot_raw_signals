@@ -12,4 +12,5 @@ python $script_path \
   --exp_config_path "config/ssm_exp_config.yaml" \
   --failure_type "$failure_type" \
   --train_phm_tools "${train_phm_tools[@]}" \
-  --test_phm_tools "${test_phm_tools[@]}"
+  --test_phm_tools "${test_phm_tools[@]}" \
+  --plot_rul

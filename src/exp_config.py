@@ -374,6 +374,12 @@ def define_arguments() -> Namespace:
         help="If set, produce the combined signals plots"
     )
 
+    parser.add_argument(
+        "--plot_rul",
+        action="store_true",
+        help="If set, produce the RUL signal in plot_raw_signals.py"
+    )
+
     args = parser.parse_args()
 
     return args
