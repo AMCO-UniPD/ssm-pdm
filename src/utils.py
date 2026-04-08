@@ -720,6 +720,17 @@ def get_transformer(
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
+                MeanImputer(),
+            ),
+            pipelineY=make_pipeline(
+                ByNameFeatureSelector(features=["RUL"]))
+            ),
+        )
+
+    elif config.transformer_type == 3:
+        transformer = Transformer(
+            pipelineX=make_pipeline(
+                ByNameFeatureSelector(features=FEATURES),
                 # RollingStatistics(
                 #                     window=config.window_size, to_compute=config.features
                 #                 ),

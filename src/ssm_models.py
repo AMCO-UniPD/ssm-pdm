@@ -1,11 +1,10 @@
 """
-Python script containing utility functions for the models migrated from the
+Python module containing utility functions for the models migrated from the
 `SSM_PDM` project into the `chronos_pdm` project.
 """
 
 import os
 import sys
-from accelerate import infer_auto_device_map
 import ipdb
 import traceback
 from typing import (
@@ -23,6 +22,7 @@ from dataclasses import (
 # torch imports
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from transformer_encoder import TransformerEncoder
@@ -33,7 +33,6 @@ from torchinfo import summary
 from calflops import calculate_flops
 
 from utils import ExperimentConfig, print_life_info, save_element, generate_path
-
 
 chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
 imports_path = os.path.join(os.path.dirname(__file__), "AD_MG", "src")
@@ -225,6 +224,54 @@ class ModelHead(nn.Module):
         x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
         return x
 
+class MonotonicLinear(nn.Linear):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        device = None,
+        dtype = None,
+        pre_activation=nn.Identity(),
+    ):
+        super().__init__(in_features, out_features, bias=bias, device=device, dtype=dtype)
+        self.act = pre_activation
+
+    def forward(self, x):
+        w_pos = self.weight.clamp(min=0.0)
+        w_neg = self.weight.clamp(max=0.0)
+        x_pos = F.linear(self.act(x), w_pos, self.bias)
+        x_neg = F.linear(self.act(-x), w_neg, self.bias)
+        return x_pos + x_neg
+
+class MonotonicHead(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        sequence_length: int,
+    ):
+        """
+        Model Head for monotonic neural networks. With this model head (that needs to have at least 4 layers
+        to be a universal approximator) the model should be monotonic, so it should produce always non increasing
+        predictions for the RUL
+        """
+        super().__init__()
+
+        self.tau_mult = config.tau_mult
+
+        self.decoder = nn.Sequential([
+            MonotonicLinear(config.d_model, config.d_model, pre_activation=nn.Identity()),
+            MonotonicLinear(config.d_model, config.d_model, pre_activation=nn.ReLU()),
+            MonotonicLinear(config.d_model, config.d_model, pre_activation=nn.ReLU()),
+            MonotonicLinear(config.d_model, sequence_length, pre_activation=nn.ReLU()),
+        ])
+
+    def forward(self, x, tau=0.5):
+
+        x = x[:,-1,:].squeeze(1) # (B, L, d_model) -> (B,1,d_model) → (B, d_model)
+        x = self.decoder(x) * tau if self.tau_mult else self.decoder(x)  # (B, d_model) -> (B, d_output)
+        return x
+
 class FullLifeHead(nn.Module):
     def __init__(
         self,
@@ -251,7 +298,8 @@ def select_model_head(
     sequence_length: int,
     ad: bool,
     gap: bool,
-    full_life: bool
+    full_life: bool,
+    monotonic: bool
 ) -> nn.Module:
     """
     Function used to select the model head depending on the approach
@@ -261,6 +309,7 @@ def select_model_head(
         ad (bool): weather to use the AD approach
         gap (bool): weather to use Global Average Pooling (GAP)
         full_life (bool): weather to use the full_life approach
+        monotonic (bool): weather to use the monotonic approach
         d_input (int): number of input features of the model
         d_output (int): number of output features of the model
         sequence_length (int): length of the sequences used
@@ -290,6 +339,12 @@ def select_model_head(
         head = FullLifeHead(
             config = config,
             d_output = d_output
+        )
+
+    if monotonic:
+        head = MonotonicHead(
+            config = config,
+            sequence_length = sequence_length
         )
 
     return head
@@ -337,6 +392,7 @@ class LinearModel(nn.Module):
         output_size: int,
         sequence_length: int,
         ad: bool = False,
+        monotonic: bool = False,
         full_life: bool = False
     ):
         super(LinearModel, self).__init__()
@@ -346,6 +402,7 @@ class LinearModel(nn.Module):
         self.gap = config.gap
         self.device = config.device
         self.ad = ad
+        self.monotonic = monotonic
         self.full_life = full_life
 
         self.fc1 = nn.Linear(input_size, config.d_model)
@@ -357,6 +414,7 @@ class LinearModel(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
+            monotonic = self.monotonic,
             full_life = self.full_life
         )
 
@@ -382,6 +440,7 @@ class MLPModel(nn.Module):
         output_size: int,
         sequence_length: int,
         ad: bool = False,
+        monotonic: bool = False,
         full_life: bool = False
     ):
         super(MLPModel, self).__init__()
@@ -391,6 +450,7 @@ class MLPModel(nn.Module):
         self.gap = config.gap
         self.device = config.device
         self.ad = ad
+        self.monotonic = monotonic
         self.full_life = full_life
 
         self.fc1 = nn.Linear(input_size, config.d_model)
@@ -420,6 +480,7 @@ class MLPModel(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
+            monotonic = self.monotonic,
             full_life = self.full_life
         )
 
@@ -457,6 +518,7 @@ class Recurrent_PDM(nn.Module):
         output_size: int,
         sequence_length: int,
         ad: bool = False,
+        monotonic: bool = False,
         full_life: bool = False
     ):
         super(Recurrent_PDM, self).__init__()
@@ -467,6 +529,7 @@ class Recurrent_PDM(nn.Module):
         self.device = config.device
         self.gap = config.gap
         self.ad = ad
+        self.monotonic = monotonic
         self.full_life = full_life
 
         if model_name == "LSTM":
@@ -503,6 +566,7 @@ class Recurrent_PDM(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
+            monotonic = self.monotonic,
             full_life = self.full_life
         )
 
@@ -532,7 +596,8 @@ class S4Model(nn.Module):
         d_output: int,
         sequence_length: int,
         ad: bool = False,
-        full_life: bool = False
+        full_life: bool = False,
+        monotonic: bool = False,
     ):
         super().__init__()
 
@@ -544,6 +609,7 @@ class S4Model(nn.Module):
         self.device = config.device
         self.ad = ad
         self.full_life = full_life
+        self.monotonic = monotonic
         d_model = config.d_model
         n_layers = config.n_layers
         dropout = config.dropout
@@ -581,7 +647,8 @@ class S4Model(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
-            full_life = self.full_life
+            full_life = self.full_life,
+            monotonic = self.monotonic
         )
 
     def forward(self, x, tau=0.5):
@@ -632,6 +699,7 @@ class S4DModel(nn.Module):
         d_output: int,
         sequence_length: int,
         ad: bool = False,
+        monotonic: bool = False,
         full_life: bool = False
     ):
         super().__init__()
@@ -642,6 +710,7 @@ class S4DModel(nn.Module):
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         self.ad = ad
+        self.monotonic = monotonic
         self.full_life = full_life
 
         d_state = config.d_state
@@ -677,7 +746,8 @@ class S4DModel(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
-            full_life = self.full_life
+            full_life = self.full_life,
+            monotonic = self.monotonic
         )
 
     def forward(self, x, tau=0.5):
@@ -723,6 +793,7 @@ class S5Model(nn.Module):
         d_output: int,
         sequence_length: int,
         ad: bool = False,
+        monotonic: bool = False,
         full_life: bool = False
     ):
         super().__init__()
@@ -733,6 +804,7 @@ class S5Model(nn.Module):
         self.quantile_reg = config.quantile_reg
         self.device = config.device
         self.ad = ad
+        self.monotonic = monotonic
         self.full_life = full_life
 
         self.encoder = nn.Linear(d_input, config.d_model)
@@ -761,7 +833,8 @@ class S5Model(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
-            full_life = self.full_life
+            full_life = self.full_life,
+            monotonic = self.monotonic
         )
 
     def forward(self, x, tau=0.5):
@@ -805,6 +878,7 @@ class RULTransformer(nn.Module):
         output_size: int,
         sequence_length: int,
         ad: bool = False,
+        monotonic: bool = False,
         full_life: bool = False
     ):
         super(RULTransformer, self).__init__()
@@ -815,6 +889,7 @@ class RULTransformer(nn.Module):
         self.device = config.device
         self.gap = config.gap
         self.ad = ad
+        self.monotonic = monotonic
         self.full_life = full_life
 
         self.embedding = nn.Sequential(
@@ -839,6 +914,7 @@ class RULTransformer(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
+            monotonic = self.monotonic,
             full_life = self.full_life
         )
 
@@ -873,6 +949,7 @@ class RULInformer(nn.Module):
         d_output: int,
         sequence_length: int,
         ad: bool = False,
+        monotonic: bool = False,
         full_life: bool = False
     ):
         super(RULInformer, self).__init__()
@@ -884,6 +961,7 @@ class RULInformer(nn.Module):
         self.output_attention = config.output_attention
         self.gap = config.gap
         self.ad = ad
+        self.monotonic = monotonic
         self.full_life = full_life
 
         # Encoding
@@ -927,6 +1005,7 @@ class RULInformer(nn.Module):
             sequence_length = sequence_length,
             ad = self.ad,
             gap = self.gap,
+            monotonic = self.monotonic,
             full_life = self.full_life
         )
 

@@ -5,30 +5,19 @@ Training script for PHM dataset experiments
 # general imports
 import os
 import sys
-import ipdb
-import torch
-import argparse
 import setproctitle
 
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
-from exp_config import define_arguments, set_exp_name, setup_exp
+from exp_config import setup_exp
 from utils import (
-    ExperimentConfig,
     generate_path,
-    get_most_recent_file,
-    load_yaml_to_dict,
-    open_element,
-    get_current_time,
-    save_element,
     set_seed,
-    load_phm_data
 )
 
 from perf import lifes_metrics
 from models import wandb_run, best_model_perf
-from ssm_models import ModelConfig
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 

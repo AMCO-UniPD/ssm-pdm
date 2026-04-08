@@ -10,8 +10,8 @@ test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 
 model_name="S4"
 device_num=2
-# exp_name="exp"
-exp_name="super_benchmark_1_S4_flow_low_padding"
+exp_name="exp"
+# exp_name="super_benchmark_1_S4_flow_low_padding"
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_name="padding_sweep"

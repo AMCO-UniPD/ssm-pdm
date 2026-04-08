@@ -6,8 +6,7 @@ test_size: 0.2
 val_size: 0.1
 
 # dataset transformations
-transformer_type: 0
-# transformer_type: 2
+transformer_type: 3
 feature_type: phm
 # scaler: standard
 scaler: minmax # minmax for MinMaxScaler, standard for StandardScaler
@@ -16,9 +15,7 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-# approach: windowed
-approach: padding
-# approach: full_life
+approach: padding_monotonic
 
 # quantile_reg config
 quantile_reg: true
@@ -28,7 +25,7 @@ quantiles: [0.1,0.25,0.5,0.75,0.9]
 # quantiles: [0.5]
 quantile_run: 0.25
 
-# select_windows
+# select_windows (windowed approach)
 max_rul: 500
 keep_long_rul_prob: 0.1
 n_const_win: 1000
@@ -37,6 +34,9 @@ normalize_rul: true
 
 #AD approach
 ad: false
+
+# monotonic approach
+monotonic: true
 
 # training parameters
 batch_size: 16

@@ -78,6 +78,8 @@ class ExperimentConfig:
     n_const_win: int = 10
     normalize_rul: bool = False
     ad: bool = False
+    # monotonic approach
+    monotonic: bool = False
     # wandb sweep
     sweep_method: str = "random"
     sweep_param_names: List[str] = field(default_factory=lambda: ["batch_size", "lr"])
