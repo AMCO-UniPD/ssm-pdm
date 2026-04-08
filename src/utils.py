@@ -511,7 +511,7 @@ class SSMWindowRegressionDataset(Dataset):
     ):
         """
         Function to select only the windows with at least one RUL value
-        lower than MAX RUL and keep the others with probability keep_long_rul_prob
+        lower than MAX RUL and keep the last n_const_win windows
 
         Args:
             n_const_win (int): number of constant windows to keep

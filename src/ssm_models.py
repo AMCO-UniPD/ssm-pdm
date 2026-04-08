@@ -169,7 +169,10 @@ class GapHead(nn.Module):
         d_output: int,
     ):
         """
-        Model Regression head for the GAP approach
+        Model Regression head for the GAP approach. The embeddings
+        coming from the feature extractor are averaged over the time dimension
+        (i.e. axis 1)
+        to produce the output.
         """
         super().__init__()
 
@@ -190,7 +193,9 @@ class ADHead(nn.Module):
         d_input: int,
     ):
         """
-        Model Regression head for the AD approach
+        Model Regression head for the AD approach. In this case the
+        dimension in output is d_input because we are using a reconstruction approach
+        so we want to reconstruct the input.
         """
         super().__init__()
 
@@ -251,9 +256,10 @@ class MonotonicHead(nn.Module):
         sequence_length: int,
     ):
         """
-        Model Head for monotonic neural networks. With this model head (that needs to have at least 4 layers
-        to be a universal approximator) the model should be monotonic, so it should produce always non increasing
-        predictions for the RUL
+        Model Head for monotonic neural networks (works both for padding and monotonic approach).
+        With this model head (that needs to have at least 4 layers
+        to be a universal approximator) the model should be monotonic, so it should produce always
+        non increasing predictions for the RUL
         """
         super().__init__()
 
