@@ -33,6 +33,10 @@ sys.path.append(chronos_path_scripts)
 sys.path.append(imports_path)
 
 # import from other modules
+
+from trainer import get_trainer
+from evaluator import get_evaluator
+
 from utils import (
     get_current_time,
     get_phm_feature_names,
@@ -56,7 +60,7 @@ from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_tab
 from plots import plot_predictions_grid
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
+experiment_path = os.path.join(cwd, "experiments", "phm_exp")
 
 def get_activation(act: str) -> nn.Module:
     """
@@ -125,6 +129,7 @@ def train_loop(
     optimizer: optim.Optimizer,
     criterion: nn.Module,
     device: torch.device = torch.device("cpu"),
+    mono_mask: np.ndarray = np.zeros(shape=(10,1))
 ) -> float:
     """
     Train loop for one epoch
@@ -136,6 +141,7 @@ def train_loop(
         optimizer (torch.optim.Optimizer): The optimizer object
         criterion (torch.nn.Module): The loss function
         device (str): The device to use
+        mono_mask (np.ndarray): boolean mask to identify monotonic features
 
     Returns:
         loss (float): The loss value
@@ -153,6 +159,7 @@ def train_loop(
             if "padding" in config.approach
             else life.to(device).squeeze(-1)
         )
+
         rul = rul.to(device).squeeze(-1)
         mask = (
             mask.to(device)
@@ -557,6 +564,7 @@ def exp_run(
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
     tau: float = 0.5,
+    mono_mask: np.ndarray = np.zeros(shape=(10,1))
 ) -> None:
     """
     This function implements all the stuff that compose a wandb run: from
@@ -570,6 +578,7 @@ def exp_run(
         outputs_path (str): basepath where to save the outputs dictionary
         metrics_path (str): basepath where to save the metrics
         tau (float): quantile level for the evaluation
+        mono_mask (np.ndarray): boolean mask to identify monotonic features
 
     Returns:
         This function performs the experiment, logs the results on wandb, saves the outputs and
@@ -591,20 +600,23 @@ def exp_run(
         model_config = model_config
     )
 
-    wandb_train_test(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        test_loader=test_loader,
-        criterion=criterion,
-        eval_criterion=eval_criterion,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        config=config,
-        device=device,
-        best_model_path=best_model_path,
-        tau=tau,
+    trainer = get_trainer(
+        train_loader = train_loader,
+        val_loader = val_loader,
+        test_loader = test_loader,
+        model = model,
+        optimizer = optimizer,
+        criterion = criterion,
+        eval_criterion = eval_criterion,
+        scheduler = scheduler,
+        device = device,
+        best_model_path = best_model_path,
+        config = config,
+        mono_mask = mono_mask,
+        tau = tau
     )
+
+    trainer.run()
 
     if config.return_outputs or config.save_outputs:
 
@@ -670,6 +682,7 @@ def wandb_train_test(
     device: str = "cpu",
     best_model_path: str = experiment_path,
     tau: float = 0.5,
+    mono_mask: np.ndarray = np.zeros(shape=(10,1))
 ) -> None:
     """
     Train and test the model on a wandb run and log the metrics
@@ -686,9 +699,10 @@ def wandb_train_test(
         device (str): The device to use
         best_model_path (str): The path to save the best model
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
+        mono_mask (np.ndarray): boolean mask to identify monotonic features
 
     Returns:
-        None: the model does not return anything
+        None: the function does not return anything
     """
 
     if config.use_wandb:
@@ -747,6 +761,7 @@ def wandb_train_test(
                     optimizer=optimizer,
                     criterion=criterion,
                     device=device,
+                    mono_mask=mono_mask
                 )
 
             train_time = time.time() - train_time
@@ -785,6 +800,7 @@ def wandb_train_test(
                     mode="Val",
                     device=device,
                     tau=tau,
+                    mono_mask=mono_mask
                 )
 
             val_time = time.time() - val_time
@@ -823,6 +839,7 @@ def wandb_train_test(
                     mode="Test",
                     device=device,
                     tau=tau,
+                    mono_mask=mono_mask
                 )
 
             test_time = time.time() - test_time
@@ -1007,16 +1024,20 @@ def best_model_perf(
         print(f"Testing on life {i+1+config.test_idx[0]}") if config.data_name == "CMAPSS" else print(f"Testing on life {test_idx[i]}")
         print("#" * 50)
 
-        _, _, y_pred, y_true, mean_an_scores, max_an_scores = eval_loop(
-            dataloader=test_loader,
-            model=model,
-            config=config,
-            criterion=criterion,
-            eval_criterion=eval_criterion,
-            mode="Test",
-            device=device,
-            use_tqdm=False,
-            tau=tau,
+        evaluator = get_evaluator(
+            model = model,
+            config = config,
+            criterion = criterion,
+            eval_criterion = eval_criterion,
+            device = device,
+            mono_mask = mono_mask,
+            tau = tau
+        )
+
+        _, _, y_pred, y_true = evaluator.eval_loop(
+            loader = test_loader,
+            mode = "Test",
+            use_tqdm = False
         )
 
         if config.normalize_rul:
