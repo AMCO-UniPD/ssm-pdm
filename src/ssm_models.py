@@ -513,6 +513,55 @@ class MLPModel(nn.Module):
 
         return x
 
+class MonotonicMLP(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        input_size: int,
+        output_size: int,
+        sequence_length: int,
+        ad: bool = False,
+        full_life: bool = False
+    ):
+        """
+        Monotonic version of the MLP model using only MonotonicLinear layers
+        """
+        super(MonotonicMLP, self).__init__()
+        self.quantile_reg = config.quantile_reg
+        self.tau_feat = config.tau_feat
+        self.tau_mult = config.tau_mult
+        self.gap = config.gap
+        self.device = config.device
+        self.ad = ad
+        self.full_life = full_life
+
+        self.fc1 = nn.Linear(input_size, config.d_model)
+
+        self.head = select_model_head(
+            config = config,
+            d_input = input_size,
+            d_output = output_size,
+            sequence_length = sequence_length,
+            ad = self.ad,
+            gap = self.gap,
+            monotonic = True,
+            full_life = self.full_life
+        )
+
+    def forward(self, x, tau=0.5):
+        if self.quantile_reg:
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
+
+        x = self.fc1(x) # (B,L,D) → (B,L,H)
+        x = self.head(x, tau=tau) # (B, L, d_model) -> (B, L)
+
+        return x
+
 # RNN based models
 
 class Recurrent_PDM(nn.Module):
@@ -1139,6 +1188,15 @@ def load_ssm_model(
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
             monotonic = exp_config.monotonic,
+            full_life = True if exp_config.approach == "full_life" else False
+        )
+    elif exp_config.model_name == "MonotonicMLP":
+        model = MonotonicMLP(
+            config=model_config,
+            input_size=d_input,
+            output_size=1 if not model_config.gap else exp_config.sequence_length,
+            sequence_length = exp_config.sequence_length,
+            ad = exp_config.ad,
             full_life = True if exp_config.approach == "full_life" else False
         )
     elif exp_config.model_name == "Linear":
