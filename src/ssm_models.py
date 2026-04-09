@@ -75,6 +75,10 @@ class ModelConfig:
     quantile_reg: bool = True
     tau_mult: bool = True
     tau_feat: bool = True
+    # monotonic
+    n_mono_layers: int = 2
+    n_neurons: int = 128
+    n_mono_neurons: int = 128
     # S4 config
     lr: float = 1.0e-3
     activation: str = "relu"
@@ -559,6 +563,54 @@ class MonotonicMLP(nn.Module):
 
         x = self.fc1(x) # (B,L,D) → (B,L,H)
         x = self.head(x, tau=tau) # (B, L, d_model) -> (B, L)
+
+        return x
+
+class PartiallyMonotonicMLP(nn.Module):
+    def __init__(
+        self,
+        config: ModelConfig,
+        input_size: int,
+        output_size: int,
+        sequence_length: int,
+    ):
+        """
+        Partially Monotonic version of the MLP model using only MonotonicLinear layers
+        """
+        super(PartiallyMonotonicMLP, self).__init__()
+        self.quantile_reg = config.quantile_reg
+        self.tau_feat = config.tau_feat
+        self.tau_mult = config.tau_mult
+        self.device = config.device
+
+        self.pre_mono = nn.ModuleList([nn.LazyLinear(config.n_neurons) for _ in range(config.n_layers)])
+
+        #NOTE: For the moment let's hard code ReLU as the activation
+        self.mono = nn.ModuleList([
+            MonotonicLinear(input_size+config.n_neurons, config.n_mono_neurons,pre_activation=nn.Identity()),
+            *[MonotonicLinear(config.n_mono_neurons, config.n_mono_neurons, pre_activation=nn.ReLU()) for _ in range(config.n_mono_layers)],
+            MonotonicLinear(config.n_mono_neurons, sequence_length, pre_activation=nn.ReLU())
+        ])
+
+    def forward(self, x, x_mono, tau=0.5):
+
+        if self.quantile_reg:
+            x = concat_tau(
+                x = x,
+                tau = tau,
+                device = self.device,
+                tau_feat = self.tau_feat
+            )
+
+        for layer in self.pre_mono:
+            x = nn.ReLU(layer(x))
+
+        x = torch.cat((x, x_mono), dim=-1)
+
+        for layer in self.mono:
+            x = layer(x)
+
+        x = x*tau if self.tau_mult else x
 
         return x
 
@@ -1198,6 +1250,13 @@ def load_ssm_model(
             sequence_length = exp_config.sequence_length,
             ad = exp_config.ad,
             full_life = True if exp_config.approach == "full_life" else False
+        )
+    elif exp_config.model_name == "PartiallyMonotonicMLP":
+        model = PartiallyMonotonicMLP(
+            config=model_config,
+            input_size=d_input,
+            output_size=1 if not model_config.gap else exp_config.sequence_length,
+            sequence_length = exp_config.sequence_length,
         )
     elif exp_config.model_name == "Linear":
         model = LinearModel(

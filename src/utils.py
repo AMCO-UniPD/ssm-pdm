@@ -2,68 +2,51 @@
 Script containing some utility functions for the `chronos-pdm` project
 """
 
+import json
+import math
 import os
+import pickle
+import random
+import re
 import sys
 import time
-import math
-import json
-import re
-import yaml
-import pickle
+from typing import List, Optional, Tuple, Union
+
 import ipdb
-import pandas as pd
 import numpy as np
-import random
-from typing import Tuple, List, Optional, Union
+import pandas as pd
+import yaml
 
 ceruleo_path = os.path.join(os.path.dirname(__file__), "ceruleo")
 sys.path.append(ceruleo_path)
 
-# ceruleo imports
-from ceruleo.dataset.ts_dataset import AbstractPDMDataset
-from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset
-from ceruleo.dataset.catalog.PHMDataset2018 import PHMDataset2018
-from ceruleo.dataset.catalog.CMAPSS import sensor_indices
-from ceruleo.transformation import Transformer
-from ceruleo.transformation.features.selection import (
-    ByNameFeatureSelector,
-    PandasVarianceThreshold,
-)
-
-# from ceruleo.transformation.features.extraction import RollingStatistics
-from ceruleo.transformation.functional.pipeline.pipeline import make_pipeline
-from ceruleo.transformation.features.scalers import (
-    MinMaxScaler,
-    RobustMinMaxScaler,
-    StandardScaler,
-    RobustStandardScaler,
-)
-from ceruleo.transformation.features.imputers import MeanImputer, RollingMeanImputer
-from ceruleo.transformation.features.transformation import Clip
-
-# sklearn imports
-from sklearn.model_selection import train_test_split
-
-# torch imports
-from torch.utils.data import DataLoader, ConcatDataset
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset
+# sklearn imports
+from sklearn.model_selection import train_test_split
+# torch imports
+from torch.utils.data import ConcatDataset, DataLoader, Dataset
 
-from config_vars import (
-    MAX_RUL,
-    PHM_PATH,
-    PHM_PATH_ACQ4,
-    PHM_PATH_ACQ2,
-    CMAPSS_MODELS,
-    PHM_TOOLS,
-    PHM_FAILURES,
-    PHM_IN_FEATURES,
-    PHM_ETCH_FEATURES,
-    PHM_FAIL_TYPES,
-    PHM_FEATURES,
-    APPROACHES,
-)
+from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset, sensor_indices
+from ceruleo.dataset.catalog.PHMDataset2018 import PHMDataset2018
+# ceruleo imports
+from ceruleo.dataset.ts_dataset import AbstractPDMDataset
+from ceruleo.transformation import Transformer
+from ceruleo.transformation.features.imputers import (MeanImputer,
+                                                      RollingMeanImputer)
+from ceruleo.transformation.features.scalers import (MinMaxScaler,
+                                                     RobustMinMaxScaler,
+                                                     RobustStandardScaler,
+                                                     StandardScaler)
+from ceruleo.transformation.features.selection import (ByNameFeatureSelector,
+                                                       PandasVarianceThreshold)
+from ceruleo.transformation.features.transformation import Clip
+# from ceruleo.transformation.features.extraction import RollingStatistics
+from ceruleo.transformation.functional.pipeline.pipeline import make_pipeline
+from config_vars import (APPROACHES, CMAPSS_MODELS, MAX_RUL, PHM_ETCH_FEATURES,
+                         PHM_FAIL_TYPES, PHM_FAILURES, PHM_FEATURES,
+                         PHM_IN_FEATURES, PHM_PATH, PHM_PATH_ACQ2,
+                         PHM_PATH_ACQ4, PHM_TOOLS)
 from exp_config import ExperimentConfig
 
 
@@ -652,20 +635,19 @@ class SSMFullLifeRegressionDataset(Dataset):
         mask = torch.tensor(self.mask[idx], dtype=torch.float32)
         return sequence, target, mask
 
-
-def get_transformer(
+def get_feature_type(
     config: ExperimentConfig,
     df: Union[CMAPSSDataset, PHMDataset2018],
-) -> Tuple[Transformer, List[str]]:
+) -> List[str]:
     """
-    Create a transformer object to preprocess the data from the CMAPSS dataset
+    This function returns the list of input features
 
     Args:
-        config (ExperimentConfig): The configuration dictionary
-        df (CMAPSSDataset): The CMAPSS dataset
+        config (ExperimentConfig): experiment configuration object
+        df (Union[CMAPSSDataset, PHMDataset2018]): The CMAPSS dataset
 
     Returns:
-        transformer (Transformer): The ceruleo transformer object
+        FEATURES (List[str]): list of input features
     """
 
     if config.data_name == "CMAPSS":
@@ -677,6 +659,25 @@ def get_transformer(
             FEATURES = PHM_IN_FEATURES
         else:
             FEATURES = PHM_FEATURES
+
+    return FEATURES
+
+def get_transformer(
+    config: ExperimentConfig,
+    df: Union[CMAPSSDataset, PHMDataset2018],
+) -> Tuple[Transformer, List[str]]:
+    """
+    Create a transformer object to preprocess the data from the CMAPSS dataset
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+        df (Union[CMAPSSDataset, PHMDataset2018]): The CMAPSS dataset
+
+    Returns:
+        transformer (Transformer): The ceruleo transformer object
+    """
+
+    FEATURES = get_feature_type(config=config, df=df)
 
     if config.scaler == "minmax":
         scaler = MinMaxScaler(
@@ -1554,7 +1555,6 @@ def extract_number(
     else:
         return None
 
-
 def an_score_to_rul(an_scores: np.ndarray, max_rul: int = MAX_RUL) -> np.ndarray:
     """
     This function converts an array containing the anomaly scores over the samples
@@ -1575,3 +1575,37 @@ def an_score_to_rul(an_scores: np.ndarray, max_rul: int = MAX_RUL) -> np.ndarray
     rul_scores = an_scores_norm * max_rul
 
     return rul_scores
+
+def get_mono_mask(features: List[str]) -> np.ndarray:
+    """
+    Function to compute the monotonic mask from the list of input features
+
+    Args:
+        features (List[str]): list of input features
+
+    Returns:
+        mono_mask (np.ndarray): boolean mask to indicate monotonic and non monotonic features
+    """
+
+    mono_mask = np.array(int("ETCH" in features))
+
+    return mono_mask
+
+def split_input(mask_mono:np.ndarray, inputs: torch.Tensor, device: str = "cpu") -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    This function splits the input data into monotonic and non monotonic features
+
+    Args:
+        mask_mono (np.ndarray): boolean mask indicating the monotonic and non monotonic features
+        inputs (torch.Tensor): input tensor
+        device (str): CUDA device
+
+    Returns:
+        non_mono_inputs (torch.Tensor): tensor with the non monotonic features
+        mono_inputs (torch.Tensor): tensor with the monotonic features
+    """
+
+    non_mono_inputs = inputs[:, np.where(mask_mono==0)].squeeze()
+    mono_inputs = inputs[:, np.where(mask_mono!=0)].squeeze() * torch.tensor(mask_mono[np.where(mask_mono!=0)][None,:], dtype=torch.float32).to(device)
+
+    return non_mono_inputs, mono_inputs

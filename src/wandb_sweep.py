@@ -257,6 +257,7 @@ def exp_run_sweep(
         scheduler,
         criterion,
         eval_criterion,
+        mono_mask
     ) = wandb_data(
         config = exp_config,
         model_config = model_config

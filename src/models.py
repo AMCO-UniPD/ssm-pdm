@@ -46,6 +46,7 @@ from utils import (
     open_element,
     get_feature_names,
     combine_values,
+    get_mono_mask
 )
 
 from config_vars import MAX_RUL
@@ -488,7 +489,8 @@ def wandb_data(
         optim.Optimizer,
         optim.lr_scheduler._LRScheduler,
         nn.Module,
-        nn.Module
+        nn.Module,
+        np.ndarray
         ],
         ExperimentConfig
 ]:
@@ -510,6 +512,7 @@ def wandb_data(
             lr_scheduler (optim.lr_scheduler): lr scheduler
             criterion (nn.Module): training loss
             eval_criterion (nn.Module): evaluation loss
+            mono_mask (np.ndarray): boolean mask to divide between monotonic and non montonic features
         otherwise it returns:
             config (ExperimentConfig): experiment configuration object updated with the test_idx
     """
@@ -541,7 +544,10 @@ def wandb_data(
         eval_loss_name=config.eval_loss,
     )
 
-    return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion
+    mono_mask = get_mono_mask(features=feature_names)
+    ipdb.set_trace()
+
+    return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion, mono_mask
 
 def exp_run(
     config: ExperimentConfig,
@@ -579,6 +585,7 @@ def exp_run(
         scheduler,
         criterion,
         eval_criterion,
+        mono_mask
     ) = wandb_data(
         config = config,
         model_config = model_config
