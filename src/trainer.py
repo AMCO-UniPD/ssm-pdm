@@ -113,7 +113,8 @@ class Trainer:
 
     def run(self):
         """
-        Method implemeting an entire training and evaluation run for multiple epochs.
+        Method implemeting an entire training and evaluation run for multiple epochs
+        logging the results to wandb
         """
 
         if self.config.use_wandb:
@@ -234,7 +235,7 @@ class Trainer:
             )
 
 
-# NOTE: Standard Trainer → no quantile_reg and no monotonic
+# NOTE: Standard Trainer → no quantile_reg
 
 class StandardTrainer(Trainer):
     """
@@ -299,7 +300,7 @@ class QuantileTrainer(Trainer):
         super().__init__(*args, **kwargs)
 
         self.tau = tau
-        self.evaluator = QuantileEvaluator(tau=self.tau,**kwargs)
+        self.evaluator = QuantileEvaluator(tau=self.tau, **kwargs)
 
     def train_loop(self) -> float:
         """
@@ -331,7 +332,11 @@ class QuantileTrainer(Trainer):
                 print_quantile=True,
             )
 
-            output = self.model(life, tau=tau)
+            #NOTE: In the new version of the models tau is a model attribute
+            # so we have to set it to the sampled quantile level
+
+            self.model.tau = tau
+            output = self.model(life)
             loss = self.criterion(output, rul, mask, tau)
 
             self.optimizer.zero_grad()
@@ -348,306 +353,6 @@ class QuantileTrainer(Trainer):
             )
 
         return train_loss / num_batches
-
-    def eval_loop(
-        self, loader: torch.Tensor, mode: str = "Val", use_tqdm: bool = True
-    ) -> Tuple[float, float, np.ndarray, np.ndarray]:
-        """
-        Implementation of eval_loop for QuantileTrainer
-        """
-
-        self.model.eval()
-        eval_loss, eval_rmse_loss = 0.0, 0.0
-        num_batches = len(loader)
-        pbar = tqdm(loader) if use_tqdm else loader
-        y_pred, y_true = [], []
-
-        with torch.no_grad():
-            for life, rul, mask in pbar:
-                life = (
-                    life.to(self.device)
-                    if "padding" in self.config.approach
-                    else life.to(self.device).squeeze(-1)
-                )
-                rul = rul.to(self.device).squeeze(-1)
-                mask = (
-                    mask.to(self.device)
-                    if "padding" in self.config.approach
-                    else mask.to(self.device).squeeze(-1)
-                )
-
-                output = self.model(life, tau=self.tau)
-
-                batch_out = output.to("cpu").detach().numpy()
-                batch_target = rul.to("cpu").detach().numpy()
-                y_pred.extend(batch_out)
-                y_true.extend(batch_target)
-
-                loss = self.criterion(output, rul, mask, self.tau)
-                rmse_loss = self.eval_criterion(output, rul, mask, self.tau)
-                eval_loss += loss.item()
-                eval_rmse_loss += rmse_loss.item()
-
-            eval_loss /= num_batches
-            eval_rmse_loss /= num_batches
-            print(
-                f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}"
-            )
-
-        return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
-
-
-# NOTE: MonotonicTrainer → no quantile_reg and monotonic
-
-class MonotonicTrainer(Trainer):
-    """
-    MonotonicTrainer subclasses used to train the models using Partially Monotonic NN
-
-    Args:
-        mono_mask (np.ndarray): boolean mask to identify monotonic features
-    """
-
-    def __init__(self, mono_mask: np.ndarray, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.mono_mask = mono_mask
-        self.evaluator = MonotonicEvaluator(mono_mask=self.mono_mask,**kwargs)
-
-    def train_loop(self) -> float:
-        """
-        train_loop implementation for MonotonicTrainer
-
-        Args:
-            mono_mask (np.ndarray): boolean mask to identify monotonic features
-        """
-
-        self.model.train()
-        train_loss = 0.0
-        num_batches = len(self.train_loader)
-        pbar = tqdm(enumerate(self.train_loader))
-
-        for batch_idx, (life, rul, mask) in pbar:
-
-            life, life_mono = split_input(mask_mono=self.mono_mask, inputs=life, device=self.device)
-
-            life = (
-                life.to(self.device)
-                if "padding" in self.config.approach
-                else life.to(self.device).squeeze(-1)
-            )
-            life_mono = (
-                life_mono.to(self.device)
-                if "padding" in self.config.approach
-                else life_mono.to(self.device).squeeze(-1)
-            )
-            rul = rul.to(self.device).squeeze(-1)
-            mask = (
-                mask.to(self.device)
-                if "padding" in self.config.approach
-                else mask.to(self.device).squeeze(-1)
-            )
-
-            output = self.model(life,life_mono)
-            loss = self.criterion(output, rul, mask)
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            torch.cuda.empty_cache()
-            gc.collect()
-
-            train_loss += loss.item()
-
-            pbar.set_description(
-                f"Batch Idx: {batch_idx}/{len(self.train_loader)} | Train Loss: {train_loss / (batch_idx + 1):.4f}"
-            )
-
-        return train_loss / num_batches
-
-    def eval_loop(
-        self, loader: torch.Tensor, mode: str = "Val", use_tqdm: bool = True
-    ) -> Tuple[float, float, np.ndarray, np.ndarray]:
-        """
-        Implementation of eval_loop for MonotonicTrainer
-        """
-
-        self.model.eval()
-        eval_loss, eval_rmse_loss = 0.0, 0.0
-        num_batches = len(loader)
-        pbar = tqdm(loader) if use_tqdm else loader
-        y_pred, y_true = [], []
-
-        with torch.no_grad():
-            for life, rul, mask in pbar:
-                life, life_mono = split_input(mask_mono=self.mono_mask, inputs=life, device=self.device)
-
-                life = (
-                    life.to(self.device)
-                    if "padding" in self.config.approach
-                    else life.to(self.device).squeeze(-1)
-                )
-                life_mono = (
-                    life_mono.to(self.device)
-                    if "padding" in self.config.approach
-                    else life_mono.to(self.device).squeeze(-1)
-                )
-                rul = rul.to(self.device).squeeze(-1)
-                mask = (
-                    mask.to(self.device)
-                    if "padding" in self.config.approach
-                    else mask.to(self.device).squeeze(-1)
-                )
-
-                output = self.model(life,life_mono)
-
-                batch_out = output.to("cpu").detach().numpy()
-                batch_target = rul.to("cpu").detach().numpy()
-                y_pred.extend(batch_out)
-                y_true.extend(batch_target)
-
-                loss = self.criterion(output, rul, mask)
-                rmse_loss = self.eval_criterion(output, rul, mask)
-                eval_loss += loss.item()
-                eval_rmse_loss += rmse_loss.item()
-
-            eval_loss /= num_batches
-            eval_rmse_loss /= num_batches
-            print(
-                f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}"
-            )
-
-        return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
-
-# NOTE: MonoQuantileTrainer → quantile_reg and monotonic
-
-class MonoQuantileTrainer(Trainer):
-    """
-    MonoQuantileTrainer subclasses used to train the models using Quantile
-    Regression and Partially Monotonic NN
-
-    Args:
-        tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
-        mono_mask (np.ndarray): boolean mask to identify monotonic features
-    """
-
-    def __init__(self, mono_mask: np.ndarray, tau: float = 0.5, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.tau = tau
-        self.mono_mask = mono_mask
-        self.evaluator = MonoQuantileEvaluator(tau=self.tau, mono_mask=self.mono_mask,**kwargs)
-
-    def train_loop(self) -> float:
-        """
-        train_loop implementation for MonoQuantileTrainer
-
-        Args:
-            mono_mask (np.ndarray): boolean mask to identify monotonic features
-        """
-
-        self.model.train()
-        train_loss = 0.0
-        num_batches = len(self.train_loader)
-        pbar = tqdm(enumerate(self.train_loader))
-
-        for batch_idx, (life, rul, mask) in pbar:
-
-            life, life_mono = split_input(mask_mono=self.mono_mask, inputs=life, device=self.device)
-
-            life = (
-                life.to(self.device)
-                if "padding" in self.config.approach
-                else life.to(self.device).squeeze(-1)
-            )
-            life_mono = (
-                life_mono.to(self.device)
-                if "padding" in self.config.approach
-                else life_mono.to(self.device).squeeze(-1)
-            )
-            rul = rul.to(self.device).squeeze(-1)
-            mask = (
-                mask.to(self.device)
-                if "padding" in self.config.approach
-                else mask.to(self.device).squeeze(-1)
-            )
-
-            tau = sample_quantile(
-                quantile_dist=self.config.quantile_dist,
-                bounds=self.config.bounds,
-                print_quantile=True,
-            )
-
-            output = self.model(life, tau=tau)
-            loss = self.criterion(output, rul, mask, tau)
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            torch.cuda.empty_cache()
-            gc.collect()
-
-            train_loss += loss.item()
-
-            pbar.set_description(
-                f"Batch Idx: {batch_idx}/{len(self.train_loader)} | Train Loss: {train_loss / (batch_idx + 1):.4f}"
-            )
-
-        return train_loss / num_batches
-
-    def eval_loop(
-        self, loader: torch.Tensor, mode: str = "Val", use_tqdm: bool = True
-    ) -> Tuple[float, float, np.ndarray, np.ndarray]:
-        """
-        Implementation of eval_loop for MonoQuantileTrainer
-        """
-
-        self.model.eval()
-        eval_loss, eval_rmse_loss = 0.0, 0.0
-        num_batches = len(loader)
-        pbar = tqdm(loader) if use_tqdm else loader
-        y_pred, y_true = [], []
-
-        with torch.no_grad():
-            for life, rul, mask in pbar:
-                life, life_mono = split_input(mask_mono=self.mono_mask, inputs=life, device=self.device)
-
-                life = (
-                    life.to(self.device)
-                    if "padding" in self.config.approach
-                    else life.to(self.device).squeeze(-1)
-                )
-                life_mono = (
-                    life_mono.to(self.device)
-                    if "padding" in self.config.approach
-                    else life_mono.to(self.device).squeeze(-1)
-                )
-                rul = rul.to(self.device).squeeze(-1)
-                mask = (
-                    mask.to(self.device)
-                    if "padding" in self.config.approach
-                    else mask.to(self.device).squeeze(-1)
-                )
-
-                output = self.model(life, tau=self.tau)
-
-                batch_out = output.to("cpu").detach().numpy()
-                batch_target = rul.to("cpu").detach().numpy()
-                y_pred.extend(batch_out)
-                y_true.extend(batch_target)
-
-                loss = self.criterion(output, rul, mask, self.tau)
-                rmse_loss = self.eval_criterion(output, rul, mask, self.tau)
-                eval_loss += loss.item()
-                eval_rmse_loss += rmse_loss.item()
-
-            eval_loss /= num_batches
-            eval_rmse_loss /= num_batches
-            print(
-                f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}"
-            )
-
-        return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
 
 def get_trainer(
     mono_mask: np.ndarray = np.zeros(shape=(10,1)),
@@ -668,11 +373,7 @@ def get_trainer(
 
     config = kwargs["config"]
 
-    if config.quantile_reg and config.monotonic:
-        trainer = MonoQuantileTrainer(tau=tau, mono_mask=mono_mask, **kwargs)
-    elif not config.quantile_reg and config.monotonic:
-        trainer = MonotonicTrainer(mono_mask=mono_mask, **kwargs)
-    elif config.quantile_reg and not config.monotonic:
+    if config.quantile_reg:
         trainer = QuantileTrainer(tau=tau, **kwargs)
     else:
         trainer = StandardTrainer(**kwargs)
