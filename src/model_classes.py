@@ -20,9 +20,13 @@ from transformer_encoder.utils import PositionalEncoding
 from torchinfo import summary
 from calflops import calculate_flops
 
-from ssm_models import concat_tau, model_summary_manual
-from utils import ExperimentConfig, split_input
-from models import ModelConfig
+from utils import (
+    ExperimentConfig,
+    split_input,
+    concat_tau,
+    model_summary_manual
+)
+from ssm_models import ModelConfig
 from projector import Projector
 from extractor import (
     Extractor,
@@ -57,9 +61,6 @@ class RULModel(nn.Module):
         self.model_name = model_name
         self.model_config = model_config
         self.output_size = output_size
-
-        #TODO: Call here the get_extractor function to
-        # define the extractor block
 
         self.projector = Projector(d_model=self.model_config.d_model)
         self.get_extractor()

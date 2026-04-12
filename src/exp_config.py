@@ -9,8 +9,6 @@ from dataclasses import dataclass, field, fields
 from typing import List, Dict, Tuple, Union
 import torch
 from wandb.sdk.wandb_config import Config as WandbConfig
-# from utils import load_yaml_to_dict
-# from ssm_models import ModelConfig
 
 @dataclass
 class ExperimentConfig:
@@ -93,6 +91,70 @@ class ExperimentConfig:
 
     @classmethod
     def from_dict(cls, config: dict) -> "ExperimentConfig":
+        valid_keys = {f.name for f in fields(cls)}
+        unknown = config.keys() - valid_keys
+        if unknown:
+            raise ValueError(f"Unknown config keys: {unknown}")
+        return cls(**config)
+
+    def add_params(self, args: dict):
+        """
+        This function let's us to add some additional parameters
+        to the dataclass (i.e. parameters passed through the command line)
+        """
+        for key in args:
+            setattr(self, key, args[key])
+
+# dataclass for the model configuration
+
+@dataclass
+class ModelConfig:
+    """
+    This dataclass contains all the configuration parameters for the
+    models used in the project
+    """
+
+    random_init: bool = True
+    d_model: int = 128
+    n_layers: int = 5
+    dropout: float = 0.0
+    dropout_fn: Optional[Callable] = field(default=torch.nn.modules.dropout.Dropout1d)
+    gap: bool = True
+    # quantile regression
+    quantile_reg: bool = True
+    tau_mult: bool = True
+    tau_feat: bool = True
+    # monotonic
+    n_mono_layers: int = 2
+    n_neurons: int = 128
+    n_mono_neurons: int = 128
+    # S4 config
+    lr: float = 1.0e-3
+    activation: str = "relu"
+    gate_act: str = "null"
+    mult_act: str = "null"
+    final_act: str = "glu"
+    prenorm: bool = False
+    # S4D config
+    d_state: int = 64
+    act: str = "gelu"
+    # S5 config
+    bidir: bool = False
+    ff_dropout: float = 0.0
+    attn_dropout: float = 0.0
+    # RULTransformer config
+    d_ff: int = 64
+    n_heads: int = 8
+    # RULInformer config
+    factor: int = 5
+    attn: str = "prob"
+    inf_activation: str = "gelu"
+    distil: bool = True
+    output_attention: bool = False
+    device: str = "cpu"
+
+    @classmethod
+    def from_dict(cls, config: dict) -> "ModelConfig":
         valid_keys = {f.name for f in fields(cls)}
         unknown = config.keys() - valid_keys
         if unknown:
@@ -436,8 +498,6 @@ def set_sweep_name(config: ExperimentConfig) -> str:
         sweep_name = f"{sweep_name}_{param_name}"
 
     return sweep_name
-
-from ssm_models import ModelConfig
 
 def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
     """

@@ -266,8 +266,12 @@ class StandardTrainer(Trainer):
                 else mask.to(self.device).squeeze(-1)
             )
 
+            ipdb.set_trace()
+
             output = self.model(life)
             loss = self.criterion(output, rul, mask)
+
+            ipdb.set_trace()
 
             self.optimizer.zero_grad()
             loss.backward()

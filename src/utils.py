@@ -1609,3 +1609,74 @@ def split_input(mask_mono:np.ndarray, inputs: torch.Tensor, device: str = "cpu")
     mono_inputs = inputs[:, np.where(mask_mono!=0)].squeeze() * torch.tensor(mask_mono[np.where(mask_mono!=0)][None,:], dtype=torch.float32).to(device)
 
     return non_mono_inputs, mono_inputs
+
+def concat_tau(
+    x: torch.Tensor,
+    tau: float = 0.5,
+    device: str = "cpu",
+    tau_feat: bool = False
+) -> torch.Tensor:
+    """
+    This function checks some stuff on the quantile level tau
+    and concatenates it to the input in case the tau_feat flag is true,
+    otherwise the tensor passed in input is returned.
+
+    Args:
+        x (torch.Tensor): input tensor
+        tau (float): quantile level
+        device (str): CUDA device
+        tau_feat (bool): boolean flag to decide weather to concatenate the quantile
+        level to the input or not
+
+    Returns:
+        x (torch.Tensor): input tensor if tau_feat=False, otherwise the input tensor
+        with tau added as an additional feature
+    """
+
+    assert tau is not None, "tau must be provided for quantile regression"
+    assert isinstance(tau, float), "tau must be a float"
+    assert 0 <= tau <= 1, "tau must be between 0 and 1"
+
+    if tau_feat:
+        x = torch.cat(
+            [x, torch.ones(x.shape[0], x.shape[1], 1).to(device) * tau],
+            dim=-1,
+        )
+
+    return x
+
+def model_summary_manual(model: nn.Module) -> int:
+    """
+    Manual version of torchinfo summary module.
+
+    Args:
+        model: nn.Module object
+
+    Returns:
+        total_params: the number of parameters in the model
+    """
+
+    total_params = 0
+    trainable_params = 0
+    non_trainable_params = 0
+    for name, param in model.named_parameters():
+        num_params = param.numel()  # Number of elements in the parameter
+        total_params += num_params
+        if param.requires_grad:
+            trainable_params += num_params
+        else:
+            non_trainable_params += num_params
+        print(
+            f"{name}: Shape={list(param.shape)}, Num params={num_params},"
+            f" Trainable={param.requires_grad}"
+        )
+        print("#" * 50)
+
+    print("#" * 50)
+    print("Model Summary:")
+    print("#" * 50)
+    print(f"Total parameters: {total_params}")
+    print(f"Trainable parameters: {trainable_params}")
+    print(f"Non-trainable parameters: {non_trainable_params}")
+
+    return total_params

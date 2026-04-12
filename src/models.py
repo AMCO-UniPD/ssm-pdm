@@ -3,6 +3,28 @@ Python script containing utility functions for the models of the `chronos-pdm` p
 """
 
 # general imports
+from plots import plot_predictions_grid
+from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_table
+from loss import load_loss_functions
+from ssm_models import ModelConfig, load_ssm_model
+from config_vars import MAX_RUL
+from utils import (
+    get_current_time,
+    get_phm_feature_names,
+    sample_quantile,
+    save_element,
+    ExperimentConfig,
+    generate_path,
+    load_reg_data,
+    load_phm_data,
+    get_most_recent_file,
+    open_element,
+    get_feature_names,
+    combine_values,
+    get_mono_mask
+)
+from evaluator import get_evaluator
+from trainer import get_trainer
 import os
 import sys
 import ipdb
@@ -25,8 +47,10 @@ from torch.cuda.amp import GradScaler, autocast
 # from apex.optimizers import FusedAdam
 from torch.optim import AdamW, lr_scheduler
 
-chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
-chronos_path_scripts = os.path.join(os.path.dirname(__file__), "chronos-rul", "scripts")
+chronos_path_src = os.path.join(
+    os.path.dirname(__file__), "chronos-rul", "src")
+chronos_path_scripts = os.path.join(
+    os.path.dirname(__file__), "chronos-rul", "scripts")
 imports_path = os.path.join(os.path.dirname(__file__), "AD_MG", "src")
 sys.path.append(chronos_path_src)
 sys.path.append(chronos_path_scripts)
@@ -34,33 +58,10 @@ sys.path.append(imports_path)
 
 # import from other modules
 
-from trainer import get_trainer
-from evaluator import get_evaluator
-
-from utils import (
-    get_current_time,
-    get_phm_feature_names,
-    sample_quantile,
-    save_element,
-    ExperimentConfig,
-    generate_path,
-    load_reg_data,
-    load_phm_data,
-    get_most_recent_file,
-    open_element,
-    get_feature_names,
-    combine_values,
-    get_mono_mask
-)
-
-from config_vars import MAX_RUL
-from ssm_models import ModelConfig, load_ssm_model
-from loss import load_loss_functions
-from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_table
-from plots import plot_predictions_grid
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "phm_exp")
+
 
 def get_activation(act: str) -> nn.Module:
     """
@@ -118,9 +119,11 @@ class RegressionHead(nn.Module):
             x = self.fc(x)
             return x
 
-        x = self.fc(x)  # (n_sensors,hidden_size) -> (n_sensors,sequence_length)
+        # (n_sensors,hidden_size) -> (n_sensors,sequence_length)
+        x = self.fc(x)
         # x = self.dropout(x)
         return x
+
 
 def train_loop(
     dataloader: DataLoader,
@@ -129,7 +132,7 @@ def train_loop(
     optimizer: optim.Optimizer,
     criterion: nn.Module,
     device: torch.device = torch.device("cpu"),
-    mono_mask: np.ndarray = np.zeros(shape=(10,1))
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1))
 ) -> float:
     """
     Train loop for one epoch
@@ -199,6 +202,7 @@ def train_loop(
         )
 
     return train_loss / num_batches
+
 
 def mixed_train_loop(
     dataloader: DataLoader,
@@ -344,7 +348,7 @@ def eval_loop(
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
 
-            #NOTE: Since in both the padding and windowed approach we have
+            # NOTE: Since in both the padding and windowed approach we have
             # mini batches of size > 1 we have to use extend and not append
             y_pred.extend(batch_out)
             y_true.extend(batch_target)
@@ -358,23 +362,25 @@ def eval_loop(
             eval_loss += loss.item()
             eval_rmse_loss += rmse_loss.item()
 
-            #NOTE: In the AD case I have to compute the difference sample per sample
+            # NOTE: In the AD case I have to compute the difference sample per sample
             # between the input life and the reconstructed one so that I have an anomaly
             # score for each sample (same dimension of the batch_out and batch_pred
             # that I insert in y_pred and y_true)
             # array to have the anomaly scores over all windows
 
             if config.ad:
-                mean_an_score = np.mean((batch_out-batch_target)**2,axis=2)
-                max_an_score = np.max((batch_out-batch_target)**2,axis=2)
+                mean_an_score = np.mean((batch_out-batch_target)**2, axis=2)
+                max_an_score = np.max((batch_out-batch_target)**2, axis=2)
                 mean_an_scores.extend(mean_an_score)
                 max_an_scores.extend(max_an_score)
 
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
-        print(f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+        print(
+            f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
 
     return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true), np.array(mean_an_scores), np.array(max_an_scores)
+
 
 def mixed_eval_loop(
     dataloader: DataLoader,
@@ -413,7 +419,7 @@ def mixed_eval_loop(
     eval_loss, eval_rmse_loss = 0.0, 0.0
     num_batches = len(dataloader)
     pbar = tqdm(dataloader) if use_tqdm else dataloader
-    y_pred, y_true= [], []
+    y_pred, y_true = [], []
 
     with torch.no_grad():
         for life, rul, mask in pbar:
@@ -445,7 +451,7 @@ def mixed_eval_loop(
             eval_loss += loss.item()
             eval_rmse_loss += rmse_loss.item()
 
-            #NOTE: Since in full_life we have batch_size=1
+            # NOTE: Since in full_life we have batch_size=1
             # we have to use append
             batch_out = output.to("cpu").detach().numpy()
             batch_target = rul.to("cpu").detach().numpy()
@@ -454,11 +460,13 @@ def mixed_eval_loop(
 
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
-        print(f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+        print(
+            f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
 
     return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
 
 # Save the best model
+
 
 def save_best_model(
     best_model_state_dict: dict,
@@ -483,6 +491,7 @@ def save_best_model(
     print("#" * 50)
     print(f"Best model saved at: {best_model_path}")
     print("#" * 50)
+
 
 def wandb_data(
     config: ExperimentConfig,
@@ -524,7 +533,8 @@ def wandb_data(
             config (ExperimentConfig): experiment configuration object updated with the test_idx
     """
 
-    loaders_dict = load_phm_data(config) if config.data_name == "PHM" else load_reg_data(config)
+    loaders_dict = load_phm_data(
+        config) if config.data_name == "PHM" else load_reg_data(config)
 
     train_loader, val_loader, test_loader, test_idx = (
         loaders_dict["train_loader"],
@@ -537,9 +547,9 @@ def wandb_data(
     if config.get_test_idx:
         return config
 
-    feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
+    feature_names = get_feature_names(
+        config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
     mono_mask = get_mono_mask(features=feature_names)
-    ipdb.set_trace()
 
     model, optimizer, scheduler = load_ssm_model(
         exp_config=config,
@@ -549,14 +559,15 @@ def wandb_data(
         mono_mask=mono_mask
     )
     model = model.to(model_config.device)
+    ipdb.set_trace()
 
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
         eval_loss_name=config.eval_loss,
     )
 
-
     return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion, mono_mask
+
 
 def exp_run(
     config: ExperimentConfig,
@@ -566,7 +577,7 @@ def exp_run(
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
     tau: float = 0.5,
-    mono_mask: np.ndarray = np.zeros(shape=(10,1))
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1))
 ) -> None:
     """
     This function implements all the stuff that compose a wandb run: from
@@ -598,25 +609,26 @@ def exp_run(
         eval_criterion,
         mono_mask
     ) = wandb_data(
-        config = config,
-        model_config = model_config
+        config=config,
+        model_config=model_config
     )
 
     trainer = get_trainer(
-        train_loader = train_loader,
-        val_loader = val_loader,
-        test_loader = test_loader,
-        model = model,
-        optimizer = optimizer,
-        criterion = criterion,
-        eval_criterion = eval_criterion,
-        scheduler = scheduler,
-        device = device,
-        best_model_path = best_model_path,
-        config = config,
-        mono_mask = mono_mask,
-        tau = tau
+        train_loader=train_loader,
+        val_loader=val_loader,
+        test_loader=test_loader,
+        model=model,
+        optimizer=optimizer,
+        criterion=criterion,
+        eval_criterion=eval_criterion,
+        scheduler=scheduler,
+        device=device,
+        best_model_path=best_model_path,
+        config=config,
+        mono_mask=mono_mask,
+        tau=tau
     )
+    ipdb.set_trace()
 
     trainer.run()
 
@@ -645,7 +657,7 @@ def exp_run(
             config=config,
             outputs_path=outputs_path,
             metrics_path=metrics_path,
-            tau = tau
+            tau=tau
         )
         print("#" * 50)
         print(f"metrics_df shape: {metrics_df.shape}")
@@ -656,11 +668,13 @@ def exp_run(
         print("Producing the obsidian table")
         print("#" * 50)
 
-        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
+        metrics_path = get_most_recent_file(
+            metrics_path, file_pos=config.file_pos)
         metrics_df = open_element(metrics_path)
 
         if config.sub_lifes_metrics:
-            sub_metrics_df = sub_lifes_metrics(config=config, metrics_df=metrics_df)
+            sub_metrics_df = sub_lifes_metrics(
+                config=config, metrics_df=metrics_df)
             # obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
             obsidian_table = sub_metrics_df.to_markdown()
         else:
@@ -670,6 +684,7 @@ def exp_run(
         print(obsidian_table)
 
 # Function to train and test the model on a wandb run
+
 
 def wandb_train_test(
     model: nn.Module,
@@ -684,7 +699,7 @@ def wandb_train_test(
     device: str = "cpu",
     best_model_path: str = experiment_path,
     tau: float = 0.5,
-    mono_mask: np.ndarray = np.zeros(shape=(10,1))
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1))
 ) -> None:
     """
     Train and test the model on a wandb run and log the metrics
@@ -738,7 +753,8 @@ def wandb_train_test(
             if config.approach == "full_life":
 
                 print("-"*50)
-                print(f"We are in approach {config.approach} so we use mixed train_loop")
+                print(
+                    f"We are in approach {config.approach} so we use mixed train_loop")
                 print("-"*50)
 
                 train_loss = mixed_train_loop(
@@ -753,7 +769,8 @@ def wandb_train_test(
             else:
 
                 print("-"*50)
-                print(f"We are in approach {config.approach} so we use train_loop")
+                print(
+                    f"We are in approach {config.approach} so we use train_loop")
                 print("-"*50)
 
                 train_loss = train_loop(
@@ -773,7 +790,8 @@ def wandb_train_test(
             if config.approach == "full_life":
 
                 print("-"*50)
-                print(f"We are in approach {config.approach} so we use mixed_val_loop")
+                print(
+                    f"We are in approach {config.approach} so we use mixed_val_loop")
                 print("-"*50)
 
                 val_loss, eval_val_loss, y_pred, y_true = mixed_eval_loop(
@@ -790,7 +808,8 @@ def wandb_train_test(
             else:
 
                 print("-"*50)
-                print(f"We are in approach {config.approach} so we use val_loop")
+                print(
+                    f"We are in approach {config.approach} so we use val_loop")
                 print("-"*50)
 
                 val_loss, eval_val_loss, y_pred, y_true, _, _ = eval_loop(
@@ -812,7 +831,8 @@ def wandb_train_test(
             if config.approach == "full_life":
 
                 print("-"*50)
-                print(f"We are in approach {config.approach} so we use mixed_eval_loop")
+                print(
+                    f"We are in approach {config.approach} so we use mixed_eval_loop")
                 print("-"*50)
 
                 test_loss, eval_test_loss, y_pred, y_true = mixed_eval_loop(
@@ -829,7 +849,8 @@ def wandb_train_test(
             else:
 
                 print("-"*50)
-                print(f"We are in approach {config.approach} so we use eval_loop")
+                print(
+                    f"We are in approach {config.approach} so we use eval_loop")
                 print("-"*50)
 
                 test_loss, eval_test_loss, y_pred, y_true, _, _ = eval_loop(
@@ -848,11 +869,13 @@ def wandb_train_test(
 
             if scheduler is not None:
                 scheduler.step()
-                print(f"Epoch {epoch} learning rate: {scheduler.get_last_lr()}")
+                print(
+                    f"Epoch {epoch} learning rate: {scheduler.get_last_lr()}")
 
             if val_loss < min_val_loss:
                 min_val_loss = val_loss
-                print(f"Epoch {epoch} | New best model found with val loss: {min_val_loss}")
+                print(
+                    f"Epoch {epoch} | New best model found with val loss: {min_val_loss}")
                 print("#" * 50)
                 best_model_state_dict = model.state_dict().copy()
 
@@ -870,12 +893,12 @@ def wandb_train_test(
                 "eval_loss/eval_val_loss": eval_val_loss,
                 "loss/test_loss": test_loss,
                 "eval_loss/eval_test_loss": eval_test_loss,
-                }
+            }
 
             if config.use_wandb:
                 wandb.log(model_info)
             else:
-                model_info_df = pd.DataFrame(model_info,index=["values"])
+                model_info_df = pd.DataFrame(model_info, index=["values"])
                 print("-"*50)
                 print("Information on the model training and evaluation:")
                 print(model_info_df.T)
@@ -915,6 +938,7 @@ def wandb_train_test(
             best_model_path=best_model_path
         )
 
+
 def load_best_model(
     config: ExperimentConfig,
     model_config: ModelConfig,
@@ -931,11 +955,14 @@ def load_best_model(
         model (nn.Module): best model
     """
 
-    best_model_filepath = get_most_recent_file(dirpath=best_model_path, file_pos=config.file_pos)
+    best_model_filepath = get_most_recent_file(
+        dirpath=best_model_path, file_pos=config.file_pos)
 
-    best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
+    best_model_state_dict = open_element(
+        best_model_filepath, filetype="pickle")
 
-    feature_names = get_feature_names(config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
+    feature_names = get_feature_names(
+        config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
 
     if config.save_summary_dict:
         model, summary_dict = load_ssm_model(
@@ -995,15 +1022,16 @@ def best_model_perf(
 
     """
 
-    loaders_dict = load_phm_data(config,eval=True) if config.data_name == "PHM" else load_reg_data(config)
+    loaders_dict = load_phm_data(
+        config, eval=True) if config.data_name == "PHM" else load_reg_data(config)
     test_lifes = loaders_dict["test_lifes"]
     test_loaders = loaders_dict["test_loaders"]
     test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None
 
     model = load_best_model(
-        config = config,
-        model_config = model_config,
-        best_model_path = best_model_path
+        config=config,
+        model_config=model_config,
+        best_model_path=best_model_path
     )
 
     if config.model_summary:
@@ -1023,23 +1051,24 @@ def best_model_perf(
     for i, test_loader in enumerate(test_loaders):
 
         print("#" * 50)
-        print(f"Testing on life {i+1+config.test_idx[0]}") if config.data_name == "CMAPSS" else print(f"Testing on life {test_idx[i]}")
+        print(f"Testing on life {i+1+config.test_idx[0]}") if config.data_name == "CMAPSS" else print(
+            f"Testing on life {test_idx[i]}")
         print("#" * 50)
 
         evaluator = get_evaluator(
-            model = model,
-            config = config,
-            criterion = criterion,
-            eval_criterion = eval_criterion,
-            device = device,
-            mono_mask = mono_mask,
-            tau = tau
+            model=model,
+            config=config,
+            criterion=criterion,
+            eval_criterion=eval_criterion,
+            device=device,
+            mono_mask=mono_mask,
+            tau=tau
         )
 
         _, _, y_pred, y_true = evaluator.eval_loop(
-            loader = test_loader,
-            mode = "Test",
-            use_tqdm = False
+            loader=test_loader,
+            mode="Test",
+            use_tqdm=False
         )
 
         if config.normalize_rul:
@@ -1055,21 +1084,21 @@ def best_model_perf(
         else:
 
             combined_preds, combined_true_vals, combined_mean_an_scores = combine_values(
-                predictions = y_pred,
-                true_values = y_true,
-                an_scores = mean_an_scores,
-                original_shape = test_lifes[test_idx[i]].shape[0],
-                sequence_length = config.sequence_length,
-                stride = config.stride
+                predictions=y_pred,
+                true_values=y_true,
+                an_scores=mean_an_scores,
+                original_shape=test_lifes[test_idx[i]].shape[0],
+                sequence_length=config.sequence_length,
+                stride=config.stride
             )
 
             _, _, combined_max_an_scores = combine_values(
-                predictions = y_pred,
-                true_values = y_true,
-                an_scores = max_an_scores,
-                original_shape = test_lifes[test_idx[i]].shape[0],
-                sequence_length = config.sequence_length,
-                stride = config.stride
+                predictions=y_pred,
+                true_values=y_true,
+                an_scores=max_an_scores,
+                original_shape=test_lifes[test_idx[i]].shape[0],
+                sequence_length=config.sequence_length,
+                stride=config.stride
             )
 
             preds.append(combined_preds)
@@ -1084,7 +1113,7 @@ def best_model_perf(
         "max_an_scores": max_anomaly_scores,
     }
 
-    filename=f"{get_current_time()}_outputs_mean_max_an_scores_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
+    filename = f"{get_current_time()}_outputs_mean_max_an_scores_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
 
     if config.save_outputs:
         save_element(
@@ -1098,6 +1127,7 @@ def best_model_perf(
         return outputs_dict
 
 # Function that implements a wandb run
+
 
 def wandb_run(
     run_name: str,
@@ -1132,23 +1162,22 @@ def wandb_run(
 
         with wandb.init(project=config.project_name, name=run_name):
             exp_run(
-                config = config,
-                model_config = model_config,
-                device = device,
-                best_model_path = best_model_path,
-                outputs_path = outputs_path,
-                metrics_path = metrics_path,
-                tau = tau
+                config=config,
+                model_config=model_config,
+                device=device,
+                best_model_path=best_model_path,
+                outputs_path=outputs_path,
+                metrics_path=metrics_path,
+                tau=tau
             )
     else:
 
         exp_run(
-            config = config,
-            model_config = model_config,
-            device = device,
-            best_model_path = best_model_path,
-            outputs_path = outputs_path,
-            metrics_path = metrics_path,
-            tau = tau
+            config=config,
+            model_config=model_config,
+            device=device,
+            best_model_path=best_model_path,
+            outputs_path=outputs_path,
+            metrics_path=metrics_path,
+            tau=tau
         )
-

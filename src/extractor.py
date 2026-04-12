@@ -16,7 +16,7 @@ from transformer_encoder.utils import PositionalEncoding
 
 # informer imports
 from informer import *
-from models import ModelConfig
+from ssm_models import ModelConfig
 
 # s4 imports
 from s4 import DropoutNd

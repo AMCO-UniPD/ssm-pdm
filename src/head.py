@@ -52,6 +52,8 @@ class MonotonicHead(Head):
             self.activation = nn.SiLU()
         elif self.config.act == "selu":
             self.activation = nn.SELU()
+        elif self.config.act == "celu":
+            self.activation = nn.CELU()
         else:
             self.activation = nn.Identity()
 

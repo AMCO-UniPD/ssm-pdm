@@ -72,7 +72,6 @@ metrics_path = generate_path(
     ],
 )
 
-
 plot_path = generate_path(
     basepath=experiment_path,
     folders=[
