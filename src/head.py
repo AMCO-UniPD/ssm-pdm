@@ -52,7 +52,7 @@ class Head(nn.Module):
 
 class QuantileHead(Head):
     def __init__(self, tau: float = 0.5, *args, **kwargs):
-        super().__init__(*args, *kwargs)
+        super().__init__(*args, **kwargs)
         self.tau = tau
 
     def forward(self, x):
@@ -60,8 +60,8 @@ class QuantileHead(Head):
         x = self.decoder(x) * self.tau if self.config.tau_mult else self.decoder(x) # (B,H) → (B,O)
 
 class MonotonicHead(Head):
-    def __init__(self, d_output: int = 1000, *args, **kwargs):
-        super().__init__(*args, *kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         if self.config.act == "gelu":
             self.activation = nn.GELU()
@@ -92,7 +92,7 @@ class MonotonicHead(Head):
 class MonoQuantileHead(MonotonicHead):
 
     def __init__(self, tau: float = 0.5, *args, **kwargs):
-        super().__init__(*args, *kwargs)
+        super().__init__(*args, **kwargs)
         self.tau = tau
 
     def forward(self, x):

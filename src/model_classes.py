@@ -135,7 +135,9 @@ class QuantileRULModel(RULModel):
         super().__init__(*args, **kwargs)
 
         self.tau = tau
+        ipdb.set_trace()
         self.head = QuantileHead(tau = self.tau, config=self.model_config, d_output=self.output_size)
+        ipdb.set_trace()
 
     def forward(self, x):
         x = concat_tau(
