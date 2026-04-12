@@ -6,7 +6,7 @@ import argparse
 from argparse import Namespace
 import ipdb
 from dataclasses import dataclass, field, fields
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Optional, Callable
 import torch
 from wandb.sdk.wandb_config import Config as WandbConfig
 

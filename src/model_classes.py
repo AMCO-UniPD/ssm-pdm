@@ -26,7 +26,7 @@ from utils import (
     concat_tau,
     model_summary_manual
 )
-from ssm_models import ModelConfig
+from exp_config import ModelConfig
 from projector import Projector
 from extractor import (
     Extractor,

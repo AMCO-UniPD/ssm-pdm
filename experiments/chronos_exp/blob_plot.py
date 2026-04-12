@@ -34,7 +34,7 @@ from utils import (
 )
 
 from plots import blob_plot
-from ssm_models import ModelConfig
+from exp_config import ModelConfig
 from perf import state_dict_size, time_exp
 
 config_path = os.path.join(experiment_path, "config", "ssm_exp_config.yaml")

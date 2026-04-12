@@ -6,7 +6,8 @@ Python script containing utility functions for the models of the `chronos-pdm` p
 from plots import plot_predictions_grid
 from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_table
 from loss import load_loss_functions
-from ssm_models import ModelConfig, load_ssm_model
+from exp_config import ModelConfig
+from ssm_models import load_ssm_model
 from config_vars import MAX_RUL
 from utils import (
     get_current_time,

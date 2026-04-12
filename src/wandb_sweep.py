@@ -16,7 +16,7 @@ from exp_config import (
     define_arguments,
     check_arguments
 )
-from ssm_models import ModelConfig
+from exp_config import ModelConfig
 from models import (
     wandb_data,
     train_loop,

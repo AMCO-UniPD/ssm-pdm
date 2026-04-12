@@ -6,7 +6,7 @@ blocks for the RUL models
 import torch
 import torch.nn as nn
 
-from models import ModelConfig
+from exp_config import ModelConfig
 from ssm_models import MonotonicLinear
 
 class Head(nn.Module):
