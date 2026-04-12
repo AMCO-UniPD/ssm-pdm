@@ -33,7 +33,8 @@ from transformer_encoder.utils import PositionalEncoding
 from torchinfo import summary
 from calflops import calculate_flops
 
-from utils import ExperimentConfig, print_life_info, save_element, generate_path
+from utils import print_life_info, save_element, generate_path
+from exp_config import ExperimentConfig, ModelConfig
 
 from model_classes import RULModel, QuantileRULModel, MonotonicRULModel, MonoQuantileRULModel
 
@@ -104,31 +105,10 @@ def setup_optimizer(model, lr, weight_decay, epochs):
 
     return optimizer, scheduler
 
-class MonotonicLinear(nn.Linear):
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        bias: bool = True,
-        device = None,
-        dtype = None,
-        pre_activation=nn.Identity(),
-    ):
-        super().__init__(in_features, out_features, bias=bias, device=device, dtype=dtype)
-        self.act = pre_activation
-
-    def forward(self, x):
-        w_pos = self.weight.clamp(min=0.0)
-        w_neg = self.weight.clamp(max=0.0)
-        x_pos = F.linear(self.act(x), w_pos, self.bias)
-        x_neg = F.linear(self.act(-x), w_neg, self.bias)
-        return x_pos + x_neg
-
 # Function to create the model
 
 def load_ssm_model(
     exp_config: ExperimentConfig,
-    model_config: ModelConfig,
     mono_mask: np.ndarray = np.zeros(shape=(10,1)),
     tau: float = 0.5,
     **kwargs

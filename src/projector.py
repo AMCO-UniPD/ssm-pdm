@@ -16,7 +16,7 @@ class Projector(nn.Module):
         """
         super().__init__()
 
-        self.projector = nn.LeakyLinear(d_model)
+        self.projector = nn.LazyLinear(d_model)
 
     def forward(self,x):
 

@@ -556,11 +556,10 @@ def wandb_data(
         exp_config=config,
         model_config=model_config,
         model_name=config.model_name,
-        d_output=config.sequence_length,
+        output_size=config.sequence_length,
         mono_mask=mono_mask
     )
     model = model.to(model_config.device)
-    ipdb.set_trace()
 
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,

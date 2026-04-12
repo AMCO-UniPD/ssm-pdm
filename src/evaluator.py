@@ -15,13 +15,14 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from utils import(
+from utils import (
     ExperimentConfig,
     split_input
 )
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "phm_exp")
+
 
 class Evaluator:
     def __init__(
@@ -54,6 +55,7 @@ class Evaluator:
         raise NotImplementedError
 
 # NOTE: Standard Evaluator → no quantile_reg and no monotonic
+
 
 class StandardEvaluator(Evaluator):
     """
@@ -111,6 +113,7 @@ class StandardEvaluator(Evaluator):
         return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
 
 # NOTE: QuantileEvaluator → quantile_reg and no monotonic
+
 
 class QuantileEvaluator(Evaluator):
     """
@@ -174,8 +177,9 @@ class QuantileEvaluator(Evaluator):
 
         return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
 
+
 def get_evaluator(
-    mono_mask: np.ndarray = np.zeros(shape=(10,1)),
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
     tau: float = 0.5,
     **kwargs
 ) -> Evaluator:

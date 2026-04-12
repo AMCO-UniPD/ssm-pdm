@@ -58,6 +58,7 @@ class RULModel(nn.Module):
             output_size (int): output size
         """
 
+        super().__init__()
         self.model_name = model_name
         self.model_config = model_config
         self.output_size = output_size
@@ -134,14 +135,14 @@ class QuantileRULModel(RULModel):
         super().__init__(*args, **kwargs)
 
         self.tau = tau
-        self.head = QuantileHead(tau = self.tau, config=self.config, d_output=self.output_size)
+        self.head = QuantileHead(tau = self.tau, config=self.model_config, d_output=self.output_size)
 
     def forward(self, x):
         x = concat_tau(
             x = x,
             tau = self.tau,
-            device = self.config.device,
-            tau_feat = self.config.tau_feat
+            device = self.model_config.device,
+            tau_feat = self.model_config.tau_feat
         )
 
         x = self.projector(x)
@@ -162,11 +163,11 @@ class MonotonicRULModel(RULModel):
         super().__init__(*args, **kwargs)
 
         self.mono_mask = mono_mask
-        self.head = MonotonicHead(d_output = self.output_size, config = self.config)
+        self.head = MonotonicHead(d_output = self.output_size, config = self.model_config)
 
     def forward(self, x):
 
-        x, x_mono = split_input(mask_mono = self.mono_mask, inputs=x, device=self.config.device)
+        x, x_mono = split_input(mask_mono = self.mono_mask, inputs=x, device=self.model_config.device)
 
         x = self.projector(x) # (B,L,D_nm) → (B,L,H)
         x = self.extractor(x) # (B,L,H) → (B,L,H)
@@ -189,11 +190,11 @@ class MonoQuantileRULModel(RULModel):
 
         self.tau = tau
         self.mono_mask = mono_mask
-        self.head = MonoQuantileHead(d_output = self.output_size, tau = self.tau)
+        self.head = MonoQuantileHead(config=self.model_config, d_output = self.output_size, tau = self.tau)
 
     def forward(self, x):
 
-        x, x_mono = split_input(mask_mono = self.mono_mask, inputs=x, device=self.config.device)
+        x, x_mono = split_input(mask_mono = self.mono_mask, inputs=x, device=self.model_config.device)
 
         #NOTE: The feature containing the quantile level is concatenated
         # to the monotonic features because it's constant and thus monotonic
@@ -201,8 +202,8 @@ class MonoQuantileRULModel(RULModel):
         x_mono = concat_tau(
             x = x_mono,
             tau = self.tau,
-            device = self.config.device,
-            tau_feat = self.config.tau_feat
+            device = self.model_config.device,
+            tau_feat = self.model_config.tau_feat
         )
 
         x = self.projector(x) # (B,L,D_nm) → (B,L,H)

@@ -52,7 +52,7 @@ class Extractor(nn.Module):
             self.activation = nn.Identity()
 
         for _ in range(self.config.n_layers):
-            self.hidden_layers.append(nn.LeakyLinear(self.config.d_model))
+            self.hidden_layers.append(nn.LazyLinear(self.config.d_model))
             self.acts.append(self.activation)
 
         def forward(self, x):
@@ -262,7 +262,6 @@ class LinearExtractor(Extractor):
         return x
 
 
-
 class RecurrentExtractor(Extractor):
     """
     Recurrent model (i.e. LSTM, RNN, GRU) feature extractor
@@ -300,7 +299,6 @@ class RecurrentExtractor(Extractor):
         self.norm = nn.LayerNorm(self.config.d_model)
 
 
-
 class TransformerExtractor(Extractor):
     """
     Transformer model feature extractor
@@ -336,7 +334,6 @@ class TransformerExtractor(Extractor):
         x = self.encoder(x, mask)  # (B, L, H) -> (B, L, H)
 
         return x
-
 
 
 class InformerExtractor(Extractor):
@@ -389,6 +386,7 @@ class InformerExtractor(Extractor):
     def forward(self, x):
 
         enc_out = self.enc_embedding(x)  # [B,L,D] -> [B,L,H]
-        enc_out, attns = self.encoder(enc_out, attn_mask=None)  # [B,L,H] -> [B,L,H]
+        enc_out, attns = self.encoder(
+            enc_out, attn_mask=None)  # [B,L,H] -> [B,L,H]
 
         return enc_out

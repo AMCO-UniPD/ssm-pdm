@@ -7,7 +7,26 @@ import torch
 import torch.nn as nn
 
 from exp_config import ModelConfig
-from ssm_models import MonotonicLinear
+
+class MonotonicLinear(nn.Linear):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        device = None,
+        dtype = None,
+        pre_activation=nn.Identity(),
+    ):
+        super().__init__(in_features, out_features, bias=bias, device=device, dtype=dtype)
+        self.act = pre_activation
+
+    def forward(self, x):
+        w_pos = self.weight.clamp(min=0.0)
+        w_neg = self.weight.clamp(max=0.0)
+        x_pos = F.linear(self.act(x), w_pos, self.bias)
+        x_neg = F.linear(self.act(-x), w_neg, self.bias)
+        return x_pos + x_neg
 
 class Head(nn.Module):
     def __init__(self, config: ModelConfig, d_output: int):
@@ -22,7 +41,7 @@ class Head(nn.Module):
         self.config = config
         self.d_output = d_output
 
-        self.decoder = nn.LeakyLinear(self.d_output)
+        self.decoder = nn.LazyLinear(self.d_output)
 
     def forward(self, x):
 

@@ -25,8 +25,6 @@ from tqdm.auto import tqdm
 from evaluator import(
     Evaluator,
     QuantileEvaluator,
-    MonotonicEvaluator,
-    MonoQuantileEvaluator
 )
 
 from utils import(
@@ -304,7 +302,14 @@ class QuantileTrainer(Trainer):
         super().__init__(*args, **kwargs)
 
         self.tau = tau
-        self.evaluator = QuantileEvaluator(tau=self.tau, **kwargs)
+        self.evaluator = QuantileEvaluator(
+                model=kwargs["model"],
+                config=kwargs["config"],
+                criterion=kwargs["criterion"],
+                eval_criterion=kwargs["eval_criterion"],
+                device=kwargs["device"],
+                tau=self.tau,
+        )
 
     def train_loop(self) -> float:
         """

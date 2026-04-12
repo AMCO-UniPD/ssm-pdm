@@ -33,7 +33,8 @@ from utils import (
 
 from loss import load_loss_functions
 
-from ssm_models import load_ssm_model, ModelConfig
+from ssm_models import load_ssm_model
+from exp_config import ModelConfig
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
