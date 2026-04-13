@@ -1576,18 +1576,26 @@ def an_score_to_rul(an_scores: np.ndarray, max_rul: int = MAX_RUL) -> np.ndarray
 
     return rul_scores
 
-def get_mono_mask(features: List[str]) -> np.ndarray:
+def get_mono_mask(config: ExperimentConfig, feature_names: List[str]) -> np.ndarray:
     """
     Function to compute the monotonic mask from the list of input features
 
     Args:
+        config (ExperimentConfig): experiment configuration object
         features (List[str]): list of input features
 
     Returns:
         mono_mask (np.ndarray): boolean mask to indicate monotonic and non monotonic features
     """
 
-    mono_mask = np.array(int("ETCH" in features))
+    if config.data_name == "PHM":
+        #NOTE: Hard code mono_mask for PHMDataset
+        mono_mask = np.array([0]*13+[1]*3+[0])
+    elif config.data_name == "CMAPSS":
+        #NOTE: Hard code mono_mask for CMAPSS → for the moment let's put all monotonic
+        mono_mask = np.ones(shape=len(feature_names))
+    else:
+        raise ValueError(f"{config.data_name} not supported")
 
     return mono_mask
 
@@ -1605,8 +1613,8 @@ def split_input(mask_mono:np.ndarray, inputs: torch.Tensor, device: str = "cpu")
         mono_inputs (torch.Tensor): tensor with the monotonic features
     """
 
-    non_mono_inputs = inputs[:, np.where(mask_mono==0)].squeeze()
-    mono_inputs = inputs[:, np.where(mask_mono!=0)].squeeze() * torch.tensor(mask_mono[np.where(mask_mono!=0)][None,:], dtype=torch.float32).to(device)
+    non_mono_inputs = inputs[:, :, np.where(mask_mono==0)].squeeze()
+    mono_inputs = inputs[:, :,  np.where(mask_mono!=0)].squeeze() * torch.tensor(mask_mono[np.where(mask_mono!=0)][None,:], dtype=torch.float32).to(device)
 
     return non_mono_inputs, mono_inputs
 

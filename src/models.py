@@ -550,7 +550,7 @@ def wandb_data(
 
     feature_names = get_feature_names(
         config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
-    mono_mask = get_mono_mask(features=feature_names)
+    mono_mask = get_mono_mask(config=config, feature_names=feature_names)
 
     model, optimizer, scheduler = load_ssm_model(
         exp_config=config,
@@ -628,7 +628,6 @@ def exp_run(
         mono_mask=mono_mask,
         tau=tau
     )
-    ipdb.set_trace()
 
     trainer.run()
 
@@ -943,7 +942,7 @@ def load_best_model(
     config: ExperimentConfig,
     model_config: ModelConfig,
     best_model_path: str
-) -> nn.Module:
+) -> Tuple[nn.Module, np.ndarray]:
     """
     This function loads the best model given the best model path
 
@@ -953,6 +952,7 @@ def load_best_model(
 
     Returns:
         model (nn.Module): best model
+        mono_mask (np.ndarray): monotonic mask
     """
 
     best_model_filepath = get_most_recent_file(
@@ -963,6 +963,7 @@ def load_best_model(
 
     feature_names = get_feature_names(
         config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
+    mono_mask = get_mono_mask(config=config, feature_names=feature_names)
 
     if config.save_summary_dict:
         model, summary_dict = load_ssm_model(
@@ -977,17 +978,17 @@ def load_best_model(
         print("#" * 50)
     else:
         model, _, _ = load_ssm_model(
-            model_config=model_config,
             exp_config=config,
-            d_input=len(feature_names)
-            if ((not config.quantile_reg) or (not model_config.tau_feat))
-            else len(feature_names) + 1,
+            model_config=model_config,
+            model_name=config.model_name,
+            output_size=config.sequence_length,
+            mono_mask=mono_mask
         )
 
     model.load_state_dict(best_model_state_dict)
     model = model.to(model_config.device)
 
-    return model
+    return model, mono_mask
 
 # Function to get the best model performance
 
@@ -1028,7 +1029,7 @@ def best_model_perf(
     test_loaders = loaders_dict["test_loaders"]
     test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None
 
-    model = load_best_model(
+    model, mono_mask = load_best_model(
         config=config,
         model_config=model_config,
         best_model_path=best_model_path

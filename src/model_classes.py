@@ -42,6 +42,7 @@ from head import Head, QuantileHead, MonotonicHead, MonoQuantileHead
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
 
+
 class RULModel(nn.Module):
     def __init__(
         self,
@@ -89,7 +90,8 @@ class RULModel(nn.Module):
         elif self.name == "Linear":
             self.extractor = LinearExtractor(config=self.model_config)
         elif self.name in ["LSTM", "RNN", "GRU"]:
-            self.extractor = RecurrentExtractor(model_name=self.name, config=self.model_config)
+            self.extractor = RecurrentExtractor(
+                model_name=self.name, config=self.model_config)
         else:
             self.extractor = Extractor(config=self.model_config)
 
@@ -106,10 +108,11 @@ class RULModel(nn.Module):
             print("-"*50)
             print(f"Computing model summary for {module.name}")
             print("-"*50)
-            total_params+=model_summary_manual(model=module)
+            total_params += model_summary_manual(model=module)
 
         print("-"*50)
-        print(f"Total number of parameters for model {self.name}: {total_params}")
+        print(
+            f"Total number of parameters for model {self.name}: {total_params}")
         print("-"*50)
 
     def forward(self, x):
@@ -117,11 +120,12 @@ class RULModel(nn.Module):
         Typical method for implementing the forward pass of the model
         """
 
-        x = self.projector(x) # (B,L,D) → (B,L,H)
-        x = self.extractor(x) # (B,L,H) → (B,L,H)
-        x = self.head(x) # (B,L,H) → (B,O)
+        x = self.projector(x)  # (B,L,D) → (B,L,H)
+        x = self.extractor(x)  # (B,L,H) → (B,L,H)
+        x = self.head(x)  # (B,L,H) → (B,O)
 
         return x
+
 
 class QuantileRULModel(RULModel):
     """
@@ -131,20 +135,20 @@ class QuantileRULModel(RULModel):
     Args:
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
     """
+
     def __init__(self, tau: float = 0.5, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.tau = tau
-        ipdb.set_trace()
-        self.head = QuantileHead(tau = self.tau, config=self.model_config, d_output=self.output_size)
-        ipdb.set_trace()
+        self.head = QuantileHead(
+            tau=self.tau, config=self.model_config, d_output=self.output_size)
 
     def forward(self, x):
         x = concat_tau(
-            x = x,
-            tau = self.tau,
-            device = self.model_config.device,
-            tau_feat = self.model_config.tau_feat
+            x=x,
+            tau=self.tau,
+            device=self.model_config.device,
+            tau_feat=self.model_config.tau_feat
         )
 
         x = self.projector(x)
@@ -152,6 +156,7 @@ class QuantileRULModel(RULModel):
         x = self.head(x)
 
         return x
+
 
 class MonotonicRULModel(RULModel):
     """
@@ -161,23 +166,33 @@ class MonotonicRULModel(RULModel):
     Args:
         mono_mask (np.ndarray): boolean mask to identify monotonic features
     """
+
     def __init__(self, mono_mask: np.ndarray, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.mono_mask = mono_mask
-        self.head = MonotonicHead(d_output = self.output_size, config = self.model_config)
+        self.n_mono_neurons = np.where(mono_mask == 1).sum()
+        self.head = MonoQuantileHead(
+            config=self.model_config,
+            d_output=self.output_size,
+            tau=self.tau,
+            n_mono_neurons=self.n_mono_neurons
+        )
 
     def forward(self, x):
 
-        x, x_mono = split_input(mask_mono = self.mono_mask, inputs=x, device=self.model_config.device)
+        x, x_mono = split_input(mask_mono=self.mono_mask,
+                                inputs=x, device=self.model_config.device)
 
-        x = self.projector(x) # (B,L,D_nm) → (B,L,H)
-        x = self.extractor(x) # (B,L,H) → (B,L,H)
+        x = self.projector(x)  # (B,L,D_nm) → (B,L,H)
+        x = self.extractor(x)  # (B,L,H) → (B,L,H)
 
-        x = torch.cat((x,x_mono), dim=-1) # [(B,L,D_m), (B,L,H)] → (B,L,D_m+H)
-        x = self.head(x) # (B,L,D_m+H)
+        # [(B,L,D_m), (B,L,H)] → (B,L,D_m+H)
+        x = torch.cat((x, x_mono), dim=-1)
+        x = self.head(x)  # (B,L,D_m+H)
 
         return x
+
 
 class MonoQuantileRULModel(RULModel):
     """
@@ -187,31 +202,49 @@ class MonoQuantileRULModel(RULModel):
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
         mono_mask (np.ndarray): boolean mask to identify monotonic features
     """
+
     def __init__(self, tau: float, mono_mask: np.ndarray, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.tau = tau
         self.mono_mask = mono_mask
-        self.head = MonoQuantileHead(config=self.model_config, d_output = self.output_size, tau = self.tau)
+
+        # NOTE: Here we have to use +1 in n_mono_neurons because the additional
+        # feature added with tau_feat is
+        # inserted in the monotonic features
+
+        if self.model_config.tau_feat:
+            self.n_mono_neurons = len(np.where(mono_mask == 1)[0]) + 1
+        else:
+            self.n_mono_neurons = len(np.where(mono_mask == 1)[0])
+
+        self.head = MonoQuantileHead(
+            config=self.model_config,
+            d_output=self.output_size,
+            tau=self.tau,
+            n_mono_neurons=self.n_mono_neurons
+        )
 
     def forward(self, x):
 
-        x, x_mono = split_input(mask_mono = self.mono_mask, inputs=x, device=self.model_config.device)
+        x, x_mono = split_input(mask_mono=self.mono_mask,
+                                inputs=x, device=self.model_config.device)
 
-        #NOTE: The feature containing the quantile level is concatenated
+        # NOTE: The feature containing the quantile level is concatenated
         # to the monotonic features because it's constant and thus monotonic
 
         x_mono = concat_tau(
-            x = x_mono,
-            tau = self.tau,
-            device = self.model_config.device,
-            tau_feat = self.model_config.tau_feat
+            x=x_mono,
+            tau=self.tau,
+            device=self.model_config.device,
+            tau_feat=self.model_config.tau_feat
         )
 
-        x = self.projector(x) # (B,L,D_nm) → (B,L,H)
-        x = self.extractor(x) # (B,L,H) → (B,L,H)
+        x = self.projector(x)  # (B,L,D_nm) → (B,L,H)
+        x = self.extractor(x)  # (B,L,H) → (B,L,H)
 
-        x = torch.cat((x,x_mono), dim=-1) # [(B,L,D_m), (B,L,H)] → (B,L,D_m+H)
-        x = self.head(x) # (B,L,D_m+H)
+        # [(B,L,D_m), (B,L,H)] → (B,L,D_m+H)
+        x = torch.cat((x, x_mono), dim=-1)
+        x = self.head(x)  # (B,L,D_m+H)
 
         return x

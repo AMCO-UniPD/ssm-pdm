@@ -116,6 +116,10 @@ class Trainer:
         """
 
         if self.config.use_wandb:
+            # NOTE: Create a dummy input on which to perform a forward pass
+            # in order to initialize the weights of LazyLinear
+            # dummy_input = next(iter(self.train_loader))[0].to(self.device)
+            # self.model(dummy_input)
             wandb.watch(self.model, self.criterion, log="all", log_freq=10)
             wandb.define_metric("epoch")
             wandb.define_metric("loss/*", step_metric="epoch")
@@ -264,12 +268,8 @@ class StandardTrainer(Trainer):
                 else mask.to(self.device).squeeze(-1)
             )
 
-            ipdb.set_trace()
-
             output = self.model(life)
             loss = self.criterion(output, rul, mask)
-
-            ipdb.set_trace()
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -341,7 +341,7 @@ class QuantileTrainer(Trainer):
                 print_quantile=True,
             )
 
-            #NOTE: In the new version of the models tau is a model attribute
+            # NOTE: In the new version of the models tau is a model attribute
             # so we have to set it to the sampled quantile level
 
             self.model.tau = tau

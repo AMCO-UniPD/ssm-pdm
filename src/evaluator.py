@@ -165,7 +165,7 @@ class QuantileEvaluator(Evaluator):
                 y_true.extend(batch_target)
 
                 loss = self.criterion(output, rul, mask, self.tau)
-                rmse_loss = self.eval_criterion(output, rul, mask, self.tau)
+                rmse_loss = self.eval_criterion(output, rul, mask)
                 eval_loss += loss.item()
                 eval_rmse_loss += rmse_loss.item()
 

@@ -15,7 +15,7 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-approach: padding
+approach: padding_monotonic
 
 # quantile_reg config
 quantile_reg: true
@@ -36,7 +36,7 @@ normalize_rul: true
 ad: false
 
 # monotonic approach
-monotonic: false
+monotonic: true
 
 # training parameters
 batch_size: 16
@@ -44,7 +44,7 @@ sequence_length: 1000
 stride: 500
 # epochs: 30
 epochs: 1
-lr: 0.00671
+lr: 0.001
 weight_decay: 1.0e-4
 
 # loss parameters

@@ -3,6 +3,11 @@ Python module containing utility functions for the models migrated from the
 `SSM_PDM` project into the `chronos_pdm` project.
 """
 
+from informer import *
+from s5 import S5Block
+from s4d import S4D
+from s4 import S4Block as S4
+from s4 import DropoutNd
 import os
 import sys
 import ipdb
@@ -38,23 +43,19 @@ from exp_config import ExperimentConfig, ModelConfig
 
 from model_classes import RULModel, QuantileRULModel, MonotonicRULModel, MonoQuantileRULModel
 
-chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
+chronos_path_src = os.path.join(
+    os.path.dirname(__file__), "chronos-rul", "src")
 imports_path = os.path.join(os.path.dirname(__file__), "AD_MG", "src")
 sys.path.append(chronos_path_src)
 sys.path.append(imports_path)
 
 # s4 imports
-from s4 import DropoutNd
-from s4 import S4Block as S4
 
 # s4d imports
-from s4d import S4D
 
 # s5 imports
-from s5 import S5Block
 
 # informer imports
-from informer import *
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
@@ -81,13 +82,15 @@ def setup_optimizer(model, lr, weight_decay, epochs):
     optimizer = optim.AdamW(params, lr=lr, weight_decay=weight_decay)
 
     # Add parameters with special hyperparameters
-    hps = [getattr(p, "_optim") for p in all_parameters if hasattr(p, "_optim")]
+    hps = [getattr(p, "_optim")
+           for p in all_parameters if hasattr(p, "_optim")]
     hps = [
         dict(s)
         for s in sorted(list(dict.fromkeys(frozenset(hp.items()) for hp in hps)))
     ]  # Unique dicts
     for hp in hps:
-        params = [p for p in all_parameters if getattr(p, "_optim", None) == hp]
+        params = [p for p in all_parameters if getattr(
+            p, "_optim", None) == hp]
         optimizer.add_param_group({"params": params, **hp})
 
     # Create a lr scheduler
@@ -107,9 +110,10 @@ def setup_optimizer(model, lr, weight_decay, epochs):
 
 # Function to create the model
 
+
 def load_ssm_model(
     exp_config: ExperimentConfig,
-    mono_mask: np.ndarray = np.zeros(shape=(10,1)),
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
     tau: float = 0.5,
     **kwargs
 ) -> Tuple[nn.Module, optim.Optimizer, optim.lr_scheduler]:

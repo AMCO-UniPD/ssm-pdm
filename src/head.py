@@ -3,10 +3,11 @@ Python module containing the implementation of the model head
 blocks for the RUL models
 """
 
-import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from exp_config import ModelConfig
+
 
 class MonotonicLinear(nn.Linear):
     def __init__(
@@ -14,8 +15,8 @@ class MonotonicLinear(nn.Linear):
         in_features: int,
         out_features: int,
         bias: bool = True,
-        device = None,
-        dtype = None,
+        device=None,
+        dtype=None,
         pre_activation=nn.Identity(),
     ):
         super().__init__(in_features, out_features, bias=bias, device=device, dtype=dtype)
@@ -27,6 +28,7 @@ class MonotonicLinear(nn.Linear):
         x_pos = F.linear(self.act(x), w_pos, self.bias)
         x_neg = F.linear(self.act(-x), w_neg, self.bias)
         return x_pos + x_neg
+
 
 class Head(nn.Module):
     def __init__(self, config: ModelConfig, d_output: int):
@@ -45,10 +47,11 @@ class Head(nn.Module):
 
     def forward(self, x):
 
-        x = x[:,-1,:].squeeze(1) # (B, L, H) -> (B,1,H) → (B, H)
-        x = self.decoder(x) # (B,H) → (B,O)
+        x = x[:, -1, :].squeeze(1)  # (B, L, H) -> (B,1,H) → (B, H)
+        x = self.decoder(x)  # (B,H) → (B,O)
 
         return x
+
 
 class QuantileHead(Head):
     def __init__(self, tau: float = 0.5, *args, **kwargs):
@@ -56,11 +59,16 @@ class QuantileHead(Head):
         self.tau = tau
 
     def forward(self, x):
-        x = x[:,-1,:].squeeze(1) # (B, L, H) -> (B,1,H) → (B, H)
-        x = self.decoder(x) * self.tau if self.config.tau_mult else self.decoder(x) # (B,H) → (B,O)
+        x = x[:, -1, :].squeeze(1)  # (B, L, H) -> (B,1,H) → (B, H)
+        # (B,H) → (B,O)
+        x = self.decoder(
+            x) * self.tau if self.config.tau_mult else self.decoder(x)
+
+        return x
+
 
 class MonotonicHead(Head):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, n_mono_neurons: int = 3,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if self.config.act == "gelu":
@@ -76,18 +84,26 @@ class MonotonicHead(Head):
         else:
             self.activation = nn.Identity()
 
+        n_neurons = self.config.d_model + n_mono_neurons
+
         self.mono = nn.ModuleList([
-            MonotonicLinear(self.config.d_model, self.config.n_mono_neurons,pre_activation=nn.Identity()),
-            *[MonotonicLinear(self.config.n_mono_neurons, self.config.n_mono_neurons, pre_activation=self.activation) for _ in range(self.config.n_mono_layers)],
-            MonotonicLinear(self.config.n_mono_neurons, d_output, pre_activation=self.activation)
+            MonotonicLinear(
+                n_neurons, n_neurons, pre_activation=nn.Identity()),
+            *[MonotonicLinear(n_neurons, n_neurons,
+                              pre_activation=self.activation) for _ in range(self.config.n_mono_layers)],
+            MonotonicLinear(n_neurons,
+                            self.d_output, pre_activation=self.activation)
         ])
 
         def forward(self, x):
+
+            x = x[:, -1, :].squeeze(1)  # (B, L, H) -> (B,1,H) → (B, H)
 
             for layer in self.mono:
                 x = layer(x)
 
             return x
+
 
 class MonoQuantileHead(MonotonicHead):
 
@@ -97,9 +113,10 @@ class MonoQuantileHead(MonotonicHead):
 
     def forward(self, x):
 
+        x = x[:, -1, :].squeeze(1)  # (B, L, H) -> (B,1,H) → (B, H)
+
         for layer in self.mono:
             x = layer(x)
 
         x = x * self.tau if self.config.tau_mult else x
         return x
-
