@@ -1613,8 +1613,8 @@ def split_input(mask_mono:np.ndarray, inputs: torch.Tensor, device: str = "cpu")
         mono_inputs (torch.Tensor): tensor with the monotonic features
     """
 
-    non_mono_inputs = inputs[:, :, np.where(mask_mono==0)].squeeze()
-    mono_inputs = inputs[:, :,  np.where(mask_mono!=0)].squeeze() * torch.tensor(mask_mono[np.where(mask_mono!=0)][None,:], dtype=torch.float32).to(device)
+    non_mono_inputs = inputs[:, :, np.where(mask_mono==0)[0]]
+    mono_inputs = inputs[:, :,  np.where(mask_mono!=0)[0]] * torch.tensor(mask_mono[np.where(mask_mono!=0)][None,:], dtype=torch.float32).to(device)
 
     return non_mono_inputs, mono_inputs
 

@@ -120,6 +120,7 @@ if exp_config.test_script:
                     device = device,
                     best_model_path = best_model_path_test_script,
                     outputs_path = outputs_path_test_script,
+                    tau = quantile
                 )
 
             if exp_config.compute_metrics:

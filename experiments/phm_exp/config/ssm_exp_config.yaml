@@ -42,8 +42,7 @@ monotonic: true
 batch_size: 16
 sequence_length: 1000
 stride: 500
-# epochs: 30
-epochs: 1
+epochs: 30
 lr: 0.001
 weight_decay: 1.0e-4
 

@@ -22,12 +22,12 @@ from torch.optim import AdamW, lr_scheduler
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from evaluator import(
+from evaluator import (
     Evaluator,
     QuantileEvaluator,
 )
 
-from utils import(
+from utils import (
     ExperimentConfig,
     get_current_time,
     sample_quantile,
@@ -71,11 +71,11 @@ class Trainer:
         self.best_model_path = best_model_path
 
         self.evaluator = Evaluator(
-            model = self.model,
-            config = self.config,
-            criterion = self.criterion,
-            eval_criterion = self.eval_criterion,
-            device = self.device
+            model=self.model,
+            config=self.config,
+            criterion=self.criterion,
+            eval_criterion=self.eval_criterion,
+            device=self.device
         )
 
     def train_loop(self):
@@ -116,11 +116,7 @@ class Trainer:
         """
 
         if self.config.use_wandb:
-            # NOTE: Create a dummy input on which to perform a forward pass
-            # in order to initialize the weights of LazyLinear
-            # dummy_input = next(iter(self.train_loader))[0].to(self.device)
-            # self.model(dummy_input)
-            wandb.watch(self.model, self.criterion, log="all", log_freq=10)
+            wandb.watch(self.model, self.criterion, log=None, log_freq=10)
             wandb.define_metric("epoch")
             wandb.define_metric("loss/*", step_metric="epoch")
             wandb.define_metric("times/*", step_metric="epoch")
@@ -174,7 +170,8 @@ class Trainer:
                         f"Epoch {epoch} | New best model found with val loss: {min_val_loss}"
                     )
                     print("#" * 50)
-                    best_model_state_dict = copy.deepcopy(self.model.state_dict())
+                    best_model_state_dict = copy.deepcopy(
+                        self.model.state_dict())
 
                 train_times.append(train_time)
                 val_times.append(val_time)
@@ -303,12 +300,12 @@ class QuantileTrainer(Trainer):
 
         self.tau = tau
         self.evaluator = QuantileEvaluator(
-                model=kwargs["model"],
-                config=kwargs["config"],
-                criterion=kwargs["criterion"],
-                eval_criterion=kwargs["eval_criterion"],
-                device=kwargs["device"],
-                tau=self.tau,
+            model=kwargs["model"],
+            config=kwargs["config"],
+            criterion=kwargs["criterion"],
+            eval_criterion=kwargs["eval_criterion"],
+            device=kwargs["device"],
+            tau=self.tau,
         )
 
     def train_loop(self) -> float:
@@ -363,8 +360,9 @@ class QuantileTrainer(Trainer):
 
         return train_loss / num_batches
 
+
 def get_trainer(
-    mono_mask: np.ndarray = np.zeros(shape=(10,1)),
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
     tau: float = 0.5,
     **kwargs
 ) -> Trainer:
