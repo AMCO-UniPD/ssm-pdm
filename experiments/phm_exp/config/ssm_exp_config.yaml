@@ -46,7 +46,8 @@ lr: 0.001
 weight_decay: 1.0e-4
 
 # loss parameters
-loss: quantile_reg
+# loss: quantile_reg # for quantile_reg
+loss: mse # for standard
 eval_loss: rmse
 
 # multi run parameters

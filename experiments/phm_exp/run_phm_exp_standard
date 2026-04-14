@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+echo "-------------------------------------------"
+echo "Running PHM Dataset standard experiment"
+echo "-------------------------------------------"
+
+echo "-------------------------------------------"
+echo "Step 1: Train the model, save the best one"
+echo "and save outputs and metrics"
+echo "-------------------------------------------"
+
+./launch_train_phm_standard training
+
+echo "-------------------------------------------"
+echo "Step 4: Produce the quantile plots"
+echo "-------------------------------------------"
+
+./launch_train_phm_standard standard_plots

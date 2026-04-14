@@ -1,5 +1,5 @@
 """
-Training script for PHM dataset experiments
+Training script for PHM dataset experiments with quantile regression
 """
 
 # general imports

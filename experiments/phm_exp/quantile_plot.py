@@ -37,7 +37,7 @@ outputs_path = generate_path(
         exp_config.failure_type,
         exp_config.approach,
         exp_name,
-        f"run_{exp_config.run_id}",
+        f"run_{exp_config.plot_run_id}",
     ],
 )
 

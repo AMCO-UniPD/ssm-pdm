@@ -108,7 +108,8 @@ def plot_predictions_grid(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
-) -> plt.figure:
+    n_last_samples: int = 0,
+) -> None:
     """
     Function to plot in a grid the `RUL` prediction of each life for a specific
     feature/sensor
@@ -124,8 +125,7 @@ def plot_predictions_grid(
 
     Returns:
     --------
-    fig: plt.figure
-        Figure containing the plot
+        None: the function produces the plot but does not return anything
     """
 
     if config.life_idx is None:
@@ -135,40 +135,39 @@ def plot_predictions_grid(
             "Number of rows and columns must match the number of lives"
         )
 
-    # Get the name of the sensor to plot
-    feature_names = get_feature_names(config)
-
     # Get the y_pred and y_true tensors
     outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
     # Select the predictions and true values for the sensor
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
-    if config.model_name.startswith("chronos"):
-        pred, true = (
-            y_pred[config.life_idx][:, sensor_idx, :],
-            y_true[config.life_idx][:, sensor_idx, :],
-        )
-    elif config.approach == "padding":
-        pred, true = y_pred[config.life_idx, :], y_true[config.life_id, :]
-    elif config.approach == "windowed":
-        pred = [y_pred[i] for i in config.life_idx]
-        true = [y_true[i] for i in config.life_idx]
+    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
+    pred = [y_pred[i] for i in life_idxs]
+    true = [y_true[i] for i in life_idxs]
+
     if not config.full_life:
-        mask = (
-            true != 0
-            if config.approach == "padding"
-            else [true[i] != 0 for i in range(len(true))]
-        )
+        mask = [true[i] != 0 for i in range(len(true))]
     else:
-        np.ones(true.shape, dtype=int)
+        mask = [np.ones(len(t), dtype=bool) for t in true]
 
     # Produce the plot
-    fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(30, 20))
+    if config.nrows == config.ncols == 1:
+        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(10, 8))
+    else:
+        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(50, 20))
+
     for i in range(config.nrows):
         for j in range(config.ncols):
             if i * config.ncols + j < (config.nrows * config.ncols):
-                ax = axs[i, j]
+                if config.nrows == 1 and config.ncols == 1:
+                    ax = axs
+                elif config.nrows == 1:
+                    ax = axs[j]
+                elif config.ncols == 1:
+                    ax = axs[i]
+                else:
+                    ax = axs[i, j]
+
                 ax.plot(
                     true[i * config.ncols + j][mask[i * config.ncols + j]],
                     color="blue",
@@ -179,9 +178,13 @@ def plot_predictions_grid(
                     color="orange",
                     label="Predicted RUL",
                 )
-                ax.set_title(
-                    f"Life {config.life_idx[i * config.ncols + j] + config.cmapss_test_idx[0] + 1}"
+
+                plot_title = (
+                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    if config.data_name == "CMAPSS"
+                    else f"Life {config.life_idx[i * config.ncols + j]}"
                 )
+                ax.set_title(plot_title)
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
                 ax.legend()
@@ -198,8 +201,6 @@ def plot_predictions_grid(
         print("#" * 50)
         print(f"Plot saved at: {plot_path}")
         print("#" * 50)
-
-    return fig
 
 
 # Plot function to plot the prediction intervals of the model using the
