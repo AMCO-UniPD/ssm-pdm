@@ -232,9 +232,6 @@ def plot_prediction_interval(
         None: the function produces the plot but does not return anything
     """
 
-    # assert config.approach == "windowed", (
-    #     "The Quantile Regression experiments were don only on the windowed approach"
-    # )
     assert config.nrows * config.ncols == len(config.life_idx), (
         "Number of rows and columns must match the number of lives"
     )

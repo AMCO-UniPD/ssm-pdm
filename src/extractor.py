@@ -55,15 +55,15 @@ class Extractor(nn.Module):
             self.hidden_layers.append(nn.LazyLinear(self.config.d_model))
             self.acts.append(self.activation)
 
-        def forward(self, x):
+    def forward(self, x):
 
-            # In this loop it's all (B,L,H) → (B,L,H)
-            for layer, act in zip(self.hidden_layers, self.acts):
+        # In this loop it's all (B,L,H) → (B,L,H)
+        for layer, act in zip(self.hidden_layers, self.acts):
 
-                x = layer(x)
-                x = act(x)
+            x = layer(x)
+            x = act(x)
 
-            return x
+        return x
 
 
 class S4Extractor(Extractor):
@@ -259,6 +259,43 @@ class LinearExtractor(Extractor):
 
     def forward(self, x):
         x = self.identity(x)
+        return x
+
+class MLPExtractor(Extractor):
+    """
+    MLP model feature extractor
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.hidden_layers = nn.ModuleList()
+        self.norms = nn.ModuleList()
+        self.dropouts = nn.ModuleList()
+        self.acts = nn.ModuleList()
+
+        if self.config.act == "gelu":
+            self.activation = nn.GELU()
+        elif self.config.act == "relu":
+            self.activation = nn.ReLU()
+        else:
+            self.activation = nn.Identity()
+
+        self.layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(self.config.d_model, self.config.d_model),
+                nn.LayerNorm(self.config.d_model),
+                self.activation,
+                nn.Dropout(self.config.dropout)
+            )
+            for _ in range(self.config.n_layers)
+        ])
+
+    def forward(self, x):
+
+        for layer in self.layers:
+            x = layer(x)
+
         return x
 
 
