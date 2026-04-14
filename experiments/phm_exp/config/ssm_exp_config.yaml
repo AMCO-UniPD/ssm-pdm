@@ -15,10 +15,11 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-approach: padding
+monotonic: false
+quantile_reg: false
+approach: padding_standard
 
 # quantile_reg config
-quantile_reg: true
 quantile_dist: uniform
 bounds: [0.1, 0.9]
 quantiles: [0.1,0.25,0.5,0.75,0.9]
@@ -35,14 +36,12 @@ normalize_rul: true
 #AD approach
 ad: false
 
-# monotonic approach
-monotonic: false
-
 # training parameters
 batch_size: 16
 sequence_length: 1000
 stride: 500
-epochs: 30
+# epochs: 30
+epochs: 1
 lr: 0.001
 weight_decay: 1.0e-4
 

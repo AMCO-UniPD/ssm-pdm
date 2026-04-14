@@ -24,6 +24,7 @@ from tqdm.auto import tqdm
 
 from evaluator import (
     Evaluator,
+    StandardEvaluator,
     QuantileEvaluator,
 )
 
@@ -240,6 +241,17 @@ class StandardTrainer(Trainer):
     """
     Standard Trainer class without any fancy approach
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.evaluator = StandardEvaluator(
+            model=kwargs["model"],
+            config=kwargs["config"],
+            criterion=kwargs["criterion"],
+            eval_criterion=kwargs["eval_criterion"],
+            device=kwargs["device"],
+        )
 
     def train_loop(self) -> float:
         """
