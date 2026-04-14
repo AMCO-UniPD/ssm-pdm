@@ -1013,8 +1013,9 @@ def best_model_perf(
         device (str): The device to use
         best_model_path (str): The path to save the best model
         outputs_path (str): The path to save the outputs
-        plot_path (str): The path to save the plots
         metrics_path (str): The path to save the test metrics
+        outputs_path (str): The path to save the outputs
+        tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
         Union[None,nn.Module,dict]: The function saves the plots and the metrics and does not return anything

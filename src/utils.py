@@ -1355,21 +1355,21 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
             test_lifes=test_lifes,
         )
 
-    elif config.approach == "full_life":
-        loaders_dict = create_full_life_loaders(
-            config=config,
-            train_lifes=train_lifes,
-            val_lifes=val_lifes,
-            test_lifes=test_lifes,
-        )
-
-    elif config.approach == "windowed":
+    elif "windowed" in config.approach:
         loaders_dict = create_window_loaders(
             config=config,
             train_lifes=train_lifes,
             val_lifes=val_lifes,
             test_lifes=test_lifes,
             eval=eval,
+        )
+
+    elif config.approach == "full_life":
+        loaders_dict = create_full_life_loaders(
+            config=config,
+            train_lifes=train_lifes,
+            val_lifes=val_lifes,
+            test_lifes=test_lifes,
         )
 
     else:
