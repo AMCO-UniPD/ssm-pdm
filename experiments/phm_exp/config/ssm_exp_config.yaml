@@ -15,9 +15,9 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-monotonic: false
+monotonic: true
 quantile_reg: false
-approach: padding_standard
+approach: padding_standard_monotonic
 
 # quantile_reg config
 quantile_dist: uniform
@@ -40,14 +40,13 @@ ad: false
 batch_size: 16
 sequence_length: 1000
 stride: 500
-# epochs: 30
-epochs: 1
+epochs: 30
 lr: 0.001
 weight_decay: 1.0e-4
 
 # loss parameters
 # loss: quantile_reg # for quantile_reg
-loss: mse # for standard
+loss: rmse # for standard
 eval_loss: rmse
 
 # multi run parameters
@@ -59,7 +58,7 @@ summary_func: torchinfo
 
 # quantile plots
 file_pos: 0
-plot_run_id: 3
+plot_run_id: 1
 quantile_plot: 0.5
 # life_idx: [0,1,5,11]
 # life_idx: [77,97,129,228]

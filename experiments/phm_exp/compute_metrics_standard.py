@@ -19,7 +19,7 @@ from utils import (
     save_element,
     get_current_time,
 )
-from perf import lifes_metrics
+from perf import lifes_metrics, print_summary_metrics
 from models import wandb_data
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))

@@ -79,7 +79,7 @@ class S4Extractor(Extractor):
         self.d_model = self.config.d_model
         self.n_layers = self.config.n_layers
         self.dropout = self.config.dropout
-        self.activation = self.config.activation
+        self.act = self.config.activation
         self.gate_act = self.config.gate_act
         self.mult_act = self.config.mult_act
         self.final_act = self.config.final_act
@@ -93,7 +93,7 @@ class S4Extractor(Extractor):
                 S4(
                     self.d_model,
                     dropout=self.dropout,
-                    activation=self.activation,
+                    activation=self.act,
                     gate_act=self.gate_act,
                     mult_act=self.mult_act,
                     final_act=self.final_act,

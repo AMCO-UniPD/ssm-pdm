@@ -195,7 +195,7 @@ def plot_predictions_grid(
         else:
             filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad"
         life_idx_str = "_".join(str(x) for x in config.life_idx)
-        filename = f"{filename}_life_{life_idx_str}.pdf"
+        filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
         print("#" * 50)

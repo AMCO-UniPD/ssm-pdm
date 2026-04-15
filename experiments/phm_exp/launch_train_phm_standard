@@ -30,9 +30,7 @@ case "$mode" in
     --device_num $device_num \
     --use_wandb \
     --save_best_model \
-    --save_outputs \
-    --compute_metrics \
-    --save_metrics_df
+    --save_outputs
 
   ;;
   "training_no_wandb")
@@ -81,7 +79,7 @@ case "$mode" in
 
   echo "-------------------------------------------"
   echo "mode: $mode"
-  echo "Saving the outputs for all the quantiles in the same run"
+  echo "Computing metrics"
   echo "-------------------------------------------"
 
   python "compute_metrics_standard.py" \
@@ -94,6 +92,9 @@ case "$mode" in
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
+    --print_summary_metrics \
+    --print_mean_metrics_df \
+    --save_mean_metrics_df \
     --save_metrics_df
 
   ;;

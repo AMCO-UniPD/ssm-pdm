@@ -174,11 +174,10 @@ class MonotonicRULModel(RULModel):
         super().__init__(*args, **kwargs)
 
         self.mono_mask = mono_mask
-        self.n_mono_neurons = np.where(mono_mask == 1).sum()
-        self.head = MonoQuantileHead(
+        self.n_mono_neurons = len(np.where(mono_mask == 1)[0])
+        self.head = MonotonicHead(
             config=self.model_config,
             d_output=self.output_size,
-            tau=self.tau,
             n_mono_neurons=self.n_mono_neurons
         )
 

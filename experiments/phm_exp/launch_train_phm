@@ -100,7 +100,7 @@ case "$mode" in
 
   echo "-------------------------------------------"
   echo "mode: $mode"
-  echo "Saving the outputs for all the quantiles in the same run"
+  echo "Computing metrics"
   echo "-------------------------------------------"
 
   python "compute_metrics.py" \

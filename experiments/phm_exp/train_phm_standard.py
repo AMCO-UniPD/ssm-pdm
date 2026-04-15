@@ -132,7 +132,7 @@ if exp_config.test_script:
                 metrics_path = metrics_path,
             )
 
-quit()
+    quit()
 
 for run in range(exp_config.start_run_id, exp_config.n_runs):
 
