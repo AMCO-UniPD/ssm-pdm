@@ -625,7 +625,6 @@ def exp_run(
         device=device,
         best_model_path=best_model_path,
         config=config,
-        mono_mask=mono_mask,
         tau=tau
     )
 

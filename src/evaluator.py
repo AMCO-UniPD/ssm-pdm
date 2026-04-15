@@ -179,7 +179,6 @@ class QuantileEvaluator(Evaluator):
 
 
 def get_evaluator(
-    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
     tau: float = 0.5,
     **kwargs
 ) -> Evaluator:
@@ -188,7 +187,6 @@ def get_evaluator(
 
     Args:
         config (ExperimentConfig): experiment configuration object
-        mono_mask (np.ndarray): boolean mask to identify monotonic features
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:

@@ -33,7 +33,6 @@ from utils import (
     get_current_time,
     sample_quantile,
     save_element,
-    split_input
 )
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -372,9 +371,7 @@ class QuantileTrainer(Trainer):
 
         return train_loss / num_batches
 
-
 def get_trainer(
-    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
     tau: float = 0.5,
     **kwargs
 ) -> Trainer:

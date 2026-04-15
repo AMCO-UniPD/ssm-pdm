@@ -23,6 +23,8 @@ from models import (
     eval_loop,
 )
 from utils import load_yaml_to_dict
+from trainer import get_trainer
+from evaluator import get_evaluator
 
 import torch
 import torch.nn as nn
@@ -116,6 +118,7 @@ def wandb_train_test_sweep(
     model: nn.Module,
     train_loader: DataLoader,
     val_loader: DataLoader,
+    test_loader: DataLoader,
     criterion: nn.Module,
     eval_criterion: nn.Module,
     optimizer: optim.Optimizer,
@@ -135,6 +138,7 @@ def wandb_train_test_sweep(
         model (nn.Module): The model object
         train_loader (DataLoader): The DataLoader object for training
         val_loader (DataLoader): The DataLoader object for validation
+        test_loader (DataLoader): The DataLoader object for test
         criterion (nn.Module): The loss function
         optimizer (optim.Optimizer): The optimizer object
         scheduler (optim.lr_scheduler._LRScheduler): The scheduler object
@@ -146,6 +150,29 @@ def wandb_train_test_sweep(
         min_val_loss: minimum validation loss over the epochs.
         This is the metric that will be tracked in the sweep
     """
+
+    trainer = get_trainer(
+        train_loader=train_loader,
+        val_loader=val_loader,
+        test_loader=test_loader,
+        model=model,
+        optimizer=optimizer,
+        criterion=criterion,
+        eval_criterion=eval_criterion,
+        scheduler=scheduler,
+        device=device,
+        config=config,
+        tau=tau
+    )
+
+    evaluator = get_evaluator(
+        model=model,
+        config=config,
+        criterion=criterion,
+        eval_criterion=eval_criterion,
+        device=device,
+        tau=tau
+    )
 
     wandb.watch(model, criterion, log="all", log_freq=10)
     wandb.define_metric("epoch")
@@ -167,26 +194,12 @@ def wandb_train_test_sweep(
             )
 
         train_time = time.time()
-        train_loss = train_loop(
-            dataloader=train_loader,
-            model=model,
-            config=config,
-            optimizer=optimizer,
-            criterion=criterion,
-            device=device,
-        )
+        train_loss = trainer.train_loop()
         train_time = time.time() - train_time
 
         val_time = time.time()
-        val_loss, eval_val_loss, _, _, _, _ = eval_loop(
-            dataloader=val_loader,
-            model=model,
-            config=config,
-            criterion=criterion,
-            eval_criterion=eval_criterion,
-            mode="Val",
-            device=device,
-            tau=tau,
+        val_loss, eval_val_loss, _, _ = evaluator.eval_loop(
+            loader=trainer.val_loader, mode="Val"
         )
         val_time = time.time() - val_time
 
@@ -257,7 +270,7 @@ def exp_run_sweep(
         scheduler,
         criterion,
         eval_criterion,
-        mono_mask
+        _
     ) = wandb_data(
         config = exp_config,
         model_config = model_config
@@ -267,6 +280,7 @@ def exp_run_sweep(
         model = model,
         train_loader = train_loader,
         val_loader = val_loader,
+        test_loader = val_loader,
         criterion = criterion,
         eval_criterion = eval_criterion,
         optimizer = optimizer,
@@ -315,7 +329,7 @@ def wandb_run_sweep():
             )
             sweep_run.log({"score": score})
 
-        except AssertionError as e:
+        except AssertionError as _:
 
             print("-"*50)
             print("Skipping run due to an invalid configuration")
@@ -332,7 +346,5 @@ def wandb_run_sweep():
             sweep_run.finish(exit_code=1)
 
             raise e
-
-
 
 
