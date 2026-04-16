@@ -1,17 +1,19 @@
 # Configuration file for wandb sweep experiments
 
-sweep_method: random
+sweep_method: bayes
 sweep_param_names:
-  - d_model
+  - lr
   - dropout
   # - sequence_length
+  # - d_model
+  # - stride
 
-d_model_vals: [32, 64, 128]
-dropout_vals: [0.1, 0.4]
+# d_model_vals: [32, 64, 128]
 # sequence_length_vals: [1000, 2000, 5000]
 # batch_size_vals: [16, 32, 48]
 # n_const_win_vals: [10, 50, 100, 200]
-# lr_vals: [0.001, 0.01]
+lr_vals: [0.001, 0.01]
+dropout_vals: [0.1, 0.5]
 # stride_vals: [200, 500, 1000]
 
 #NOTE: AD sweep

@@ -157,7 +157,7 @@ class S4DExtractor(Extractor):
             self.s4d_layers.append(
                 S4D(
                     d_model=self.d_model,
-                    d_output=self.d_output,
+                    d_output=self.d_model,
                     d_state=self.d_state,
                     dropout=self.dropout,
                     act=self.act,
