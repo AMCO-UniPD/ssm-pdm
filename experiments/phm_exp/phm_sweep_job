@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S4D_random_ad_sweep_phm_exp
-#SBATCH --output=slurm_logs/S4D/S4D_random_ad_sweep_phm_exp_%j.txt
-#SBATCH --error=slurm_logs/S4D/S4D_random_ad_sweep_phm_exp_error_%j.txt
+#SBATCH --job-name=S5_bayes_padding_standard_sweep_3_phm_exp
+#SBATCH --output=slurm_logs/S5/S5_bayes_padding_standard_sweep_3_phm_exp_%j.txt
+#SBATCH --error=slurm_logs/S5/S5_bayes_padding_standard_sweep_3_phm_exp_error_%j.txt
 #SBATCH --time=20:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most

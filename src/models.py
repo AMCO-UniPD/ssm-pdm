@@ -1062,7 +1062,6 @@ def best_model_perf(
             criterion=criterion,
             eval_criterion=eval_criterion,
             device=device,
-            mono_mask=mono_mask,
             tau=tau
         )
 

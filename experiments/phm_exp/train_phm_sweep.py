@@ -43,9 +43,10 @@ def main() -> None:
 
     sweep_config = define_sweep_config(
         sweep_config_path = sweep_config_path,
-        script_path = script_path
+        script_path = script_path,
+        exp_config = exp_config
     )
-
+    
     print("-"*50)
     print(f"Sweep configuration:\n {sweep_config}")
     print("-"*50)

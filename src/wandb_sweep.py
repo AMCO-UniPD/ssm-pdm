@@ -37,7 +37,8 @@ sweep_config_path = os.path.join(experiment_path,"config","sweep_config.yaml")
 
 def define_sweep_config(
     sweep_config_path: str,
-    script_path: str
+    script_path: str,
+    exp_config: ExperimentConfig
 ) -> dict:
     """
     This function uses the hyperparameters set on the yaml sweep file
@@ -46,6 +47,7 @@ def define_sweep_config(
     Args:
         sweep_config_path (str): path to the sweep yaml config file
         script_path (str): path to the script launching the sweep
+        exp_config (ExperimentConfig): experiment configuration object
 
     Returns:
         sweep_config (dict): sweep configuration dictionary
@@ -55,11 +57,12 @@ def define_sweep_config(
     sweep_config_dict = load_yaml_to_dict(sweep_config_path)
     config = ExperimentConfig.from_dict(sweep_config_dict)
     config.add_params(args=args.__dict__)
+    setattr(exp_config,"sweep_method",config.sweep_method)
 
-    if config.sweep_name == "sweep":
-        sweep_name = set_sweep_name(config = config)
+    if exp_config.sweep_name == "sweep":
+        sweep_name = set_sweep_name(config = exp_config)
     else:
-        sweep_name = config.sweep_name
+        sweep_name = exp_config.sweep_name
 
     sweep_config = {
         "program": script_path,
@@ -174,7 +177,7 @@ def wandb_train_test_sweep(
         tau=tau
     )
 
-    wandb.watch(model, criterion, log="all", log_freq=10)
+    wandb.watch(model, criterion, log=None, log_freq=10)
     wandb.define_metric("epoch")
     wandb.define_metric("loss/*", step_metric="epoch")
     wandb.define_metric("times/*", step_metric="epoch")
@@ -304,7 +307,8 @@ def wandb_run_sweep():
     exp_config, model_config, device, _ = setup_exp()
     sweep_config = define_sweep_config(
             sweep_config_path = sweep_config_path,
-            script_path = script_path
+            script_path = script_path,
+            exp_config = exp_config
     )
 
     with wandb.init(project=exp_config.project_name) as sweep_run:
