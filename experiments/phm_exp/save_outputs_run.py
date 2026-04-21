@@ -81,16 +81,14 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
         outputs_dict_path = get_most_recent_file(os.path.join(run_outputs_path,f"quantile_{quantile}"),file_pos=exp_config.file_pos)
         outputs_dict = open_element(outputs_dict_path,filetype="pickle")
 
-        y_pred, y_true, mean_an_scores, max_an_scores = outputs_dict["y_pred"], outputs_dict["y_true"], outputs_dict["mean_an_scores"], outputs_dict["max_an_scores"]
+        y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
 
         if i == 0:
             run_outputs_dict["y_true"] = y_true
 
         run_outputs_dict[f"pred_quantile_{quantile}"] = y_pred
-        run_outputs_dict[f"mean_an_scores_quantile_{quantile}"] = mean_an_scores
-        run_outputs_dict[f"max_an_scores_quantile_{quantile}"] = max_an_scores
 
-    filename = f"{get_current_time()}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs_mean_max_an_scores" if exp_config.data_name == "CMAPSS" else f"{get_current_time()}_{exp_config.model_name}_{exp_config.approach}_run_{run+1}_outputs_mean_max_an_scores"
+    filename = f"{get_current_time()}_{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_run_{run+1}_outputs" if exp_config.data_name == "CMAPSS" else f"{get_current_time()}_{exp_config.model_name}_{exp_config.approach}_run_{run+1}_outputs"
 
     save_element(
         element=run_outputs_dict,
