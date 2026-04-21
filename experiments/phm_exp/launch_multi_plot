@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+script_path="multi_standard_plot.py"
+
+source "./phm_exp_config"
+
+echo "-------------------------------------------"
+echo "Executing $script_path"
+echo "-------------------------------------------"
+
+model_names=("S5" "S4")
+# model_names=("S5" "S4" "S4D" "MLP")
+
+python "$script_path" \
+    --model_names "${model_names[@]}" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --failure_type "$failure_type" \
+    --train_phm_tools "${train_phm_tools[@]}" \
+    --test_phm_tools "${test_phm_tools[@]}"

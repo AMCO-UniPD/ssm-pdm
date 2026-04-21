@@ -101,8 +101,6 @@ def plot_forecast(
     print(f"Plot saved at: {plot_path}")
 
 
-# Re adaptation of function plot_torch_predictions_grid from `SSM_PDM` project
-
 
 def plot_predictions_grid(
     config: ExperimentConfig,
@@ -202,10 +200,110 @@ def plot_predictions_grid(
         print(f"Plot saved at: {plot_path}")
         print("#" * 50)
 
+def multi_plot_predictions_grid(
+    config: ExperimentConfig,
+    plot_dict: dict = {"S4":experiment_path},
+    plot_path: str = experiment_path,
+    n_last_samples: int = 0,
+) -> None:
+    """
+    Extension of plot_predictions_grid that reports the predicted RULs from
+    multiple models in the same grid plot
 
-# Plot function to plot the prediction intervals of the model using the
-# predictions from different quantile levels
+    Parameters:
+    -----------
+    config: ExperimentConfig
+        Experiment configuration object
+    plot_dict (dict)
+        Dictionary containing the informations to produce the plot (model names and output paths)
+    plot_path: str
+        Path to save the plot
 
+    Returns:
+    --------
+        None: the function produces the plot but does not return anything
+    """
+
+    if config.life_idx is None:
+        config.life_idx = np.arange(config.nrows * config.ncols)
+    else:
+        assert config.nrows * config.ncols == len(config.life_idx), (
+            "Number of rows and columns must match the number of lives"
+        )
+
+    pred = {}
+    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
+
+    for model_name, output_path in plot_dict.items():
+        outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
+        outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
+        y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
+        pred[model_name] = [y_pred[i] for i in life_idxs]
+
+    true = y_true[-1]
+
+    if not config.full_life:
+        mask = [true[-1] != 0 for i in range(len(true))]
+    else:
+        mask = [np.ones(len(t), dtype=bool) for t in true]
+
+    # Produce the plot
+    if config.nrows == config.ncols == 1:
+        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(10, 8))
+    else:
+        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(50, 20))
+
+    cmap = plt.get_cmap("viridis")
+    colors = cmap(np.linspace(0,1,len(plot_dict.keys())))
+
+    for i in range(config.nrows):
+        for j in range(config.ncols):
+            if i * config.ncols + j < (config.nrows * config.ncols):
+                if config.nrows == 1 and config.ncols == 1:
+                    ax = axs
+                elif config.nrows == 1:
+                    ax = axs[j]
+                elif config.ncols == 1:
+                    ax = axs[i]
+                else:
+                    ax = axs[i, j]
+
+                ax.plot(
+                    true[i * config.ncols + j][mask[i * config.ncols + j]],
+                    color="blue",
+                    label="True RUL",
+                )
+
+                for model_name, color in zip(plot_dict.keys(), colors):
+
+                    ax.plot(
+                        pred[model_name][i * config.ncols + j][mask[i * config.ncols + j]],
+                        color=color,
+                        label=model_name,
+                    )
+
+                plot_title = (
+                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    if config.data_name == "CMAPSS"
+                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                )
+                ax.set_title(plot_title)
+                ax.set_xticks([])
+                ax.set_ylabel("RUL")
+                ax.legend()
+
+    if config.save_plot:
+        if config.full_life:
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_multi_predictions_grid_full"
+        else:
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_multi_predictions_grid_pad"
+        life_idx_str = "_".join(str(x) for x in config.life_idx)
+        filename = f"{filename}_life_{life_idx_str}.png"
+        plot_path = os.path.join(plot_path, filename)
+        plt.savefig(plot_path, bbox_inches="tight")
+        print("#" * 50)
+        print(f"Plot saved at: {plot_path}")
+        print("#" * 50)
 
 def plot_prediction_interval(
     config: ExperimentConfig,
