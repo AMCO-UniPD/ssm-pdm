@@ -753,7 +753,6 @@ def get_transformer(
 def combine_values(
     predictions: np.ndarray,
     true_values: np.ndarray,
-    an_scores: np.ndarray,
     original_shape: int,
     sequence_length: int,
     stride: int,
@@ -764,7 +763,6 @@ def combine_values(
     Args:
         predictions: np.array containing the predictions for each sub sequence
         true_values: np.array containing the true values for each sub sequence
-        an_scores: np.array containing the anomaly scores for each sub sequence
         original_shape: shape of the signal before applying the sliding windows approach
         sequence_length: length of the sequences
         stride: stride used to construct the sliding windows
@@ -772,47 +770,27 @@ def combine_values(
     Returns:
         combined_predictions: np.array containing the combined
         combined_true_vals: np.array containing the combined true values
-        combined_an_scores: np.array containing the combined anomaly scores.
-        In case there are no anomaly scores the function returns an array of ones
     """
 
     # NOTE: In case we have non overlapping windows we just need
-    # to concatenate ther predictions and true values over the windows
+    # to concatenate the predictions and true values over the windows
 
     if sequence_length == stride:
         combined_predictions = np.concatenate(predictions)
         combined_true_vals = np.concatenate(true_values)
-        combined_an_scores = (
-            np.concatenate(an_scores)
-            if len(an_scores) != 0
-            else np.ones_like(combined_true_vals)
-        )
 
-        return combined_predictions, combined_true_vals, combined_an_scores
+        return combined_predictions, combined_true_vals
 
     n_samples = (len(predictions) * stride) + sequence_length
-    combined_predictions = (
-        np.zeros((n_samples, predictions.shape[-1]))
-        if len(an_scores) != 0
-        else np.zeros(n_samples)
-    )
-    combined_true_vals = (
-        np.zeros((n_samples, predictions.shape[-1]))
-        if len(an_scores) != 0
-        else np.zeros(n_samples)
-    )
-    combined_an_scores = np.zeros(n_samples)
+    combined_predictions = np.zeros(n_samples)
+    combined_true_vals = np.zeros(n_samples)
     counts = np.zeros(n_samples)
 
-    # for i, (preds, true, an_score) in enumerate(zip(predictions, true_values, an_scores)):
     for i, (preds, true) in enumerate(zip(predictions, true_values)):
         start_index = i * stride
         end_index = start_index + sequence_length
         combined_predictions[start_index:end_index] += preds
         combined_true_vals[start_index:end_index] += true
-        combined_an_scores[start_index:end_index] += (
-            an_score if len(an_scores) != 0 else 1
-        )
         counts[start_index:end_index] += 1
 
     nonzero_counts = counts != 0
@@ -828,8 +806,6 @@ def combine_values(
             counts[nonzero_counts], axis=1
         )
 
-    combined_an_scores[nonzero_counts] /= counts[nonzero_counts]
-
     if n_samples > original_shape:
         print("-" * 50)
         print(
@@ -840,10 +816,9 @@ def combine_values(
         return (
             combined_predictions[: -(n_samples - original_shape)],
             combined_true_vals[: -(n_samples - original_shape)],
-            combined_an_scores[: -(n_samples - original_shape)],
         )
 
-    return combined_predictions, combined_true_vals, combined_an_scores
+    return combined_predictions, combined_true_vals
 
 
 def load_reg_data(config: ExperimentConfig) -> dict:

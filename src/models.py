@@ -1047,7 +1047,7 @@ def best_model_perf(
     print("Evaluating the best model on the test set")
     print("#" * 50)
 
-    preds, true_vals, mean_anomaly_scores, max_anomaly_scores = [], [], [], []
+    preds, true_vals = [], []
 
     for i, test_loader in enumerate(test_loaders):
 
@@ -1083,19 +1083,9 @@ def best_model_perf(
 
         else:
 
-            combined_preds, combined_true_vals, combined_mean_an_scores = combine_values(
+            combined_preds, combined_true_vals = combine_values(
                 predictions=y_pred,
                 true_values=y_true,
-                an_scores=mean_an_scores,
-                original_shape=test_lifes[test_idx[i]].shape[0],
-                sequence_length=config.sequence_length,
-                stride=config.stride
-            )
-
-            _, _, combined_max_an_scores = combine_values(
-                predictions=y_pred,
-                true_values=y_true,
-                an_scores=max_an_scores,
                 original_shape=test_lifes[test_idx[i]].shape[0],
                 sequence_length=config.sequence_length,
                 stride=config.stride
@@ -1103,17 +1093,13 @@ def best_model_perf(
 
             preds.append(combined_preds)
             true_vals.append(combined_true_vals)
-            mean_anomaly_scores.append(combined_mean_an_scores)
-            max_anomaly_scores.append(combined_max_an_scores)
 
     outputs_dict = {
         "y_pred": preds,
         "y_true": true_vals,
-        "mean_an_scores": mean_anomaly_scores,
-        "max_an_scores": max_anomaly_scores,
     }
 
-    filename = f"{get_current_time()}_outputs_mean_max_an_scores_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
+    filename = f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
 
     if config.save_outputs:
         save_element(
