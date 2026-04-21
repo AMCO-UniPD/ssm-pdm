@@ -490,14 +490,14 @@ class SSMWindowRegressionDataset(Dataset):
 
     def select_windows(
         self,
-        n_const_win: int = 10,
+        n_const_win: int = 0,
     ):
         """
         Function to select only the windows with at least one RUL value
         lower than MAX RUL and keep the last n_const_win windows
 
         Args:
-            n_const_win (int): number of constant windows to keep
+            n_const_win (int): number of constant windows to keep, by default 0 (all constant windows are kept)
 
         Returns:
             None: the method filters the class attributes self.lifes and self.targets
