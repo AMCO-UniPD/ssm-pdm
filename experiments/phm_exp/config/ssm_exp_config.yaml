@@ -17,7 +17,8 @@ scaler_kwargs:
 # approach
 monotonic: false
 quantile_reg: false
-approach: padding_standard
+# approach: padding_standard
+approach: windowed_standard
 
 # quantile_reg config
 quantile_dist: uniform
@@ -29,7 +30,7 @@ quantile_run: 0.25
 # select_windows (windowed approach)
 max_rul: 500
 keep_long_rul_prob: 0.1
-n_const_win: 1000
+n_const_win: 10
 normalize_rul: true
 # normalize_rul: false
 
@@ -38,10 +39,10 @@ ad: false
 
 # training parameters
 batch_size: 16
-sequence_length: 500
+sequence_length: 1000
 stride: 500
-epochs: 30
-lr: 0.0078
+epochs: 1
+lr: 0.001
 weight_decay: 1.0e-4
 
 # loss parameters

@@ -1146,7 +1146,7 @@ def create_window_loaders(
     val_lifes: TransData,
     test_lifes: TransData,
     eval: bool = False,
-) -> Union[List[DataLoader], dict]:
+) -> Union[dict]:
     """
     Function to create the dataloaders for the window approach.
 
@@ -1159,8 +1159,8 @@ def create_window_loaders(
         (i.e one loader per life) or not
 
     Returns:
-        loaders_dict (dict): dictionary containing the dataloaders if eval=False
-        test_loaders (List[DataLoader]): list of dataloaders of the test lifes if eval=True
+        loaders_dict (dict): dictionary containing all the dataloaders if eval=False else
+        just the list of test loaders is returned in a dictionary
     """
 
     if eval:
@@ -1185,7 +1185,9 @@ def create_window_loaders(
         print("window dataloaders created successfully")
         print("-" * 50)
 
-        return test_loaders
+        loaders_dict = { "test_loaders": test_loaders }
+
+        return loaders_dict
 
     else:
         print("-" * 50)
@@ -1193,9 +1195,7 @@ def create_window_loaders(
         print("-" * 50)
 
         train_datasets = create_window_dataset(config=config, lifes=train_lifes)
-
         val_datasets = create_window_dataset(config=config, lifes=val_lifes)
-
         test_datasets = create_window_dataset(config=config, lifes=test_lifes)
 
         train_loader = DataLoader(

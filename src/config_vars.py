@@ -111,6 +111,9 @@ APPROACHES = [
     "padding",
     "padding_monotonic",
     "windowed",
+    "windowed_monotonic",
+    "windowed_standard",
+    "windowed_standard_monotonic",
     "full_life"
 ]
 
