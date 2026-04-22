@@ -56,5 +56,4 @@ _ = plot_predictions_grid(
     config=exp_config,
     outputs_path=outputs_path,
     plot_path=plot_path,
-    n_last_samples=exp_config.sequence_length
 )

@@ -13,8 +13,8 @@ src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from exp_config import setup_exp
-from ad_info import load_lifes
 from utils import generate_path, get_current_time
+from ad_info import load_lifes
 from config_vars import PHM_FEATURES
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
@@ -23,9 +23,8 @@ exp_config, model_config, device, exp_name = setup_exp()
 plot_path = generate_path(
     basepath=experiment_path,
     folders=[
-        "plots",
-        exp_config.failure_type,
         "raw_signals" if not exp_config.plot_rul else "rul_signals",
+        exp_config.failure_type,
     ],
 )
 
@@ -53,10 +52,10 @@ print(f"Data split: {data_split}")
 print(f"Life indices: {life_indices}")
 print("-" * 50)
 
-for feature in PHM_FEATURES:
+if exp_config.plot_rul:
 
     print("-"*50)
-    print(f"Producing raw signal for feature {feature}")
+    print("Producing RUL plot")
     print("-"*50)
 
     fig, axs = plt.subplots(exp_config.nrows, exp_config.ncols, figsize=(50, 20))
@@ -65,30 +64,57 @@ for feature in PHM_FEATURES:
         for j in range(exp_config.ncols):
             ax = axs[i, j]
 
-            if exp_config.plot_rul:
-                ax.plot(
-                    lifes[i*exp_config.ncols+j].loc[:,"RUL"],
-                    color = "orange",
-                    label = "RUL Signal"
-                )
-            else:
+            ax.plot(
+                lifes[i*exp_config.ncols+j].loc[:,"RUL"],
+                color = "orange",
+                label = "RUL Signal"
+            )
+
+        plot_title = f"RUL {life_indices[i*exp_config.ncols+j]}"
+        ax.set_title(plot_title)
+        ax.set_xticks([])
+        ax.set_ylabel("RUL")
+        ax.legend()
+
+    if exp_config.save_plot:
+        filename = f"{get_current_time()}_ruls_{exp_config.failure_type}.png"
+        filepath = os.path.join(plot_path, filename)
+        plt.savefig(filepath, dpi=300, bbox_inches="tight")
+        print("-" * 50)
+        print(f"Plot saved at: {filepath}")
+        print("-" * 50)
+
+else:
+
+    for feature in PHM_FEATURES:
+
+        print("-"*50)
+        print(f"Producing raw signal for feature {feature}")
+        print("-"*50)
+
+        fig, axs = plt.subplots(exp_config.nrows, exp_config.ncols, figsize=(50, 20))
+
+        for i in range(exp_config.nrows):
+            for j in range(exp_config.ncols):
+                ax = axs[i, j]
+
                 ax.plot(
                     lifes[i*exp_config.ncols+j].loc[:,feature],
                     color = "blue",
                     label = "Raw Signal"
                 )
 
-            plot_title = f"Life {life_indices[i*exp_config.ncols+j]}" if not exp_config.plot_rul else f"RUL {life_indices[i*exp_config.ncols+j]}"
-            ax.set_title(plot_title)
-            ax.set_xticks([])
-            ax.set_ylabel(feature)
-            ax.legend()
+                plot_title = f"Life {life_indices[i*exp_config.ncols+j]}"
+                ax.set_title(plot_title)
+                ax.set_xticks([])
+                ax.set_ylabel(feature)
+                ax.legend()
 
-    if exp_config.save_plot:
-        filename = f"{get_current_time()}_raw_signals_{feature}_{data_split}.png" if not exp_config.plot_rul else f"{get_current_time()}_ruls_{feature}_{data_split}.png"
-        filepath = os.path.join(plot_path, filename)
-        plt.savefig(filepath, dpi=300, bbox_inches="tight")
-        print("-" * 50)
-        print(f"Plot saved at: {filepath}")
-        print("-" * 50)
+        if exp_config.save_plot:
+            filename = f"{get_current_time()}_raw_signals_{feature}_{data_split}.png" if not exp_config.plot_rul else f"{get_current_time()}_ruls_{feature}_{data_split}.png"
+            filepath = os.path.join(plot_path, filename)
+            plt.savefig(filepath, dpi=300, bbox_inches="tight")
+            print("-" * 50)
+            print(f"Plot saved at: {filepath}")
+            print("-" * 50)
 

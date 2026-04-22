@@ -310,7 +310,7 @@ class RecurrentExtractor(Extractor):
 
         if model_name == "LSTM":
             self.recurrent = nn.LSTM(
-                input_size=self.input_size,
+                input_size=self.config.d_model,
                 hidden_size=self.config.d_model,
                 num_layers=self.config.n_layers,
                 batch_first=True,
@@ -318,7 +318,7 @@ class RecurrentExtractor(Extractor):
             )
         elif model_name == "GRU":
             self.recurrent = nn.GRU(
-                input_size=self.input_size,
+                input_size=self.config.d_model,
                 hidden_size=self.config.d_model,
                 num_layers=self.config.n_layers,
                 batch_first=True,
@@ -326,7 +326,7 @@ class RecurrentExtractor(Extractor):
             )
         elif model_name == "RNN":
             self.recurrent = nn.RNN(
-                input_size=self.input_size,
+                input_size=self.config.d_model,
                 hidden_size=self.config.d_model,
                 num_layers=self.config.n_layers,
                 batch_first=True,
@@ -346,7 +346,7 @@ class TransformerExtractor(Extractor):
 
         self.embedding = nn.Sequential(
             nn.Embedding(
-                num_embeddings=self.input_size, embedding_dim=self.config.d_model
+                num_embeddings=self.config.d_model, embedding_dim=self.config.d_model
             ),
             PositionalEncoding(
                 d_model=self.config.d_model,
