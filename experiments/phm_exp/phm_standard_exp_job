@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_flow_low_windowed_standard
-#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_standard_%j.txt
-#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_standard_error_%j.txt
+#SBATCH --job-name=S5_flow_low_windowed_standard_monotonic
+#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_standard_monotonic_%j.txt
+#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_standard_monotonic_error_%j.txt
 #SBATCH --time=05:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most

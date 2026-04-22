@@ -140,8 +140,13 @@ def plot_predictions_grid(
     # Select the predictions and true values for the sensor
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
-    pred = [y_pred[i] for i in life_idxs]
-    true = [y_true[i] for i in life_idxs]
+
+    if n_last_samples > 0:
+        true = [y_true[i][-n_last_samples:] for i in life_idxs]
+        pred = [y_pred[i][-n_last_samples:] for i in life_idxs]
+    else:
+        true = [y_true[i] for i in life_idxs]
+        pred = [y_pred[i] for i in life_idxs]
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
@@ -191,7 +196,7 @@ def plot_predictions_grid(
         if config.full_life:
             filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_full"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad_n_last_samples_{n_last_samples}"
         life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)
@@ -235,12 +240,12 @@ def multi_plot_predictions_grid(
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
 
     for model_name, output_path in plot_dict.items():
-        outputs_path = get_most_recent_file(outputs_path, file_pos=config.file_pos)
+        outputs_path = get_most_recent_file(output_path, file_pos=config.file_pos)
         outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
         y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
-        pred[model_name] = [y_pred[i] for i in life_idxs]
+        pred[model_name] = [y_pred[i].squeeze() for i in life_idxs]
 
-    true = y_true[-1]
+    true = y_true[-1].squeeze()
 
     if not config.full_life:
         mask = [true[-1] != 0 for i in range(len(true))]
@@ -269,7 +274,7 @@ def multi_plot_predictions_grid(
                     ax = axs[i, j]
 
                 ax.plot(
-                    true[i * config.ncols + j][mask[i * config.ncols + j]],
+                    true,
                     color="blue",
                     label="True RUL",
                 )
@@ -277,7 +282,7 @@ def multi_plot_predictions_grid(
                 for model_name, color in zip(plot_dict.keys(), colors):
 
                     ax.plot(
-                        pred[model_name][i * config.ncols + j][mask[i * config.ncols + j]],
+                        pred[model_name][i * config.ncols + j],
                         color=color,
                         label=model_name,
                     )
@@ -290,7 +295,7 @@ def multi_plot_predictions_grid(
                 ax.set_title(plot_title)
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
-                ax.legend()
+                # ax.legend()
 
     if config.save_plot:
         if config.full_life:

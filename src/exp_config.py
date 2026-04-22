@@ -241,6 +241,21 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--exp_names",
+        type=str,
+        nargs="+",
+        default=["exp"],
+        help="Names of the experiments for the different models for the multi_plot script",
+    )
+
+    parser.add_argument(
+        "--plot_approach",
+        type=str,
+        default="padding_standard",
+        help="Appproach to use for the multi_plot script",
+    )
+
+    parser.add_argument(
         "--failure_type",
         type=str,
         default="flow_low",

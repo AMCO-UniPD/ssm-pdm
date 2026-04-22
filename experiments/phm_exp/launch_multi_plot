@@ -8,11 +8,17 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
+plot_approach="padding_standard"
 model_names=("S5" "S4")
 # model_names=("S5" "S4" "S4D" "MLP")
+exp_names=(
+    "super_benchmark_S5_flow_low_padding_standard_best_sweep_1"
+    "super_benchmark_S4_flow_low_padding_standard"
+)
 
 python "$script_path" \
     --model_names "${model_names[@]}" \
+    --exp_names "${exp_names[@]}" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --failure_type "$failure_type" \
     --train_phm_tools "${train_phm_tools[@]}" \

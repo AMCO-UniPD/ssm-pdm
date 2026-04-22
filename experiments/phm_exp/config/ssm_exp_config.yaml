@@ -15,10 +15,10 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-monotonic: false
+monotonic: true
 quantile_reg: false
 # approach: padding_standard
-approach: windowed_standard
+approach: windowed_standard_monotonic
 
 # quantile_reg config
 quantile_dist: uniform
@@ -41,7 +41,7 @@ ad: false
 batch_size: 16
 sequence_length: 1000
 stride: 500
-epochs: 1
+epochs: 30
 lr: 0.001
 weight_decay: 1.0e-4
 

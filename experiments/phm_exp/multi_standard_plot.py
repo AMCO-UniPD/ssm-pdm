@@ -24,31 +24,28 @@ wandb_data(config=exp_config, model_config=model_config)
 
 plot_dict = {}
 
-for model_name in exp_config.model_names:
+for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
 
     outputs_path = generate_path(
         basepath=experiment_path,
         folders=[
             "outputs",
-            exp_config.model_name,
+            model_name,
             exp_config.failure_type,
-            exp_config.approach,
+            exp_config.plot_approach,
+            exp_name,
+            f"run_{exp_config.plot_run_id}"
         ],
     )
 
-    outputs_exp_path = get_most_recent_dir(outputs_path,file_pos=exp_config.file_pos)
-    outputs_dirpath = generate_path(
-        basepath=outputs_exp_path,
-        folders=[f"run_{exp_config.plot_run_id}"]
-    )
-    plot_dict[model_name]=outputs_dirpath
+    plot_dict[model_name]=outputs_path
 
 plot_path = generate_path(
     basepath=experiment_path,
     folders=[
         "multi_plots",
         exp_config.failure_type,
-        exp_config.approach,
+        exp_config.plot_approach,
         f"run_{exp_config.plot_run_id}",
     ],
 )
