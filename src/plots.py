@@ -295,13 +295,13 @@ def multi_plot_predictions_grid(
                 ax.set_title(plot_title)
                 ax.set_xticks([])
                 ax.set_ylabel("RUL")
-                # ax.legend()
+                ax.legend()
 
     if config.save_plot:
         if config.full_life:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_multi_predictions_grid_full"
+            filename = f"{get_current_time()}_{config.model_name}_{config.plot_approach}_multi_predictions_grid_full"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_multi_predictions_grid_pad"
+            filename = f"{get_current_time()}_{config.model_name}_{config.plot_approach}_multi_predictions_grid_pad"
         life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)

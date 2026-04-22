@@ -8,18 +8,46 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
-plot_approach="padding_standard"
-model_names=("S5" "S4")
-# model_names=("S5" "S4" "S4D" "MLP")
-exp_names=(
-    "super_benchmark_S5_flow_low_padding_standard_best_sweep_1"
+model_names=("S4" "S4D" "S5" "MLP" "Linear")
+exp_names_padding_standard=(
     "super_benchmark_S4_flow_low_padding_standard"
+    "super_benchmark_S4D_flow_low_padding_standard"
+    "super_benchmark_S5_flow_low_padding_standard_best_sweep_1"
+    "super_benchmark_MLP_flow_low_padding_standard"
+    "super_benchmark_Linear_flow_low_padding_standard"
 )
+exp_names_padding_standard_monotonic=(
+    "super_benchmark_S4_flow_low_padding_standard_monotonic"
+    "super_benchmark_S4D_flow_low_padding_standard_monotonic"
+    "super_benchmark_S5_flow_low_padding_standard_monotonic"
+    "super_benchmark_MLP_flow_low_padding_standard_monotonic"
+    "super_benchmark_Linear_flow_low_padding_standard_monotonic"
+)
+
+echo "-------------------------------------------"
+echo "Producing multi plot for padding_standard approach"
+echo "-------------------------------------------"
 
 python "$script_path" \
     --model_names "${model_names[@]}" \
-    --exp_names "${exp_names[@]}" \
+    --exp_names "${exp_names_padding_standard[@]}" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --failure_type "$failure_type" \
+    --plot_approach "padding_standard" \
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}"
+
+echo "-------------------------------------------"
+echo "Producing multi plot for padding_standard_monotonic approach"
+echo "-------------------------------------------"
+
+python "$script_path" \
+    --model_names "${model_names[@]}" \
+    --exp_names "${exp_names_padding_standard_monotonic[@]}" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --failure_type "$failure_type" \
+    --plot_approach "padding_standard_monotonic" \
+    --train_phm_tools "${train_phm_tools[@]}" \
+    --test_phm_tools "${test_phm_tools[@]}"
+
+

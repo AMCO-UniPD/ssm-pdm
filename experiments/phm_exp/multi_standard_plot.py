@@ -14,7 +14,7 @@ sys.path.append(src_path)
 from exp_config import setup_exp
 from models import wandb_data
 from plots import multi_plot_predictions_grid
-from utils import generate_path, get_most_recent_dir
+from utils import generate_path
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
