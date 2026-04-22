@@ -73,6 +73,9 @@ save_plot: true
 # save_plot: false
 show_plot: false
 
+# raw signal plots
+use_test_set: true
+
 #NOTE: The following parameters are all set through the command line
 # with the define_arguments function
 
