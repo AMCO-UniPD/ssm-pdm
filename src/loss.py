@@ -2,10 +2,12 @@
 Python script with the loss functions for the `chronos-pdm` project
 """
 
+from typing import Tuple
+
+import ipdb
 import torch
 import torch.nn as nn
-import ipdb
-from typing import Tuple
+
 
 class RMSELoss(nn.Module):
     def __init__(self):
@@ -99,6 +101,56 @@ class SSMSELoss(nn.Module):
         y_pred=y_pred[mask.bool()]
         y_true=y_true[mask.bool()]
         return torch.mean((y_pred - y_true) ** 2)
+
+class WindowMSELoss(nn.Module):
+    def __init__(self):
+        super(WindowMSELoss, self).__init__()
+
+    def forward(
+        self,
+        y_pred:torch.Tensor,
+        y_true:torch.Tensor,
+        mask:torch.Tensor,
+        n_const_wins: int,
+        n_decreasing_wins: int,
+    ) -> torch.Tensor:
+        """
+        Compute the weighted MSE loss for the windowed approach.
+        A different weight is used depending on weather we have
+        a constant or non constant window. If we have a constant
+        window the weight should be 1/n_const_wins, otherwise it should
+        be 1/n_decreasing_wins
+
+        Args:
+            y_pred (torch.Tensor): predicted RUL
+            y_true (torch.Tensor): true RUL
+            mask (torch.Tensor): mask to take into account for padded values
+            n_const_wins (int): total number of constant windows in the dataset
+            n_decreasing_wins (int): total number of decreasing windows in the dataset
+
+        Returns:
+            loss (torch.Tensor): MSE loss value
+        """
+
+        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
+
+        is_constant = torch.tensor([
+            torch.unique(y_true[i][mask[i]]).numel() == 1
+            for i in range(y_true.shape[0])
+        ], device=y_true.device)
+
+        weights = torch.where(
+            is_constant,
+            1.0 / n_const_wins,
+            1.0 / n_decreasing_wins
+        )
+
+        mse_per_window = torch.tensor([
+            torch.mean((y_pred[i][mask[i]] - y_true[i][mask[i]]) ** 2)
+            for i in range(y_true.shape[0])
+        ], device=y_true.device)
+
+        return torch.sum(weights * mse_per_window)
 
 class MAELoss(nn.Module):
     def __init__(self):
@@ -265,7 +317,9 @@ def load_loss_functions(
     if loss_name=="mae":
         criterion=SSMAELoss()
     elif loss_name=="mse":
-        criterion=MSELoss()
+        criterion=SSMSELoss()
+    elif loss_name=="window_mse":
+        criterion=WindowMSELoss()
     elif loss_name=="rmse":
         criterion=SSMRMSELoss()
     elif loss_name=="pinball":
@@ -276,7 +330,9 @@ def load_loss_functions(
     if eval_loss_name=="mae":
         eval_loss=MAELoss()
     elif eval_loss_name=="mse":
-        eval_loss=MSELoss()
+        eval_loss=SSMSELoss()
+    elif eval_loss_name=="window_mse":
+        criterion=WindowMSELoss()
     elif eval_loss_name=="rmse":
         eval_loss=SSMRMSELoss()
     elif eval_loss_name=="pinball":

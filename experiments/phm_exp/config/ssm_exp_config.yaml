@@ -15,10 +15,10 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-monotonic: true
+monotonic: false
 quantile_reg: false
-approach: padding_standard_monotonic
-# approach: windowed_standard_monotonic
+# approach: padding_standard_monotonic
+approach: windowed_standard
 
 # quantile_reg config
 quantile_dist: uniform
@@ -30,7 +30,7 @@ quantile_run: 0.25
 # select_windows (windowed approach)
 max_rul: 500
 keep_long_rul_prob: 0.1
-n_const_win: 10
+n_const_win: 0
 normalize_rul: true
 # normalize_rul: false
 
@@ -47,8 +47,9 @@ weight_decay: 1.0e-4
 
 # loss parameters
 # loss: quantile_reg # for quantile_reg
-loss: rmse # for standard
-eval_loss: rmse
+# loss: rmse # for standard
+loss: window_mse
+eval_loss: window_mse
 
 # multi run parameters
 n_runs: 5
