@@ -62,6 +62,17 @@ outputs_path = generate_path(
     ],
 )
 
+combined_outputs_path = generate_path(
+    basepath=experiment_path,
+    folders=[
+        "combined_outputs",
+        exp_config.model_name,
+        exp_config.failure_type,
+        exp_config.approach,
+        exp_name
+    ],
+)
+
 metrics_path = generate_path(
     basepath=experiment_path,
     folders=[
@@ -109,7 +120,12 @@ if exp_config.test_script:
                 folders = quantile_reg_folders
             )
 
-            if exp_config.save_outputs:
+            combined_outputs_path_test_script = generate_path(
+                basepath = combined_outputs_path,
+                folders = quantile_reg_folders
+            )
+
+            if exp_config.save_outputs or exp_config.save_combined_outputs:
 
                 print("-"*50)
                 print(f"Saving outputs for run {run+1} and quantile {quantile}")
@@ -121,6 +137,7 @@ if exp_config.test_script:
                     device = device,
                     best_model_path = best_model_path_test_script,
                     outputs_path = outputs_path_test_script,
+                    combined_outputs_path = combined_outputs_path_test_script,
                     tau = quantile
                 )
 
@@ -169,6 +186,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
 
         quantile_best_model_path = generate_path(basepath=best_model_path, folders=quantile_reg_folders)
         quantile_outputs_path = generate_path(basepath=outputs_path, folders=quantile_reg_folders)
+        quantile_combined_outputs_path = generate_path(basepath=combined_outputs_path, folders=quantile_reg_folders)
         quantile_metrics_path = generate_path(basepath=metrics_path, folders=quantile_reg_folders)
 
         wandb_run(
@@ -178,6 +196,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
             device = model_config.device,
             best_model_path = quantile_best_model_path,
             outputs_path = quantile_outputs_path,
+            combined_outputs_path = quantile_combined_outputs_path,
             metrics_path = quantile_metrics_path,
             tau = quantile
         )

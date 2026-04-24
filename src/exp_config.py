@@ -335,6 +335,12 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--save_combined_outputs",
+        action="store_true",
+        help="If set, save the combined predictions into a file"
+    )
+
+    parser.add_argument(
         "--save_outputs_quantile",
         action="store_true",
         help="If set, save the quantile regression predictions into a file"
@@ -478,6 +484,12 @@ def check_arguments(args: Union[ExperimentConfig, WandbConfig]) -> None:
 
     if hasattr(args, "stride"):
         assert args.stride <= args.sequence_length, f"The stride must be less or equal to the sequence length but got stride={args.stride} and sequence_length={args.sequence_length}"
+
+    if "windowed" in args.approach:
+        assert ("window" in args.loss) and ("window" in args.eval_loss), f"We are in a window based approach but I got loss {args.loss} and eval_loss {args.eval_loss}. One of them (or both) are not supported for this approach"
+
+    if args.quantile_reg:
+        assert ("quantile" in args.loss) and ("pinball" in args.eval_loss), f"You are using a quantile regression approach and loss is {args.loss} and eval_loss {args.eval_loss}. One of the two (or both) are not supported for this approach"
 
 
 def set_exp_name(config: ExperimentConfig) -> str:

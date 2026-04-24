@@ -507,7 +507,7 @@ def wandb_data(
         optim.lr_scheduler._LRScheduler,
         nn.Module,
         nn.Module,
-        np.ndarray
+        ExperimentConfig
         ],
         ExperimentConfig
 ]:
@@ -529,7 +529,9 @@ def wandb_data(
             lr_scheduler (optim.lr_scheduler): lr scheduler
             criterion (nn.Module): training loss
             eval_criterion (nn.Module): evaluation loss
-            mono_mask (np.ndarray): boolean mask to divide between monotonic and non montonic features
+            config (ExperimentConfig): experiment configuration object
+            updated with mono_mask and constant
+            and decreasing window information
         otherwise it returns:
             config (ExperimentConfig): experiment configuration object updated with the test_idx
     """
@@ -594,6 +596,7 @@ def exp_run(
     device: str = "cpu",
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
+    combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
     tau: float = 0.5,
     mono_mask: np.ndarray = np.zeros(shape=(10, 1))
@@ -608,6 +611,7 @@ def exp_run(
         device (torch.device): CUDA device where to perform the experiment
         best_model_path (str): basepath where to save the best model
         outputs_path (str): basepath where to save the outputs dictionary
+        combined_outputs_path (str): basepath where to save the outputs dictionary
         metrics_path (str): basepath where to save the metrics
         tau (float): quantile level for the evaluation
         mono_mask (np.ndarray): boolean mask to identify monotonic features
@@ -649,7 +653,7 @@ def exp_run(
 
     trainer.run()
 
-    if config.return_outputs or config.save_outputs:
+    if config.return_outputs or config.save_outputs or config.save_combined_outputs:
 
         print("#" * 50)
         print("Saving outputs")
@@ -661,6 +665,7 @@ def exp_run(
             device=device,
             best_model_path=best_model_path,
             outputs_path=outputs_path,
+            combined_outputs_path=combined_outputs_path,
             tau=tau,
         )
 
@@ -1017,6 +1022,7 @@ def best_model_perf(
     device: torch.device = torch.device("cpu"),
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
+    combined_outputs_path: str = experiment_path,
     tau: float = 0.5,
 ) -> Union[None, nn.Module, dict]:
     """
@@ -1033,6 +1039,7 @@ def best_model_perf(
         outputs_path (str): The path to save the outputs
         metrics_path (str): The path to save the test metrics
         outputs_path (str): The path to save the outputs
+        combined_outputs_path (str): The path to save the combined outputs
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
@@ -1068,6 +1075,9 @@ def best_model_perf(
 
     preds, true_vals = [], []
 
+    if config.save_combined_outputs:
+        combined_preds_list, combined_true_vals_list = [], []
+
     for i, test_loader in enumerate(test_loaders):
 
         print("#" * 50)
@@ -1097,10 +1107,20 @@ def best_model_perf(
 
         if "padding" in config.approach:
 
+            #NOTE: If we are in the padding approach
+            # here we have a single sequence predicting the RUL → (1,sequence_length)
             preds.append(y_pred)
             true_vals.append(y_true)
 
         else:
+
+            #NOTE: If we are in the windowed approach we have predictions
+            # and true values for each different window, so y_pred and
+            # y_true are a list of predictions and true values
+            preds.extend(y_pred)
+            true_vals.extend(y_true)
+
+        if config.save_combined_outputs:
 
             combined_preds, combined_true_vals = combine_values(
                 predictions=y_pred,
@@ -1110,20 +1130,38 @@ def best_model_perf(
                 stride=config.stride
             )
 
-            preds.append(combined_preds)
-            true_vals.append(combined_true_vals)
+            combined_preds_list.append(combined_preds)
+            combined_true_vals_list.append(combined_true_vals)
 
-    outputs_dict = {
-        "y_pred": preds,
-        "y_true": true_vals,
-    }
 
-    filename = f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
 
     if config.save_outputs:
+
+        outputs_dict = {
+            "y_pred": preds,
+            "y_true": true_vals,
+        }
+
+        filename = f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
         save_element(
             element=outputs_dict,
             dirpath=outputs_path,
+            filename=filename,
+            filetype="pickle",
+        )
+
+    if config.save_combined_outputs:
+
+        combined_outputs_dict = {
+            "y_pred": combined_preds_list,
+            "y_true": combined_true_vals_list,
+        }
+
+        filename = f"{get_current_time()}_combined_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_combined_outputs_{config.model_name}"
+
+        save_element(
+            element=combined_outputs_dict,
+            dirpath=combined_outputs_path,
             filename=filename,
             filetype="pickle",
         )
@@ -1141,6 +1179,7 @@ def wandb_run(
     device: str = "cpu",
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
+    combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
     tau: float = 0.5,
 ) -> None:
@@ -1156,6 +1195,7 @@ def wandb_run(
         device (str): The device to use
         best_model_path (str): The path to save the best model
         outputs_path (str): The path to save the outputs
+        combined_outputs_path (str): The path to save the outputs
         metrics_path (str): The path to save the metrics
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
@@ -1172,6 +1212,7 @@ def wandb_run(
                 device=device,
                 best_model_path=best_model_path,
                 outputs_path=outputs_path,
+                combined_outputs_path=combined_outputs_path,
                 metrics_path=metrics_path,
                 tau=tau
             )
@@ -1183,6 +1224,7 @@ def wandb_run(
             device=device,
             best_model_path=best_model_path,
             outputs_path=outputs_path,
+            combined_outputs_path=combined_outputs_path,
             metrics_path=metrics_path,
             tau=tau
         )

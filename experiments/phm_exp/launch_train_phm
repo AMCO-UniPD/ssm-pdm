@@ -77,6 +77,27 @@ case "$mode" in
     --save_outputs
 
   ;;
+  "save_combined_outputs")
+
+  echo "-------------------------------------------"
+  echo "mode: $mode"
+  echo "Saving combined outputs"
+  echo "-------------------------------------------"
+
+  python $script_path \
+    --exp_name "$exp_name" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --project_name "$project_name" \
+    --data_name "$data_name" \
+    --model_name "$model_name" \
+    --failure_type "$failure_type" \
+    --train_phm_tools "${train_phm_tools[@]}" \
+    --test_phm_tools "${test_phm_tools[@]}" \
+    --device_num $device_num \
+    --test_script \
+    --save_combined_outputs
+
+  ;;
   "save_outputs_run")
 
   echo "-------------------------------------------"
