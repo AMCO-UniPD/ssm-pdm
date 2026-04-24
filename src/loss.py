@@ -293,7 +293,7 @@ class QuantileLoss(nn.Module):
             tau *  torch.abs(d) # Underestimation
         )
 
-        return torch.sum(weights*loss)
+        return torch.mean(loss)
 
 class WindowedQuantileLoss(nn.Module):
     def __init__(self):
