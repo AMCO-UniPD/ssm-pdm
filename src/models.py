@@ -672,7 +672,7 @@ def exp_run(
     if config.compute_metrics:
 
         print("#" * 50)
-        print("Computing metrics for each life and for each sensor in the test set")
+        print("Computing metrics for each life in the test set")
         print("#" * 50)
 
         metrics_df = lifes_metrics(

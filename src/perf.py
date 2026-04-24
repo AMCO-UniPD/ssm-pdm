@@ -48,7 +48,7 @@ def lifes_metrics(
     tau: float = 0.5
 ) -> pd.DataFrame:
     """
-    Calculate the metrics for each life and each sensor in the dataset and save them in a pd.DataFrame
+    Calculate the metrics for each life in the dataset and save them in a pd.DataFrame
 
     Args:
         config:dict ExperimentConfig object
