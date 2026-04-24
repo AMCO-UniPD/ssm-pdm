@@ -343,7 +343,6 @@ class SSMRegressionDataset(Dataset):
             else:
                 self.data_indices.append((i,0))
 
-
     def __len__(self):
         return len(self.data_indices)
 
@@ -522,8 +521,8 @@ class SSMWindowRegressionDataset(Dataset):
 
         constant_seq = list(set(self.data_indices) - set(filtered_indices))
         seq_to_keep = constant_seq.copy()
-        self.normal_seq = constant_seq
-        self.anomalous_seq = filtered_indices
+        self.constant_seq = constant_seq
+        self.decreasing_seq = filtered_indices
 
         if not self.ad:
             # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):] # keep the last keep_long_rul_prob percentage of constant windows
@@ -533,49 +532,49 @@ class SSMWindowRegressionDataset(Dataset):
             seq_to_keep.extend(filtered_indices)
             self.data_indices = seq_to_keep
 
-    def get_normal_wins(self) -> List:
+    def get_constant_wins(self) -> List:
         """
-        Function that returns a list with the raw signal in the normal
+        Function that returns a list with the raw signal in the constant
         windows
 
         Args:
             no input arguments required
 
         Returns:
-            normal_wins (np.ndarray): array containing all the normal windows
+            constant_wins (np.ndarray): array containing all the constant windows
         """
 
-        normal_wins = []
+        constant_wins = []
 
-        for life_idx, start_idx in self.normal_seq:
+        for life_idx, start_idx in self.constant_seq:
             life = self.lifes[life_idx]
             end_idx = start_idx + self.sequence_length
-            normal_win = life[start_idx : min(end_idx, life.shape[0])]
-            normal_wins.append(normal_win)
+            constant_win = life[start_idx : min(end_idx, life.shape[0])]
+            constant_wins.append(constant_win)
 
-        return normal_wins
+        return constant_wins
 
-    def get_anomalous_wins(self) -> List:
+    def get_decreasing_wins(self) -> List:
         """
-        Function that returns a list with the raw signal in the anomalous
+        Function that returns a list with the raw signal in the decreasing
         windows
 
         Args:
             no input arguments required
 
         Returns:
-            anomalous_wins (np.ndarray): array containing all the anomalous windows
+            decreasing_wins (np.ndarray): array containing all the decreasing windows
         """
 
-        anomalous_wins = []
+        decreasing_wins = []
 
-        for life_idx, start_idx in self.anomalous_seq:
+        for life_idx, start_idx in self.decreasing_seq:
             life = self.lifes[life_idx]
             end_idx = start_idx + self.sequence_length
-            anomalous_win = life[start_idx : min(end_idx, life.shape[0])]
-            anomalous_wins.append(anomalous_win)
+            decreasing_win = life[start_idx : min(end_idx, life.shape[0])]
+            decreasing_wins.append(decreasing_win)
 
-        return anomalous_wins
+        return decreasing_wins
 
 
 class SSMFullLifeRegressionDataset(Dataset):
@@ -1170,7 +1169,6 @@ def create_window_loaders(
         print("-" * 50)
 
         train_datasets = create_window_dataset(config=config, lifes=train_lifes)
-        ipdb.set_trace()
         val_datasets = create_window_dataset(config=config, lifes=val_lifes)
         test_datasets = create_window_dataset(config=config, lifes=test_lifes)
 
@@ -1194,9 +1192,15 @@ def create_window_loaders(
 
         loaders_dict = {
             "train_loader": train_loader,
+            "n_train_constant_wins": len(train_datasets.constant_seq),
+            "n_train_decreasing_wins": len(train_datasets.decreasing_seq),
             "val_loader": val_loader,
+            "n_val_constant_wins": len(val_datasets.constant_seq),
+            "n_val_decreasing_wins": len(val_datasets.decreasing_seq),
             "test_loader": test_loader,
             "test_loaders": test_loaders,
+            "n_test_constant_wins": len(test_datasets.constant_seq),
+            "n_test_decreasing_wins": len(test_datasets.decreasing_seq),
         }
 
         return loaders_dict

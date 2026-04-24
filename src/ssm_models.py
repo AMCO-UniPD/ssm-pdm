@@ -115,6 +115,8 @@ def load_ssm_model(
     exp_config: ExperimentConfig,
     mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
     tau: float = 0.5,
+    n_const_wins: int = 1000,
+    n_decreasing_wins: int = 1000,
     **kwargs
 ) -> Tuple[nn.Module, optim.Optimizer, optim.lr_scheduler]:
     """

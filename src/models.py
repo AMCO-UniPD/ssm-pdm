@@ -545,12 +545,31 @@ def wandb_data(
     )
     config.test_idx = test_idx
 
+    train_wins = {
+        "constant": loaders_dict["n_train_constant_wins"],
+        "decreasing": loaders_dict["n_train_decreasing_wins"],
+    }
+    val_wins = {
+        "constant": loaders_dict["n_val_constant_wins"],
+        "decreasing": loaders_dict["n_val_decreasing_wins"],
+    }
+    test_wins = {
+        "constant": loaders_dict["n_test_constant_wins"],
+        "decreasing": loaders_dict["n_test_decreasing_wins"],
+    }
+
     if config.get_test_idx:
         return config
 
     feature_names = get_feature_names(
         config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
     mono_mask = get_mono_mask(config=config, feature_names=feature_names)
+
+    setattr(config,"mono_mask",mono_mask)
+    setattr(config,"train_wins",train_wins)
+    setattr(config,"val_wins",val_wins)
+    setattr(config,"test_wins",test_wins)
+
 
     model, optimizer, scheduler = load_ssm_model(
         exp_config=config,
@@ -566,7 +585,7 @@ def wandb_data(
         eval_loss_name=config.eval_loss,
     )
 
-    return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion, mono_mask
+    return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion, config
 
 
 def exp_run(
@@ -607,7 +626,7 @@ def exp_run(
         scheduler,
         criterion,
         eval_criterion,
-        mono_mask
+        config,
     ) = wandb_data(
         config=config,
         model_config=model_config

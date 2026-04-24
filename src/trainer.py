@@ -277,7 +277,13 @@ class StandardTrainer(Trainer):
             )
 
             output = self.model(life)
-            loss = self.criterion(output, rul, mask)
+
+            if "windowed" in self.config.approach:
+                n_const_wins = self.config.train_wins["constant"]
+                n_decreasing_wins = self.config.train_wins["decreasing"]
+                loss = self.criterion(output, rul, mask, n_const_wins, n_decreasing_wins)
+            else:
+                loss = self.criterion(output, rul, mask)
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -354,7 +360,18 @@ class QuantileTrainer(Trainer):
 
             self.model.tau = tau
             output = self.model(life)
-            loss = self.criterion(output, rul, mask, tau)
+
+            #TODO: Adapt the code to the Pinball loss
+
+            # loss = self.criterion(output, rul, mask, tau)
+
+            if "windowed" in self.config.approach:
+                n_const_wins = self.config.train_wins["constant"]
+                n_decreasing_wins = self.config.train_wins["decreasing"]
+                loss = self.criterion(output, rul, mask, n_const_wins, n_decreasing_wins)
+            else:
+                loss = self.criterion(output, rul, mask)
+
 
             self.optimizer.zero_grad()
             loss.backward()
