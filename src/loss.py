@@ -293,7 +293,61 @@ class QuantileLoss(nn.Module):
             tau *  torch.abs(d) # Underestimation
         )
 
-        return torch.mean(loss)
+        return torch.sum(weights*loss)
+
+class WindowedQuantileLoss(nn.Module):
+    def __init__(self):
+        super(WindowedQuantileLoss, self).__init__()
+
+    def forward(
+        self,
+        y_pred:torch.Tensor,
+        y_true:torch.Tensor,
+        mask:torch.Tensor,
+        n_const_wins: int,
+        n_decreasing_wins: int,
+        tau: float = 0.5,
+    ) -> torch.Tensor:
+        """
+        Compute the Pinball loss between the predicted and the true values
+
+        Args:
+            y_pred (torch.Tensor): The predicted values
+            y_true (torch.Tensor): The true values
+            mask (torch.Tensor): The mask for the padded values
+            tau (float): The quantile level
+            n_const_wins (int): total number of constant windows in the dataset
+            n_decreasing_wins (int): total number of decreasing windows in the dataset
+
+        Returns:
+            torch.Tensor: The Pinball loss
+        """
+
+        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
+
+        is_constant = torch.tensor([
+            torch.unique(y_true[i][mask[i]]).numel() == 1
+            for i in range(y_true.shape[0])
+        ], device=y_true.device)
+
+        weights = torch.where(
+            is_constant,
+            1.0 / n_const_wins,
+            1.0 / n_decreasing_wins
+        )
+
+        mae_per_window = torch.tensor([
+            torch.mean(torch.abs(y_pred[i][mask[i]] - y_true[i][mask[i]]))
+            for i in range(y_true.shape[0])
+        ], device = y_true.device)
+
+        loss = torch.where(
+            mae_per_window>0,
+            (1-tau) * mae_per_window, # Overestimation
+            tau *  mae_per_window # Underestimation
+        )
+
+        return torch.sum(weights*loss)
 
 
 def load_loss_functions(
