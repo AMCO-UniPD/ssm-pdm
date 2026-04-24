@@ -52,7 +52,7 @@ eval_loss: rmse
 
 # multi run parameters
 n_runs: 5
-start_run_id: 2
+start_run_id: 0
 
 # model summary
 summary_func: torchinfo
@@ -64,6 +64,7 @@ quantile_plot: 0.5
 # life_idx: [0,1,5,11]
 # life_idx: [77,97,129,228]
 life_idx: [0,1,2,3]
+# life_idx: [0]
 col_idx: 0
 nrows: 2
 ncols: 2

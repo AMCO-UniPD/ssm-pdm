@@ -35,7 +35,9 @@ from extractor import (
     S4DExtractor,
     S5Extractor,
     LinearExtractor,
-    MLPExtractor
+    MLPExtractor,
+    TransformerExtractor,
+    InformerExtractor,
 )
 
 from head import Head, QuantileHead, MonotonicHead, MonoQuantileHead
@@ -95,6 +97,14 @@ class RULModel(nn.Module):
         elif self.name in ["LSTM", "RNN", "GRU"]:
             self.extractor = RecurrentExtractor(
                 model_name=self.name, config=self.model_config)
+        elif self.name == "Transformer":
+            self.extractor = TransformerExtractor(
+                output_size = self.output_size, config=self.model_config
+            )
+        elif self.name == "Informer":
+            self.extractor = InformerExtractor(
+                 config=self.model_config
+            )
         else:
             self.extractor = Extractor(config=self.model_config)
 

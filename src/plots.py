@@ -258,8 +258,10 @@ def multi_plot_predictions_grid(
     else:
         fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(50, 20))
 
-    cmap = plt.get_cmap("viridis")
-    colors = cmap(np.linspace(0,1,len(plot_dict.keys())))
+    # cmap = plt.get_cmap("viridis")
+    # colors = cmap(np.linspace(0,1,len(plot_dict.keys())))
+    cmap = plt.get_cmap("tab10")
+    colors = [cmap(i) for i in range(len(plot_dict))]
 
     for i in range(config.nrows):
         for j in range(config.ncols):

@@ -341,8 +341,10 @@ class TransformerExtractor(Extractor):
     Transformer model feature extractor
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, output_size:int = 1000, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.output_size = output_size
 
         self.embedding = nn.Sequential(
             nn.Embedding(
@@ -383,7 +385,7 @@ class InformerExtractor(Extractor):
 
         # Encoding
         self.enc_embedding = DataEmbedding(
-            c_in=self.d_input, d_model=self.config.d_model, dropout=self.config.dropout
+            c_in=self.config.d_model, d_model=self.config.d_model, dropout=self.config.dropout
         )
         # Attention
         Attn = ProbAttention if self.config.attn == "prob" else FullAttention
@@ -423,7 +425,6 @@ class InformerExtractor(Extractor):
     def forward(self, x):
 
         enc_out = self.enc_embedding(x)  # [B,L,D] -> [B,L,H]
-        enc_out, attns = self.encoder(
-            enc_out, attn_mask=None)  # [B,L,H] -> [B,L,H]
+        enc_out, attns = self.encoder(enc_out, attn_mask=None)  # [B,L,H] -> [B,L,H]
 
         return enc_out
