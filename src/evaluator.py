@@ -99,7 +99,8 @@ class StandardEvaluator(Evaluator):
                 y_pred.extend(batch_out)
                 y_true.extend(batch_target)
 
-                if "windowed" in self.config.approach:
+                ipdb.set_trace()
+                if hasattr(self.config,"test_wins"):
                     n_const_wins = self.config.val_wins["constant"] if mode == "Val" else self.config.test_wins["constant"]
                     n_decreasing_wins = self.config.val_wins["decreasing"] if mode == "Val" else self.config.test_wins["decreasing"]
                     loss = self.criterion(output, rul, mask, n_const_wins, n_decreasing_wins)

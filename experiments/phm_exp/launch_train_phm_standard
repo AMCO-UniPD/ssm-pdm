@@ -30,7 +30,9 @@ case "$mode" in
     --device_num $device_num \
     --use_wandb \
     --save_best_model \
-    --save_outputs
+    --save_outputs \
+    --compute_metrics \
+    --save_metrics_df
 
   ;;
   "training_no_wandb")
@@ -49,6 +51,7 @@ case "$mode" in
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
+    --save_best_model \
     --save_outputs \
     --compute_metrics \
     --save_metrics_df
@@ -72,7 +75,8 @@ case "$mode" in
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
     --test_script \
-    --save_outputs
+    --save_outputs \
+    --save_combined_outputs
 
   ;;
   "save_combined_outputs")

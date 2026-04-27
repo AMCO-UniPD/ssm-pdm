@@ -1085,7 +1085,6 @@ def create_full_life_loaders(
 def create_window_dataset(
     config: ExperimentConfig,
     lifes: TransData,
-    eval: bool = False,
 ) -> SSMWindowRegressionDataset:
     """
     Function to create a SSMWindowRegressionDataset object starting from a set of
@@ -1094,7 +1093,6 @@ def create_window_dataset(
     Args:
         config (ExperimentConfig): experiment configuration object
         lifes (TransData): list of lifes
-        eval (bool): weather to create the dataset in evaluation mode or not
 
     Returns:
         dataset (SSMWindowRegressionDataset): dataset object
@@ -1108,8 +1106,7 @@ def create_window_dataset(
         normalize_rul=config.normalize_rul,
         ad=config.ad,
     )
-    if not eval:
-        dataset.select_windows(n_const_win=config.n_const_win)
+    dataset.select_windows(n_const_win=config.n_const_win)
 
     return dataset
 
@@ -1142,12 +1139,9 @@ def create_window_loaders(
         print("Creating window dataloaders in evaluation mode")
         print("-" * 50)
 
-        # NOTE: For the evaluation lifes we do not use select_windows because we want
-        # to test the model on the entire life
-
         test_datasets = []
         for test_life in test_lifes:
-            test_dataset = create_window_dataset(config=config, lifes=[test_life], eval=True)
+            test_dataset = create_window_dataset(config=config, lifes=[test_life])
             test_datasets.append(test_dataset)
 
         test_loaders = [

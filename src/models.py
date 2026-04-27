@@ -493,6 +493,39 @@ def save_best_model(
     print(f"Best model saved at: {best_model_path}")
     print("#" * 50)
 
+def compute_window_info(
+    loaders_dict: dict,
+    config: ExperimentConfig,
+) -> None:
+    """
+    Compute informations on the windows used in the windowed
+    approaches, needed to compute the loss weights
+
+    Args:
+        loaders_dict (dict): dictionary with dataloaders and windows info
+        config (ExperimentConfig): experiment configuration object to update
+        with windows informations
+
+    Returns:
+        None: the config object is modified in place
+    """
+
+    train_wins = {
+        "constant": loaders_dict["n_train_constant_wins"],
+        "decreasing": loaders_dict["n_train_decreasing_wins"],
+    }
+    val_wins = {
+        "constant": loaders_dict["n_val_constant_wins"],
+        "decreasing": loaders_dict["n_val_decreasing_wins"],
+    }
+    test_wins = {
+        "constant": loaders_dict["n_test_constant_wins"],
+        "decreasing": loaders_dict["n_test_decreasing_wins"],
+    }
+
+    setattr(config,"train_wins",train_wins)
+    setattr(config,"val_wins",val_wins)
+    setattr(config,"test_wins",test_wins)
 
 def wandb_data(
     config: ExperimentConfig,
@@ -547,18 +580,8 @@ def wandb_data(
     )
     config.test_idx = test_idx
 
-    train_wins = {
-        "constant": loaders_dict["n_train_constant_wins"],
-        "decreasing": loaders_dict["n_train_decreasing_wins"],
-    }
-    val_wins = {
-        "constant": loaders_dict["n_val_constant_wins"],
-        "decreasing": loaders_dict["n_val_decreasing_wins"],
-    }
-    test_wins = {
-        "constant": loaders_dict["n_test_constant_wins"],
-        "decreasing": loaders_dict["n_test_decreasing_wins"],
-    }
+    if "windowed" in config.approach:
+        compute_window_info(loaders_dict=loaders_dict,config=config)
 
     if config.get_test_idx:
         return config
@@ -566,12 +589,7 @@ def wandb_data(
     feature_names = get_feature_names(
         config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
     mono_mask = get_mono_mask(config=config, feature_names=feature_names)
-
     setattr(config,"mono_mask",mono_mask)
-    setattr(config,"train_wins",train_wins)
-    setattr(config,"val_wins",val_wins)
-    setattr(config,"test_wins",test_wins)
-
 
     model, optimizer, scheduler = load_ssm_model(
         exp_config=config,
@@ -1046,11 +1064,9 @@ def best_model_perf(
         Union[None,nn.Module,dict]: The function saves the plots and the metrics and does not return anything
             If model_summary is set to True the function returns the model object, but it will not save the outputs
             If return_outputs is set to True the function returns the outputs dictionary, but it will not save the outputs
-
     """
 
-    loaders_dict = load_phm_data(
-        config, eval=True) if config.data_name == "PHM" else load_reg_data(config)
+    loaders_dict = load_phm_data(config, eval=True) if config.data_name == "PHM" else load_reg_data(config)
     test_lifes = loaders_dict["test_lifes"]
     test_loaders = loaders_dict["test_loaders"]
     test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None
@@ -1105,20 +1121,15 @@ def best_model_perf(
             y_pred = y_pred*MAX_RUL
             y_true = y_true*MAX_RUL
 
-        if "padding" in config.approach:
+        #NOTE: If we are in the padding approach
+        # here we have a single sequence predicting the RUL → (1,sequence_length)
+        # In case we are in the windowed approach we have a set
+        # of predictions on the different windows → (n_windows,sequence_length).
+        # In both cases we have np.arrays so we simply need to append them to the
+        # preds and true_vals lists
 
-            #NOTE: If we are in the padding approach
-            # here we have a single sequence predicting the RUL → (1,sequence_length)
-            preds.append(y_pred)
-            true_vals.append(y_true)
-
-        else:
-
-            #NOTE: If we are in the windowed approach we have predictions
-            # and true values for each different window, so y_pred and
-            # y_true are a list of predictions and true values
-            preds.extend(y_pred)
-            true_vals.extend(y_true)
+        preds.append(y_pred)
+        true_vals.append(y_true)
 
         if config.save_combined_outputs:
 
@@ -1127,13 +1138,10 @@ def best_model_perf(
                 true_values=y_true,
                 original_shape=test_lifes[test_idx[i]].shape[0],
                 sequence_length=config.sequence_length,
-                stride=config.stride
             )
 
             combined_preds_list.append(combined_preds)
             combined_true_vals_list.append(combined_true_vals)
-
-
 
     if config.save_outputs:
 

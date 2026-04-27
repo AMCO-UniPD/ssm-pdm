@@ -145,10 +145,10 @@ class WindowMSELoss(nn.Module):
             1.0 / n_decreasing_wins
         )
 
-        mse_per_window = torch.tensor([
-            torch.mean((y_pred[i][mask[i]] - y_true[i][mask[i]]) ** 2)
+        mse_per_window = torch.stack([
+            ((y_pred[i][mask[i]] - y_true[i][mask[i]]) ** 2).mean()
             for i in range(y_true.shape[0])
-        ], device=y_true.device)
+        ])
 
         return torch.sum(weights * mse_per_window)
 
@@ -336,10 +336,10 @@ class WindowedQuantileLoss(nn.Module):
             1.0 / n_decreasing_wins
         )
 
-        mae_per_window = torch.tensor([
-            torch.mean(torch.abs(y_pred[i][mask[i]] - y_true[i][mask[i]]))
+        mae_per_window = torch.stack([
+            ((y_pred[i][mask[i]] - y_true[i][mask[i]]).abs()).mean()
             for i in range(y_true.shape[0])
-        ], device = y_true.device)
+        ])
 
         loss = torch.where(
             mae_per_window>0,
@@ -390,10 +390,10 @@ class WindowedPinballLoss(nn.Module):
             1.0 / n_decreasing_wins
         )
 
-        mae_per_window = torch.tensor([
-            torch.mean(torch.abs(y_pred[i][mask[i]] - y_true[i][mask[i]]))
+        mae_per_window = torch.stack([
+            ((y_pred[i][mask[i]] - y_true[i][mask[i]]).abs()).mean()
             for i in range(y_true.shape[0])
-        ], device = y_true.device)
+        ])
 
         loss = torch.where(
             mae_per_window>0,
@@ -436,18 +436,22 @@ def load_loss_functions(
         criterion=QuantileLoss()
     elif loss_name=="window_quantile_reg":
         criterion=WindowedQuantileLoss()
+    else:
+        raise ValueError(f"loss {loss_name} not recognized")
 
     if eval_loss_name=="mae":
-        eval_loss=MAELoss()
+        eval_criterion=MAELoss()
     elif eval_loss_name=="mse":
-        eval_loss=SSMSELoss()
+        eval_criterion=SSMSELoss()
     elif eval_loss_name=="window_mse":
-        criterion=WindowMSELoss()
+        eval_criterion=WindowMSELoss()
     elif eval_loss_name=="rmse":
-        eval_loss=SSMRMSELoss()
+        eval_criterion=SSMRMSELoss()
     elif eval_loss_name=="pinball":
-        eval_loss=SSMPinballLoss(tau=tau)
+        eval_criterion=SSMPinballLoss(tau=tau)
     elif eval_loss_name=="window_pinball":
-        eval_loss=WindowedPinballLoss(tau=tau)
+        eval_criterion=WindowedPinballLoss(tau=tau)
+    else:
+        raise ValueError(f"loss {eval_loss_name} not recognized")
 
-    return criterion, eval_loss
+    return criterion, eval_criterion

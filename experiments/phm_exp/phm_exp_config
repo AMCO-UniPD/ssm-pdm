@@ -9,8 +9,8 @@ test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 
 model_name="S5"
 device_num=0
-exp_name="exp"
-# exp_name="super_benchmark_S4_flow_low_padding_standard_seq_len_500"
+# exp_name="exp"
+exp_name="super_benchmark_S4_flow_low_windowed_standard_weighted_loss"
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_name="sweep"
