@@ -45,7 +45,8 @@ lr: 0.001
 weight_decay: 1.0e-4
 
 # loss parameters
-# loss: quantile_reg # for quantile_reg
+# loss: window_quantile_reg # for quantile_reg
+# eval_loss: window_pinball
 loss: window_mse
 eval_loss: window_mse
 life_eval_loss: rmse

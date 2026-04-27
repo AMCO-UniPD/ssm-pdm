@@ -116,6 +116,8 @@ APPROACHES = [
     "windowed_standard_monotonic",
     "windowed_weighted",
     "windowed_weighted_monotonic",
+    "windowed_quantile_weighted",
+    "windowed_quantile_weighted_monotonic",
     "full_life"
 ]
 

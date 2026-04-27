@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=Informer_flow_low_padding_standard_monotonic
-#SBATCH --output=slurm_logs/Informer/Informer_flow_low_padding_standard_monotonic_%j.txt
-#SBATCH --error=slurm_logs/Informer/Informer_flow_low_padding_standard_monotonic_error_%j.txt
-#SBATCH --time=05:00:00
+#SBATCH --job-name=S5_flow_low_windowed_weighted
+#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_weighted_%j.txt
+#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_weighted_error_%j.txt
+#SBATCH --time=07:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
 #SBATCH --mem=30G
