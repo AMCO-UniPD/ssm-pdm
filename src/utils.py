@@ -1117,7 +1117,7 @@ def create_window_loaders(
     val_lifes: TransData,
     test_lifes: TransData,
     eval: bool = False,
-) -> Union[dict]:
+) -> dict:
     """
     Function to create the dataloaders for the window approach.
 
@@ -1175,6 +1175,9 @@ def create_window_loaders(
         test_loader = DataLoader(
             test_datasets, batch_size=config.batch_size, shuffle=True
         )
+
+        #TODO: Verify that this list actually contains a single dataloader
+        # In that case it can be removed
         test_loaders = [
             DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
             for test_dataset in test_datasets
@@ -1230,17 +1233,6 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
         loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
-
-    assert config.data_name == "PHM", "This function works just with the PHM dataset"
-    assert set(config.train_phm_tools).issubset(PHM_TOOLS), (
-        f"The set of train tools must be a subset of {PHM_TOOLS} but got {config.train_phm_tools}"
-    )
-    assert set(config.test_phm_tools).issubset(PHM_TOOLS), (
-        f"The set of test tools must be a subset of {PHM_TOOLS} but got {config.test_phm_tools}"
-    )
-    assert config.failure_type in PHM_FAIL_TYPES, (
-        f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
-    )
 
     if os.path.exists(PHM_PATH_ACQ4):
         print("-" * 50)

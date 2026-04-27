@@ -50,6 +50,7 @@ class Evaluator:
         """
         raise NotImplementedError
 
+
 class LifeEvaluator:
     def __init__(
         self,
@@ -67,7 +68,9 @@ class LifeEvaluator:
         self.life_criterion = life_criterion
         self.device = device
 
-    def life_eval_loop(self, loader: DataLoader, mode: str = "Val", use_tqdm: bool = True):
+    def life_eval_loop(
+        self, loader: DataLoader, mode: str = "Val", use_tqdm: bool = True
+    ):
         """
         Method implementing an evaluation loop on a single epoch
 
@@ -124,7 +127,6 @@ class StandardEvaluator(Evaluator):
                 y_pred.extend(batch_out)
                 y_true.extend(batch_target)
 
-                ipdb.set_trace()
                 if hasattr(self.config, "test_wins"):
                     n_const_wins = (
                         self.config.val_wins["constant"]
@@ -359,6 +361,7 @@ def get_evaluator(tau: float = 0.5, **kwargs) -> Evaluator:
         evaluator = StandardEvaluator(**kwargs)
 
     return evaluator
+
 
 def get_life_evaluator(tau: float = 0.5, **kwargs) -> LifeEvaluator:
     """

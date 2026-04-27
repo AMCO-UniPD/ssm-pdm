@@ -2,56 +2,57 @@
 Python script containing utility functions for the models of the `chronos-pdm` project
 """
 
-# general imports
-from plots import plot_predictions_grid
-from perf import lifes_metrics, sub_lifes_metrics, df_with_index_to_obsidian_table
-from loss import load_loss_functions
-from exp_config import ModelConfig
-from ssm_models import load_ssm_model
-from config_vars import MAX_RUL
-from utils import (
-    get_current_time,
-    get_phm_feature_names,
-    sample_quantile,
-    save_element,
-    ExperimentConfig,
-    generate_path,
-    load_reg_data,
-    load_phm_data,
-    get_most_recent_file,
-    open_element,
-    get_feature_names,
-    combine_values,
-    get_mono_mask
-)
-from evaluator import get_evaluator, get_life_evaluator
-from trainer import get_trainer
+import gc
 import os
 import sys
-import ipdb
-import traceback
-import gc
 import time
-import wandb
+import traceback
+from typing import Tuple, Union
+
+import ipdb
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
-from typing import Tuple, Union
 
 # torch imports
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 import torch.optim as optim
+import wandb
 from torch.cuda.amp import GradScaler, autocast
 
 # from apex.optimizers import FusedAdam
 from torch.optim import AdamW, lr_scheduler
+from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
-chronos_path_src = os.path.join(
-    os.path.dirname(__file__), "chronos-rul", "src")
-chronos_path_scripts = os.path.join(
-    os.path.dirname(__file__), "chronos-rul", "scripts")
+from config_vars import MAX_RUL
+from evaluator import get_evaluator, get_life_evaluator
+from exp_config import ModelConfig
+from loss import load_loss_functions
+from perf import df_with_index_to_obsidian_table, lifes_metrics, sub_lifes_metrics
+
+# general imports
+from plots import plot_predictions_grid
+from ssm_models import load_ssm_model
+from trainer import get_trainer
+from utils import (
+    ExperimentConfig,
+    combine_values,
+    generate_path,
+    get_current_time,
+    get_feature_names,
+    get_mono_mask,
+    get_most_recent_file,
+    get_phm_feature_names,
+    load_phm_data,
+    load_reg_data,
+    open_element,
+    sample_quantile,
+    save_element,
+)
+
+chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
+chronos_path_scripts = os.path.join(os.path.dirname(__file__), "chronos-rul", "scripts")
 imports_path = os.path.join(os.path.dirname(__file__), "AD_MG", "src")
 sys.path.append(chronos_path_src)
 sys.path.append(chronos_path_scripts)
@@ -133,7 +134,7 @@ def train_loop(
     optimizer: optim.Optimizer,
     criterion: nn.Module,
     device: torch.device = torch.device("cpu"),
-    mono_mask: np.ndarray = np.zeros(shape=(10, 1))
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
 ) -> float:
     """
     Train loop for one epoch
@@ -370,17 +371,25 @@ def eval_loop(
             # array to have the anomaly scores over all windows
 
             if config.ad:
-                mean_an_score = np.mean((batch_out-batch_target)**2, axis=2)
-                max_an_score = np.max((batch_out-batch_target)**2, axis=2)
+                mean_an_score = np.mean((batch_out - batch_target) ** 2, axis=2)
+                max_an_score = np.max((batch_out - batch_target) ** 2, axis=2)
                 mean_an_scores.extend(mean_an_score)
                 max_an_scores.extend(max_an_score)
 
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
         print(
-            f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+            f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}"
+        )
 
-    return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true), np.array(mean_an_scores), np.array(max_an_scores)
+    return (
+        eval_loss,
+        eval_rmse_loss,
+        np.array(y_pred),
+        np.array(y_true),
+        np.array(mean_an_scores),
+        np.array(max_an_scores),
+    )
 
 
 def mixed_eval_loop(
@@ -462,9 +471,11 @@ def mixed_eval_loop(
         eval_loss /= num_batches
         eval_rmse_loss /= num_batches
         print(
-            f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}")
+            f"Avg {mode} Loss: {eval_loss:.4f} | Avg {mode} eval Loss: {eval_rmse_loss:.4f}"
+        )
 
     return eval_loss, eval_rmse_loss, np.array(y_pred), np.array(y_true)
+
 
 # Save the best model
 
@@ -492,6 +503,7 @@ def save_best_model(
     print("#" * 50)
     print(f"Best model saved at: {best_model_path}")
     print("#" * 50)
+
 
 def compute_window_info(
     loaders_dict: dict,
@@ -523,15 +535,13 @@ def compute_window_info(
         "decreasing": loaders_dict["n_test_decreasing_wins"],
     }
 
-    setattr(config,"train_wins",train_wins)
-    setattr(config,"val_wins",val_wins)
-    setattr(config,"test_wins",test_wins)
+    setattr(config, "train_wins", train_wins)
+    setattr(config, "val_wins", val_wins)
+    setattr(config, "test_wins", test_wins)
 
-def wandb_data(
-    config: ExperimentConfig,
-    model_config: ModelConfig
-) -> Union[
-        Tuple[
+
+def wandb_data(config: ExperimentConfig, model_config: ModelConfig) -> Union[
+    Tuple[
         DataLoader,
         DataLoader,
         DataLoader,
@@ -540,9 +550,9 @@ def wandb_data(
         optim.lr_scheduler._LRScheduler,
         nn.Module,
         nn.Module,
-        ExperimentConfig
-        ],
-        ExperimentConfig
+        ExperimentConfig,
+    ],
+    ExperimentConfig,
 ]:
     """
     Function to prepare the data and all the ingredients needed for model training
@@ -569,8 +579,9 @@ def wandb_data(
             config (ExperimentConfig): experiment configuration object updated with the test_idx
     """
 
-    loaders_dict = load_phm_data(
-        config) if config.data_name == "PHM" else load_reg_data(config)
+    loaders_dict = (
+        load_phm_data(config) if config.data_name == "PHM" else load_reg_data(config)
+    )
 
     train_loader, val_loader, test_loader, test_idx = (
         loaders_dict["train_loader"],
@@ -581,22 +592,25 @@ def wandb_data(
     config.test_idx = test_idx
 
     if "windowed" in config.approach:
-        compute_window_info(loaders_dict=loaders_dict,config=config)
+        compute_window_info(loaders_dict=loaders_dict, config=config)
 
     if config.get_test_idx:
         return config
 
-    feature_names = get_feature_names(
-        config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
+    feature_names = (
+        get_feature_names(config)
+        if config.data_name == "CMAPSS"
+        else get_phm_feature_names(config)
+    )
     mono_mask = get_mono_mask(config=config, feature_names=feature_names)
-    setattr(config,"mono_mask",mono_mask)
+    setattr(config, "mono_mask", mono_mask)
 
     model, optimizer, scheduler = load_ssm_model(
         exp_config=config,
         model_config=model_config,
         model_name=config.model_name,
         output_size=config.sequence_length,
-        mono_mask=mono_mask
+        mono_mask=mono_mask,
     )
     model = model.to(model_config.device)
 
@@ -605,7 +619,17 @@ def wandb_data(
         eval_loss_name=config.eval_loss,
     )
 
-    return train_loader, val_loader, test_loader, model, optimizer, scheduler, criterion, eval_criterion, config
+    return (
+        train_loader,
+        val_loader,
+        test_loader,
+        model,
+        optimizer,
+        scheduler,
+        criterion,
+        eval_criterion,
+        config,
+    )
 
 
 def exp_run(
@@ -617,7 +641,7 @@ def exp_run(
     combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
     tau: float = 0.5,
-    mono_mask: np.ndarray = np.zeros(shape=(10, 1))
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
 ) -> None:
     """
     This function implements all the stuff that compose a wandb run: from
@@ -649,10 +673,7 @@ def exp_run(
         criterion,
         eval_criterion,
         config,
-    ) = wandb_data(
-        config=config,
-        model_config=model_config
-    )
+    ) = wandb_data(config=config, model_config=model_config)
 
     trainer = get_trainer(
         train_loader=train_loader,
@@ -666,7 +687,7 @@ def exp_run(
         device=device,
         best_model_path=best_model_path,
         config=config,
-        tau=tau
+        tau=tau,
     )
 
     trainer.run()
@@ -694,10 +715,7 @@ def exp_run(
         print("#" * 50)
 
         metrics_df = lifes_metrics(
-            config=config,
-            outputs_path=outputs_path,
-            metrics_path=metrics_path,
-            tau=tau
+            config=config, outputs_path=outputs_path, metrics_path=metrics_path, tau=tau
         )
         print("#" * 50)
         print(f"metrics_df shape: {metrics_df.shape}")
@@ -708,13 +726,11 @@ def exp_run(
         print("Producing the obsidian table")
         print("#" * 50)
 
-        metrics_path = get_most_recent_file(
-            metrics_path, file_pos=config.file_pos)
+        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
         metrics_df = open_element(metrics_path)
 
         if config.sub_lifes_metrics:
-            sub_metrics_df = sub_lifes_metrics(
-                config=config, metrics_df=metrics_df)
+            sub_metrics_df = sub_lifes_metrics(config=config, metrics_df=metrics_df)
             # obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
             obsidian_table = sub_metrics_df.to_markdown()
         else:
@@ -722,6 +738,7 @@ def exp_run(
             obsidian_table = metrics_df.to_markdown()
 
         print(obsidian_table)
+
 
 # Function to train and test the model on a wandb run
 
@@ -739,7 +756,7 @@ def wandb_train_test(
     device: str = "cpu",
     best_model_path: str = experiment_path,
     tau: float = 0.5,
-    mono_mask: np.ndarray = np.zeros(shape=(10, 1))
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
 ) -> None:
     """
     Train and test the model on a wandb run and log the metrics
@@ -792,10 +809,11 @@ def wandb_train_test(
 
             if config.approach == "full_life":
 
-                print("-"*50)
+                print("-" * 50)
                 print(
-                    f"We are in approach {config.approach} so we use mixed train_loop")
-                print("-"*50)
+                    f"We are in approach {config.approach} so we use mixed train_loop"
+                )
+                print("-" * 50)
 
                 train_loss = mixed_train_loop(
                     dataloader=train_loader,
@@ -808,10 +826,9 @@ def wandb_train_test(
 
             else:
 
-                print("-"*50)
-                print(
-                    f"We are in approach {config.approach} so we use train_loop")
-                print("-"*50)
+                print("-" * 50)
+                print(f"We are in approach {config.approach} so we use train_loop")
+                print("-" * 50)
 
                 train_loss = train_loop(
                     dataloader=train_loader,
@@ -820,7 +837,7 @@ def wandb_train_test(
                     optimizer=optimizer,
                     criterion=criterion,
                     device=device,
-                    mono_mask=mono_mask
+                    mono_mask=mono_mask,
                 )
 
             train_time = time.time() - train_time
@@ -829,10 +846,9 @@ def wandb_train_test(
 
             if config.approach == "full_life":
 
-                print("-"*50)
-                print(
-                    f"We are in approach {config.approach} so we use mixed_val_loop")
-                print("-"*50)
+                print("-" * 50)
+                print(f"We are in approach {config.approach} so we use mixed_val_loop")
+                print("-" * 50)
 
                 val_loss, eval_val_loss, y_pred, y_true = mixed_eval_loop(
                     dataloader=val_loader,
@@ -847,10 +863,9 @@ def wandb_train_test(
 
             else:
 
-                print("-"*50)
-                print(
-                    f"We are in approach {config.approach} so we use val_loop")
-                print("-"*50)
+                print("-" * 50)
+                print(f"We are in approach {config.approach} so we use val_loop")
+                print("-" * 50)
 
                 val_loss, eval_val_loss, y_pred, y_true, _, _ = eval_loop(
                     dataloader=val_loader,
@@ -861,7 +876,7 @@ def wandb_train_test(
                     mode="Val",
                     device=device,
                     tau=tau,
-                    mono_mask=mono_mask
+                    mono_mask=mono_mask,
                 )
 
             val_time = time.time() - val_time
@@ -870,10 +885,9 @@ def wandb_train_test(
 
             if config.approach == "full_life":
 
-                print("-"*50)
-                print(
-                    f"We are in approach {config.approach} so we use mixed_eval_loop")
-                print("-"*50)
+                print("-" * 50)
+                print(f"We are in approach {config.approach} so we use mixed_eval_loop")
+                print("-" * 50)
 
                 test_loss, eval_test_loss, y_pred, y_true = mixed_eval_loop(
                     dataloader=test_loader,
@@ -888,10 +902,9 @@ def wandb_train_test(
 
             else:
 
-                print("-"*50)
-                print(
-                    f"We are in approach {config.approach} so we use eval_loop")
-                print("-"*50)
+                print("-" * 50)
+                print(f"We are in approach {config.approach} so we use eval_loop")
+                print("-" * 50)
 
                 test_loss, eval_test_loss, y_pred, y_true, _, _ = eval_loop(
                     dataloader=test_loader,
@@ -902,20 +915,20 @@ def wandb_train_test(
                     mode="Test",
                     device=device,
                     tau=tau,
-                    mono_mask=mono_mask
+                    mono_mask=mono_mask,
                 )
 
             test_time = time.time() - test_time
 
             if scheduler is not None:
                 scheduler.step()
-                print(
-                    f"Epoch {epoch} learning rate: {scheduler.get_last_lr()}")
+                print(f"Epoch {epoch} learning rate: {scheduler.get_last_lr()}")
 
             if val_loss < min_val_loss:
                 min_val_loss = val_loss
                 print(
-                    f"Epoch {epoch} | New best model found with val loss: {min_val_loss}")
+                    f"Epoch {epoch} | New best model found with val loss: {min_val_loss}"
+                )
                 print("#" * 50)
                 best_model_state_dict = model.state_dict().copy()
 
@@ -939,15 +952,15 @@ def wandb_train_test(
                 wandb.log(model_info)
             else:
                 model_info_df = pd.DataFrame(model_info, index=["values"])
-                print("-"*50)
+                print("-" * 50)
                 print("Information on the model training and evaluation:")
                 print(model_info_df.T)
-                print("-"*50)
+                print("-" * 50)
 
     except KeyboardInterrupt:
-        print("-"*50)
+        print("-" * 50)
         print("Manual Early Stopping triggered. Saving the best model up to now")
-        print("-"*50)
+        print("-" * 50)
 
         if config.save_best_model:
             save_best_model(
@@ -956,17 +969,17 @@ def wandb_train_test(
             )
 
     except torch.cuda.OutOfMemoryError:
-        print("-"*50)
+        print("-" * 50)
         print("CUDA Out of Memory Error, stopping execution")
-        print("-"*50)
+        print("-" * 50)
         traceback.print_exc()  # Print the full traceback of the error
         error = True
         quit()
 
     except Exception as e:
-        print("-"*50)
+        print("-" * 50)
         print("An error occured during the training process:")
-        print("-"*50)
+        print("-" * 50)
         print(e)
         traceback.print_exc()  # Print the full traceback of the error
         error = True
@@ -974,15 +987,12 @@ def wandb_train_test(
     if not error:
         print("No errors occured during the training process, saving the best model")
         save_best_model(
-            best_model_state_dict=best_model_state_dict,
-            best_model_path=best_model_path
+            best_model_state_dict=best_model_state_dict, best_model_path=best_model_path
         )
 
 
 def load_best_model(
-    config: ExperimentConfig,
-    model_config: ModelConfig,
-    best_model_path: str
+    config: ExperimentConfig, model_config: ModelConfig, best_model_path: str
 ) -> Tuple[nn.Module, np.ndarray]:
     """
     This function loads the best model given the best model path
@@ -997,22 +1007,27 @@ def load_best_model(
     """
 
     best_model_filepath = get_most_recent_file(
-        dirpath=best_model_path, file_pos=config.file_pos)
+        dirpath=best_model_path, file_pos=config.file_pos
+    )
 
-    best_model_state_dict = open_element(
-        best_model_filepath, filetype="pickle")
+    best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
 
-    feature_names = get_feature_names(
-        config) if config.data_name == "CMAPSS" else get_phm_feature_names(config)
+    feature_names = (
+        get_feature_names(config)
+        if config.data_name == "CMAPSS"
+        else get_phm_feature_names(config)
+    )
     mono_mask = get_mono_mask(config=config, feature_names=feature_names)
 
     if config.save_summary_dict:
         model, summary_dict = load_ssm_model(
             model_config=model_config,
             exp_config=config,
-            d_input=len(feature_names)
-            if ((not config.quantile_reg) or (not model_config.tau_feat))
-            else len(feature_names) + 1,
+            d_input=(
+                len(feature_names)
+                if ((not config.quantile_reg) or (not model_config.tau_feat))
+                else len(feature_names) + 1
+            ),
         )
         print("#" * 50)
         print(f"Summary dict keys: {summary_dict.keys()}")
@@ -1023,13 +1038,14 @@ def load_best_model(
             model_config=model_config,
             model_name=config.model_name,
             output_size=config.sequence_length,
-            mono_mask=mono_mask
+            mono_mask=mono_mask,
         )
 
     model.load_state_dict(best_model_state_dict)
     model = model.to(model_config.device)
 
     return model, mono_mask
+
 
 # Function to get the best model performance
 
@@ -1066,15 +1082,17 @@ def best_model_perf(
             If return_outputs is set to True the function returns the outputs dictionary, but it will not save the outputs
     """
 
-    loaders_dict = load_phm_data(config, eval=True) if config.data_name == "PHM" else load_reg_data(config)
+    loaders_dict = (
+        load_phm_data(config, eval=True)
+        if config.data_name == "PHM"
+        else load_reg_data(config)
+    )
     test_lifes = loaders_dict["test_lifes"]
     test_loaders = loaders_dict["test_loaders"]
     test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None
 
     model, mono_mask = load_best_model(
-        config=config,
-        model_config=model_config,
-        best_model_path=best_model_path
+        config=config, model_config=model_config, best_model_path=best_model_path
     )
 
     if config.model_summary:
@@ -1083,6 +1101,7 @@ def best_model_perf(
     _, life_criterion = load_loss_functions(
         loss_name=config.loss,
         eval_loss_name=config.life_eval_loss,
+        tau=tau,
     )
 
     print("#" * 50)
@@ -1097,8 +1116,11 @@ def best_model_perf(
     for i, test_loader in enumerate(test_loaders):
 
         print("#" * 50)
-        print(f"Testing on life {i+1+config.test_idx[0]}") if config.data_name == "CMAPSS" else print(
-            f"Testing on life {test_idx[i]}")
+        (
+            print(f"Testing on life {i+1+config.test_idx[0]}")
+            if config.data_name == "CMAPSS"
+            else print(f"Testing on life {test_idx[i]}")
+        )
         print("#" * 50)
 
         evaluator = get_life_evaluator(
@@ -1111,17 +1133,15 @@ def best_model_perf(
         ipdb.set_trace()
 
         _, _, y_pred, y_true = evaluator.life_eval_loop(
-            loader=test_loader,
-            mode="Test",
-            use_tqdm=False
+            loader=test_loader, mode="Test", use_tqdm=False
         )
 
         if config.normalize_rul:
 
-            y_pred = y_pred*MAX_RUL
-            y_true = y_true*MAX_RUL
+            y_pred = y_pred * MAX_RUL
+            y_true = y_true * MAX_RUL
 
-        #NOTE: If we are in the padding approach
+        # NOTE: If we are in the padding approach
         # here we have a single sequence predicting the RUL → (1,sequence_length)
         # In case we are in the windowed approach we have a set
         # of predictions on the different windows → (n_windows,sequence_length).
@@ -1150,7 +1170,11 @@ def best_model_perf(
             "y_true": true_vals,
         }
 
-        filename = f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_outputs_{config.model_name}"
+        filename = (
+            f"{get_current_time()}_outputs_{config.model_name}_{config.cmapss_models}"
+            if config.data_name == "CMAPSS"
+            else f"{get_current_time()}_outputs_{config.model_name}"
+        )
         save_element(
             element=outputs_dict,
             dirpath=outputs_path,
@@ -1165,7 +1189,11 @@ def best_model_perf(
             "y_true": combined_true_vals_list,
         }
 
-        filename = f"{get_current_time()}_combined_outputs_{config.model_name}_{config.cmapss_models}" if config.data_name == "CMAPSS" else f"{get_current_time()}_combined_outputs_{config.model_name}"
+        filename = (
+            f"{get_current_time()}_combined_outputs_{config.model_name}_{config.cmapss_models}"
+            if config.data_name == "CMAPSS"
+            else f"{get_current_time()}_combined_outputs_{config.model_name}"
+        )
 
         save_element(
             element=combined_outputs_dict,
@@ -1176,6 +1204,7 @@ def best_model_perf(
 
     if config.return_outputs:
         return outputs_dict
+
 
 # Function that implements a wandb run
 
@@ -1222,7 +1251,7 @@ def wandb_run(
                 outputs_path=outputs_path,
                 combined_outputs_path=combined_outputs_path,
                 metrics_path=metrics_path,
-                tau=tau
+                tau=tau,
             )
     else:
 
@@ -1234,5 +1263,5 @@ def wandb_run(
             outputs_path=outputs_path,
             combined_outputs_path=combined_outputs_path,
             metrics_path=metrics_path,
-            tau=tau
+            tau=tau,
         )
