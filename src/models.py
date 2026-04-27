@@ -24,7 +24,7 @@ from utils import (
     combine_values,
     get_mono_mask
 )
-from evaluator import get_evaluator
+from evaluator import get_evaluator, get_life_evaluator
 from trainer import get_trainer
 import os
 import sys
@@ -1080,9 +1080,9 @@ def best_model_perf(
     if config.model_summary:
         return model
 
-    criterion, eval_criterion = load_loss_functions(
+    _, life_criterion = load_loss_functions(
         loss_name=config.loss,
-        eval_loss_name=config.eval_loss,
+        eval_loss_name=config.life_eval_loss,
     )
 
     print("#" * 50)
@@ -1101,16 +1101,16 @@ def best_model_perf(
             f"Testing on life {test_idx[i]}")
         print("#" * 50)
 
-        evaluator = get_evaluator(
+        evaluator = get_life_evaluator(
             model=model,
             config=config,
-            criterion=criterion,
-            eval_criterion=eval_criterion,
+            life_criterion=life_criterion,
             device=device,
-            tau=tau
+            tau=tau,
         )
+        ipdb.set_trace()
 
-        _, _, y_pred, y_true = evaluator.eval_loop(
+        _, _, y_pred, y_true = evaluator.life_eval_loop(
             loader=test_loader,
             mode="Test",
             use_tqdm=False

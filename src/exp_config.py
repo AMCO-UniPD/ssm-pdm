@@ -52,6 +52,7 @@ class ExperimentConfig:
     # loss parameters
     loss: str = "quantile_reg"
     eval_loss: str = "rmse"
+    life_eval_loss: str = "rmse"
     # multi run parameters
     n_runs: int = 5
     start_run_id: int = 0

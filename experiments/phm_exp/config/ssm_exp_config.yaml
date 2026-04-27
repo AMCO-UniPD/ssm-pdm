@@ -49,7 +49,8 @@ weight_decay: 1.0e-4
 # loss: quantile_reg # for quantile_reg
 # loss: rmse # for standard
 loss: window_mse
-eval_loss: rmse
+eval_loss: window_rmse
+life_eval_loss: rmse
 
 # multi run parameters
 n_runs: 1
