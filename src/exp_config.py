@@ -9,6 +9,7 @@ from dataclasses import dataclass, field, fields
 from typing import List, Dict, Tuple, Union, Optional, Callable
 import torch
 from wandb.sdk.wandb_config import Config as WandbConfig
+from config_vars import PHM_TOOLS, PHM_FAIL_TYPES
 
 @dataclass
 class ExperimentConfig:
@@ -483,15 +484,15 @@ def check_arguments(args: Union[ExperimentConfig, WandbConfig]) -> None:
         None: the function does not return nothing but can throw some exception if the arguments are not passed correctly
     """
 
-    assert config.data_name == "PHM", "This function works just with the PHM dataset"
-    assert set(config.train_phm_tools).issubset(PHM_TOOLS), (
-        f"The set of train tools must be a subset of {PHM_TOOLS} but got {config.train_phm_tools}"
+    assert args.data_name == "PHM", "This function works just with the PHM dataset"
+    assert set(args.train_phm_tools).issubset(PHM_TOOLS), (
+        f"The set of train tools must be a subset of {PHM_TOOLS} but got {args.train_phm_tools}"
     )
-    assert set(config.test_phm_tools).issubset(PHM_TOOLS), (
-        f"The set of test tools must be a subset of {PHM_TOOLS} but got {config.test_phm_tools}"
+    assert set(args.test_phm_tools).issubset(PHM_TOOLS), (
+        f"The set of test tools must be a subset of {PHM_TOOLS} but got {args.test_phm_tools}"
     )
-    assert config.failure_type in PHM_FAIL_TYPES, (
-        f"Failure type name must be in {PHM_FAIL_TYPES} but got {config.failure_type}"
+    assert args.failure_type in PHM_FAIL_TYPES, (
+        f"Failure type name must be in {PHM_FAIL_TYPES} but got {args.failure_type}"
     )
 
     if hasattr(args, "stride"):

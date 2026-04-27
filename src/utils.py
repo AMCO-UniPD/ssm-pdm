@@ -1176,13 +1176,6 @@ def create_window_loaders(
             test_datasets, batch_size=config.batch_size, shuffle=True
         )
 
-        #TODO: Verify that this list actually contains a single dataloader
-        # In that case it can be removed
-        test_loaders = [
-            DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
-            for test_dataset in test_datasets
-        ]
-
         print("-" * 50)
         print("window dataloaders created successfully")
         print("-" * 50)
@@ -1195,7 +1188,6 @@ def create_window_loaders(
             "n_val_constant_wins": len(val_datasets.constant_seq),
             "n_val_decreasing_wins": len(val_datasets.decreasing_seq),
             "test_loader": test_loader,
-            "test_loaders": test_loaders,
             "n_test_constant_wins": len(test_datasets.constant_seq),
             "n_test_decreasing_wins": len(test_datasets.decreasing_seq),
         }

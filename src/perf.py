@@ -72,7 +72,7 @@ def lifes_metrics(
 
     _, eval_criterion = load_loss_functions(
         loss_name=config.loss,
-        eval_loss_name=config.eval_loss,
+        eval_loss_name=config.life_eval_loss,
         tau=tau,
     )
 

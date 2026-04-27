@@ -32,7 +32,7 @@ wandb_data(config=exp_config, model_config=model_config)
 outputs_path = generate_path(
     basepath=experiment_path,
     folders=[
-        "outputs",
+        "combined_outputs",
         exp_config.model_name,
         exp_config.failure_type,
         exp_config.approach,

@@ -1130,9 +1130,8 @@ def best_model_perf(
             device=device,
             tau=tau,
         )
-        ipdb.set_trace()
 
-        _, _, y_pred, y_true = evaluator.life_eval_loop(
+        _, y_pred, y_true = evaluator.life_eval_loop(
             loader=test_loader, mode="Test", use_tqdm=False
         )
 
@@ -1158,6 +1157,7 @@ def best_model_perf(
                 true_values=y_true,
                 original_shape=test_lifes[test_idx[i]].shape[0],
                 sequence_length=config.sequence_length,
+                stride=config.stride
             )
 
             combined_preds_list.append(combined_preds)

@@ -198,9 +198,7 @@ case "$mode" in
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
-    --get_test_idx \
-    --combined_signal_plots \
-    --an_score_plot
+    --get_test_idx
 
   ;;
   *)
