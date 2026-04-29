@@ -31,6 +31,7 @@ case "$mode" in
     --use_wandb \
     --save_best_model \
     --save_outputs \
+    --save_combined_outputs \
     --compute_metrics \
     --save_metrics_df
 
