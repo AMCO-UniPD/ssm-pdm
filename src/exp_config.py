@@ -68,6 +68,8 @@ class ExperimentConfig:
     nrows: int = 1
     life_idx: List[int] = field(default_factory=lambda: [3])
     col_idx: int = 0
+    start_idx: int = 0
+    end_idx: int = 1000000
     plot_run_id: int = 1
     quantile_plot: float = 0.25
     save_plot: bool = False

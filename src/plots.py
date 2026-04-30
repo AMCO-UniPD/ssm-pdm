@@ -106,7 +106,8 @@ def plot_predictions_grid(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
-    n_last_samples: int = 0,
+    start_idx: int = 0,
+    end_idx: int = 1000000,
 ) -> None:
     """
     Function to plot in a grid the `RUL` prediction of each life for a specific
@@ -120,6 +121,10 @@ def plot_predictions_grid(
         Path to the outputs dictionary
     plot_path: str
         Path to save the plot
+    start_idx: int
+        start index to plot
+    end_idx: int
+        end index to plot
 
     Returns:
     --------
@@ -141,12 +146,8 @@ def plot_predictions_grid(
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
 
-    if n_last_samples > 0:
-        true = [y_true[i][-n_last_samples:] for i in life_idxs]
-        pred = [y_pred[i][-n_last_samples:] for i in life_idxs]
-    else:
-        true = [y_true[i] for i in life_idxs]
-        pred = [y_pred[i] for i in life_idxs]
+    true = [y_true[i][start_idx:end_idx] for i in life_idxs]
+    pred = [y_pred[i][start_idx:end_idx] for i in life_idxs]
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
@@ -196,7 +197,7 @@ def plot_predictions_grid(
         if config.full_life:
             filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_full"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad_n_last_samples_{n_last_samples}"
+            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad"
         life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)
