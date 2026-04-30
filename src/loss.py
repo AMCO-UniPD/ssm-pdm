@@ -146,9 +146,15 @@ class WindowMSELoss(nn.Module):
         )
 
         mse_per_window = torch.stack([
-            ((y_pred[i][mask[i]] - y_true[i][mask[i]]) ** 2).mean()
+            (((y_pred[i][mask[i]] - y_true[i][mask[i]]) ** 2)).mean()
             for i in range(y_true.shape[0])
         ])
+
+        #WARN: Adding weight by the RUL
+        # mse_per_window = torch.stack([
+        #     (((y_pred[i][mask[i]] - y_true[i][mask[i]]) ** 2)*(1/(y_true[i][mask[i]]+1e-5))).mean()
+        #     for i in range(y_true.shape[0])
+        # ])
 
         return torch.sum(weights * mse_per_window)
 
