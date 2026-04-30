@@ -56,4 +56,6 @@ _ = plot_predictions_grid(
     config=exp_config,
     outputs_path=outputs_path,
     plot_path=plot_path,
+    start_idx=exp_config.start_idx,
+    end_idx=exp_config.end_idx,
 )

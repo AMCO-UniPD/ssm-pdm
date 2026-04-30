@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_flow_low_windowed_weighted
-#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_weighted_%j.txt
-#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_weighted_error_%j.txt
-#SBATCH --time=07:00:00
+#SBATCH --job-name=MLP_flow_low_windowed_weigthed_rul_weight
+#SBATCH --output=slurm_logs/MLP/MLP_flow_low_windowed_weigthed_rul_weight_%j.txt
+#SBATCH --error=slurm_logs/MLP/MLP_flow_low_windowed_weigthed_rul_weight_error_%j.txt
+#SBATCH --time=10:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
 #SBATCH --mem=30G

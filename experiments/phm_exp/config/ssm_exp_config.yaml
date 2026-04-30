@@ -1,4 +1,4 @@
-# Configuration file for ssm experiments on PHM dataset
+
 # NOTE: See default parameters on the definition of ExperimentConfig class
 
 # Dataset
@@ -15,9 +15,9 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-monotonic: false
+monotonic: true
 quantile_reg: false
-approach: windowed_weighted
+approach: windowed_weighted_monotonic
 
 # quantile_reg config
 quantile_dist: uniform
@@ -64,11 +64,13 @@ plot_run_id: 1
 quantile_plot: 0.5
 # life_idx: [0,1,5,11]
 # life_idx: [77,97,129,228]
-life_idx: [0,1,2,3]
-# life_idx: [0]
+# life_idx: [0,1,2,3]
+life_idx: [0]
 col_idx: 0
-nrows: 2
-ncols: 2
+start_idx: 0
+end_idx: 5000
+nrows: 1
+ncols: 1
 # ncols: 3
 full_life: false
 save_plot: true
