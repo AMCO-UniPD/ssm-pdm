@@ -40,7 +40,7 @@ from ceruleo.transformation.features.scalers import (MinMaxScaler,
                                                      StandardScaler)
 from ceruleo.transformation.features.selection import (ByNameFeatureSelector,
                                                        PandasVarianceThreshold)
-from ceruleo.transformation.features.transformation import Clip
+from ceruleo.transformation.features.transformation import Clip, LinearDegradation
 # from ceruleo.transformation.features.extraction import RollingStatistics
 from ceruleo.transformation.functional.pipeline.pipeline import make_pipeline
 from config_vars import (APPROACHES, CMAPSS_MODELS, MAX_RUL, PHM_ETCH_FEATURES,
@@ -230,6 +230,15 @@ def generate_path(basepath: str = os.getcwd(), folders: List[str] = []) -> str:
 
 class TransData(AbstractPDMDataset):
     def __init__(self, data: AbstractPDMDataset):
+        """
+        TransData dataset type. This dataset puts the
+        input sensor data and the RUL target values into a
+        single dataframe
+
+        Args:
+            data (AbstractPDMDataset): instance of AbstractPDMDataset
+            containing the transformed data
+        """
         super().__init__()
         self.lives = []
         for life in data:
@@ -731,15 +740,9 @@ def get_transformer(
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
-                # RollingStatistics(
-                #                     window=config.window_size, to_compute=config.features
-                #                 ),
-                MeanImputer(),
-                # PandasVarianceThreshold(min_variance=config.min_variance),
-                scaler,
             ),
             pipelineY=make_pipeline(
-                ByNameFeatureSelector(features=["RUL"]),
+                ByNameFeatureSelector(features=["RUL"], LinearDegradation() ),
             ),
         )
 
