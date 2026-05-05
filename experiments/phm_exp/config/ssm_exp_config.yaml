@@ -17,7 +17,7 @@ scaler_kwargs:
 # approach
 monotonic: false
 quantile_reg: false
-approach: windowed_standard
+approach: padding_standard
 
 # quantile_reg config
 quantile_dist: uniform
@@ -80,26 +80,7 @@ show_plot: false
 # raw signal plots
 use_test_set: true
 
-#NOTE: The following parameters are all set through the command line
-# with the define_arguments function
+# business metrics plots
+max_windows: 100
+n_maintenance_windows: 10
 
-# project_name: "ssm-pdm"
-# data_name: PHM
-# phm_tools:
-#   - 01M01
-#   - 01M02
-# failure_type: flow_low
-# test_script config
-# test_script: false
-# file_pos: 0
-# # outputs → train_ssm.py
-# save_outputs: true
-# save_outputs_quantile: true
-# save_outputs_run: false
-# return_outputs: false
-# save_mean_metrics_df: true
-# print_summary_metrics: true
-# save_metrics_df_runs: false
-# # obsididan table
-# sub_lifes_metrics: false
-# obsidian_table: false

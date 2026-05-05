@@ -76,6 +76,9 @@ class ExperimentConfig:
     show_plot: bool = False
     # raw signal plots
     use_test_set: bool = False
+    # business metrics plots
+    max_windows: int = 100
+    n_maintenance_windows: int = 10
     # select_windows parameters
     max_rul: int = 500
     keep_long_rul_prob: float = 0.2
