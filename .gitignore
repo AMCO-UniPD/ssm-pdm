@@ -49,6 +49,9 @@ package.json
 *.xlsx
 *.csv
 
+# patch files
+*.patch
+
 !requirements.txt
 
 # some file types files
