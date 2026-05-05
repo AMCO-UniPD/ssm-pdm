@@ -250,6 +250,14 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--baseline_model_names",
+        type=str,
+        nargs="+",
+        default=["mean"],
+        help="Names of the baseline models",
+    )
+
+    parser.add_argument(
         "--exp_names",
         type=str,
         nargs="+",
@@ -368,6 +376,12 @@ def define_arguments() -> Namespace:
         "--compute_metrics",
         action="store_true",
         help="If set, save the df with the average metrics over the lifes"
+    )
+
+    parser.add_argument(
+        "--compute_business_metrics",
+        action="store_true",
+        help="If set, save the df with the average business metrics over the lifes"
     )
 
     parser.add_argument(

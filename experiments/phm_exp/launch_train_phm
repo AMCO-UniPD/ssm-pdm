@@ -32,7 +32,8 @@ case "$mode" in
     --save_best_model \
     --save_outputs \
     --save_combined_outputs \
-    --compute_metrics \
+    --compute_business_metrics \
+    --compute_business_metrics \
     --save_metrics_df
 
   ;;
@@ -55,6 +56,7 @@ case "$mode" in
     --save_outputs \
     --save_combined_outputs \
     --compute_metrics \
+    --compute_business_metrics \
     --save_metrics_df
 
   ;;

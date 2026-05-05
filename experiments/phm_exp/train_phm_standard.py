@@ -83,6 +83,17 @@ metrics_path = generate_path(
     ],
 )
 
+metrics_path = generate_path(
+    basepath=experiment_path,
+    folders=[
+        "business_metrics",
+        exp_config.model_name,
+        exp_config.failure_type,
+        exp_config.approach,
+        exp_name
+    ],
+)
+
 plot_path = generate_path(
     basepath=experiment_path,
     folders=[
@@ -182,4 +193,5 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
         outputs_path = outputs_path_run,
         combined_outputs_path = combined_outputs_path_run,
         metrics_path = metrics_path_run,
+        business_metrics_path = business_metrics_path_run,
     )

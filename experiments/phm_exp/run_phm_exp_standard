@@ -18,7 +18,13 @@ echo "-------------------------------------------"
 ./launch_train_phm_standard compute_metrics
 
 echo "-------------------------------------------"
-echo "Step 3: Produce the quantile plots"
+echo "Step 3: Compute business metrics"
+echo "-------------------------------------------"
+
+./launch_train_phm_standard compute_business_metrics
+
+echo "-------------------------------------------"
+echo "Step 4: Produce the quantile plots"
 echo "-------------------------------------------"
 
 ./launch_train_phm_standard standard_plots

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+script_path="baseline_model_outputs.py"
+
+source "./phm_exp_config"
+
+echo "-------------------------------------------"
+echo "Executing $script_path"
+echo "-------------------------------------------"
+
+baseline_model_names=("mean" "median")
+
+python "$script_path" \
+    --baseline_model_names "${baseline_model_names[@]}" \
+    --exp_config_path "config/ssm_exp_config.yaml" \
+    --train_phm_tools "${train_phm_tools[@]}" \
+    --test_phm_tools "${test_phm_tools[@]}"

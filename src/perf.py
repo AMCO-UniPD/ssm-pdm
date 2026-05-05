@@ -30,6 +30,11 @@ from utils import (
     get_most_recent_file,
     set_seed,
 )
+from ceruleo.results.results import (
+    PredictionResult,
+    unexpected_breaks,
+    unexploited_lifetime
+)
 
 from loss import load_loss_functions
 
@@ -117,6 +122,74 @@ def lifes_metrics(
         print("-"*50)
 
     pd.options.display.float_format = None
+
+    return metrics_df
+
+def lifes_business_metrics(
+    config: ExperimentConfig,
+    outputs_path: str = experiment_path,
+    metrics_path: str = experiment_path,
+) -> pd.DataFrame:
+    """
+    Clone of lifes_metrics function to compute the business metrics
+    on the different test lifes
+
+    Args:
+        config:dict ExperimentConfig object
+        outputs_path:str Path to the outputs
+        metrics_path:str Path to save the metrics
+
+    Returns:
+        pd.DataFrame business metrics DataFrame
+    """
+
+    outputs_filepath = get_most_recent_file(outputs_path)
+    outputs_dict = open_element(outputs_filepath,filetype="pickle")
+
+    prediction_results = [
+        PredictionResult(
+            name = f"Life_{i+1}",
+            true_RUL = outputs_dict["y_true"][i],
+            pred_RUL = outputs_dict["y_pred"][i],
+        )
+        for i in range(len(outputs_dict["y_pred"]))
+    ]
+
+    m_values, mean_ub, std_ub = unexpected_breaks(
+        d = prediction_results,
+        window_size = config.max_windows,
+        step = config.n_maintenance_windows
+    )
+
+    _, mean_ul, std_ul = unexploited_lifetime(
+        d = prediction_results,
+        window_size = config.max_windows,
+        step = config.n_maintenance_windows
+    )
+
+    metrics_dict = {
+        "Lifes": [f"Life_{i+1}" for i in range(len(outputs_dict["y_pred"]))],
+        "M values": m_values,
+        "Unexpected Breaks": mean_ub,
+        "Unexpected Breaks std": std_ub,
+        "Unexploited Lifetime": mean_ul,
+        "Unexploited Lifetim std": std_ul,
+    }
+    metrics_df = pd.DataFrame(metrics_dict)
+
+    if config.save_metrics_df:
+
+        filename = f"{get_current_time()}_business_lifes_metrics_{config.model_name}"
+
+        save_element(
+            element=metrics_df,
+            dirpath=metrics_path,
+            filename=filename,
+        )
+
+        print("-"*50)
+        print(f"Metrics df saved at {os.path.join(metrics_path,filename)}")
+        print("-"*50)
 
     return metrics_df
 

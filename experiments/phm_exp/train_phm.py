@@ -84,6 +84,17 @@ metrics_path = generate_path(
     ],
 )
 
+metrics_path = generate_path(
+    basepath=experiment_path,
+    folders=[
+        "business_metrics",
+        exp_config.model_name,
+        exp_config.failure_type,
+        exp_config.approach,
+        exp_name
+    ],
+)
+
 plot_path = generate_path(
     basepath=experiment_path,
     folders=[
@@ -188,6 +199,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
         quantile_outputs_path = generate_path(basepath=outputs_path, folders=quantile_reg_folders)
         quantile_combined_outputs_path = generate_path(basepath=combined_outputs_path, folders=quantile_reg_folders)
         quantile_metrics_path = generate_path(basepath=metrics_path, folders=quantile_reg_folders)
+        quantile_business_metrics_path = generate_path(basepath=business_metrics_path, folders=quantile_reg_folders)
 
         wandb_run(
             run_name = run_name,
@@ -198,6 +210,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
             outputs_path = quantile_outputs_path,
             combined_outputs_path = quantile_combined_outputs_path,
             metrics_path = quantile_metrics_path,
+            business_metrics_path = quantile_business_metrics_path,
             tau = quantile
         )
 

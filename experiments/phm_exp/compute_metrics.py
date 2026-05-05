@@ -1,5 +1,6 @@
 """
 Python script to compute the metrics of a quantile regression model
+over the different runs
 """
 
 # general imports
@@ -26,64 +27,98 @@ experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
 
-outputs_path = generate_path(
-    basepath=experiment_path,
-    folders=[
-        "outputs",
-        exp_config.model_name,
-        exp_config.failure_type,
-        exp_config.approach,
-        exp_name
-    ],
-)
+is_baseline_model = exp_config.model_name in ["mean", "median"]
 
-metrics_path = generate_path(
-    basepath=experiment_path,
-    folders=[
-        "metrics",
-        exp_config.model_name,
-        exp_config.failure_type,
-        exp_config.approach,
-        exp_name
-    ],
-)
+if is_baseline_model:
 
-setproctitle.setproctitle(f"compute_metrics_{exp_name}")
+    outputs_path = generate_path(
+        basepath=experiment_path,
+        folders=[
+            "baseline_outputs",
+            exp_config.model_name,
+        ],
+    )
+
+    metrics_path = generate_path(
+        basepath=experiment_path,
+        folders=[
+            "baseline_metrics",
+            exp_config.model_name,
+        ],
+    )
+
+else:
+
+    outputs_path = generate_path(
+        basepath=experiment_path,
+        folders=[
+            "outputs",
+            exp_config.model_name,
+            exp_config.failure_type,
+            exp_config.approach,
+            exp_name
+        ],
+    )
+
+    metrics_path = generate_path(
+        basepath=experiment_path,
+        folders=[
+            "metrics",
+            exp_config.model_name,
+            exp_config.failure_type,
+            exp_config.approach,
+            exp_name
+        ],
+    )
+
+setproctitle.setproctitle(f"compute_metrics_quantile_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
-for run in range(exp_config.start_run_id, exp_config.n_runs):
 
-    run_metrics_path = generate_path(
-        basepath = metrics_path,
-        folders = [f"run_{run+1}"]
+if is_baseline_model:
+
+    metrics_df = lifes_metrics(
+        config=exp_config,
+        outputs_path=outputs_path,
+        metrics_path=metrics_path,
+        compute_stats = True,
     )
 
-    run_outputs_path = generate_path(
-        basepath = outputs_path,
-        folders = [f"run_{run+1}"]
-    )
+else:
 
-    for quantile in exp_config.quantiles:
+    for run in range(exp_config.start_run_id, exp_config.n_runs):
 
-        print("#" * 50)
-        print(f"Computing metrics for quantile level: {quantile}")
-        print("#" * 50)
-
-        quantile_reg_folders = [
-            f"quantile_{quantile}",
-        ]
-        quantile_metrics_path = generate_path(
-            basepath=run_metrics_path, folders=quantile_reg_folders
-        )
-        quantile_outputs_path = generate_path(
-            basepath=run_outputs_path, folders=quantile_reg_folders
+        run_metrics_path = generate_path(
+            basepath = metrics_path,
+            folders = [f"run_{run+1}"]
         )
 
-        metrics_df = lifes_metrics(
-            config=exp_config,
-            outputs_path=quantile_outputs_path,
-            metrics_path=quantile_metrics_path,
-            compute_stats = True,
-            tau = quantile
+        run_outputs_path = generate_path(
+            basepath = outputs_path,
+            folders = [f"run_{run+1}"]
         )
+
+        for quantile in exp_config.quantiles:
+
+            print("#" * 50)
+            print(f"Computing metrics for quantile level: {quantile}")
+            print("#" * 50)
+
+            quantile_reg_folders = [
+                f"quantile_{quantile}",
+            ]
+            quantile_metrics_path = generate_path(
+                basepath=run_metrics_path, folders=quantile_reg_folders
+            )
+            quantile_outputs_path = generate_path(
+                basepath=run_outputs_path, folders=quantile_reg_folders
+            )
+
+            metrics_df = lifes_metrics(
+                config=exp_config,
+                outputs_path=quantile_outputs_path,
+                metrics_path=quantile_metrics_path,
+                compute_stats = True,
+                tau = quantile
+            )

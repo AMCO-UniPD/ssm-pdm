@@ -1,5 +1,5 @@
 """
-Python script to compute the metrics of a non quantile regression model
+Python script to compute business metrics for a non quantile regression model
 """
 
 # general imports
@@ -19,7 +19,7 @@ from utils import (
     save_element,
     get_current_time,
 )
-from perf import lifes_metrics, print_summary_metrics
+from perf import lifes_business_metrics, print_summary_metrics
 from models import wandb_data
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
@@ -70,27 +70,27 @@ else:
         ],
     )
 
-setproctitle.setproctitle(f"compute_metrics_{exp_name}")
+setproctitle.setproctitle(f"compute_business_metrics_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
 if is_baseline_model:
 
-    metrics_df = lifes_metrics(
+    business_metrics_df = lifes_business_metrics(
         config=exp_config,
         outputs_path=outputs_path,
-        metrics_path=metrics_path,
+        business_metrics_path=business_metrics_path,
         compute_stats = True,
     )
 
 else:
 
-    metrics_dfs = []
+    business_metrics_dfs = []
 
     for run in range(exp_config.start_run_id, exp_config.n_runs):
 
-        run_metrics_path = generate_path(
-            basepath = metrics_path,
+        run_business_metrics_path = generate_path(
+            basepath = business_metrics_path,
             folders = [f"run_{run+1}"]
         )
 
@@ -99,22 +99,22 @@ else:
             folders = [f"run_{run+1}"]
         )
 
-        metrics_df = lifes_metrics(
+        business_metrics_df = lifes_business_metrics(
             config=exp_config,
             outputs_path=run_outputs_path,
-            metrics_path=run_metrics_path,
+            business_metrics_path=run_business_metrics_path,
             compute_stats = True,
         )
 
-        metrics_dfs.append(metrics_df)
+        business_metrics_dfs.append(business_metrics_df)
 
-    mean_metrics_df=(sum(metrics_dfs)/len(metrics_dfs)).round(2)
-    mean_metrics_df.index.name = "Lifes"
+    mean_business_metrics_df=(sum(business_metrics_dfs)/len(business_metrics_dfs)).round(2)
+    mean_business_metrics_df.index.name = "Lifes"
 
     if exp_config.print_summary_metrics:
-        print_summary_metrics(metrics_df=mean_metrics_df,model_name=exp_config.model_name)
+        print_summary_metrics(metrics_df=mean_business_metrics_df,model_name=exp_config.model_name)
 
-    if exp_config.print_mean_metrics_df:
+    if exp_config.print_mean_business_metrics_df:
 
         print("-"*50)
         print("Mean metrics df:")
@@ -123,11 +123,11 @@ else:
 
     if exp_config.save_mean_metrics_df:
 
-        filename=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_global_metrics_df" if exp_config.data_name == "CMAPSS" else f"{exp_config.model_name}_{exp_config.approach}_global_metrics_df"
+        filename= f"{exp_config.model_name}_{exp_config.approach}_global_business__metrics_df"
 
         save_element(
-            mean_metrics_df,
-            dirpath=metrics_path,
+            mean_business_metrics_df,
+            dirpath=business_metrics_path,
             filename=filename,
             filetype="pickle",
         )

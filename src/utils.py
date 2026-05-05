@@ -29,6 +29,7 @@ from torch.utils.data import ConcatDataset, DataLoader, Dataset
 
 from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset, sensor_indices
 from ceruleo.dataset.catalog.PHMDataset2018 import PHMDataset2018
+from ceruleo.dataset.transformed import TransformedDataset
 # ceruleo imports
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset
 from ceruleo.transformation import Transformer
@@ -1222,18 +1223,17 @@ def print_life_info(phm_data: PHMDataset2018) -> None:
         print(f"Shape of life {i}: {life.shape}")
         print("-" * 50)
 
-
-def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
+def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, TransformedDataset, TransformedDataset]:
     """
-    Clone of the load_reg_data function but adapted for the PHM dataset.
+    Load raw PHM data and transform them
 
     Args:
         config (ExperimentConfig): The configuration dictionary
-        eval (bool): weather to load the loaders in eval mode in the windowed approach
 
     Returns:
-        loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
-        approach, it also contains a list of DataLoader objects for each life in the test set.
+        transformed_train_data (TransformedDataset): transformed training set
+        transformed_val_data (TransformedDataset): transformed validation set
+        transformed_test_data (TransformedDataset): transformed test set
     """
 
     if os.path.exists(PHM_PATH_ACQ4):
@@ -1310,6 +1310,23 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
     transformed_train_data = train_data.map(transformer)
     transformed_val_data = val_data.map(transformer)
     transformed_test_data = test_phm_data.map(transformer)
+
+    return transformed_train_data, transformed_val_data, transformed_test_data
+
+def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
+    """
+    Clone of the load_reg_data function but adapted for the PHM dataset.
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+        eval (bool): weather to load the loaders in eval mode in the windowed approach
+
+    Returns:
+        loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
+        approach, it also contains a list of DataLoader objects for each life in the test set.
+    """
+
+    transformed_train_data, transformed_val_data, transformed_test_data = transform_phm_data(config=config)
 
     train_lifes = TransData(transformed_train_data)
     val_lifes = TransData(transformed_val_data)

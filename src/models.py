@@ -29,7 +29,12 @@ from config_vars import MAX_RUL
 from evaluator import get_evaluator, get_life_evaluator
 from exp_config import ModelConfig
 from loss import load_loss_functions
-from perf import df_with_index_to_obsidian_table, lifes_metrics, sub_lifes_metrics
+from perf import (
+    df_with_index_to_obsidian_table,
+    lifes_metrics,
+    lifes_business_metrics,
+    sub_lifes_metrics
+)
 
 # general imports
 from plots import plot_predictions_grid
@@ -50,6 +55,7 @@ from utils import (
     sample_quantile,
     save_element,
 )
+from ceruleo.models.baseline import BaselineModel
 
 chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
 chronos_path_scripts = os.path.join(os.path.dirname(__file__), "chronos-rul", "scripts")
@@ -640,6 +646,7 @@ def exp_run(
     outputs_path: str = experiment_path,
     combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
+    business_metrics_path: str = experiment_path,
     tau: float = 0.5,
     mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
 ) -> None:
@@ -655,6 +662,7 @@ def exp_run(
         outputs_path (str): basepath where to save the outputs dictionary
         combined_outputs_path (str): basepath where to save the outputs dictionary
         metrics_path (str): basepath where to save the metrics
+        business_metrics_path (str): basepath where to save the business metrics
         tau (float): quantile level for the evaluation
         mono_mask (np.ndarray): boolean mask to identify monotonic features
 
@@ -717,6 +725,21 @@ def exp_run(
         metrics_df = lifes_metrics(
             config=config, outputs_path=outputs_path, metrics_path=metrics_path, tau=tau
         )
+        print("#" * 50)
+        print(f"metrics_df shape: {metrics_df.shape}")
+
+    if config.compute_business_metrics:
+
+        print("#" * 50)
+        print("Computing business metrics for each life in the test set")
+        print("#" * 50)
+
+        metrics_df = lifes_business_metrics(
+            config=config,
+            outputs_path=outputs_path,
+            metrics_path=business_metrics_path,
+        )
+
         print("#" * 50)
         print(f"metrics_df shape: {metrics_df.shape}")
 
@@ -1046,6 +1069,27 @@ def load_best_model(
 
     return model, mono_mask
 
+def load_baseline_model(
+    model_name: str = "mean"
+) -> BaselineModel:
+    """
+    Load a baseline RUL model representing a Preventive Maintenance
+    approach
+
+    Args:
+        model_name (str): statistics used to produce the prediction
+
+    Returns:
+        baseline_model (BaselineModel): BaselineModel instance representing
+        the baseline model
+    """
+
+    MODES = ["mean", "median"]
+    assert model_name in MODES, f"Model {model_name} not supported. Available modes arre {MODES}"
+
+    baseline_model = BaselineModel(mode=model_name)
+    return baseline_model
+
 
 # Function to get the best model performance
 
@@ -1222,6 +1266,7 @@ def wandb_run(
     outputs_path: str = experiment_path,
     combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
+    business_metrics_path: str = experiment_path,
     tau: float = 0.5,
 ) -> None:
     """
@@ -1238,6 +1283,7 @@ def wandb_run(
         outputs_path (str): The path to save the outputs
         combined_outputs_path (str): The path to save the outputs
         metrics_path (str): The path to save the metrics
+        business_metrics_path (str): The path to save the business metrics
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
@@ -1255,6 +1301,7 @@ def wandb_run(
                 outputs_path=outputs_path,
                 combined_outputs_path=combined_outputs_path,
                 metrics_path=metrics_path,
+                business_metrics_path=business_metrics_path,
                 tau=tau,
             )
     else:
@@ -1267,5 +1314,6 @@ def wandb_run(
             outputs_path=outputs_path,
             combined_outputs_path=combined_outputs_path,
             metrics_path=metrics_path,
+            business_metrics_path=business_metrics_path,
             tau=tau,
         )
