@@ -15,6 +15,9 @@
 # # Paper
 # chronos-pdm-notes/Paper
 
+# strange nfs files
+*.nfs*
+
 # All notes in the gitignore
 ssm-pdm-notes/
 
