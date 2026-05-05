@@ -141,8 +141,8 @@ class WindowMSELoss(nn.Module):
 
         weights = torch.where(
             is_constant,
-            1.0 / n_const_wins,
-            1.0 / n_decreasing_wins
+            1.0 / (n_const_wins + 1e-3),
+            1.0 / (n_decreasing_wins + 1e-3)
         )
 
         mse_per_window = torch.stack([

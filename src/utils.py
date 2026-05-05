@@ -523,7 +523,7 @@ class SSMWindowRegressionDataset(Dataset):
             target_slice = rul.iloc[start_idx : min(end_idx, len(rul))].values
 
             # Condition: at least one RUL value < self.max_rul
-            is_near_failure = np.any(target_slice < self.max_rul)
+            is_near_failure = np.unique(target_slice).shape[0] > 1
 
             if is_near_failure:
                 filtered_indices.append(self.data_indices[idx])
@@ -698,9 +698,15 @@ def get_transformer(
         scaler = StandardScaler()
 
     if config.transformer_type == 0:
+        rul_scaler = MinMaxScaler(range=(0,1))
+        setattr(config,"rul_scaler",rul_scaler)
         transformer = Transformer(
-            pipelineX=make_pipeline(ByNameFeatureSelector(features=FEATURES)),
-            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"])),
+            pipelineX=make_pipeline(
+                ByNameFeatureSelector(features=FEATURES),
+                MeanImputer(),
+                scaler,
+            ),
+            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"]), rul_scaler),
         )
     elif config.transformer_type == 1:
         transformer = Transformer(
@@ -737,12 +743,13 @@ def get_transformer(
         )
 
     elif config.transformer_type == 4:
+        rul_scaler = MinMaxScaler(range=(0,1))
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
             ),
             pipelineY=make_pipeline(
-                ByNameFeatureSelector(features=["RUL"], LinearDegradation() ),
+                ByNameFeatureSelector(features=["RUL"]), LinearDegradation(), rul_scaler
             ),
         )
 

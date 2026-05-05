@@ -195,9 +195,9 @@ def plot_predictions_grid(
 
     if config.save_plot:
         if config.full_life:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_full"
+            filename = f"{get_current_time()}_{config.model_name}_predictions_grid_full"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.cmapss_models}_predictions_grid_pad"
+            filename = f"{get_current_time()}_{config.model_name}_predictions_grid_pad"
         life_idx_str = "_".join(str(x) for x in config.life_idx)
         filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)

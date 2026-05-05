@@ -1135,12 +1135,16 @@ def best_model_perf(
             loader=test_loader, mode="Test", use_tqdm=False
         )
 
+        if hasattr(config,"rul_scaler"):
+            y_pred = config.rul_scaler.inverse_transform(y_pred)
+            y_true = config.rul_scaler.inverse_transform(y_true)
+
         if config.normalize_rul:
 
             y_pred = y_pred * MAX_RUL
             y_true = y_true * MAX_RUL
 
-        # NOTE: If we are in the padding approach
+        #NOTE: If we are in the padding approach
         # here we have a single sequence predicting the RUL → (1,sequence_length)
         # In case we are in the windowed approach we have a set
         # of predictions on the different windows → (n_windows,sequence_length).
