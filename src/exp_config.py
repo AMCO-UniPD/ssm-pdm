@@ -488,6 +488,12 @@ def define_arguments() -> Namespace:
         help="If set, produce the RUL signal in plot_raw_signals.py"
     )
 
+    parser.add_argument(
+        "--resume_training",
+        action="store_true",
+        help="If set, resume the training of a model"
+    )
+
     args = parser.parse_args()
 
     return args

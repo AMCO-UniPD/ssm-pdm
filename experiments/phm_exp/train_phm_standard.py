@@ -193,5 +193,4 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
         outputs_path = outputs_path_run,
         combined_outputs_path = combined_outputs_path_run,
         metrics_path = metrics_path_run,
-        business_metrics_path = business_metrics_path_run,
     )

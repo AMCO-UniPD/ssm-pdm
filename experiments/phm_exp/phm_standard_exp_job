@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_flow_low_windowed_weigthed
-#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_weigthed_%j.txt
-#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_weigthed_error_%j.txt
+#SBATCH --job-name=S5_flow_low_windowed_weigthed_resume_training
+#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_weigthed_resume_training_%j.txt
+#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_weigthed_error_resume_training_%j.txt
 #SBATCH --time=10:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most

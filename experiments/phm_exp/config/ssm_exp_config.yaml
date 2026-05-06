@@ -15,7 +15,7 @@ scaler_kwargs:
 # approach
 monotonic: false
 quantile_reg: false
-approach: windowed_standard
+approach: windowed_weighted
 
 # quantile_reg config
 quantile_dist: uniform
@@ -36,9 +36,9 @@ ad: false
 
 # training parameters
 batch_size: 16
-sequence_length: 1000
-stride: 1000
-epochs: 10
+sequence_length: 5000
+stride: 5000
+epochs: 20
 lr: 0.001
 weight_decay: 1.0e-4
 
