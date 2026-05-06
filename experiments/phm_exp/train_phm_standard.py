@@ -18,7 +18,7 @@ from utils import (
 )
 
 from perf import lifes_metrics
-from models import wandb_run, best_model_perf
+from models import wandb_run, best_model_perf, init_wandb
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
@@ -176,8 +176,20 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
     print(f"Experiment for run {run+1}")
     print("-"*50)
 
-    run_name = f"{exp_name}_run_{run+1}"
-    setproctitle.setproctitle(run_name)
+    runWB = init_wandb(
+        config = exp_config,
+        model_config = model_config
+    )
+
+    if runWB is not None:
+        exp_name = runWB.name
+        run_name = f"{runWB.name}_run_{run+1}"
+        runWB.name = run_name
+        setproctitle.setproctitle(run_name)
+    else:
+        exp_name = f"{exp_time}_no_wandb_logging_exp"
+        run_name = exp_name
+        setproctitle.setproctitle(run_name)
 
     best_model_path_run = generate_path(basepath=best_model_path, folders=[f"run_{run+1}"])
     outputs_path_run = generate_path(basepath=outputs_path, folders=[f"run_{run+1}"])
@@ -188,6 +200,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
         run_name = run_name,
         config = exp_config,
         model_config = model_config,
+        runWB=runWB,
         device = model_config.device,
         best_model_path = best_model_path_run,
         outputs_path = outputs_path_run,

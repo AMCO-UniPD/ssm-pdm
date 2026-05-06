@@ -13,6 +13,9 @@ import ipdb
 import numpy as np
 import pandas as pd
 
+import wandb
+from wandb.sdk.wandb_run import Run as WandbRun
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -109,13 +112,16 @@ class Trainer:
         print(f"Best model saved at: {best_model_path}")
         print("#" * 50)
 
-    def run(self):
+    def run(self, runWB: Union[WandbRun, None]):
         """
         Method implemeting an entire training and evaluation run for multiple epochs
         logging the results to wandb
+
+        Args:
+            runWB (WandbRun): WandbRun instance
         """
 
-        if self.config.use_wandb:
+        if runWB is not None:
             wandb.watch(self.model, self.criterion, log=None, log_freq=10)
             wandb.define_metric("epoch")
             wandb.define_metric("loss/*", step_metric="epoch")
@@ -189,7 +195,7 @@ class Trainer:
                     "eval_loss/eval_test_loss": eval_test_loss,
                 }
 
-                if self.config.use_wandb:
+                if runWB is not None:
                     wandb.log(model_info)
                 else:
                     model_info_df = pd.DataFrame(model_info, index=["values"])

@@ -4,6 +4,7 @@ Python script containing utility functions for the models of the `chronos-pdm` p
 
 import gc
 import os
+from pdb import run
 import sys
 import time
 import traceback
@@ -802,6 +803,7 @@ def wandb_data(
 def exp_run(
     config: ExperimentConfig,
     model_config: ModelConfig,
+    runWB: Union[WandbRun, None],
     device: str = "cpu",
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
@@ -817,6 +819,7 @@ def exp_run(
     Args:
         config (ExperimentConfig): experiment configuration object
         model_config (ModelConfig): model configuration object
+        runWB (Union[WandbRun, None]): WandbRun instance
         device (torch.device): CUDA device where to perform the experiment
         best_model_path (str): basepath where to save the best model
         outputs_path (str): basepath where to save the outputs dictionary
@@ -861,7 +864,7 @@ def exp_run(
         tau=tau,
     )
 
-    trainer.run()
+    trainer.run(runWB=runWB)
 
     if config.return_outputs or config.save_outputs or config.save_combined_outputs:
 
@@ -1325,17 +1328,81 @@ def best_model_perf(
     if config.return_outputs:
         return outputs_dict
 
+def set_wandb_run_name(
+    config: ExperimentConfig,
+    model_config: ModelConfig,
+    run: WandbRun
+) -> WandbRun:
+    """
+    Set the wandb run name
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        model_config (ModelConfig): model configuration
+        run (WandbRun): wandb run object
+    """
+
+    if config.run_name == "wandb_run":
+
+        run.name = f"{config.run_name}_{model_config.model_type}"
+
+    else:
+
+        run.name = config.run_name
+
+    return run
 
 def init_wandb(
     config: ExperimentConfig,
+    model_config: ModelConfig
 ) -> Union[WandbRun, None]:
     """
     Function to initialize a wandb run using the wandb API key
     to avoid multi login problems
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        model_config (ModelConfig): model configuration
+
+    Returns:
+        run (WandbRun): WandbRun instance
     """
 
-    pass
+    from dotenv import load_dotenv
+    load_dotenv()
 
+    if not config.use_wandb:
+        print("-"*50)
+        print("Performing experiment without wandb logging")
+        print("-"*50)
+        return None
+
+    print("-"*50)
+    print("Initializing wandb logging")
+    print("-"*50)
+
+    #WARN: The WANDB_API_KEY should be stored in .env
+    # and .env MUST BE INSERTED in the .gitignore
+    key = os.getenv("WANDB_API_KEY")
+    print("WANDB_API_KEY set:", bool(key))
+    wandb_ok = wandb.login(key=key, relogin=False)
+    print("wandb.login() succeeded?:", wandb_ok)
+    wandb.finish()
+
+    run = wandb.init(
+        project=config.project_name,
+        save_code=False,
+    )
+
+    run = set_wandb_run_name(
+        config = config,
+        model_config = model_config,
+        run = run
+    )
+
+    print(f"Run started: {run.name}, View at: {run.url}")
+
+    return run
 
 # Function that implements a wandb run
 
@@ -1344,6 +1411,7 @@ def wandb_run(
     run_name: str,
     config: ExperimentConfig,
     model_config: ModelConfig,
+    runWB: Union[WandbRun, None],
     device: str = "cpu",
     best_model_path: str = experiment_path,
     outputs_path: str = experiment_path,
@@ -1360,6 +1428,7 @@ def wandb_run(
         run_name (str): The name of the run
         config (ExperimentConfig): The experiment configuration object
         model_config (ModelConfig): The model configuration object
+        runWB (Union[WandbRun, None]): WandbRun instance
         device (str): The device to use
         best_model_path (str): The path to save the best model
         outputs_path (str): The path to save the outputs
@@ -1371,12 +1440,18 @@ def wandb_run(
         None: Performs a wandb run and does not return anything
     """
 
+    #TODO: If we add the runWB thing probably
+    # the wandb_run function becomes useless
+    # → remove wandb_run and call exp_run inside train_phm_standard
+    # and train_phm once I certified that
+
     if config.use_wandb:
 
         with wandb.init(project=config.project_name, name=run_name):
             exp_run(
                 config=config,
                 model_config=model_config,
+                runWB=runWB,
                 device=device,
                 best_model_path=best_model_path,
                 outputs_path=outputs_path,
@@ -1389,6 +1464,7 @@ def wandb_run(
         exp_run(
             config=config,
             model_config=model_config,
+            runWB=runWB,
             device=device,
             best_model_path=best_model_path,
             outputs_path=outputs_path,
