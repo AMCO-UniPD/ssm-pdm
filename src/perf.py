@@ -32,9 +32,11 @@ from utils import (
 )
 from ceruleo.results.results import (
     PredictionResult,
-    unexpected_breaks,
-    unexploited_lifetime,
-    metric_J
+    FittedLife,
+    unexpected_breaks_from_cv,
+    unexploited_lifetime_from_cv,
+    excessive_life_from_cv,
+    metric_J_from_cv
 )
 
 from loss import load_loss_functions
@@ -130,62 +132,93 @@ def lifes_business_metrics(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
+    is_baseline: bool = False
 ) -> pd.DataFrame:
     """
     Clone of lifes_metrics function to compute the business metrics
     on the different test lifes
 
     Args:
-        config:dict ExperimentConfig object
-        outputs_path:str Path to the outputs
-        metrics_path:str Path to save the metrics
+        config (dict): ExperimentConfig object
+        outputs_path (str): Path to the outputs
+        metrics_path (str): Path to save the metrics
+        is_baseline (bool): weather there is a baseline model
 
     Returns:
         pd.DataFrame business metrics DataFrame
     """
 
-    outputs_filepath = get_most_recent_file(outputs_path)
-    outputs_dict = open_element(outputs_filepath,filetype="pickle")
+    outputs_dicts = []
 
-    prediction_results = [
-        PredictionResult(
-            name = f"Life_{i+1}",
-            true_RUL = outputs_dict["y_true"][i],
-            predicted_RUL = outputs_dict["y_pred"][i],
+    start_run_id = 0 if is_baseline else config.start_run_id
+    n_runs = 1 if is_baseline else config.n_runs
+
+    for run in range(start_run_id, n_runs):
+
+        run_outputs_path = generate_path(
+            basepath = outputs_path,
+            folders = [f"run_{run+1}"]
         )
-        for i in range(len(outputs_dict["y_pred"]))
+        outputs_filepath = get_most_recent_file(run_outputs_path)
+        outputs_dict = open_element(outputs_filepath,filetype="pickle")
+        outputs_dicts.append(outputs_dict)
+
+    fitted_lifes = [
+        [
+            FittedLife(
+                y_true = outputs_dicts[j]["y_true"][i],
+                y_pred = outputs_dicts[j]["y_pred"][i],
+                time = np.arange(np.squeeze(outputs_dict["y_pred"][i]).shape[0]),
+            )
+            for j in range(start_run_id, n_runs)
+        ]
+        for i in range(len(outputs_dicts[0]["y_true"]))
     ]
 
-    m_ub_values, mean_ub, std_ub = unexpected_breaks(
-        d = prediction_results,
+    m_ub_values, mean_ub, std_ub = unexpected_breaks_from_cv(
+        lives = fitted_lifes,
         window_size = config.max_windows,
-        step = config.n_maintenance_windows
+        n = config.n_maintenance_windows
     )
 
-    m_ul_values, mean_ul, std_ul = unexploited_lifetime(
-        d = prediction_results,
+    m_ul_values, mean_ul, std_ul = unexploited_lifetime_from_cv(
+        lives = fitted_lifes,
         window_size = config.max_windows,
-        step = config.n_maintenance_windows
+        n = config.n_maintenance_windows
     )
 
-    m_J_values, J = metric_J(
-        d = prediction_results,
+    m_el_values, mean_el, std_el = excessive_life_from_cv(
+        lives = fitted_lifes,
         window_size = config.max_windows,
-        step = config.n_maintenance_windows,
+        n = config.n_maintenance_windows
+    )
+
+    m_J_values, J = metric_J_from_cv(
+        lives = fitted_lifes,
+        window_size = config.max_windows,
+        n = config.n_maintenance_windows,
         c_ub = 10.0,
         c_ul = 1.0
     )
-    ipdb.set_trace()
 
     metrics_dict = {
         "M values": np.round(m_ub_values,2),
         "Unexpected Breaks": mean_ub,
-        # "Unexpected Breaks std": std_ub,
+        "Unexpected Breaks std": std_ub,
         "Unexploited Lifetime": mean_ul,
-        # "Unexploited Lifetime std": std_ul,
+        "Unexploited Lifetime std": std_ul,
+        "Excessive Life": mean_el,
+        "Excessive Life std": std_el,
         "Metric J": J,
     }
     metrics_df = pd.DataFrame(metrics_dict)
+    metrics_df.set_index("M values")
+
+    if config.print_mean_metrics_df:
+
+        print("-"*50)
+        print(metrics_df.to_markdown())
+        print("-"*50)
 
     if config.save_metrics_df:
 

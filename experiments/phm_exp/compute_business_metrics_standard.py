@@ -74,57 +74,10 @@ setproctitle.setproctitle(f"compute_business_metrics_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
-if is_baseline_model:
+business_metrics_df = lifes_business_metrics(
+    config=exp_config,
+    outputs_path=outputs_path,
+    metrics_path=business_metrics_path,
+    is_baseline=is_baseline_model
+)
 
-    business_metrics_df = lifes_business_metrics(
-        config=exp_config,
-        outputs_path=outputs_path,
-        metrics_path=business_metrics_path,
-    )
-
-else:
-
-    business_metrics_dfs = []
-
-    for run in range(exp_config.start_run_id, exp_config.n_runs):
-
-        run_business_metrics_path = generate_path(
-            basepath = business_metrics_path,
-            folders = [f"run_{run+1}"]
-        )
-
-        run_outputs_path = generate_path(
-            basepath = outputs_path,
-            folders = [f"run_{run+1}"]
-        )
-
-        business_metrics_df = lifes_business_metrics(
-            config=exp_config,
-            outputs_path=run_outputs_path,
-            metrics_path=run_business_metrics_path,
-        )
-
-        business_metrics_dfs.append(business_metrics_df)
-
-    mean_business_metrics_df=(sum(business_metrics_dfs)/len(business_metrics_dfs)).round(2)
-
-    if exp_config.print_summary_metrics:
-        print_summary_metrics(metrics_df=mean_business_metrics_df,model_name=exp_config.model_name)
-
-    if exp_config.print_mean_metrics_df:
-
-        print("-"*50)
-        print("Mean metrics df:")
-        print(mean_business_metrics_df.to_markdown())
-        print("-"*50)
-
-    if exp_config.save_mean_metrics_df:
-
-        filename= f"{exp_config.model_name}_{exp_config.approach}_global_business__metrics_df"
-
-        save_element(
-            element=mean_business_metrics_df,
-            dirpath=business_metrics_path,
-            filename=filename,
-            filetype="pickle",
-        )

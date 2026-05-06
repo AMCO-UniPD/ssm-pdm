@@ -15,7 +15,7 @@ scaler_kwargs:
 # approach
 monotonic: false
 quantile_reg: false
-approach: windowed_weighted
+approach: windowed_standard
 
 # quantile_reg config
 quantile_dist: uniform
@@ -75,6 +75,6 @@ show_plot: false
 use_test_set: true
 
 # business metrics plots
-max_windows: 500
-n_maintenance_windows: 5
+max_windows: 100
+n_maintenance_windows: 10
 
