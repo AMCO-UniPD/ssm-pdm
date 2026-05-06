@@ -17,8 +17,11 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import wandb
 from torch.cuda.amp import GradScaler, autocast
+
+# wandb imports
+import wandb
+from wandb.sdk.wandb_run import Run as WandbRun
 
 # from apex.optimizers import FusedAdam
 from torch.optim import AdamW, lr_scheduler
@@ -30,7 +33,6 @@ from evaluator import get_evaluator, get_life_evaluator
 from exp_config import ModelConfig
 from loss import load_loss_functions
 from perf import (
-    df_with_index_to_obsidian_table,
     lifes_metrics,
     lifes_business_metrics,
     sub_lifes_metrics
@@ -38,8 +40,13 @@ from perf import (
 
 # general imports
 from plots import plot_predictions_grid
-from ssm_models import load_ssm_model
 from trainer import get_trainer
+from model_classes import (
+    RULModel,
+    QuantileRULModel,
+    MonotonicRULModel,
+    MonoQuantileRULModel
+)
 from utils import (
     ExperimentConfig,
     combine_values,
@@ -57,19 +64,8 @@ from utils import (
 )
 from ceruleo.models.baseline import BaselineModel
 
-chronos_path_src = os.path.join(os.path.dirname(__file__), "chronos-rul", "src")
-chronos_path_scripts = os.path.join(os.path.dirname(__file__), "chronos-rul", "scripts")
-imports_path = os.path.join(os.path.dirname(__file__), "AD_MG", "src")
-sys.path.append(chronos_path_src)
-sys.path.append(chronos_path_scripts)
-sys.path.append(imports_path)
-
-# import from other modules
-
-
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "phm_exp")
-
 
 def get_activation(act: str) -> nn.Module:
     """
@@ -131,6 +127,152 @@ class RegressionHead(nn.Module):
         x = self.fc(x)
         # x = self.dropout(x)
         return x
+
+def setup_optimizer(model, lr, weight_decay, epochs):
+    """
+    S4 requires a specific optimizer setup.
+
+    The S4 layer (A, B, C, dt) parameters typically
+    require a smaller learning rate (typically 0.001), with no weight decay.
+
+    The rest of the model can be trained with a higher learning rate (e.g. 0.004, 0.01)
+    and weight decay (if desired).
+    """
+
+    # All parameters in the model
+    all_parameters = list(model.parameters())
+
+    # General parameters don't contain the special _optim key
+    params = [p for p in all_parameters if not hasattr(p, "_optim")]
+
+    # Create an optimizer with the general parameters
+    optimizer = optim.AdamW(params, lr=lr, weight_decay=weight_decay)
+
+    # Add parameters with special hyperparameters
+    hps = [getattr(p, "_optim")
+           for p in all_parameters if hasattr(p, "_optim")]
+    hps = [
+        dict(s)
+        for s in sorted(list(dict.fromkeys(frozenset(hp.items()) for hp in hps)))
+    ]  # Unique dicts
+    for hp in hps:
+        params = [p for p in all_parameters if getattr(
+            p, "_optim", None) == hp]
+        optimizer.add_param_group({"params": params, **hp})
+
+    # Create a lr scheduler
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=patience, factor=0.2)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
+
+    # Print optimizer info
+    keys = sorted(set([k for hp in hps for k in hp.keys()]))
+    for i, g in enumerate(optimizer.param_groups):
+        group_hps = {k: g.get(k, None) for k in keys}
+        # print(' | '.join([
+        #     f"Optimizer group {i}",
+        #     f"{len(g['params'])} tensors",
+        # ] + [f"{k} {v}" for k, v in group_hps.items()]))
+
+    return optimizer, scheduler
+
+def load_best_model(
+    config: ExperimentConfig, model_config: ModelConfig, best_model_path: str
+) -> Tuple[nn.Module, np.ndarray]:
+    """
+    This function loads the best model given the best model path
+
+    Args:
+        config (ExperimentConfig): experiment configuration object
+        best_model_path (str): path to the best model
+
+    Returns:
+        model (nn.Module): best model
+        mono_mask (np.ndarray): monotonic mask
+    """
+
+    best_model_filepath = get_most_recent_file(
+        dirpath=best_model_path, file_pos=config.file_pos
+    )
+
+    best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
+
+    feature_names = (
+        get_feature_names(config)
+        if config.data_name == "CMAPSS"
+        else get_phm_feature_names(config)
+    )
+    mono_mask = get_mono_mask(config=config, feature_names=feature_names)
+
+    if config.save_summary_dict:
+        model, summary_dict = load_ssm_model(
+            model_config=model_config,
+            exp_config=config,
+            d_input=(
+                len(feature_names)
+                if ((not config.quantile_reg) or (not model_config.tau_feat))
+                else len(feature_names) + 1
+            ),
+        )
+        print("#" * 50)
+        print(f"Summary dict keys: {summary_dict.keys()}")
+        print("#" * 50)
+    else:
+        model, _, _ = load_ssm_model(
+            exp_config=config,
+            model_config=model_config,
+            model_name=config.model_name,
+            output_size=config.sequence_length,
+            mono_mask=mono_mask,
+        )
+
+    model.load_state_dict(best_model_state_dict)
+    model = model.to(model_config.device)
+
+    return model, mono_mask
+
+# Function to create the model
+
+def load_ssm_model(
+    exp_config: ExperimentConfig,
+    mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
+    tau: float = 0.5,
+    n_const_wins: int = 1000,
+    n_decreasing_wins: int = 1000,
+    **kwargs
+) -> Tuple[nn.Module, optim.Optimizer, optim.lr_scheduler]:
+    """
+    Function to create the model based on the configuration.
+    The function also sets up the optimizer and the scheduler.
+
+    Args:
+        exp_config (ExperimentConfig): experiment configuration object
+        model_config (ModelConfig): model configuration object
+        mono_mask (np.ndarray): boolean mask to identify monotonic features
+        tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
+
+    Returns:
+        model: nn.Module object
+        optimizer: torch.optim object
+        scheduler: torch.optim.lr_scheduler object
+    """
+
+    if exp_config.quantile_reg and exp_config.monotonic:
+        model = MonoQuantileRULModel(tau=tau, mono_mask=mono_mask, **kwargs)
+    elif not exp_config.quantile_reg and exp_config.monotonic:
+        model = MonotonicRULModel(mono_mask=mono_mask, **kwargs)
+    elif exp_config.quantile_reg and not exp_config.monotonic:
+        model = QuantileRULModel(tau=tau, **kwargs)
+    else:
+        model = RULModel(**kwargs)
+
+    optimizer, scheduler = setup_optimizer(
+        model,
+        lr=exp_config.lr,
+        weight_decay=exp_config.weight_decay,
+        epochs=exp_config.epochs,
+    )
+
+    return model, optimizer, scheduler
 
 
 def train_loop(
@@ -546,7 +688,11 @@ def compute_window_info(
     setattr(config, "test_wins", test_wins)
 
 
-def wandb_data(config: ExperimentConfig, model_config: ModelConfig) -> Union[
+def wandb_data(
+    config: ExperimentConfig,
+    model_config: ModelConfig,
+    best_model_path: str = os.getcwd()
+) -> Union[
     Tuple[
         DataLoader,
         DataLoader,
@@ -567,6 +713,8 @@ def wandb_data(config: ExperimentConfig, model_config: ModelConfig) -> Union[
     Args:
         exp_config (ExperimentConfig): ExperimentConfig object
         model_config (ModelConfig): ModelConfig object
+        best_model_path (str): path containing the best model. Needed in
+        case we want to use the resume training option
 
     Returns:
         If get_test_idx is false the method returns the following:
@@ -618,6 +766,19 @@ def wandb_data(config: ExperimentConfig, model_config: ModelConfig) -> Union[
         output_size=config.sequence_length,
         mono_mask=mono_mask,
     )
+
+    if config.resume_training:
+
+        print("-"*50)
+        print("Loading best model to resume training")
+        print("-"*50)
+
+        model, _ = load_best_model(
+            config=config,
+            model_config=model_config,
+            best_model_path=best_model_path
+        )
+
     model = model.to(model_config.device)
 
     criterion, eval_criterion = load_loss_functions(
@@ -646,7 +807,6 @@ def exp_run(
     outputs_path: str = experiment_path,
     combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
-    business_metrics_path: str = experiment_path,
     tau: float = 0.5,
     mono_mask: np.ndarray = np.zeros(shape=(10, 1)),
 ) -> None:
@@ -662,7 +822,6 @@ def exp_run(
         outputs_path (str): basepath where to save the outputs dictionary
         combined_outputs_path (str): basepath where to save the outputs dictionary
         metrics_path (str): basepath where to save the metrics
-        business_metrics_path (str): basepath where to save the business metrics
         tau (float): quantile level for the evaluation
         mono_mask (np.ndarray): boolean mask to identify monotonic features
 
@@ -681,7 +840,11 @@ def exp_run(
         criterion,
         eval_criterion,
         config,
-    ) = wandb_data(config=config, model_config=model_config)
+    ) = wandb_data(
+        config=config,
+        model_config=model_config,
+        best_model_path=best_model_path
+    )
 
     trainer = get_trainer(
         train_loader=train_loader,
@@ -728,43 +891,7 @@ def exp_run(
         print("#" * 50)
         print(f"metrics_df shape: {metrics_df.shape}")
 
-    if config.compute_business_metrics:
-
-        print("#" * 50)
-        print("Computing business metrics for each life in the test set")
-        print("#" * 50)
-
-        metrics_df = lifes_business_metrics(
-            config=config,
-            outputs_path=outputs_path,
-            metrics_path=business_metrics_path,
-        )
-
-        print("#" * 50)
-        print(f"metrics_df shape: {metrics_df.shape}")
-
-    if config.obsidian_table:
-
-        print("#" * 50)
-        print("Producing the obsidian table")
-        print("#" * 50)
-
-        metrics_path = get_most_recent_file(metrics_path, file_pos=config.file_pos)
-        metrics_df = open_element(metrics_path)
-
-        if config.sub_lifes_metrics:
-            sub_metrics_df = sub_lifes_metrics(config=config, metrics_df=metrics_df)
-            # obsidian_table = df_with_index_to_obsidian_table(sub_metrics_df)
-            obsidian_table = sub_metrics_df.to_markdown()
-        else:
-            # obsidian_table = df_with_index_to_obsidian_table(metrics_df)
-            obsidian_table = metrics_df.to_markdown()
-
-        print(obsidian_table)
-
-
 # Function to train and test the model on a wandb run
-
 
 def wandb_train_test(
     model: nn.Module,
@@ -1014,61 +1141,6 @@ def wandb_train_test(
         )
 
 
-def load_best_model(
-    config: ExperimentConfig, model_config: ModelConfig, best_model_path: str
-) -> Tuple[nn.Module, np.ndarray]:
-    """
-    This function loads the best model given the best model path
-
-    Args:
-        config (ExperimentConfig): experiment configuration object
-        best_model_path (str): path to the best model
-
-    Returns:
-        model (nn.Module): best model
-        mono_mask (np.ndarray): monotonic mask
-    """
-
-    best_model_filepath = get_most_recent_file(
-        dirpath=best_model_path, file_pos=config.file_pos
-    )
-
-    best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
-
-    feature_names = (
-        get_feature_names(config)
-        if config.data_name == "CMAPSS"
-        else get_phm_feature_names(config)
-    )
-    mono_mask = get_mono_mask(config=config, feature_names=feature_names)
-
-    if config.save_summary_dict:
-        model, summary_dict = load_ssm_model(
-            model_config=model_config,
-            exp_config=config,
-            d_input=(
-                len(feature_names)
-                if ((not config.quantile_reg) or (not model_config.tau_feat))
-                else len(feature_names) + 1
-            ),
-        )
-        print("#" * 50)
-        print(f"Summary dict keys: {summary_dict.keys()}")
-        print("#" * 50)
-    else:
-        model, _, _ = load_ssm_model(
-            exp_config=config,
-            model_config=model_config,
-            model_name=config.model_name,
-            output_size=config.sequence_length,
-            mono_mask=mono_mask,
-        )
-
-    model.load_state_dict(best_model_state_dict)
-    model = model.to(model_config.device)
-
-    return model, mono_mask
-
 def load_baseline_model(
     model_name: str = "mean"
 ) -> BaselineModel:
@@ -1254,6 +1326,17 @@ def best_model_perf(
         return outputs_dict
 
 
+def init_wandb(
+    config: ExperimentConfig,
+) -> Union[WandbRun, None]:
+    """
+    Function to initialize a wandb run using the wandb API key
+    to avoid multi login problems
+    """
+
+    pass
+
+
 # Function that implements a wandb run
 
 
@@ -1266,7 +1349,6 @@ def wandb_run(
     outputs_path: str = experiment_path,
     combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
-    business_metrics_path: str = experiment_path,
     tau: float = 0.5,
 ) -> None:
     """
@@ -1283,7 +1365,6 @@ def wandb_run(
         outputs_path (str): The path to save the outputs
         combined_outputs_path (str): The path to save the outputs
         metrics_path (str): The path to save the metrics
-        business_metrics_path (str): The path to save the business metrics
         tau (float): The quantile level on which the model will be evaluated if the quantile regression approach is used
 
     Returns:
@@ -1301,7 +1382,6 @@ def wandb_run(
                 outputs_path=outputs_path,
                 combined_outputs_path=combined_outputs_path,
                 metrics_path=metrics_path,
-                business_metrics_path=business_metrics_path,
                 tau=tau,
             )
     else:
@@ -1314,6 +1394,5 @@ def wandb_run(
             outputs_path=outputs_path,
             combined_outputs_path=combined_outputs_path,
             metrics_path=metrics_path,
-            business_metrics_path=business_metrics_path,
             tau=tau,
         )

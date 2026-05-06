@@ -15,6 +15,9 @@
 # # Paper
 # chronos-pdm-notes/Paper
 
+# env variables
+.env
+
 # strange nfs files
 *.nfs*
 
