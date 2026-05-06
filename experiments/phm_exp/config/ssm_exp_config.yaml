@@ -36,8 +36,8 @@ ad: false
 
 # training parameters
 batch_size: 16
-sequence_length: 5000
-stride: 5000
+sequence_length: 1000
+stride: 1000
 epochs: 10
 lr: 0.001
 weight_decay: 1.0e-4
@@ -75,6 +75,6 @@ show_plot: false
 use_test_set: true
 
 # business metrics plots
-max_windows: 100
-n_maintenance_windows: 10
+max_windows: 500
+n_maintenance_windows: 5
 

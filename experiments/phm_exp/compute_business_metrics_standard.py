@@ -38,10 +38,10 @@ if is_baseline_model:
         ],
     )
 
-    metrics_path = generate_path(
+    business_metrics_path = generate_path(
         basepath=experiment_path,
         folders=[
-            "baseline_metrics",
+            "baseline_business_metrics",
             exp_config.model_name,
         ],
     )
@@ -51,7 +51,7 @@ else:
     outputs_path = generate_path(
         basepath=experiment_path,
         folders=[
-            "outputs",
+            "combined_outputs",
             exp_config.model_name,
             exp_config.failure_type,
             exp_config.approach,
@@ -59,10 +59,10 @@ else:
         ],
     )
 
-    metrics_path = generate_path(
+    business_metrics_path = generate_path(
         basepath=experiment_path,
         folders=[
-            "metrics",
+            "business_metrics",
             exp_config.model_name,
             exp_config.failure_type,
             exp_config.approach,
@@ -79,8 +79,7 @@ if is_baseline_model:
     business_metrics_df = lifes_business_metrics(
         config=exp_config,
         outputs_path=outputs_path,
-        business_metrics_path=business_metrics_path,
-        compute_stats = True,
+        metrics_path=business_metrics_path,
     )
 
 else:
@@ -102,23 +101,21 @@ else:
         business_metrics_df = lifes_business_metrics(
             config=exp_config,
             outputs_path=run_outputs_path,
-            business_metrics_path=run_business_metrics_path,
-            compute_stats = True,
+            metrics_path=run_business_metrics_path,
         )
 
         business_metrics_dfs.append(business_metrics_df)
 
     mean_business_metrics_df=(sum(business_metrics_dfs)/len(business_metrics_dfs)).round(2)
-    mean_business_metrics_df.index.name = "Lifes"
 
     if exp_config.print_summary_metrics:
         print_summary_metrics(metrics_df=mean_business_metrics_df,model_name=exp_config.model_name)
 
-    if exp_config.print_mean_business_metrics_df:
+    if exp_config.print_mean_metrics_df:
 
         print("-"*50)
         print("Mean metrics df:")
-        print(mean_metrics_df.to_markdown())
+        print(mean_business_metrics_df.to_markdown())
         print("-"*50)
 
     if exp_config.save_mean_metrics_df:
@@ -126,7 +123,7 @@ else:
         filename= f"{exp_config.model_name}_{exp_config.approach}_global_business__metrics_df"
 
         save_element(
-            mean_business_metrics_df,
+            element=mean_business_metrics_df,
             dirpath=business_metrics_path,
             filename=filename,
             filetype="pickle",

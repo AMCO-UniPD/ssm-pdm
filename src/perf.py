@@ -33,7 +33,8 @@ from utils import (
 from ceruleo.results.results import (
     PredictionResult,
     unexpected_breaks,
-    unexploited_lifetime
+    unexploited_lifetime,
+    metric_J
 )
 
 from loss import load_loss_functions
@@ -150,30 +151,39 @@ def lifes_business_metrics(
         PredictionResult(
             name = f"Life_{i+1}",
             true_RUL = outputs_dict["y_true"][i],
-            pred_RUL = outputs_dict["y_pred"][i],
+            predicted_RUL = outputs_dict["y_pred"][i],
         )
         for i in range(len(outputs_dict["y_pred"]))
     ]
 
-    m_values, mean_ub, std_ub = unexpected_breaks(
+    m_ub_values, mean_ub, std_ub = unexpected_breaks(
         d = prediction_results,
         window_size = config.max_windows,
         step = config.n_maintenance_windows
     )
 
-    _, mean_ul, std_ul = unexploited_lifetime(
+    m_ul_values, mean_ul, std_ul = unexploited_lifetime(
         d = prediction_results,
         window_size = config.max_windows,
         step = config.n_maintenance_windows
     )
+
+    m_J_values, J = metric_J(
+        d = prediction_results,
+        window_size = config.max_windows,
+        step = config.n_maintenance_windows,
+        c_ub = 10.0,
+        c_ul = 1.0
+    )
+    ipdb.set_trace()
 
     metrics_dict = {
-        "Lifes": [f"Life_{i+1}" for i in range(len(outputs_dict["y_pred"]))],
-        "M values": m_values,
+        "M values": np.round(m_ub_values,2),
         "Unexpected Breaks": mean_ub,
-        "Unexpected Breaks std": std_ub,
+        # "Unexpected Breaks std": std_ub,
         "Unexploited Lifetime": mean_ul,
-        "Unexploited Lifetim std": std_ul,
+        # "Unexploited Lifetime std": std_ul,
+        "Metric J": J,
     }
     metrics_df = pd.DataFrame(metrics_dict)
 

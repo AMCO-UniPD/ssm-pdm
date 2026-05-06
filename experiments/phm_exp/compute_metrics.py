@@ -75,7 +75,6 @@ setproctitle.setproctitle(f"compute_metrics_quantile_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
-
 if is_baseline_model:
 
     metrics_df = lifes_metrics(

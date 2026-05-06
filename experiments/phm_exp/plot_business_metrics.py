@@ -30,6 +30,7 @@ from ceruleo.results.results import (
 from ceruleo.graphics.results import (
     plot_unexpected_breaks,
     plot_unexploited_lifetime,
+    plot_J_Cost
 )
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
@@ -102,6 +103,15 @@ _ = plot_unexploited_lifetime(
     n = exp_config.n_maintenance_windows,
     save_plot = True,
     filename = f"{base_filename}_unexploited_lifetime.png",
+    plot_path = plot_path
+)
+
+_ = plot_J_Cost(
+    results = results_dict,
+    window = exp_config.max_windows,
+    step = exp_config.n_maintenance_windows,
+    save_plot = True,
+    filename = f"{base_filename}_J_Cost.png",
     plot_path = plot_path
 )
 

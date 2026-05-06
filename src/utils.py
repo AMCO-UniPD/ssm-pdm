@@ -1223,7 +1223,7 @@ def print_life_info(phm_data: PHMDataset2018) -> None:
         print(f"Shape of life {i}: {life.shape}")
         print("-" * 50)
 
-def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, TransformedDataset, TransformedDataset]:
+def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, TransformedDataset, TransformedDataset, np.ndarray, np.ndarray, np.ndarray]:
     """
     Load raw PHM data and transform them
 
@@ -1234,6 +1234,9 @@ def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, Tr
         transformed_train_data (TransformedDataset): transformed training set
         transformed_val_data (TransformedDataset): transformed validation set
         transformed_test_data (TransformedDataset): transformed test set
+        train_idx (np.ndarray): indexes of training lifes
+        val_idx (np.ndarray): indexes of validation lifes
+        test_phm_idx (np.ndarray): indexes of test lifes
     """
 
     if os.path.exists(PHM_PATH_ACQ4):
@@ -1311,7 +1314,7 @@ def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, Tr
     transformed_val_data = val_data.map(transformer)
     transformed_test_data = test_phm_data.map(transformer)
 
-    return transformed_train_data, transformed_val_data, transformed_test_data
+    return transformed_train_data, transformed_val_data, transformed_test_data, train_idx, val_idx, test_phm_idx
 
 def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
     """
@@ -1326,7 +1329,7 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
-    transformed_train_data, transformed_val_data, transformed_test_data = transform_phm_data(config=config)
+    transformed_train_data, transformed_val_data, transformed_test_data, train_idx, val_idx, test_phm_idx = transform_phm_data(config=config)
 
     train_lifes = TransData(transformed_train_data)
     val_lifes = TransData(transformed_val_data)
