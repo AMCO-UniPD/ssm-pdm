@@ -18,7 +18,7 @@ from utils import (
 )
 
 from perf import lifes_metrics
-from models import wandb_run, best_model_perf, init_wandb
+from models import wandb_run, best_model_perf, init_wandb, exp_run
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
@@ -196,8 +196,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
     combined_outputs_path_run = generate_path(basepath=combined_outputs_path, folders=[f"run_{run+1}"])
     metrics_path_run = generate_path(basepath=metrics_path, folders=[f"run_{run+1}"])
 
-    wandb_run(
-        run_name = run_name,
+    exp_run(
         config = exp_config,
         model_config = model_config,
         runWB=runWB,

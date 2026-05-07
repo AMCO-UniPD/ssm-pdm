@@ -1330,7 +1330,6 @@ def best_model_perf(
 
 def set_wandb_run_name(
     config: ExperimentConfig,
-    model_config: ModelConfig,
     run: WandbRun
 ) -> WandbRun:
     """
@@ -1338,17 +1337,16 @@ def set_wandb_run_name(
 
     Args:
         config (ExperimentConfig): experiment configuration object
-        model_config (ModelConfig): model configuration
         run (WandbRun): wandb run object
+
+    Returns:
+        run (WandbRun): updated WandbRun instance
     """
 
-    if config.run_name == "wandb_run":
-
-        run.name = f"{config.run_name}_{model_config.model_type}"
-
+    if config.exp_name == "wandb_run":
+        run.name = f"{config.exp_name}_test"
     else:
-
-        run.name = config.run_name
+        run.name = config.exp_name
 
     return run
 
@@ -1383,26 +1381,27 @@ def init_wandb(
 
     #WARN: The WANDB_API_KEY should be stored in .env
     # and .env MUST BE INSERTED in the .gitignore
-    key = os.getenv("WANDB_API_KEY")
-    print("WANDB_API_KEY set:", bool(key))
-    wandb_ok = wandb.login(key=key, relogin=False)
-    print("wandb.login() succeeded?:", wandb_ok)
-    wandb.finish()
+    # key = os.getenv("WANDB_API_KEY")
+    # print("WANDB_API_KEY set:", bool(key))
+    # wandb_ok = wandb.login(key=key, relogin=False)
+    # print("wandb.login() succeeded?:", wandb_ok)
 
-    run = wandb.init(
+    runWB = wandb.init(
         project=config.project_name,
         save_code=False,
     )
 
-    run = set_wandb_run_name(
+    runWB = set_wandb_run_name(
         config = config,
-        model_config = model_config,
-        run = run
+        run = runWB
     )
 
-    print(f"Run started: {run.name}, View at: {run.url}")
+    print("-"*50)
+    print(f"Run {runWB.name} started")
+    print(f"View at: {runWB.url}")
+    print("-"*50)
 
-    return run
+    return runWB
 
 # Function that implements a wandb run
 
@@ -1445,30 +1444,14 @@ def wandb_run(
     # → remove wandb_run and call exp_run inside train_phm_standard
     # and train_phm once I certified that
 
-    if config.use_wandb:
-
-        with wandb.init(project=config.project_name, name=run_name):
-            exp_run(
-                config=config,
-                model_config=model_config,
-                runWB=runWB,
-                device=device,
-                best_model_path=best_model_path,
-                outputs_path=outputs_path,
-                combined_outputs_path=combined_outputs_path,
-                metrics_path=metrics_path,
-                tau=tau,
-            )
-    else:
-
-        exp_run(
-            config=config,
-            model_config=model_config,
-            runWB=runWB,
-            device=device,
-            best_model_path=best_model_path,
-            outputs_path=outputs_path,
-            combined_outputs_path=combined_outputs_path,
-            metrics_path=metrics_path,
-            tau=tau,
-        )
+    exp_run(
+        config=config,
+        model_config=model_config,
+        runWB=runWB,
+        device=device,
+        best_model_path=best_model_path,
+        outputs_path=outputs_path,
+        combined_outputs_path=combined_outputs_path,
+        metrics_path=metrics_path,
+        tau=tau,
+    )

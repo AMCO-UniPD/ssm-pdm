@@ -28,3 +28,4 @@ echo "-----------------------------"
 
 ./run_phm_exp_standard
 
+unset WANDB_API_KEY
