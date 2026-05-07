@@ -9,7 +9,7 @@ echo "Step 1: Train the model, save the best one"
 echo "and save outputs and metrics"
 echo "-------------------------------------------"
 
-./launch_train_phm_standard resume_training
+./launch_train_phm_standard training
 
 echo "-------------------------------------------"
 echo "Step 2: Compute metrics"
