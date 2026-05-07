@@ -10,6 +10,7 @@ import ipdb
 import torch
 import pandas as pd
 import numpy as np
+from typing import List
 
 # torch imports
 import torch
@@ -126,13 +127,12 @@ def lifes_metrics(
 
     return metrics_df
 
-def lifes_business_metrics(
+def get_fitted_lifes(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
-    metrics_path: str = experiment_path,
     is_baseline: bool = False,
     tau: float = 0.5
-) -> pd.DataFrame:
+) -> List[List[FittedLife]]:
     """
     Clone of lifes_metrics function to compute the business metrics
     on the different test lifes
@@ -140,12 +140,11 @@ def lifes_business_metrics(
     Args:
         config (dict): ExperimentConfig object
         outputs_path (str): Path to the outputs
-        metrics_path (str): Path to save the metrics
         is_baseline (bool): weather there is a baseline model
         tau (float): quantile level
 
     Returns:
-        pd.DataFrame business metrics DataFrame
+        fitted_lifes (List[List[FittedLife]]): list of fitted lifes
     """
 
     outputs_dicts = []
@@ -182,8 +181,28 @@ def lifes_business_metrics(
             )
             for j in range(start_run_id, n_runs)
         ]
-        for i in range(len(outputs_dicts[0]["y_true"]))
+        for i in config.life_idx
     ]
+
+    return fitted_lifes
+
+def lifes_business_metrics(
+    fitted_lifes: List[List[FittedLife]],
+    config: ExperimentConfig,
+    metrics_path: str = experiment_path
+) -> pd.DataFrame:
+    """
+    Clone of lifes_metrics function to compute the business metrics
+    on the different test lifes
+
+    Args:
+        fitted_lifes (List[List[FittedLife]]): list of fitted lifes
+        config (dict): ExperimentConfig object
+        metrics_path (str): Path to save the metrics
+
+    Returns:
+        pd.DataFrame business metrics DataFrame
+    """
 
     m_ub_values, mean_ub, std_ub = unexpected_breaks_from_cv(
         lives = fitted_lifes,

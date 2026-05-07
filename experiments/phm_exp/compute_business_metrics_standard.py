@@ -13,7 +13,7 @@ sys.path.append(src_path)
 
 from exp_config import setup_exp
 from utils import generate_path
-from perf import lifes_business_metrics
+from perf import get_fitted_lifes, lifes_business_metrics
 from models import wandb_data
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
@@ -68,10 +68,17 @@ setproctitle.setproctitle(f"compute_business_metrics_standard_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
-business_metrics_df = lifes_business_metrics(
+fitted_lifes = get_fitted_lifes(
     config=exp_config,
     outputs_path=outputs_path,
+    is_baseline=is_baseline_model,
+)
+
+ipdb.set_trace()
+
+business_metrics_df = lifes_business_metrics(
+    fitted_lifes=fitted_lifes,
+    config=exp_config,
     metrics_path=business_metrics_path,
-    is_baseline=is_baseline_model
 )
 
