@@ -13,12 +13,14 @@ sys.path.append(src_path)
 
 from exp_config import setup_exp
 from utils import (
+    get_current_time,
     generate_path,
     set_seed,
 )
 
 from perf import lifes_metrics
-from models import wandb_run, best_model_perf, init_wandb, exp_run
+from models import best_model_perf, exp_run
+from wandb_funcs import init_wandb
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
@@ -110,7 +112,7 @@ if exp_config.test_script:
     print("Running best model performance test")
     print("-" * 50)
 
-    setproctitle.setproctitle(f"{exp_config.model_name}-test-script")
+    setproctitle.setproctitle(f"{exp_config.model_name}-standard-test-script")
 
     for run in range(exp_config.start_run_id, exp_config.n_runs):
 
@@ -187,6 +189,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
         runWB.name = run_name
         setproctitle.setproctitle(run_name)
     else:
+        exp_time = get_current_time()
         exp_name = f"{exp_time}_no_wandb_logging_exp"
         run_name = exp_name
         setproctitle.setproctitle(run_name)
