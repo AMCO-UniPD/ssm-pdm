@@ -20,6 +20,8 @@ module load jupyter
 env_name="ssm-pdm"
 conda activate "$env_name"
 
+source "./export_env"
+
 echo "-----------------------------"
 echo "Starting PHM experiment run"
 echo "-----------------------------"
