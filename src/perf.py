@@ -130,7 +130,8 @@ def lifes_business_metrics(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
-    is_baseline: bool = False
+    is_baseline: bool = False,
+    tau: float = 0.5
 ) -> pd.DataFrame:
     """
     Clone of lifes_metrics function to compute the business metrics
@@ -141,6 +142,7 @@ def lifes_business_metrics(
         outputs_path (str): Path to the outputs
         metrics_path (str): Path to save the metrics
         is_baseline (bool): weather there is a baseline model
+        tau (float): quantile level
 
     Returns:
         pd.DataFrame business metrics DataFrame
@@ -153,10 +155,20 @@ def lifes_business_metrics(
 
     for run in range(start_run_id, n_runs):
 
-        run_outputs_path = generate_path(
-            basepath = outputs_path,
-            folders = [f"run_{run+1}"]
-        )
+        if config.quantile_reg:
+            run_outputs_path = generate_path(
+                basepath = outputs_path,
+                folders = [
+                    f"run_{run+1}",
+                    f"quantile_{tau}"
+                ]
+            )
+        else:
+            run_outputs_path = generate_path(
+                basepath = outputs_path,
+                folders = [f"run_{run+1}"]
+            )
+
         outputs_filepath = get_most_recent_file(run_outputs_path)
         outputs_dict = open_element(outputs_filepath,filetype="pickle")
         outputs_dicts.append(outputs_dict)

@@ -1,5 +1,5 @@
 """
-Python script to compute business metrics for a non quantile regression model
+Python script to compute business metrics for a quantile regression model
 """
 
 # general imports
@@ -20,7 +20,9 @@ experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
 
-is_baseline_model = exp_config.model_name in ["mean", "median"]
+#TODO: Here I can use the quantile baseline models when I implement them
+
+is_baseline_model = "quantile" in exp_config.model_name
 
 if is_baseline_model:
 
@@ -64,14 +66,20 @@ else:
         ],
     )
 
-setproctitle.setproctitle(f"compute_business_metrics_standard_{exp_name}")
+setproctitle.setproctitle(f"compute_business_metrics_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
-business_metrics_df = lifes_business_metrics(
-    config=exp_config,
-    outputs_path=outputs_path,
-    metrics_path=business_metrics_path,
-    is_baseline=is_baseline_model
-)
+for quantile in exp_config.quantiles:
 
+    print("-"*50)
+    print(f"Computing business metrics for quantile {quantile}")
+    print("-"*50)
+
+    business_metrics_df = lifes_business_metrics(
+        config=exp_config,
+        outputs_path=outputs_path,
+        metrics_path=business_metrics_path,
+        is_baseline=is_baseline_model,
+        tau=quantile
+    )
