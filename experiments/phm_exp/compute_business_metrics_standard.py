@@ -68,17 +68,27 @@ setproctitle.setproctitle(f"compute_business_metrics_standard_{exp_name}")
 
 wandb_data(config=exp_config,model_config=model_config)
 
-fitted_lifes = get_fitted_lifes(
-    config=exp_config,
-    outputs_path=outputs_path,
-    is_baseline=is_baseline_model,
-)
+for life_id in exp_config.life_idx:
 
-ipdb.set_trace()
+    print("-"*50)
+    print(f"Computing business metrics for life {life_id}")
+    print("-"*50)
 
-business_metrics_df = lifes_business_metrics(
-    fitted_lifes=fitted_lifes,
-    config=exp_config,
-    metrics_path=business_metrics_path,
-)
+    fitted_lifes = get_fitted_lifes(
+        config=exp_config,
+        outputs_path=outputs_path,
+        is_baseline=is_baseline_model,
+        life_id=life_id
+    )
+
+    business_metrics_path_life_id = generate_path(
+        basepath=business_metrics_path,
+        folders=[f"life_{life_id}"]
+    )
+
+    business_metrics_df = lifes_business_metrics(
+        fitted_lifes=fitted_lifes,
+        config=exp_config,
+        metrics_path=business_metrics_path_life_id,
+    )
 

@@ -131,6 +131,7 @@ def get_fitted_lifes(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     is_baseline: bool = False,
+    life_id: int = 0,
     tau: float = 0.5
 ) -> List[List[FittedLife]]:
     """
@@ -141,6 +142,7 @@ def get_fitted_lifes(
         config (dict): ExperimentConfig object
         outputs_path (str): Path to the outputs
         is_baseline (bool): weather there is a baseline model
+        life_id (int): index of the life of which to compute the business metrics
         tau (float): quantile level
 
     Returns:
@@ -175,13 +177,12 @@ def get_fitted_lifes(
     fitted_lifes = [
         [
             FittedLife(
-                y_true = outputs_dicts[j]["y_true"][i],
-                y_pred = outputs_dicts[j]["y_pred"][i],
-                time = np.arange(np.squeeze(outputs_dict["y_pred"][i]).shape[0]),
+                y_true = outputs_dicts[j]["y_true"][life_id],
+                y_pred = outputs_dicts[j]["y_pred"][life_id],
+                time = np.arange(np.squeeze(outputs_dict["y_pred"][life_id]).shape[0]),
             )
             for j in range(start_run_id, n_runs)
         ]
-        for i in config.life_idx
     ]
 
     return fitted_lifes

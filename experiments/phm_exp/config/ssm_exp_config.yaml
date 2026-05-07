@@ -45,12 +45,12 @@ weight_decay: 1.0e-4
 # loss parameters
 # loss: window_quantile_reg # for quantile_reg
 # eval_loss: window_pinball
-loss: mse
-eval_loss: rmse
+loss: window_mse
+eval_loss: window_mse
 life_eval_loss: rmse
 
 # multi run parameters
-n_runs: 5
+n_runs: 2
 start_run_id: 0
 
 # model summary
@@ -60,7 +60,7 @@ summary_func: torchinfo
 file_pos: 0
 plot_run_id: 1
 quantile_plot: 0.5
-life_idx: [0,1,2,3]
+life_idx: [0,1,2,3,4]
 # life_idx: [0]
 col_idx: 0
 # start_idx: 0
