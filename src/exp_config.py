@@ -70,6 +70,7 @@ class ExperimentConfig:
     col_idx: int = 0
     start_idx: int = 0
     end_idx: int = 1000000
+    n_last_samples: int = 0
     plot_run_id: int = 1
     quantile_plot: float = 0.25
     save_plot: bool = False

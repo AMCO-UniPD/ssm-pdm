@@ -7,6 +7,7 @@ import os
 import sys
 import setproctitle
 import ipdb
+import wandb
 
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
@@ -209,3 +210,5 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
         combined_outputs_path = combined_outputs_path_run,
         metrics_path = metrics_path_run,
     )
+
+    wandb.finish()

@@ -108,6 +108,7 @@ def plot_predictions_grid(
     plot_path: str = experiment_path,
     start_idx: int = 0,
     end_idx: int = 1000000,
+    n_last_samples: int = 0,
 ) -> None:
     """
     Function to plot in a grid the `RUL` prediction of each life for a specific
@@ -125,6 +126,8 @@ def plot_predictions_grid(
         start index to plot
     end_idx: int
         end index to plot
+    n_last_samples: int
+        if this values is higher than 0 the last n_last_samples of each life are plotted
 
     Returns:
     --------
@@ -146,8 +149,12 @@ def plot_predictions_grid(
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
 
-    true = [y_true[i][start_idx:end_idx] for i in life_idxs]
-    pred = [y_pred[i][start_idx:end_idx] for i in life_idxs]
+    if n_last_samples > 0:
+        true = [y_true[i][-n_last_samples:] for i in life_idxs]
+        pred = [y_pred[i][-n_last_samples:] for i in life_idxs]
+    else:
+        true = [y_true[i][start_idx:end_idx] for i in life_idxs]
+        pred = [y_pred[i][start_idx:end_idx] for i in life_idxs]
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
