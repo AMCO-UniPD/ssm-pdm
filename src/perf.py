@@ -77,6 +77,11 @@ def lifes_metrics(
     print("-" * 50)
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
 
+    if isinstance(y_pred[0], pd.DataFrame):
+        y_pred = [np.squeeze(y_pred[i].values) for i in range(len(y_pred))]
+    if isinstance(y_true[0], pd.DataFrame):
+        y_true = [np.squeeze(y_true[i].values) for i in range(len(y_true))]
+
     _, eval_criterion = load_loss_functions(
         loss_name=config.loss,
         eval_loss_name=config.life_eval_loss,

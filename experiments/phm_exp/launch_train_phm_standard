@@ -144,7 +144,6 @@ case "$mode" in
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
-    --print_summary_metrics \
     --print_mean_metrics_df \
     --save_mean_metrics_df \
     --save_metrics_df

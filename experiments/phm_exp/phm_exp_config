@@ -7,12 +7,12 @@ failure_type="flow_low"
 train_phm_tools=("01M01" "01M02" "02M01" "02M02" "03M01" "03M02" "04M01" "04M02" "05M01" "05M02" "06M01" "06M02" "07M01" "07M02" "08M01" "08M02" "09M01" "09M02" "10M01" "10M02")
 test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 
-model_name="MLP"
+model_name="median"
+# model_name="LSTM"
 device_num=0
-# exp_name="exp"
 # exp_name="super_benchmark_S5_flow_low_windowed_standard_all_wins"
-exp_name="super_benchmark_MLP_flow_low_windowed_weighted_all_windows"
-# exp_name="super_benchmark_S5_flow_low_windowed_weighted"
+# exp_name="super_benchmark_MLP_flow_low_windowed_weighted_all_windows"
+exp_name="super_benchmark_LSTM_flow_low_windowed_weighted"
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_name="sweep"
@@ -21,55 +21,3 @@ wandb_entity="frizzo-davide-Univeristy of Padova"
 
 #NOTE: Number of runs to perform in the sweep
 sweep_runs=20
-
-#NOTE: Experiment names S4
-# exp_name="M01_flow_low_windowed_S4"
-# exp_name="all_M01_flow_low_windowed_S4"
-# exp_name="M01_flow_low_windowed_S4_dropout"
-
-#NOTE: Experiment names S4 padding approach
-# exp_name="quantile_exp_flow_low_padding_S4"
-
-#NOTE: Experiment names MLP
-# exp_name="exp"
-
-#NOTE: AD approach experiments
-# exp_name="ad_exp_flow_low_windowed_S5"
-
-#NOTE: Experiment names S5
-# exp_name="exp"
-# exp_name="M01_flow_low_windowed_S5_ff_attn_dropout"
-# exp_name="M01_flow_low_windowed_S5_norm_dropout"
-# exp_name="quantile_exp_flow_low_windowed_S5"
-# exp_name="quantile_exp_flow_low_windowed_S5_seq_500"
-# exp_name="quantile_exp_flow_low_windowed_S5_seq_tau_feat"
-# exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul"
-# exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_no_shuffle"
-# exp_name="quantile_exp_flow_low_windowed_S5_seq_10_const_rul_norm_test"
-
-#NOTE: Experiment names S4D
-# exp_name="exp"
-# exp_name="M01_flow_low_windowed_S4D_best_sweep"
-
-#NOTE: Experiment names S4D windowed approach
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap"
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_10_const_wins_norm"
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_10_const_wins_norm_stride_1000_all_quantiles"
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_phm_in_features"
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_phm_etch_features"
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_500"
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_100_const_wins"
-# exp_name="quantile_exp_flow_low_windowed_S4D_no_gap_1000_const_wins"
-
-#NOTE: Experiment names S4D padding approach
-# exp_name="quantile_exp_flow_low_padding_S4D_seq_len_1000"
-# exp_name="quantile_exp_flow_low_padding_S4D_best_sweep"
-# exp_name="quantile_exp_flow_low_padding_S4D_seq_len_10000"
-# exp_name="quantile_exp_flow_low_padding_S4D_seq_len_1000_norm"
-
-#NOTE: Experiment names S4D AD approach
-# exp_name="ad_exp_flow_low_windowed_S4D"
-# exp_name="ad_exp_flow_low_windowed_S4D_d_model_10"
-# exp_name="ad_exp_flow_low_windowed_S4D_best_sweep"
-# exp_name="ad_exp_flow_low_windowed_S4D_no_fixture_hutter_position"
-# exp_name="ad_exp_flow_low_windowed_S4D_normalization"

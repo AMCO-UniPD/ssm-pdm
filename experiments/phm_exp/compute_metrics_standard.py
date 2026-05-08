@@ -76,7 +76,7 @@ wandb_data(config=exp_config,model_config=model_config)
 
 if is_baseline_model:
 
-    metrics_df = lifes_metrics(
+    mean_metrics_df = lifes_metrics(
         config=exp_config,
         outputs_path=outputs_path,
         metrics_path=metrics_path,
@@ -111,23 +111,23 @@ else:
     mean_metrics_df=(sum(metrics_dfs)/len(metrics_dfs)).round(2)
     mean_metrics_df.index.name = "Lifes"
 
-    if exp_config.print_summary_metrics:
-        print_summary_metrics(metrics_df=mean_metrics_df,model_name=exp_config.model_name)
+if exp_config.print_summary_metrics:
+    print_summary_metrics(metrics_df=mean_metrics_df,model_name=exp_config.model_name)
 
-    if exp_config.print_mean_metrics_df:
+if exp_config.print_mean_metrics_df:
 
-        print("-"*50)
-        print("Mean metrics df:")
-        print(mean_metrics_df.to_markdown())
-        print("-"*50)
+    print("-"*50)
+    print("Mean metrics df:")
+    print(mean_metrics_df.to_markdown())
+    print("-"*50)
 
-    if exp_config.save_mean_metrics_df:
+if exp_config.save_mean_metrics_df:
 
-        filename=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_global_metrics_df" if exp_config.data_name == "CMAPSS" else f"{exp_config.model_name}_{exp_config.approach}_global_metrics_df"
+    filename=f"{exp_config.model_name}_{exp_config.cmapss_models}_{exp_config.approach}_global_metrics_df" if exp_config.data_name == "CMAPSS" else f"{exp_config.model_name}_{exp_config.approach}_global_metrics_df"
 
-        save_element(
-            mean_metrics_df,
-            dirpath=metrics_path,
-            filename=filename,
-            filetype="pickle",
-        )
+    save_element(
+        mean_metrics_df,
+        dirpath=metrics_path,
+        filename=filename,
+        filetype="pickle",
+    )

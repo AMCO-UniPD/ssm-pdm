@@ -148,6 +148,10 @@ def plot_predictions_grid(
     # Select the predictions and true values for the sensor
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
     plot_life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.plot_life_idx]
+    if isinstance(y_pred[0], pd.DataFrame):
+        y_pred = [np.squeeze(y_pred[i].values) for i in range(len(y_pred))]
+    if isinstance(y_true[0], pd.DataFrame):
+        y_true = [np.squeeze(y_true[i].values) for i in range(len(y_true))]
 
     if n_last_samples > 0:
         true = [y_true[i][-n_last_samples:] for i in plot_life_idxs]
