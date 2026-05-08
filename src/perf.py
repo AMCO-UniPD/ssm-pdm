@@ -127,11 +127,36 @@ def lifes_metrics(
 
     return metrics_df
 
+def mask_outputs(
+    outputs_dict: dict,
+    life_idx: List[int] = [0]
+) -> dict:
+    """
+    Apply the mask to the dictionary containing the true and
+    predicted RUL values
+
+    Args:
+        outputs_dict (dict): outputs dictionary
+        life_idx (List[int]): indexes of the lifes to consider
+
+    Returns:
+        outputs_dict (dict): updated outputs dictionary with masked RUL values
+    """
+
+    for life_id in life_idx:
+
+        padded_idx = np.where(outputs_dict["y_true"][life_id] == 0)[0][1:]
+        mask = np.ones(len(outputs_dict["y_true"][life_id]),dtype=bool)
+        mask[padded_idx] = False
+        outputs_dict["y_true"][life_id] = outputs_dict["y_true"][life_id][mask]
+        outputs_dict["y_pred"][life_id] = outputs_dict["y_pred"][life_id][mask]
+
+    return outputs_dict
+
 def get_fitted_lifes(
     config: ExperimentConfig,
     outputs_path: str = experiment_path,
     is_baseline: bool = False,
-    life_id: int = 0,
     tau: float = 0.5
 ) -> List[List[FittedLife]]:
     """
@@ -142,7 +167,6 @@ def get_fitted_lifes(
         config (dict): ExperimentConfig object
         outputs_path (str): Path to the outputs
         is_baseline (bool): weather there is a baseline model
-        life_id (int): index of the life of which to compute the business metrics
         tau (float): quantile level
 
     Returns:
@@ -151,37 +175,48 @@ def get_fitted_lifes(
 
     outputs_dicts = []
 
-    start_run_id = 0 if is_baseline else config.start_run_id
-    n_runs = 1 if is_baseline else config.n_runs
-
-    for run in range(start_run_id, n_runs):
+    for run_id in range(config.start_run_id, config.n_runs):
 
         if config.quantile_reg:
-            run_outputs_path = generate_path(
-                basepath = outputs_path,
-                folders = [
-                    f"run_{run+1}",
-                    f"quantile_{tau}"
-                ]
-            )
+
+            if is_baseline:
+                run_outputs_path = generate_path(
+                    basepath = outputs_path,
+                    folders = [
+                        f"quantile_{tau}"
+                    ]
+                )
+            else:
+                run_outputs_path = generate_path(
+                    basepath = outputs_path,
+                    folders = [
+                        f"run_{run_id+1}",
+                        f"quantile_{tau}"
+                    ]
+                )
+
         else:
-            run_outputs_path = generate_path(
-                basepath = outputs_path,
-                folders = [f"run_{run+1}"]
-            )
+            if is_baseline:
+                run_outputs_path = outputs_path
+            else:
+                run_outputs_path = generate_path(
+                    basepath = outputs_path,
+                    folders = [f"run_{run_id+1}"]
+                )
 
         outputs_filepath = get_most_recent_file(run_outputs_path)
         outputs_dict = open_element(outputs_filepath,filetype="pickle")
+        outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=config.life_idx)
         outputs_dicts.append(outputs_dict)
 
     fitted_lifes = [
         [
             FittedLife(
-                y_true = outputs_dicts[j]["y_true"][life_id],
-                y_pred = outputs_dicts[j]["y_pred"][life_id],
-                time = np.arange(np.squeeze(outputs_dict["y_pred"][life_id]).shape[0]),
+                y_true = outputs_dicts[run_id]["y_true"][j],
+                y_pred = outputs_dicts[run_id]["y_pred"][j],
+                time = np.arange(np.squeeze(outputs_dicts[run_id]["y_pred"][j]).shape[0]),
             )
-            for j in range(start_run_id, n_runs)
+            for j in config.life_idx
         ]
     ]
 
@@ -190,7 +225,6 @@ def get_fitted_lifes(
 def lifes_business_metrics(
     fitted_lifes: List[List[FittedLife]],
     config: ExperimentConfig,
-    metrics_path: str = experiment_path
 ) -> pd.DataFrame:
     """
     Clone of lifes_metrics function to compute the business metrics
@@ -199,7 +233,6 @@ def lifes_business_metrics(
     Args:
         fitted_lifes (List[List[FittedLife]]): list of fitted lifes
         config (dict): ExperimentConfig object
-        metrics_path (str): Path to save the metrics
 
     Returns:
         pd.DataFrame business metrics DataFrame
@@ -244,24 +277,10 @@ def lifes_business_metrics(
     metrics_df = pd.DataFrame(metrics_dict)
     metrics_df.set_index("M values")
 
-    if config.print_mean_metrics_df:
+    if config.print_metrics_df:
 
         print("-"*50)
         print(metrics_df.to_markdown())
-        print("-"*50)
-
-    if config.save_metrics_df:
-
-        filename = f"{get_current_time()}_business_lifes_metrics_{config.model_name}"
-
-        save_element(
-            element=metrics_df,
-            dirpath=metrics_path,
-            filename=filename,
-        )
-
-        print("-"*50)
-        print(f"Metrics df saved at {os.path.join(metrics_path,filename)}")
         print("-"*50)
 
     return metrics_df

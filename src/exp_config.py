@@ -66,7 +66,7 @@ class ExperimentConfig:
     full_life: bool = False
     ncols: int = 1
     nrows: int = 1
-    life_idx: List[int] = field(default_factory=lambda: [3])
+    plot_life_idx: List[int] = field(default_factory=lambda: [3])
     col_idx: int = 0
     start_idx: int = 0
     end_idx: int = 1000000
@@ -81,6 +81,7 @@ class ExperimentConfig:
     max_windows: int = 100
     n_maintenance_windows: int = 10
     # select_windows parameters
+    life_idx: List[int] = field(default_factory=lambda: [4])
     max_rul: int = 500
     keep_long_rul_prob: float = 0.2
     n_const_win: int = 10
@@ -419,6 +420,12 @@ def define_arguments() -> Namespace:
         "--print_summary_metrics",
         action="store_true",
         help="If set, print the summary metrics"
+    )
+
+    parser.add_argument(
+        "--print_metrics_df",
+        action="store_true",
+        help="If set, print the metrics dataframe related to a single run"
     )
 
     parser.add_argument(

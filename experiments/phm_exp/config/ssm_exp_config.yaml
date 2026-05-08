@@ -15,7 +15,8 @@ scaler_kwargs:
 # approach
 monotonic: false
 quantile_reg: false
-approach: windowed_standard
+approach: windowed_weighted
+# approach: windowed_standard
 
 # quantile_reg config
 quantile_dist: uniform
@@ -50,7 +51,7 @@ eval_loss: window_mse
 life_eval_loss: rmse
 
 # multi run parameters
-n_runs: 2
+n_runs: 4
 start_run_id: 0
 
 # model summary
@@ -60,12 +61,12 @@ summary_func: torchinfo
 file_pos: 0
 plot_run_id: 1
 quantile_plot: 0.5
-life_idx: [0,1,2,3,4]
+plot_life_idx: [0,1,2,3]
 # life_idx: [0]
 col_idx: 0
 # start_idx: 0
 # end_idx: 5000
-n_last_samples: 5000
+# n_last_samples: 5000
 nrows: 2
 ncols: 2
 full_life: false
@@ -76,6 +77,7 @@ show_plot: false
 use_test_set: true
 
 # business metrics plots
+life_idx: [0,1,2,3,4]
 max_windows: 100
 n_maintenance_windows: 10
 

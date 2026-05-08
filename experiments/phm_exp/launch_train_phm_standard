@@ -168,8 +168,7 @@ case "$mode" in
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
     --save_mean_metrics_df \
-    --print_mean_metrics_df \
-    --save_metrics_df
+    --print_mean_metrics_df
 
   ;;
   "standard_plots")

@@ -134,10 +134,10 @@ def plot_predictions_grid(
         None: the function produces the plot but does not return anything
     """
 
-    if config.life_idx is None:
-        config.life_idx = np.arange(config.nrows * config.ncols)
+    if config.plot_life_idx is None:
+        config.plot_life_idx = np.arange(config.nrows * config.ncols)
     else:
-        assert config.nrows * config.ncols == len(config.life_idx), (
+        assert config.nrows * config.ncols == len(config.plot_life_idx), (
             "Number of rows and columns must match the number of lives"
         )
 
@@ -147,14 +147,14 @@ def plot_predictions_grid(
 
     # Select the predictions and true values for the sensor
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
-    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
+    plot_life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.plot_life_idx]
 
     if n_last_samples > 0:
-        true = [y_true[i][-n_last_samples:] for i in life_idxs]
-        pred = [y_pred[i][-n_last_samples:] for i in life_idxs]
+        true = [y_true[i][-n_last_samples:] for i in plot_life_idxs]
+        pred = [y_pred[i][-n_last_samples:] for i in plot_life_idxs]
     else:
-        true = [y_true[i][start_idx:end_idx] for i in life_idxs]
-        pred = [y_pred[i][start_idx:end_idx] for i in life_idxs]
+        true = [y_true[i][start_idx:end_idx] for i in plot_life_idxs]
+        pred = [y_pred[i][start_idx:end_idx] for i in plot_life_idxs]
 
     if not config.full_life:
         mask = [true[i] != 0 for i in range(len(true))]
@@ -191,9 +191,9 @@ def plot_predictions_grid(
                 )
 
                 plot_title = (
-                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    f"Life {config.plot_life_idx[i * config.ncols + j]}"
                     if config.data_name == "CMAPSS"
-                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                    else f"Life {config.plot_life_idx[i * config.ncols + j]}"
                 )
                 ax.set_title(plot_title)
                 ax.set_xticks([])
@@ -205,8 +205,8 @@ def plot_predictions_grid(
             filename = f"{get_current_time()}_{config.model_name}_predictions_grid_full"
         else:
             filename = f"{get_current_time()}_{config.model_name}_predictions_grid_pad"
-        life_idx_str = "_".join(str(x) for x in config.life_idx)
-        filename = f"{filename}_life_{life_idx_str}.png"
+        plot_life_idx_str = "_".join(str(x) for x in config.plot_life_idx)
+        filename = f"{filename}_life_{plot_life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
         print("#" * 50)
