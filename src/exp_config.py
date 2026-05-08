@@ -260,6 +260,13 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--baseline_tau",
+        type=float,
+        default=0.5,
+        help="Quantile level to use for the baseline quantile models",
+    )
+
+    parser.add_argument(
         "--exp_names",
         type=str,
         nargs="+",

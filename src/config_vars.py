@@ -121,4 +121,10 @@ APPROACHES = [
     "full_life"
 ]
 
+BASELINE_MODEL_NAMES = [
+    "mean",
+    "median",
+    "quantile"
+]
+
 MAX_RUL = 500

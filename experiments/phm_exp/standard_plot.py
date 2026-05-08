@@ -11,6 +11,7 @@ import ipdb
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
+from config_vars import BASELINE_MODEL_NAMES
 from exp_config import setup_exp
 from models import wandb_data
 from plots import plot_predictions_grid
@@ -20,7 +21,7 @@ experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
 
-is_baseline_model = exp_config.model_name in ["mean", "median"]
+is_baseline_model = exp_config.model_name in BASELINE_MODEL_NAMES
 
 wandb_data(config=exp_config, model_config=model_config)
 

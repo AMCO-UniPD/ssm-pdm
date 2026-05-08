@@ -19,7 +19,7 @@ from wandb.sdk.wandb_run import Run as WandbRun
 # from apex.optimizers import FusedAdam
 from torch.utils.data import DataLoader
 
-from config_vars import MAX_RUL
+from config_vars import MAX_RUL, BASELINE_MODEL_NAMES
 from evaluator import get_life_evaluator
 from exp_config import ModelConfig
 from loss import load_loss_functions
@@ -527,7 +527,8 @@ def exp_run(
         print(f"metrics_df shape: {metrics_df.shape}")
 
 def load_baseline_model(
-    model_name: str = "mean"
+    model_name: str = "mean",
+    tau: float = 0.5
 ) -> BaselineModel:
     """
     Load a baseline RUL model representing a Preventive Maintenance
@@ -535,16 +536,16 @@ def load_baseline_model(
 
     Args:
         model_name (str): statistics used to produce the prediction
+        tau (float): quantile level if using the quantile baseline models
 
     Returns:
         baseline_model (BaselineModel): BaselineModel instance representing
         the baseline model
     """
 
-    MODES = ["mean", "median"]
-    assert model_name in MODES, f"Model {model_name} not supported. Available modes arre {MODES}"
+    assert model_name in BASELINE_MODEL_NAMES, f"Model {model_name} not supported. Available modes arre {BASELINE_MODEL_NAMES}"
 
-    baseline_model = BaselineModel(mode=model_name)
+    baseline_model = BaselineModel(mode=model_name, tau=tau)
     return baseline_model
 
 

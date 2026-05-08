@@ -20,8 +20,6 @@ experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
 
-#TODO: Here I can use the quantile baseline models when I implement them
-
 is_baseline_model = "quantile" in exp_config.model_name
 
 if is_baseline_model:

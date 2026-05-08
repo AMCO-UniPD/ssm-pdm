@@ -13,6 +13,7 @@ import setproctitle
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
+from config_vars import BASELINE_MODEL_NAMES
 from exp_config import setup_exp
 from utils import (
     generate_path,
@@ -26,7 +27,7 @@ experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
 exp_config, model_config, device, exp_name = setup_exp()
 
-is_baseline_model = exp_config.model_name in ["mean", "median"]
+is_baseline_model = exp_config.model_name in BASELINE_MODEL_NAMES
 
 if is_baseline_model:
 
