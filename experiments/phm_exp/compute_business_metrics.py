@@ -12,7 +12,7 @@ src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from exp_config import setup_exp
-from utils import generate_path
+from utils import generate_path, get_current_time, save_element
 from perf import get_fitted_lifes, lifes_business_metrics
 from models import wandb_data
 
@@ -82,6 +82,14 @@ for quantile in exp_config.quantiles:
         print(f"Computing business metrics for quantile {quantile} and run {run_id+1}")
         print("-"*50)
 
+        quantile_outputs_path = generate_path(
+            basepath=outputs_path,
+            folders=[
+                f"run_{run_id+1}",
+                f"quantile_{quantile}"
+            ]
+        )
+
         fitted_lifes = get_fitted_lifes(
             config=exp_config,
             outputs_path=outputs_path,
@@ -101,9 +109,19 @@ for quantile in exp_config.quantiles:
 
     mean_metrics_df = (sum(business_metrics_dfs)/len(business_metrics_dfs)).round(2)
 
-    if config.save_mean_metrics_df:
+    if exp_config.print_mean_metrics_df:
 
-        filename = f"{get_current_time()}_mean_business_metrics_{config.model_name}_quantile_{quantile}"
+        print("-"*50)
+        print(f"Mean business metrics table for quantile {quantile}")
+        print("-"*50)
+
+        print("-"*50)
+        print(mean_metrics_df.to_markdown())
+        print("-"*50)
+
+    if exp_config.save_mean_metrics_df:
+
+        filename = f"{get_current_time()}_mean_business_metrics_{exp_config.model_name}_quantile_{quantile}"
 
         save_element(
             element=mean_metrics_df,

@@ -32,7 +32,7 @@ case "$mode" in
     --save_best_model \
     --save_outputs \
     --save_combined_outputs \
-    --compute_business_metrics \
+    --compute_metrics \
     --compute_business_metrics \
     --save_metrics_df
 
@@ -56,7 +56,6 @@ case "$mode" in
     --save_outputs \
     --save_combined_outputs \
     --compute_metrics \
-    --compute_business_metrics \
     --save_metrics_df
 
   ;;
@@ -79,7 +78,7 @@ case "$mode" in
     --device_num $device_num \
     --test_script \
     --save_outputs \
-    --save_combined_outputs \
+    --save_combined_outputs
 
   ;;
   "save_outputs_run")
@@ -139,8 +138,7 @@ case "$mode" in
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
     --save_mean_metrics_df \
-    --print_mean_metrics_df \
-    --save_metrics_df
+    --print_mean_metrics_df
 
   ;;
   "quantile_metrics")

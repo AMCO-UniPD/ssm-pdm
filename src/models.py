@@ -543,9 +543,9 @@ def load_baseline_model(
         the baseline model
     """
 
-    assert model_name in BASELINE_MODEL_NAMES, f"Model {model_name} not supported. Available modes arre {BASELINE_MODEL_NAMES}"
+    mode = "quantile" if "quantile" in model_name else model_name
 
-    baseline_model = BaselineModel(mode=model_name, tau=tau)
+    baseline_model = BaselineModel(mode=mode, tau=tau)
     return baseline_model
 
 

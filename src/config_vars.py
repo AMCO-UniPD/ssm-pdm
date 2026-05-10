@@ -124,7 +124,11 @@ APPROACHES = [
 BASELINE_MODEL_NAMES = [
     "mean",
     "median",
-    "quantile"
+    "quantile_0.1",
+    "quantile_0.25",
+    "quantile_0.5",
+    "quantile_0.75",
+    "quantile_0.9",
 ]
 
 MAX_RUL = 500

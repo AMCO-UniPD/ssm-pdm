@@ -19,7 +19,7 @@ from models import load_baseline_model
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 exp_config, model_config, device, exp_name = setup_exp()
 
-transformed_train_data, _, transformed_test_data = transform_phm_data(config=exp_config)
+transformed_train_data, _, transformed_test_data, _, _, _ = transform_phm_data(config=exp_config)
 
 for baseline_model_name in exp_config.baseline_model_names:
 

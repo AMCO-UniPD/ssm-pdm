@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_flow_low_padding_standard
-#SBATCH --output=slurm_logs/S5/S5_flow_low_padding_standard_%j.txt
-#SBATCH --error=slurm_logs/S5/S5_flow_low_padding_standard_error_%j.txt
-#SBATCH --time=04:00:00
+#SBATCH --job-name=S5_flow_low_windowed_quantile_weighted
+#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_quantile_weighted_%j.txt
+#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_quantile_weighted_error_%j.txt
+#SBATCH --time=12:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
 #SBATCH --mem=30G
