@@ -228,4 +228,10 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
             tau = quantile
         )
 
+        #NOTE: Here we need to finish the wandb run for
+        # quantile=quantile and run=run
         wandb.finish()
+
+    #NOTE: Here we need to finish the wandb run for
+    # run=run
+    wandb.finish()
