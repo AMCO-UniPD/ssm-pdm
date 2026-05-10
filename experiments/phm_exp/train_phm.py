@@ -7,6 +7,7 @@ import ipdb
 import os
 import sys
 import setproctitle
+import wandb
 
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
@@ -226,3 +227,5 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
             metrics_path = quantile_metrics_path,
             tau = quantile
         )
+
+        wandb.finish()
