@@ -368,7 +368,7 @@ class QuantileTrainer(Trainer):
             self.model.tau = tau
             output = self.model(life)
 
-            if "windowed" in self.config.approach:
+            if ("windowed" in self.config.approach) and (self.config.approach != "windowed_quantile_standard"):
                 n_const_wins = self.config.train_wins["constant"]
                 n_decreasing_wins = self.config.train_wins["decreasing"]
                 loss = self.criterion(output, rul, mask, n_const_wins, n_decreasing_wins, tau)

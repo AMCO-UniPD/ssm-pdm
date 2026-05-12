@@ -111,5 +111,5 @@ else:
         config = exp_config,
         outputs_path = outputs_path,
         plot_path = plot_path,
-        n_last_samples = 0
+        n_last_samples = exp_config.n_last_samples
     )

@@ -8,6 +8,8 @@ import os
 import sys
 import setproctitle
 import ipdb
+import numpy as np
+import pandas as pd
 
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
@@ -35,12 +37,15 @@ for baseline_model_name in exp_config.baseline_model_names:
     model.fit(transformed_train_data)
     baseline_outputs, baseline_true_vals = model.predict_lifes(transformed_test_data)
 
+    if isinstance(baseline_true_vals[0], pd.DataFrame):
+        baseline_true_vals = [np.squeeze(baseline_true_vals[i].values) for i in range(len(baseline_true_vals))]
+
     combined_outputs = {
         "y_pred": baseline_outputs,
         "y_true": baseline_true_vals,
     }
 
-    filename = f"{get_current_time()}baseline_outputs_{exp_config.model_name}"
+    filename = f"{get_current_time()}_baseline_outputs_{exp_config.model_name}"
 
     save_element(
         element=combined_outputs,

@@ -13,6 +13,7 @@ sys.path.append(src_path)
 
 from config_vars import BASELINE_MODEL_NAMES
 from exp_config import setup_exp
+from perf import mask_outputs
 from utils import (
     generate_path,
     get_most_recent_file,
@@ -43,7 +44,7 @@ plot_path = generate_path(
     folders=[
         "business_metrics_plots",
         exp_config.failure_type,
-        exp_config.approach,
+        exp_config.plot_approach,
     ],
 )
 
@@ -72,7 +73,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
                 "combined_outputs",
                 model_name,
                 exp_config.failure_type,
-                exp_config.approach,
+                exp_config.plot_approach,
                 exp_name,
                 f"run_{exp_config.plot_run_id}"
             ],
@@ -80,6 +81,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
 
     outputs_dict_path=get_most_recent_file(combined_outputs_path)
     outputs_dict=open_element(outputs_dict_path,filetype="pickle")
+    outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=exp_config.life_idx)
 
     prediction_results = [
         PredictionResult(
@@ -97,7 +99,7 @@ bin_edges, model_results = models_cv_results(
     nbins = 10
 )
 
-base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.approach}"
+base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}"
 
 _ = plot_unexpected_breaks(
     results_dict = results_dict,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-script_path="test_business_metrics.py"
+script_path="plot_business_metrics.py"
 
 source "./phm_exp_config"
 
@@ -10,6 +10,7 @@ echo "-------------------------------------------"
 
 # model_names=("S5" "S4" "S4D" "MLP" "Linear" "LSTM" "RNN" "GRU" "Transformer" "Informer")
 model_names=("S5" "S4D" "MLP" "LSTM" "mean" "median")
+# model_names=("S5" "S4D" "MLP" "LSTM")
 
 exp_names_padding_standard=(
     "super_benchmark_S5_flow_low_windowed_weighted"
@@ -27,5 +28,6 @@ python $script_path \
     --data_name "$data_name" \
     --model_name "$model_name" \
     --failure_type "$failure_type" \
+    --plot_approach "windowed_weighted" \
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}"

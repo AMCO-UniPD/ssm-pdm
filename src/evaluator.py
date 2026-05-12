@@ -269,7 +269,7 @@ class QuantileEvaluator(Evaluator):
                 y_pred.extend(batch_out)
                 y_true.extend(batch_target)
 
-                if hasattr(self.config, "test_wins"):
+                if hasattr(self.config, "test_wins") and (self.config.approach != "windowed_quantile_standard"):
                     n_const_wins = (
                         self.config.val_wins["constant"]
                         if mode == "Val"

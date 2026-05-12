@@ -350,7 +350,7 @@ def plot_prediction_interval(
         None: the function produces the plot but does not return anything
     """
 
-    assert config.nrows * config.ncols == len(config.life_idx), (
+    assert config.nrows * config.ncols == len(config.plot_life_idx), (
         "Number of rows and columns must match the number of lives"
     )
 
@@ -359,7 +359,8 @@ def plot_prediction_interval(
     outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
     y_true = outputs_dict["y_true"]
-    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
+    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.plot_life_idx]
+
     if n_last_samples > 0:
         true = [y_true[i][-n_last_samples:] for i in life_idxs]
     else:
@@ -393,7 +394,7 @@ def plot_prediction_interval(
                     ax = axs[i, j]
 
                 ax.plot(
-                    np.squeeze(true[i * config.ncols + j],axis=0) if "padding" in config.approach else true[i * config.ncols +j],
+                    np.squeeze(true[i * config.ncols + j][mask[i * config.ncols+j]],axis=0) if "padding" in config.approach else true[i * config.ncols +j][mask[i*config.ncols+j]],
                     color="#00008B",
                     label="True RUL",
                 )
@@ -405,15 +406,15 @@ def plot_prediction_interval(
                     ]
 
                     ax.plot(
-                        quantile_signals[f"pred_quantile_{quantile}"][i * config.ncols + j],
+                        quantile_signals[f"pred_quantile_{quantile}"][i * config.ncols + j][mask[i*config.ncols+j]],
                         color=color,
                         label=f"Predicted RUL {quantile}",
                     )
 
                 plot_title = (
-                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    f"Life {config.plot_life_idx[i * config.ncols + j]}"
                     if config.data_name == "CMAPSS"
-                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                    else f"Life {config.plot_life_idx[i * config.ncols + j]}"
                 )
                 ax.set_title(plot_title)
                 ax.set_xticks([])
@@ -459,7 +460,7 @@ def plot_prediction_interval(
                 else f"{get_current_time()}_{config.model_name}_run_{config.run_id}_interval_plot"
             )
 
-        life_idx_str = "_".join(str(x) for x in config.life_idx)
+        life_idx_str = "_".join(str(x) for x in config.plot_life_idx)
         filename = f"{filename}_life_{life_idx_str}_last_{n_last_samples}_samples.png"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")

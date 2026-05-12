@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_flow_low_windowed_quantile_weighted
-#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_quantile_weighted_%j.txt
-#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_quantile_weighted_error_%j.txt
+#SBATCH --job-name=S5_flow_low_windowed_quantile_standard_run_2
+#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_quantile_standard_run_2_%j.txt
+#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_quantile_standard_run_2_error_%j.txt
 #SBATCH --time=12:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
@@ -24,5 +24,7 @@ echo "-----------------------------"
 echo "Starting PHM experiment run"
 echo "-----------------------------"
 
-./run_phm_exp
+# ./run_phm_exp
+
+./launch_train_phm training
 

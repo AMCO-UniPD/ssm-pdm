@@ -75,6 +75,7 @@ def lifes_metrics(
     print("-" * 50)
     print(f"Opened outputs_dict at path: {outputs_path}")
     print("-" * 50)
+    outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=config.life_idx)
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
 
     if isinstance(y_pred[0], pd.DataFrame):

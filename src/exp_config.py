@@ -538,8 +538,8 @@ def check_arguments(args: Union[ExperimentConfig, WandbConfig]) -> None:
     if hasattr(args, "stride"):
         assert args.stride <= args.sequence_length, f"The stride must be less or equal to the sequence length but got stride={args.stride} and sequence_length={args.sequence_length}"
 
-    if "windowed" in args.approach:
-        assert ("window" in args.loss) or ("mse" in args.loss), f"We are in a window based approach but I got loss {args.loss} which is not supported for this approach"
+    # if "windowed" in args.approach:
+        # assert ("window" in args.loss) or ("mse" in args.loss), f"We are in a window based approach but I got loss {args.loss} which is not supported for this approach"
 
     if args.quantile_reg:
         assert ("quantile" in args.loss) and ("pinball" in args.eval_loss), f"You are using a quantile regression approach and loss is {args.loss} and eval_loss {args.eval_loss}. One of the two (or both) are not supported for this approach"

@@ -77,7 +77,6 @@ case "$mode" in
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
     --test_script \
-    --save_outputs \
     --save_combined_outputs
 
   ;;
@@ -158,7 +157,6 @@ case "$mode" in
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
     --device_num $device_num \
-    --print_summary_metrics \
     --print_mean_metrics_df \
     --save_mean_metrics_df
 

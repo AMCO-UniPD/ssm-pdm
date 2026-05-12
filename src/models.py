@@ -178,6 +178,10 @@ def load_best_model(
         dirpath=best_model_path, file_pos=config.file_pos
     )
 
+    print("-"*50)
+    print(f"Loading best model from {best_model_filepath}")
+    print("-"*50)
+
     best_model_state_dict = open_element(best_model_filepath, filetype="pickle")
 
     feature_names = (
