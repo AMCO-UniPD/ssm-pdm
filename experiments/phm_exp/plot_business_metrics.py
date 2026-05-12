@@ -11,6 +11,7 @@ import ipdb
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
+from config_vars import BASELINE_MODEL_NAMES
 from exp_config import setup_exp
 from utils import (
     generate_path,
@@ -41,10 +42,8 @@ plot_path = generate_path(
     basepath=experiment_path,
     folders=[
         "business_metrics_plots",
-        exp_config.model_name,
         exp_config.failure_type,
         exp_config.approach,
-        exp_name
     ],
 )
 
@@ -55,17 +54,29 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
     print(f"experiment_name: {exp_name}")
     print("-"*50)
 
-    combined_outputs_path = generate_path(
-        basepath=experiment_path,
-        folders=[
-            "combined_outputs",
-            model_name,
-            exp_config.failure_type,
-            exp_config.approach,
-            exp_name,
-            f"run_{exp_config.plot_run_id}"
-        ],
-    )
+    if model_name in BASELINE_MODEL_NAMES:
+
+        combined_outputs_path = generate_path(
+            basepath=experiment_path,
+            folders=[
+                "baseline_outputs",
+                model_name,
+                ]
+        )
+
+    else:
+
+        combined_outputs_path = generate_path(
+            basepath=experiment_path,
+            folders=[
+                "combined_outputs",
+                model_name,
+                exp_config.failure_type,
+                exp_config.approach,
+                exp_name,
+                f"run_{exp_config.plot_run_id}"
+            ],
+        )
 
     outputs_dict_path=get_most_recent_file(combined_outputs_path)
     outputs_dict=open_element(outputs_dict_path,filetype="pickle")

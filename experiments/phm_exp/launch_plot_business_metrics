@@ -8,19 +8,16 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
-model_names=("S5" "S4" "S4D" "MLP" "Linear" "LSTM" "RNN" "GRU" "Transformer" "Informer")
+# model_names=("S5" "S4" "S4D" "MLP" "Linear" "LSTM" "RNN" "GRU" "Transformer" "Informer")
+model_names=("S5" "S4D" "MLP" "LSTM" "mean" "median")
 
 exp_names_padding_standard=(
-    "super_benchmark_S5_flow_low_padding_standard_best_sweep_1"
-    "super_benchmark_S4_flow_low_padding_standard"
-    "super_benchmark_S4D_flow_low_padding_standard"
-    "super_benchmark_MLP_flow_low_padding_standard"
-    "super_benchmark_Linear_flow_low_padding_standard"
-    "super_benchmark_LSTM_flow_low_padding_standard"
-    "super_benchmark_RNN_flow_low_padding_standard"
-    "super_benchmark_GRU_flow_low_padding_standard"
-    "super_benchmark_Transformer_flow_low_padding_standard"
-    "super_benchmark_Informer_flow_low_padding_standard"
+    "super_benchmark_S5_flow_low_windowed_weighted"
+    "super_benchmark_S4D_flow_low_windowed_weighted"
+    "super_benchmark_MLP_flow_low_windowed_weighted"
+    "super_benchmark_LSTM_flow_low_windowed_weighted"
+    "mean"
+    "median"
 )
 
 python $script_path \
