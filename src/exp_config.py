@@ -267,6 +267,12 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--log_scale",
+        action="store_true",
+        help="If set, use logarithmic scale in the plot",
+    )
+
+    parser.add_argument(
         "--exp_names",
         type=str,
         nargs="+",

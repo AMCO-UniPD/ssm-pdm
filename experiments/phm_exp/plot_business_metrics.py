@@ -114,6 +114,7 @@ _ = plot_unexploited_lifetime(
     results_dict = results_dict,
     max_window = exp_config.max_windows,
     n = exp_config.n_maintenance_windows,
+    log_scale = exp_config.log_scale,
     save_plot = True,
     filename = f"{base_filename}_unexploited_lifetime.png",
     plot_path = plot_path

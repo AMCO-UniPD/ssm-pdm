@@ -30,4 +30,5 @@ python $script_path \
     --failure_type "$failure_type" \
     --plot_approach "windowed_weighted" \
     --train_phm_tools "${train_phm_tools[@]}" \
-    --test_phm_tools "${test_phm_tools[@]}"
+    --test_phm_tools "${test_phm_tools[@]}" \
+    --log_scale
