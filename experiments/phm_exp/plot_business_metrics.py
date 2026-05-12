@@ -101,31 +101,39 @@ bin_edges, model_results = models_cv_results(
 
 base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}"
 
-_ = plot_unexpected_breaks(
-    results_dict = results_dict,
-    max_window = exp_config.max_windows,
-    n = exp_config.n_maintenance_windows,
-    save_plot = True,
-    filename = f"{base_filename}_unexpected_breaks.png",
-    plot_path = plot_path
-)
+if exp_config.plot_ub:
 
-_ = plot_unexploited_lifetime(
-    results_dict = results_dict,
-    max_window = exp_config.max_windows,
-    n = exp_config.n_maintenance_windows,
-    log_scale = exp_config.log_scale,
-    save_plot = True,
-    filename = f"{base_filename}_unexploited_lifetime.png",
-    plot_path = plot_path
-)
+    _ = plot_unexpected_breaks(
+        results_dict = results_dict,
+        max_window = exp_config.max_windows,
+        n = exp_config.n_maintenance_windows,
+        add_shade = exp_config.add_shade,
+        save_plot = True,
+        filename = f"{base_filename}_unexpected_breaks.png",
+        plot_path = plot_path
+    )
 
-_ = plot_J_Cost(
-    results = results_dict,
-    window = exp_config.max_windows,
-    step = exp_config.n_maintenance_windows,
-    save_plot = True,
-    filename = f"{base_filename}_J_Cost.png",
-    plot_path = plot_path
-)
+if exp_config.plot_ul:
+
+    _ = plot_unexploited_lifetime(
+        results_dict = results_dict,
+        max_window = exp_config.max_windows,
+        n = exp_config.n_maintenance_windows,
+        add_shade = exp_config.add_shade,
+        log_scale = exp_config.log_scale,
+        save_plot = True,
+        filename = f"{base_filename}_unexploited_lifetime.png",
+        plot_path = plot_path
+    )
+
+if exp_config.plot_J:
+
+    _ = plot_J_Cost(
+        results = results_dict,
+        window = exp_config.max_windows,
+        step = exp_config.n_maintenance_windows,
+        save_plot = True,
+        filename = f"{base_filename}_J_Cost.png",
+        plot_path = plot_path
+    )
 

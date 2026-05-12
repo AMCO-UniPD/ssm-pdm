@@ -273,6 +273,30 @@ def define_arguments() -> Namespace:
     )
 
     parser.add_argument(
+        "--add_shade",
+        action="store_true",
+        help="If set, add shades on the business metrics plots",
+    )
+
+    parser.add_argument(
+        "--plot_ub",
+        action="store_true",
+        help="If set, produce the unexpected breaks plot",
+    )
+
+    parser.add_argument(
+        "--plot_ul",
+        action="store_true",
+        help="If set, produce the unexploited lifetime plot",
+    )
+
+    parser.add_argument(
+        "--plot_J",
+        action="store_true",
+        help="If set, produce the cost J plot",
+    )
+
+    parser.add_argument(
         "--exp_names",
         type=str,
         nargs="+",

@@ -9,16 +9,16 @@ echo "Executing $script_path"
 echo "-------------------------------------------"
 
 # model_names=("S5" "S4" "S4D" "MLP" "Linear" "LSTM" "RNN" "GRU" "Transformer" "Informer")
-model_names=("S5" "S4D" "MLP" "LSTM" "mean" "median")
-# model_names=("S5" "S4D" "MLP" "LSTM")
+# model_names=("S5" "S4D" "MLP" "LSTM" "mean" "median")
+model_names=("S5" "S4D" "MLP" "LSTM")
 
 exp_names_padding_standard=(
     "super_benchmark_S5_flow_low_windowed_weighted"
     "super_benchmark_S4D_flow_low_windowed_weighted"
     "super_benchmark_MLP_flow_low_windowed_weighted"
     "super_benchmark_LSTM_flow_low_windowed_weighted"
-    "mean"
-    "median"
+    # "mean"
+    # "median"
 )
 
 python $script_path \
@@ -31,4 +31,5 @@ python $script_path \
     --plot_approach "windowed_weighted" \
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
-    --log_scale
+    --log_scale \
+    --plot_J
