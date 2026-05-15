@@ -525,10 +525,12 @@ def exp_run(
         print("#" * 50)
 
         metrics_df = lifes_metrics(
-            config=config, outputs_path=outputs_path, metrics_path=metrics_path, tau=tau
+            config=config,
+            outputs_path=outputs_path,
+            metrics_path=metrics_path,
+            compute_stats=True,
+            tau=tau
         )
-        print("#" * 50)
-        print(f"metrics_df shape: {metrics_df.shape}")
 
 def load_baseline_model(
     model_name: str = "mean",

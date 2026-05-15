@@ -16,14 +16,14 @@ scaler_kwargs:
 monotonic: false
 quantile_reg: true
 approach: windowed_quantile_weighted
-# approach: windowed_weighted
+# approach: windowed_weighted_monotonic
 # approach: windowed_quantile_standard
 
 # quantile_reg config
 quantile_dist: uniform
 bounds: [0.1, 0.9]
-quantiles: [0.1,0.25,0.5,0.9]
-# quantiles: [0.75]
+# quantiles: [0.1,0.25,0.5,0.75,0.9]
+quantiles: [0.75, 0.9]
 quantile_run: 0.25
 
 # select_windows (windowed approach)
@@ -47,11 +47,13 @@ weight_decay: 1.0e-4
 # loss parameters
 loss: window_quantile_reg # for quantile_reg
 eval_loss: window_pinball
+# loss: quantile_reg
+# eval_loss: pinball
 life_eval_loss: rmse
 
 # multi run parameters
-n_runs: 2
-start_run_id: 1
+n_runs: 1
+start_run_id: 0
 
 # model summary
 summary_func: torchinfo

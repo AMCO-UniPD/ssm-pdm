@@ -640,7 +640,7 @@ def setup_exp() -> Tuple[ExperimentConfig, ModelConfig, torch.device, str]:
     model_config = load_yaml_to_dict(exp_config.model_config_path)
     model_config = ModelConfig.from_dict(model_config)
 
-    device = f"cuda:{exp_config.device_num}" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     model_config.device = device
 
     print("-" * 50)

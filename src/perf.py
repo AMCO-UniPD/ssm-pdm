@@ -75,7 +75,6 @@ def lifes_metrics(
     print("-" * 50)
     print(f"Opened outputs_dict at path: {outputs_path}")
     print("-" * 50)
-    outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=config.life_idx)
     y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
 
     if isinstance(y_pred[0], pd.DataFrame):
@@ -112,7 +111,7 @@ def lifes_metrics(
         print("#" * 50)
         print(f"Median eval loss over all the test lifes: {metrics_df.loc['Life_median']}")
         print("#" * 50)
-        print(f"Std eval loss over all the test lifes: {metrics_df.loc['Life_std']}")
+        print(f"Std eval loss over all the test lphm_expifes: {metrics_df.loc['Life_std']}")
         print("#" * 50)
 
     if config.save_metrics_df:
@@ -124,10 +123,6 @@ def lifes_metrics(
             dirpath=metrics_path,
             filename=filename,
         )
-
-        print("-"*50)
-        print(f"Metrics df saved at {os.path.join(metrics_path,filename)}")
-        print("-"*50)
 
     pd.options.display.float_format = None
 

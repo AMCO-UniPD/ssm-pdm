@@ -10,6 +10,12 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
+export CUDA_VISIBLE_DEVICES=$device_num
+
+echo "-------------------------------------------"
+echo "CUDA device: $CUDA_VISIBLE_DEVICES"
+echo "-------------------------------------------"
+
 case "$mode" in
   "training")
 

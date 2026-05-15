@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-#SBATCH --job-name=S5_flow_low_windowed_quantile_standard_run_2
-#SBATCH --output=slurm_logs/S5/S5_flow_low_windowed_quantile_standard_run_2_%j.txt
-#SBATCH --error=slurm_logs/S5/S5_flow_low_windowed_quantile_standard_run_2_error_%j.txt
-#SBATCH --time=12:00:00
+#SBATCH --job-name=S4D_flow_low_windowed_quantile_weighted_quantiles_075_09
+#SBATCH --output=slurm_logs/S4D/S4D_flow_low_windowed_quantile_weighted_quantiles_075_09_%j.txt
+#SBATCH --error=slurm_logs/S4D/S4D_flow_low_windowed_quantile_weighted_quantiles_075_09_error_%j.txt
+#SBATCH --time=10:00:00
 #SBATCH --partition=pgpu_most
 #SBATCH --account=dei_most
 #SBATCH --mem=30G

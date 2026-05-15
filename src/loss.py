@@ -342,15 +342,15 @@ class WindowedQuantileLoss(nn.Module):
             1.0 / n_decreasing_wins
         )
 
-        mae_per_window = torch.stack([
-            ((y_pred[i][mask[i]] - y_true[i][mask[i]]).abs()).mean()
+        err_per_window = torch.stack([
+            ((y_pred[i][mask[i]] - y_true[i][mask[i]])).mean()
             for i in range(y_true.shape[0])
         ])
 
         loss = torch.where(
-            mae_per_window>0,
-            (1-tau) * mae_per_window, # Overestimation
-            tau *  mae_per_window # Underestimation
+            err_per_window>0,
+            (1-tau) * torch.abs(err_per_window), # Overestimation
+            tau *  torch.abs(err_per_window) # Underestimation
         )
 
         return torch.sum(weights*loss)
@@ -396,15 +396,15 @@ class WindowedPinballLoss(nn.Module):
             1.0 / n_decreasing_wins
         )
 
-        mae_per_window = torch.stack([
-            ((y_pred[i][mask[i]] - y_true[i][mask[i]]).abs()).mean()
+        err_per_window = torch.stack([
+            ((y_pred[i][mask[i]] - y_true[i][mask[i]])).mean()
             for i in range(y_true.shape[0])
         ])
 
         loss = torch.where(
-            mae_per_window>0,
-            (1-self.tau) * mae_per_window, # Overestimation
-            self.tau *  mae_per_window # Underestimation
+            err_per_window>0,
+            (1-self.tau) * torch.abs(err_per_window), # Overestimation
+            self.tau *  torch.abs(err_per_window) # Underestimation
         )
 
         return torch.sum(weights*loss)
