@@ -388,7 +388,6 @@ class WindowedQuantileSampleLoss(nn.Module):
             1.0 / (n_const_wins + 1e-6),
             1.0 / (n_decreasing_wins + 1e-6)
         )
-        ipdb.set_trace()
 
         # ---------------------------------------------------
         # Sample-wise error
@@ -396,7 +395,6 @@ class WindowedQuantileSampleLoss(nn.Module):
         # ---------------------------------------------------
 
         err = y_pred - y_true
-        ipdb.set_trace()
 
         # ---------------------------------------------------
         # Pinball loss sample-by-sample
@@ -408,14 +406,12 @@ class WindowedQuantileSampleLoss(nn.Module):
             (1 - tau) * torch.abs(err),
             tau * torch.abs(err)
         )
-        ipdb.set_trace()
 
         # ---------------------------------------------------
         # Remove padded values
         # ---------------------------------------------------
 
         pinball = pinball * mask
-        ipdb.set_trace()
 
         # ---------------------------------------------------
         # Mean loss per window
@@ -425,14 +421,12 @@ class WindowedQuantileSampleLoss(nn.Module):
         valid_lengths = mask.sum(dim=1).clamp(min=1)
 
         loss_per_window = pinball.sum(dim=1) / valid_lengths
-        ipdb.set_trace()
 
         # ---------------------------------------------------
         # Apply window weights
         # ---------------------------------------------------
 
         weighted_loss = weights * loss_per_window
-        ipdb.set_trace()
 
         return weighted_loss.sum()
 
@@ -492,7 +486,7 @@ class WindowedPinballLoss(nn.Module):
 
         return torch.sum(weights*loss)
 
-class WindowedPinballeSampleLoss(nn.Module):
+class WindowedPinballSampleLoss(nn.Module):
     def __init__(self, tau: float = 0.5):
         super().__init__()
 
