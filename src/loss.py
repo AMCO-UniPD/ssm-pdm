@@ -359,78 +359,82 @@ class WindowedQuantileLoss(nn.Module):
 
 class WindowedQuantileSampleLoss(nn.Module):
     def __init__(self):
-        super(WindowedQuantileSampleLoss, self).__init__()
+        super().__init__()
 
     def forward(
         self,
-        y_pred:torch.Tensor,
-        y_true:torch.Tensor,
-        mask:torch.Tensor,
+        y_pred: torch.Tensor,
+        y_true: torch.Tensor,
+        mask: torch.Tensor,
         n_const_wins: int,
         n_decreasing_wins: int,
         tau: float = 0.5,
     ) -> torch.Tensor:
-        """
-        Compute the Pinball loss between the predicted and the true values
-        by computing the differences sample per sample.
 
-        Args:
-            y_pred (torch.Tensor): The predicted values
-            y_true (torch.Tensor): The true values
-            mask (torch.Tensor): The mask for the padded values
-            tau (float): The quantile level
-            n_const_wins (int): total number of constant windows in the dataset
-            n_decreasing_wins (int): total number of decreasing windows in the dataset
+        mask = mask.squeeze(-1).bool() if mask.ndim > 2 else mask.bool()
 
-        Returns:
-            torch.Tensor: The Pinball loss
-        """
-
-        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
-
-        #NOTE: shape → (n_windows/batch_size)
+        # ---------------------------------------------------
+        # Identify constant windows
+        # ---------------------------------------------------
 
         is_constant = torch.tensor([
             torch.unique(y_true[i][mask[i]]).numel() == 1
             for i in range(y_true.shape[0])
         ], device=y_true.device)
 
-        #NOTE: shape → (n_windows/batch_size)
-
+        # shape: (batch_size,)
         weights = torch.where(
             is_constant,
-            1.0 / n_const_wins,
-            1.0 / n_decreasing_wins
-        )
-
-        #NOTE: shape → (n_windows/batch_size, sequence_length)
-
-        err_per_window = torch.stack([
-            ((y_pred[i] - y_true[i]))
-            for i in range(y_true.shape[0])
-        ])
-
-        #NOTE: shape → (n_windows/batch_size)
-        # At this point we have to apply the mask
-        # to err_per_window in order to avoid to consider
-        # the predictions in the padded indexes
-
-        # weighted_loss = torch.stack([
-        #     torch.sum(weights[i]*err_per_window[i][mask[i]])
-        #     for i in range(err_per_window.shape[0])
-        # ])
-        # ipdb.set_trace()
-
-        #NOTE: shape → (n_windows/batch_size)
-
-        loss = torch.where(
-            err_per_window>0,
-            (1-tau) * torch.abs(err_per_window[mask[0]]), # Overestimation
-            tau *  torch.abs(err_per_window[mask[0]]) # Underestimation
+            1.0 / (n_const_wins + 1e-6),
+            1.0 / (n_decreasing_wins + 1e-6)
         )
         ipdb.set_trace()
 
-        return torch.mean(weights*loss)
+        # ---------------------------------------------------
+        # Sample-wise error
+        # shape: (batch_size, seq_len)
+        # ---------------------------------------------------
+
+        err = y_pred - y_true
+        ipdb.set_trace()
+
+        # ---------------------------------------------------
+        # Pinball loss sample-by-sample
+        # shape: (batch_size, seq_len)
+        # ---------------------------------------------------
+
+        pinball = torch.where(
+            err > 0,
+            (1 - tau) * torch.abs(err),
+            tau * torch.abs(err)
+        )
+        ipdb.set_trace()
+
+        # ---------------------------------------------------
+        # Remove padded values
+        # ---------------------------------------------------
+
+        pinball = pinball * mask
+        ipdb.set_trace()
+
+        # ---------------------------------------------------
+        # Mean loss per window
+        # shape: (batch_size,)
+        # ---------------------------------------------------
+
+        valid_lengths = mask.sum(dim=1).clamp(min=1)
+
+        loss_per_window = pinball.sum(dim=1) / valid_lengths
+        ipdb.set_trace()
+
+        # ---------------------------------------------------
+        # Apply window weights
+        # ---------------------------------------------------
+
+        weighted_loss = weights * loss_per_window
+        ipdb.set_trace()
+
+        return weighted_loss.sum()
 
 class WindowedPinballLoss(nn.Module):
     def __init__(self, tau:float):
@@ -488,64 +492,79 @@ class WindowedPinballLoss(nn.Module):
 
         return torch.sum(weights*loss)
 
-class WindowedPinballSampleLoss(nn.Module):
-    def __init__(self, tau:float):
-        super(WindowedPinballSampleLoss, self).__init__()
+class WindowedPinballeSampleLoss(nn.Module):
+    def __init__(self, tau: float = 0.5):
+        super().__init__()
+
         self.tau = tau
 
     def forward(
         self,
-        y_pred:torch.Tensor,
-        y_true:torch.Tensor,
-        mask:torch.Tensor,
+        y_pred: torch.Tensor,
+        y_true: torch.Tensor,
+        mask: torch.Tensor,
         n_const_wins: int,
         n_decreasing_wins: int,
     ) -> torch.Tensor:
-        """
-        Compute the Pinball loss between the predicted and the true values
-        for a specific quantile level passed in input sample per sample
 
-        Args:
-            y_pred (torch.Tensor): The predicted values
-            y_true (torch.Tensor): The true values
-            mask (torch.Tensor): The mask for the padded values
-            n_const_wins (int): total number of constant windows in the dataset
-            n_decreasing_wins (int): total number of decreasing windows in the dataset
+        mask = mask.squeeze(-1).bool() if mask.ndim > 2 else mask.bool()
 
-        Returns:
-            torch.Tensor: The Pinball loss
-        """
-
-        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
+        # ---------------------------------------------------
+        # Identify constant windows
+        # ---------------------------------------------------
 
         is_constant = torch.tensor([
             torch.unique(y_true[i][mask[i]]).numel() == 1
             for i in range(y_true.shape[0])
         ], device=y_true.device)
 
+        # shape: (batch_size,)
         weights = torch.where(
             is_constant,
-            1.0 / n_const_wins,
-            1.0 / n_decreasing_wins
+            1.0 / (n_const_wins + 1e-6),
+            1.0 / (n_decreasing_wins + 1e-6)
         )
 
-        err_per_window = torch.stack([
-            ((y_pred[i] - y_true[i]))
-            for i in range(y_true.shape[0])
-        ])
+        # ---------------------------------------------------
+        # Sample-wise error
+        # shape: (batch_size, seq_len)
+        # ---------------------------------------------------
 
-        weighted_loss = torch.stack([
-            torch.sum(weights[i]*err_per_window[i][mask[i]])
-            for i in range(loss.shape[0])
-        ])
+        err = y_pred - y_true
 
-        loss = torch.where(
-            weighted_loss>0,
-            (1-self.tau) * torch.abs(weighted_loss), # Overestimation
-            self.tau *  torch.abs(weighted_loss) # Underestimation
+        # ---------------------------------------------------
+        # Pinball loss sample-by-sample
+        # shape: (batch_size, seq_len)
+        # ---------------------------------------------------
+
+        pinball = torch.where(
+            err > 0,
+            (1 - self.tau) * torch.abs(err),
+            self.tau * torch.abs(err)
         )
 
-        return torch.sum(weights*loss)
+        # ---------------------------------------------------
+        # Remove padded values
+        # ---------------------------------------------------
+
+        pinball = pinball * mask
+
+        # ---------------------------------------------------
+        # Mean loss per window
+        # shape: (batch_size,)
+        # ---------------------------------------------------
+
+        valid_lengths = mask.sum(dim=1).clamp(min=1)
+
+        loss_per_window = pinball.sum(dim=1) / valid_lengths
+
+        # ---------------------------------------------------
+        # Apply window weights
+        # ---------------------------------------------------
+
+        weighted_loss = weights * loss_per_window
+
+        return weighted_loss.sum()
 
 
 def load_loss_functions(
