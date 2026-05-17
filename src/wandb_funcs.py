@@ -50,8 +50,8 @@ def init_wandb(
         run (WandbRun): WandbRun instance
     """
 
-    from dotenv import load_dotenv
-    load_dotenv()
+    # from dotenv import load_dotenv
+    # load_dotenv()
 
     if not config.use_wandb:
         print("-"*50)
