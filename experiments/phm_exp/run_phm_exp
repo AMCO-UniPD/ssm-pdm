@@ -18,7 +18,13 @@ echo "-------------------------------------------"
 ./launch_train_phm save_outputs_run
 
 echo "-------------------------------------------"
-echo "Step 3: Group the metrics from different quantiles"
+echo "Step 3: Computing RUL prediction metrics per window"
+echo "-------------------------------------------"
+
+./launch_train_phm compute_metrics
+
+echo "-------------------------------------------"
+echo "Step 4: Group the metrics from different quantiles"
 echo "-------------------------------------------"
 
 ./launch_train_phm quantile_metrics

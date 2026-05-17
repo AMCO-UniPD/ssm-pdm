@@ -303,62 +303,6 @@ class QuantileLoss(nn.Module):
 
 class WindowedQuantileLoss(nn.Module):
     def __init__(self):
-        super(WindowedQuantileLoss, self).__init__()
-
-    def forward(
-        self,
-        y_pred:torch.Tensor,
-        y_true:torch.Tensor,
-        mask:torch.Tensor,
-        n_const_wins: int,
-        n_decreasing_wins: int,
-        tau: float = 0.5,
-    ) -> torch.Tensor:
-        """
-        Compute the Pinball loss between the predicted and the true values
-
-        Args:
-            y_pred (torch.Tensor): The predicted values
-            y_true (torch.Tensor): The true values
-            mask (torch.Tensor): The mask for the padded values
-            tau (float): The quantile level
-            n_const_wins (int): total number of constant windows in the dataset
-            n_decreasing_wins (int): total number of decreasing windows in the dataset
-
-        Returns:
-            torch.Tensor: The Pinball loss
-        """
-
-        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
-
-        is_constant = torch.tensor([
-            torch.unique(y_true[i][mask[i]]).numel() == 1
-            for i in range(y_true.shape[0])
-        ], device=y_true.device)
-
-        weights = torch.where(
-            is_constant,
-            1.0 / n_const_wins,
-            1.0 / n_decreasing_wins
-        )
-
-        err_per_window = torch.stack([
-            ((y_pred[i][mask[i]] - y_true[i][mask[i]])).mean()
-            for i in range(y_true.shape[0])
-        ])
-
-        weighted_err = weights * err_per_window
-
-        loss = torch.where(
-            weighted_err>0,
-            (1-tau) * torch.abs(weighted_err), # Overestimation
-            tau *  torch.abs(weighted_err) # Underestimation
-        )
-
-        return torch.mean(loss)
-
-class WindowedQuantileSampleLoss(nn.Module):
-    def __init__(self):
         super().__init__()
 
     def forward(
@@ -431,62 +375,6 @@ class WindowedQuantileSampleLoss(nn.Module):
         return weighted_loss.sum()
 
 class WindowedPinballLoss(nn.Module):
-    def __init__(self, tau:float):
-        super(WindowedPinballLoss, self).__init__()
-        self.tau = tau
-
-    def forward(
-        self,
-        y_pred:torch.Tensor,
-        y_true:torch.Tensor,
-        mask:torch.Tensor,
-        n_const_wins: int,
-        n_decreasing_wins: int,
-    ) -> torch.Tensor:
-        """
-        Compute the Pinball loss between the predicted and the true values
-        for a specific quantile level passed in input
-
-        Args:
-            y_pred (torch.Tensor): The predicted values
-            y_true (torch.Tensor): The true values
-            mask (torch.Tensor): The mask for the padded values
-            n_const_wins (int): total number of constant windows in the dataset
-            n_decreasing_wins (int): total number of decreasing windows in the dataset
-
-        Returns:
-            torch.Tensor: The Pinball loss
-        """
-
-        mask=mask.squeeze(-1).bool() if mask.ndim>2 else mask.bool()
-
-        is_constant = torch.tensor([
-            torch.unique(y_true[i][mask[i]]).numel() == 1
-            for i in range(y_true.shape[0])
-        ], device=y_true.device)
-
-        weights = torch.where(
-            is_constant,
-            1.0 / n_const_wins,
-            1.0 / n_decreasing_wins
-        )
-
-        err_per_window = torch.stack([
-            ((y_pred[i][mask[i]] - y_true[i][mask[i]])).mean()
-            for i in range(y_true.shape[0])
-        ])
-
-        weighted_err = weights * err_per_window
-
-        loss = torch.where(
-            weighted_err>0,
-            (1-self.tau) * torch.abs(weighted_err), # Overestimation
-            self.tau *  torch.abs(weighted_err) # Underestimation
-        )
-
-        return torch.sum(weights*loss)
-
-class WindowedPinballSampleLoss(nn.Module):
     def __init__(self, tau: float = 0.5):
         super().__init__()
 
@@ -593,8 +481,6 @@ def load_loss_functions(
         criterion=QuantileLoss()
     elif loss_name=="window_quantile_reg":
         criterion=WindowedQuantileLoss()
-    elif loss_name=="sample_window_quantile_reg":
-        criterion=WindowedQuantileSampleLoss()
     else:
         raise ValueError(f"loss {loss_name} not recognized")
 
@@ -610,8 +496,6 @@ def load_loss_functions(
         eval_criterion=SSMPinballLoss(tau=tau)
     elif eval_loss_name=="window_pinball":
         eval_criterion=WindowedPinballLoss(tau=tau)
-    elif eval_loss_name=="sample_window_pinball":
-        eval_criterion=WindowedPinballSampleLoss(tau=tau)
     else:
         raise ValueError(f"loss {eval_loss_name} not recognized")
 
