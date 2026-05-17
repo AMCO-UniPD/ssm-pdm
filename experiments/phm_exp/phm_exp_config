@@ -9,7 +9,7 @@ test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 
 # model_name="quantile_0.9"
 model_name="S4D"
-device_num=2
+device_num=1
 # exp_name="super_benchmark_S4D_flow_low_windowed_weighted"
 exp_name="super_benchmark_${model_name}_flow_low_windowed_quantile_weighted_new_loss"
 # exp_name="super_benchmark_S4D_flow_low_windowed_quantile_standard"
