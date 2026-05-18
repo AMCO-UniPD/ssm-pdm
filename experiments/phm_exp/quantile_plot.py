@@ -107,6 +107,21 @@ else:
         folders = ["prediction_interval_plots"]
     )
 
+    print("-"*50)
+    print(f"Producing quantile plot with all the samples")
+    print("-"*50)
+
+    _ = plot_prediction_interval(
+        config = exp_config,
+        outputs_path = outputs_path,
+        plot_path = plot_path,
+        n_last_samples = 0
+    )
+
+    print("-"*50)
+    print(f"Producing quantile plot with last {n_last_samples}")
+    print("-"*50)
+
     _ = plot_prediction_interval(
         config = exp_config,
         outputs_path = outputs_path,
