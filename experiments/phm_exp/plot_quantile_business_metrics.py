@@ -1,6 +1,7 @@
 """
-Python script to produce the business metrics plots:
-unexpected breaks and unexploited lifetime
+Python script to produce the business metrics plots
+for Quantile Regression model → we compare the unexpected breaks
+and unexploited lifetime for the different quantiles of the same model
 """
 
 import os
@@ -42,7 +43,7 @@ exp_config, model_config, device, exp_name = setup_exp()
 plot_path = generate_path(
     basepath=experiment_path,
     folders=[
-        "business_metrics_plots",
+        "quantile_business_metrics_plots",
         exp_config.failure_type,
         exp_config.plot_approach,
     ],
@@ -57,7 +58,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
 
     if model_name in BASELINE_MODEL_NAMES:
 
-        combined_outputs_path = generate_path(
+        quantile_combined_outputs_path = generate_path(
             basepath=experiment_path,
             folders=[
                 "baseline_outputs",
@@ -65,36 +66,55 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
                 ]
         )
 
+        outputs_dict_path=get_most_recent_file(quantile_combined_outputs_path)
+        outputs_dict=open_element(outputs_dict_path,filetype="pickle")
+
+        outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=exp_config.life_idx)
+
+        prediction_results = [
+            PredictionResult(
+                name=f"Life_{i+1}",
+                true_RUL=outputs_dict["y_true"][i],
+                predicted_RUL=outputs_dict["y_pred"][i],
+            )
+            for i in range(len(outputs_dict["y_true"]))
+        ]
+
+        results_dict[model_name] = prediction_results
+
     else:
 
-        combined_outputs_path = generate_path(
-            basepath=experiment_path,
-            folders=[
-                "combined_outputs",
-                model_name,
-                exp_config.failure_type,
-                exp_config.plot_approach,
-                exp_name,
-                f"run_{exp_config.plot_run_id}"
-            ],
-        )
+        for quantile in exp_config.quantiles:
 
-    outputs_dict_path=get_most_recent_file(combined_outputs_path)
-    outputs_dict=open_element(outputs_dict_path,filetype="pickle")
-    outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=exp_config.life_idx)
+            quantile_combined_outputs_path = generate_path(
+                basepath=experiment_path,
+                folders=[
+                    "combined_outputs",
+                    exp_config.model_name,
+                    exp_config.failure_type,
+                    exp_config.plot_approach,
+                    exp_name,
+                    f"run_{exp_config.plot_run_id}"
+                ],
+            )
 
-    prediction_results = [
-        PredictionResult(
-            name=f"Life_{i+1}",
-            true_RUL=outputs_dict["y_true"][i],
-            predicted_RUL=outputs_dict["y_pred"][i],
-        )
-        for i in range(len(outputs_dict["y_true"]))
-    ]
+            outputs_dict_path=get_most_recent_file(quantile_combined_outputs_path)
+            outputs_dict=open_element(outputs_dict_path,filetype="pickle")
 
-    results_dict[model_name] = prediction_results
+            outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=exp_config.life_idx)
 
-base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}"
+            prediction_results = [
+                PredictionResult(
+                    name=f"Life_{i+1}",
+                    true_RUL=outputs_dict["y_true"][i],
+                    predicted_RUL=outputs_dict["y_pred"][i],
+                )
+                for i in range(len(outputs_dict["y_true"]))
+            ]
+
+            results_dict[f"{exp_config.model_name}_quantile_{quantile}"] = prediction_results
+
+base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}_quantile"
 
 if exp_config.plot_ub:
 
@@ -131,4 +151,3 @@ if exp_config.plot_J:
         filename = f"{base_filename}_J_Cost.png",
         plot_path = plot_path
     )
-
