@@ -87,17 +87,6 @@ metrics_path = generate_path(
     ],
 )
 
-metrics_path = generate_path(
-    basepath=experiment_path,
-    folders=[
-        "business_metrics",
-        exp_config.model_name,
-        exp_config.failure_type,
-        exp_config.approach,
-        exp_name
-    ],
-)
-
 plot_path = generate_path(
     basepath=experiment_path,
     folders=[
