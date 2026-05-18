@@ -147,6 +147,7 @@ if exp_config.plot_J:
         window = exp_config.max_windows,
         step = exp_config.n_maintenance_windows,
         save_plot = True,
+        log_scale = exp_config.log_scale,
         filename = f"{base_filename}_J_Cost.png",
         plot_path = plot_path
     )
