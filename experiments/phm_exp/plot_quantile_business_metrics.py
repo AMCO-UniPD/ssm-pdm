@@ -68,7 +68,6 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
 
         outputs_dict_path=get_most_recent_file(quantile_combined_outputs_path)
         outputs_dict=open_element(outputs_dict_path,filetype="pickle")
-
         outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=exp_config.life_idx)
 
         prediction_results = [
@@ -90,17 +89,17 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
                 basepath=experiment_path,
                 folders=[
                     "combined_outputs",
-                    exp_config.model_name,
+                    model_name,
                     exp_config.failure_type,
                     exp_config.plot_approach,
                     exp_name,
-                    f"run_{exp_config.plot_run_id}"
+                    f"run_{exp_config.plot_run_id}",
+                    f"quantile_{quantile}"
                 ],
             )
 
             outputs_dict_path=get_most_recent_file(quantile_combined_outputs_path)
             outputs_dict=open_element(outputs_dict_path,filetype="pickle")
-
             outputs_dict = mask_outputs(outputs_dict=outputs_dict, life_idx=exp_config.life_idx)
 
             prediction_results = [
@@ -112,7 +111,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
                 for i in range(len(outputs_dict["y_true"]))
             ]
 
-            results_dict[f"{exp_config.model_name}_quantile_{quantile}"] = prediction_results
+            results_dict[f"{model_name}_quantile_{quantile}"] = prediction_results
 
 base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}_quantile"
 

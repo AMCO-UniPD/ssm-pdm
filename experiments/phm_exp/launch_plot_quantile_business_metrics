@@ -8,6 +8,8 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
+plot_approach="windowed_quantile_weighted"
+
 model_names=(
   "S4D"
   "quantile_0.1"
@@ -18,7 +20,7 @@ model_names=(
 )
 
 exp_names=(
-  "$exp_name"
+  "super_benchmark_${model_names[0]}_${failure_type}_${plot_approach}"
   "quantile_0.1"
   "quantile_0.25"
   "quantile_0.5"
@@ -32,7 +34,7 @@ python $script_path \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --data_name "$data_name" \
     --failure_type "$failure_type" \
-    --plot_approach "windowed_quantile_weighted" \
+    --plot_approach "$plot_approach" \
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}" \
     --log_scale \

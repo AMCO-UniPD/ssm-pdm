@@ -7,11 +7,10 @@ failure_type="flow_low"
 train_phm_tools=("01M01" "01M02" "02M01" "02M02" "03M01" "03M02" "04M01" "04M02" "05M01" "05M02" "06M01" "06M02" "07M01" "07M02" "08M01" "08M02" "09M01" "09M02" "10M01" "10M02")
 test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 
-# model_name="quantile_0.9"
 model_name="S4"
 device_num=1
 # exp_name="super_benchmark_S4D_flow_low_windowed_weighted"
-exp_name="super_benchmark_${model_name}_flow_low_windowed_quantile_weighted"
+exp_name="super_benchmark_${model_name}_${failure_type}_windowed_quantile_weighted"
 # exp_name="super_benchmark_S4D_flow_low_windowed_quantile_standard"
 # exp_name="super_benchmark_S5_flow_low_windowed_quantile_standard"
 
