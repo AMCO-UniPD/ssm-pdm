@@ -119,7 +119,7 @@ else:
     )
 
     print("-"*50)
-    print(f"Producing quantile plot with last {n_last_samples}")
+    print(f"Producing quantile plot with last {exp_config.n_last_samples}")
     print("-"*50)
 
     _ = plot_prediction_interval(
