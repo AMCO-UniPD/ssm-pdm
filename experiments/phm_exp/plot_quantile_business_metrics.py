@@ -135,7 +135,7 @@ if exp_config.plot_ul:
         max_window = exp_config.max_windows,
         n = exp_config.n_maintenance_windows,
         add_shade = exp_config.add_shade,
-        log_scale = exp_config.log_scale,
+        log_scale = False,
         save_plot = True,
         filename = f"{base_filename}_unexploited_lifetime.png",
         plot_path = plot_path
