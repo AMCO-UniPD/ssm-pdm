@@ -239,8 +239,11 @@ class MonoQuantileRULModel(RULModel):
 
     def forward(self, x):
 
-        x, x_mono = split_input(mask_mono=self.mono_mask,
-                                inputs=x, device=self.model_config.device)
+        x, x_mono = split_input(
+            mask_mono=self.mono_mask,
+            inputs=x,
+            device=self.model_config.device
+        )
 
         # NOTE: The feature containing the quantile level is concatenated
         # to the monotonic features because it's constant and thus monotonic

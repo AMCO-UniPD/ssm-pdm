@@ -1577,8 +1577,10 @@ def get_mono_mask(config: ExperimentConfig, feature_names: List[str]) -> np.ndar
     """
 
     if config.data_name == "PHM":
-        #NOTE: Hard code mono_mask for PHMDataset
-        mono_mask = np.array([0]*13+[1]*3+[0])
+        if config.feature_type == "phm":
+            mono_mask = np.array([0]*13+[1]*3+[0])
+        elif config.feature_type == "etch":
+            mono_mask = np.array([1,1,1])
     elif config.data_name == "CMAPSS":
         #NOTE: Hard code mono_mask for CMAPSS → for the moment let's put all monotonic
         mono_mask = np.ones(shape=len(feature_names))
