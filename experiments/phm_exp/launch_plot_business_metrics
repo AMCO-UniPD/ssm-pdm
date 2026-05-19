@@ -33,4 +33,5 @@ python $script_path \
     --test_phm_tools "${test_phm_tools[@]}" \
     --log_scale \
     --plot_ub \
-    --plot_ul
+    --plot_ul \
+    --plot_J

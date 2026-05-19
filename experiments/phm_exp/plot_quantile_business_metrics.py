@@ -44,6 +44,7 @@ plot_path = generate_path(
     basepath=experiment_path,
     folders=[
         "quantile_business_metrics_plots",
+        exp_config.model_names[0],
         exp_config.failure_type,
         exp_config.plot_approach,
     ],
