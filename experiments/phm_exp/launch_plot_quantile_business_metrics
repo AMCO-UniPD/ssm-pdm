@@ -13,24 +13,25 @@ plot_approach="${2:-windowed_quantile_weighted}"
 
 model_names=(
   "$model_name"
-  "quantile_0.1"
-  "quantile_0.25"
-  "quantile_0.5"
-  "quantile_0.75"
-  "quantile_0.9"
+  # "quantile_0.1"
+  # "quantile_0.25"
+  # "quantile_0.5"
+  # "quantile_0.75"
+  # "quantile_0.9"
 )
 
 exp_names=(
   "super_benchmark_${model_names[0]}_${failure_type}_${plot_approach}"
-  "quantile_0.1"
-  "quantile_0.25"
-  "quantile_0.5"
-  "quantile_0.75"
-  "quantile_0.9"
+  # "quantile_0.1"
+  # "quantile_0.25"
+  # "quantile_0.5"
+  # "quantile_0.75"
+  # "quantile_0.9"
 )
 
 python $script_path \
     --model_names "${model_names[@]}" \
+    --model_name "$model_name" \
     --exp_names "${exp_names[@]}" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --data_name "$data_name" \
