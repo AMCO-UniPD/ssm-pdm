@@ -254,6 +254,8 @@ def multi_plot_predictions_grid(
     for model_name, output_path in plot_dict.items():
         outputs_path = get_most_recent_file(output_path, file_pos=config.file_pos)
         outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
+        #TODO: Check here how to define y_pred and y_true in case of quantile_reg
+        # models (select just quantile 0.5 for y_pred)
         y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
         pred[model_name] = [y_pred[i].squeeze() for i in life_idxs]
 

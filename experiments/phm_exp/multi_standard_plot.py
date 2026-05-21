@@ -1,5 +1,5 @@
 """
-Python script to produce the multi plot for multiple models
+Python script to produce the RUL plots for multiple models
 """
 
 # general imports
