@@ -116,4 +116,9 @@ print("-"*50)
 print("Producing business metrics plots")
 print("-"*50)
 
-plot_business_metrics(exp_config)
+plot_business_metrics(
+    exp_config = exp_config,
+    results_dict = results_dict,
+    plot_path = plot_path,
+    base_filename = base_filename
+)

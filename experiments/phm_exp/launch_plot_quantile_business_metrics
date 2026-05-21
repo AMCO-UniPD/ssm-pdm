@@ -21,7 +21,7 @@ model_names=(
 )
 
 exp_names=(
-  "super_benchmark_${model_names[0]}_${failure_type}_${plot_approach}"
+  "super_benchmark_${model_names[0]}_${failure_type}_${plot_approach}_phm_in"
   # "quantile_0.1"
   # "quantile_0.25"
   # "quantile_0.5"

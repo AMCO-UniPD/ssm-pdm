@@ -4,9 +4,9 @@ test_size: 0.2
 val_size: 0.1
 
 # dataset transformations
-transformer_type: 1 # data normalization
+# transformer_type: 1 # data normalization
 # transformer_type: 2 # no data normalization
-# transformer_type: 5 # filter with FIXTURESHUTTERPOSITION=1.0
+transformer_type: 5 # filter with FIXTURESHUTTERPOSITION=1.0
 # feature_type: phm
 feature_type: phm_in
 # scaler: standard
@@ -16,9 +16,9 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-monotonic: true
+monotonic: false
 quantile_reg: true
-approach: windowed_quantile_weighted_monotonic
+approach: windowed_quantile_weighted
 # approach: windowed_weighted_monotonic
 # approach: windowed_quantile_standard
 
