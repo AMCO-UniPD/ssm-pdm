@@ -13,7 +13,7 @@ plot_approach="${1:-windowed_quantile_weighted}"
 model_names=(
   "S4D"
   "S5"
-  "S4"
+  # "S4"
   "MLP"
   "Linear"
   "LSTM"
@@ -23,7 +23,12 @@ exp_names=()
 
 for model_name in "${model_names[@]}"; do
 
-  exp_name="super_benchmark_${model_name}_${failure_type}_${plot_approach}"
+  if [[ "$model_name" == "MLP" ]]; then
+    exp_name="super_benchmark_${model_name}_${failure_type}_${plot_approach}_normalized"
+  else
+    exp_name="super_benchmark_${model_name}_${failure_type}_${plot_approach}"
+  fi
+
   exp_names+=("$exp_name")
 
 done

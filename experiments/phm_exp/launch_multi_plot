@@ -8,55 +8,42 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
-model_names=("S4" "S4D" "S5" "MLP" "Linear" "LSTM" "RNN" "GRU" "Transformer" "Informer")
-exp_names_padding_standard=(
-    "super_benchmark_S4_flow_low_padding_standard"
-    "super_benchmark_S4D_flow_low_padding_standard"
-    "super_benchmark_S5_flow_low_padding_standard_best_sweep_1"
-    "super_benchmark_MLP_flow_low_padding_standard"
-    "super_benchmark_Linear_flow_low_padding_standard"
-    "super_benchmark_LSTM_flow_low_padding_standard"
-    "super_benchmark_RNN_flow_low_padding_standard"
-    "super_benchmark_GRU_flow_low_padding_standard"
-    "super_benchmark_Transformer_flow_low_padding_standard"
-    "super_benchmark_Informer_flow_low_padding_standard"
-)
-exp_names_padding_standard_monotonic=(
-    "super_benchmark_S4_flow_low_padding_standard_monotonic"
-    "super_benchmark_S4D_flow_low_padding_standard_monotonic"
-    "super_benchmark_S5_flow_low_padding_standard_monotonic"
-    "super_benchmark_MLP_flow_low_padding_standard_monotonic"
-    "super_benchmark_Linear_flow_low_padding_standard_monotonic"
-    "super_benchmark_LSTM_flow_low_padding_standard_monotonic"
-    "super_benchmark_RNN_flow_low_padding_standard_monotonic"
-    "super_benchmark_GRU_flow_low_padding_standard_monotonic"
-    "super_benchmark_Transformer_flow_low_padding_standard_monotonic"
-    "super_benchmark_Informer_flow_low_padding_standard_monotonic"
+plot_approach="${1:-windowed_quantile_weighted}"
+
+model_names=(
+  "S4D"
+  "S5"
+  # "S4"
+  "MLP"
+  "Linear"
+  "LSTM"
 )
 
-# echo "-------------------------------------------"
-# echo "Producing multi plot for padding_standard approach"
-# echo "-------------------------------------------"
+exp_names=()
 
-# python "$script_path" \
-#     --model_names "${model_names[@]}" \
-#     --exp_names "${exp_names_padding_standard[@]}" \
-#     --exp_config_path "config/ssm_exp_config.yaml" \
-#     --failure_type "$failure_type" \
-#     --plot_approach "padding_standard" \
-#     --train_phm_tools "${train_phm_tools[@]}" \
-#     --test_phm_tools "${test_phm_tools[@]}"
+for model_name in "${model_names[@]}"; do
+
+  if [[ "$model_name" == "MLP" ]]; then
+    exp_name="super_benchmark_${model_name}_${failure_type}_${plot_approach}_normalized"
+  else
+    exp_name="super_benchmark_${model_name}_${failure_type}_${plot_approach}"
+  fi
+
+  exp_names+=("$exp_name")
+
+done
 
 echo "-------------------------------------------"
-echo "Producing multi plot for padding_standard_monotonic approach"
+echo "Producing multi plot for $plot_approach"
 echo "-------------------------------------------"
 
 python "$script_path" \
     --model_names "${model_names[@]}" \
-    --exp_names "${exp_names_padding_standard_monotonic[@]}" \
+    --model_name "$model_name" \
+    --exp_names "${exp_names[@]}" \
     --exp_config_path "config/ssm_exp_config.yaml" \
     --failure_type "$failure_type" \
-    --plot_approach "padding_standard_monotonic" \
+    --plot_approach "$plot_approach" \
     --train_phm_tools "${train_phm_tools[@]}" \
     --test_phm_tools "${test_phm_tools[@]}"
 

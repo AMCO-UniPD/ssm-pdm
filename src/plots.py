@@ -248,28 +248,36 @@ def multi_plot_predictions_grid(
         None: the function produces the plot but does not return anything
     """
 
-    if config.life_idx is None:
-        config.life_idx = np.arange(config.nrows * config.ncols)
+    if config.plot_life_idx is None:
+        config.plot_life_idx = np.arange(config.nrows * config.ncols)
     else:
-        assert config.nrows * config.ncols == len(config.life_idx), (
+        assert config.nrows * config.ncols == len(config.plot_life_idx), (
             "Number of rows and columns must match the number of lives"
         )
 
-    pred = {}
-    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.life_idx]
+    pred_dict = {}
+    life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.plot_life_idx]
 
     for model_name, output_path in plot_dict.items():
         outputs_path = get_most_recent_file(output_path, file_pos=config.file_pos)
         outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
-        #TODO: Check here how to define y_pred and y_true in case of quantile_reg
-        # models (select just quantile quantile_run for y_pred)
-        y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
-        pred[model_name] = [y_pred[i].squeeze() for i in life_idxs]
 
-    true = y_true[-1].squeeze()
+        if "y_pred" in outputs_dict.keys():
+            y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
+        else:
+            y_pred, y_true = outputs_dict[f"pred_quantile_{config.quantile_run}"], outputs_dict["y_true"]
+
+        if n_last_samples > 0:
+            true = [y_true[i][-n_last_samples:] for i in life_idxs]
+            pred = [y_pred[i][-n_last_samples:] for i in life_idxs]
+        else:
+            true = [y_true[i][start_idx:end_idx] for i in life_idxs]
+            pred = [y_pred[i][start_idx:end_idx] for i in life_idxs]
+
+        pred_dict[model_name] = [pred[i].squeeze() for i in life_idxs]
 
     if not config.full_life:
-        mask = [true[-1] != 0 for i in range(len(true))]
+        mask = [true[i] != 0 for i in range(len(true))]
     else:
         mask = [np.ones(len(t), dtype=bool) for t in true]
 
@@ -279,8 +287,6 @@ def multi_plot_predictions_grid(
     else:
         fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(50, 20))
 
-    # cmap = plt.get_cmap("viridis")
-    # colors = cmap(np.linspace(0,1,len(plot_dict.keys())))
     cmap = plt.get_cmap("tab10")
     colors = [cmap(i) for i in range(len(plot_dict))]
 
@@ -297,7 +303,7 @@ def multi_plot_predictions_grid(
                     ax = axs[i, j]
 
                 ax.plot(
-                    true,
+                    true[i * config.ncols + j][mask[i * config.ncols + j]],
                     color="blue",
                     label="True RUL",
                 )
@@ -305,15 +311,15 @@ def multi_plot_predictions_grid(
                 for model_name, color in zip(plot_dict.keys(), colors):
 
                     ax.plot(
-                        pred[model_name][i * config.ncols + j],
+                        pred_dict[model_name][i * config.ncols + j][mask[i * config.ncols + j]],
                         color=color,
                         label=model_name,
                     )
 
                 plot_title = (
-                    f"Life {config.life_idx[i * config.ncols + j]}"
+                    f"Life {config.plot_life_idx[i * config.ncols + j]}"
                     if config.data_name == "CMAPSS"
-                    else f"Life {config.life_idx[i * config.ncols + j]}"
+                    else f"Life {config.plot_life_idx[i * config.ncols + j]}"
                 )
                 ax.set_title(plot_title)
                 ax.set_xticks([])
@@ -322,10 +328,10 @@ def multi_plot_predictions_grid(
 
     if config.save_plot:
         if config.full_life:
-            filename = f"{get_current_time()}_{config.model_name}_{config.plot_approach}_multi_predictions_grid_full"
+            filename = f"{get_current_time()}_{config.plot_approach}_multi_predictions_grid_full"
         else:
-            filename = f"{get_current_time()}_{config.model_name}_{config.plot_approach}_multi_predictions_grid_pad"
-        life_idx_str = "_".join(str(x) for x in config.life_idx)
+            filename = f"{get_current_time()}_{config.plot_approach}_multi_predictions_grid_pad"
+        life_idx_str = "_".join(str(x) for x in config.plot_life_idx)
         filename = f"{filename}_life_{life_idx_str}.png"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
@@ -477,12 +483,20 @@ def plot_prediction_interval(
         print(f"Plot saved at: {plot_path}")
         print("#" * 50)
 
-def plot_business_metrics(exp_config: ExperimentConfig) -> None:
+def plot_business_metrics(
+    exp_config: ExperimentConfig,
+    results_dict: dict,
+    plot_path: str = os.getcwd(),
+    base_filename: str = "multi_plot_quantile_business_metrics.png"
+) -> None:
     """
     Produce the business metrics plots
 
     Args:
         exp_config (ExperimentConfig): experiment configuration object
+        results_dict (dict): dictionary with the prediction results from the different models
+        plot_path (str): path where to save the plot
+        base_filename (str): base filename
 
     Returns:
         None: the function produces the plot but does not return anything

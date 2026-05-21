@@ -29,7 +29,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
     outputs_path = generate_path(
         basepath=experiment_path,
         folders=[
-            "outputs",
+            "combined_outputs",
             model_name,
             exp_config.failure_type,
             exp_config.plot_approach,
@@ -58,4 +58,15 @@ multi_plot_predictions_grid(
     config = exp_config,
     plot_dict = plot_dict,
     plot_path = plot_path,
+)
+
+print("-" * 50)
+print(f"Producing multi plot for run {exp_config.run_id} on last {exp_config.n_last_samples} samples")
+print("-" * 50)
+
+multi_plot_predictions_grid(
+    config = exp_config,
+    plot_dict = plot_dict,
+    plot_path = plot_path,
+    n_last_samples = exp_config.n_last_samples
 )

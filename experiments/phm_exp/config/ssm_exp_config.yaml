@@ -16,9 +16,9 @@ scaler_kwargs:
   high_limit: 1.0
 
 # approach
-monotonic: false
+monotonic: true
 quantile_reg: true
-approach: windowed_quantile_weighted
+approach: windowed_quantile_weighted_monotonic
 # approach: windowed_weighted_monotonic
 # approach: windowed_quantile_standard
 

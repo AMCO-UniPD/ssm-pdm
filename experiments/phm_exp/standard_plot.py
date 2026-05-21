@@ -34,7 +34,7 @@ if is_baseline_model:
             exp_config.model_name,
         ],
     )
-    
+
     plot_path = generate_path(
         basepath=experiment_path,
         folders=[

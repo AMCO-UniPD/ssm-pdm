@@ -107,10 +107,15 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
 
         results_dict[f"{model_name}_quantile_{exp_config.quantile_run}"] = prediction_results
 
-base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}_quantile"
+base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}_multi_plot_business_metrics_quantile"
 
 print("-"*50)
 print("Producing multi business metrics plots")
 print("-"*50)
 
-plot_business_metrics(exp_config)
+plot_business_metrics(
+    exp_config = exp_config,
+    results_dict = results_dict,
+    plot_path = plot_path,
+    base_filename = base_filename
+)
