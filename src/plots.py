@@ -32,7 +32,14 @@ from utils import (
     open_element,
     get_feature_names,
 )
+
 from config_vars import PHM_FEATURES
+
+from ceruleo.graphics.results import (
+    plot_unexpected_breaks,
+    plot_unexploited_lifetime,
+    plot_J_Cost
+)
 
 
 def plot_forecast(
@@ -255,7 +262,7 @@ def multi_plot_predictions_grid(
         outputs_path = get_most_recent_file(output_path, file_pos=config.file_pos)
         outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
         #TODO: Check here how to define y_pred and y_true in case of quantile_reg
-        # models (select just quantile 0.5 for y_pred)
+        # models (select just quantile quantile_run for y_pred)
         y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
         pred[model_name] = [y_pred[i].squeeze() for i in life_idxs]
 
@@ -470,6 +477,53 @@ def plot_prediction_interval(
         print(f"Plot saved at: {plot_path}")
         print("#" * 50)
 
+def plot_business_metrics(exp_config: ExperimentConfig) -> None:
+    """
+    Produce the business metrics plots
+
+    Args:
+        exp_config (ExperimentConfig): experiment configuration object
+
+    Returns:
+        None: the function produces the plot but does not return anything
+    """
+
+    if exp_config.plot_ub:
+
+        _ = plot_unexpected_breaks(
+            results_dict = results_dict,
+            max_window = exp_config.max_windows,
+            n = exp_config.n_maintenance_windows,
+            add_shade = exp_config.add_shade,
+            save_plot = True,
+            filename = f"{base_filename}_unexpected_breaks.png",
+            plot_path = plot_path
+        )
+
+    if exp_config.plot_ul:
+
+        _ = plot_unexploited_lifetime(
+            results_dict = results_dict,
+            max_window = exp_config.max_windows,
+            n = exp_config.n_maintenance_windows,
+            add_shade = exp_config.add_shade,
+            log_scale = exp_config.log_scale,
+            save_plot = True,
+            filename = f"{base_filename}_unexploited_lifetime.png",
+            plot_path = plot_path
+        )
+
+    if exp_config.plot_J:
+
+        _ = plot_J_Cost(
+            results = results_dict,
+            window = exp_config.max_windows,
+            step = exp_config.n_maintenance_windows,
+            save_plot = True,
+            log_scale = exp_config.log_scale,
+            filename = f"{base_filename}_J_Cost.png",
+            plot_path = plot_path
+        )
 
 def plot_an_scores(
     config: ExperimentConfig,

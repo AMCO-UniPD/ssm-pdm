@@ -27,7 +27,7 @@ quantile_dist: uniform
 bounds: [0.1, 0.9]
 quantiles: [0.1,0.25,0.5,0.75,0.9]
 # quantiles: [0.75]
-quantile_run: 0.25
+quantile_run: 0.5
 
 # select_windows (windowed approach)
 max_rul: 500
