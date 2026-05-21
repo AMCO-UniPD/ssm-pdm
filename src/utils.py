@@ -33,6 +33,7 @@ from ceruleo.dataset.transformed import TransformedDataset
 # ceruleo imports
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset
 from ceruleo.transformation import Transformer
+from ceruleo.transformation.features.split import Filter
 from ceruleo.transformation.features.imputers import (MeanImputer,
                                                       RollingMeanImputer)
 from ceruleo.transformation.features.scalers import (MinMaxScaler,
@@ -751,6 +752,21 @@ def get_transformer(
             ),
             pipelineY=make_pipeline(
                 ByNameFeatureSelector(features=["RUL"]), LinearDegradation(), rul_scaler
+            ),
+        )
+
+    elif config.transformer_type == 5:
+        transformer = Transformer(
+            pipelineX=make_pipeline(
+                Filter(values=[1.0],columns=["FIXTURESHUTTERPOSITION"]),
+                ByNameFeatureSelector(features=FEATURES),
+                MeanImputer(),
+                scaler,
+            ),
+            pipelineY=make_pipeline(
+                Filter(values=[1.0],columns=["FIXTURESHUTTERPOSITION"]),
+                ByNameFeatureSelector(features=["RUL"]),
+                Clip(lower=0.0, upper=500.0)
             ),
         )
 
