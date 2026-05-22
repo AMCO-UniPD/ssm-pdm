@@ -22,33 +22,50 @@ sys.path.append(ceruleo_path)
 
 import torch
 import torch.nn as nn
+
 # sklearn imports
 from sklearn.model_selection import train_test_split
+
 # torch imports
 from torch.utils.data import ConcatDataset, DataLoader, Dataset
 
 from ceruleo.dataset.catalog.CMAPSS import CMAPSSDataset, sensor_indices
 from ceruleo.dataset.catalog.PHMDataset2018 import PHMDataset2018
 from ceruleo.dataset.transformed import TransformedDataset
+
 # ceruleo imports
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset
 from ceruleo.transformation import Transformer
+from ceruleo.transformation.features.imputers import MeanImputer, RollingMeanImputer
+from ceruleo.transformation.features.scalers import (
+    MinMaxScaler,
+    RobustMinMaxScaler,
+    RobustStandardScaler,
+    StandardScaler,
+)
+from ceruleo.transformation.features.selection import (
+    ByNameFeatureSelector,
+    PandasVarianceThreshold,
+)
 from ceruleo.transformation.features.split import Filter
-from ceruleo.transformation.features.imputers import (MeanImputer,
-                                                      RollingMeanImputer)
-from ceruleo.transformation.features.scalers import (MinMaxScaler,
-                                                     RobustMinMaxScaler,
-                                                     RobustStandardScaler,
-                                                     StandardScaler)
-from ceruleo.transformation.features.selection import (ByNameFeatureSelector,
-                                                       PandasVarianceThreshold)
 from ceruleo.transformation.features.transformation import Clip, LinearDegradation
+
 # from ceruleo.transformation.features.extraction import RollingStatistics
 from ceruleo.transformation.functional.pipeline.pipeline import make_pipeline
-from config_vars import (APPROACHES, CMAPSS_MODELS, MAX_RUL, PHM_ETCH_FEATURES,
-                         PHM_FAIL_TYPES, PHM_FAILURES, PHM_FEATURES,
-                         PHM_IN_FEATURES, PHM_PATH, PHM_PATH_ACQ2,
-                         PHM_PATH_ACQ4, PHM_TOOLS)
+from config_vars import (
+    APPROACHES,
+    CMAPSS_MODELS,
+    MAX_RUL,
+    PHM_ETCH_FEATURES,
+    PHM_FAIL_TYPES,
+    PHM_FAILURES,
+    PHM_FEATURES,
+    PHM_IN_FEATURES,
+    PHM_PATH,
+    PHM_PATH_ACQ2,
+    PHM_PATH_ACQ4,
+    PHM_TOOLS,
+)
 from exp_config import ExperimentConfig
 
 
@@ -128,9 +145,9 @@ def open_element(
         "pth",
         "json",
     ]
-    assert filetype in FILETYPES, (
-        f"filetype must be one of {FILETYPES}, but got {filetype}"
-    )
+    assert (
+        filetype in FILETYPES
+    ), f"filetype must be one of {FILETYPES}, but got {filetype}"
 
     if filetype == "pickle":
         with open(file_path, "rb") as fl:
@@ -259,6 +276,34 @@ class TransData(AbstractPDMDataset):
         return len(self.lives)
 
 
+class MergeData(AbstractPDMDataset):
+    def __init__(self, data_list: List[AbstractPDMDataset]):
+        """
+        This function merges multiple AbstractPDMDataset instances into a single one
+
+        Args:
+            data_list (List[AbstractPDMDataset]): a list of AbstractPDMDataset instances
+        """
+
+        super().__init__()
+        self.lives = []
+
+        for data in data_list:
+            for life in data:
+                self.lives.append(life)
+
+    def get_time_series(self, i):
+        return self.lives[i]
+
+    @property
+    def rul_column(self) -> str:
+        return "RUL"
+
+    @property
+    def n_time_series(self):
+        return len(self.lives)
+
+
 # Regression dataset for chronos
 
 
@@ -347,12 +392,12 @@ class SSMRegressionDataset(Dataset):
 
         self.data_indices = []
 
-        for i,life in enumerate(self.lifes):
+        for i, life in enumerate(self.lifes):
 
             if sequence_length > life.shape[0]:
-                self.data_indices.append((i,sequence_length-life.shape[0]))
+                self.data_indices.append((i, sequence_length - life.shape[0]))
             else:
-                self.data_indices.append((i,0))
+                self.data_indices.append((i, 0))
 
     def __len__(self):
         return len(self.data_indices)
@@ -363,7 +408,7 @@ class SSMRegressionDataset(Dataset):
         life = self.lifes[life_idx]
         rul = self.ruls[life_idx]
 
-        #NOTE: Time series shorter than sequence_length, we use 0 padding
+        # NOTE: Time series shorter than sequence_length, we use 0 padding
 
         if self.sequence_length > life.shape[0]:
             pad_arr = np.zeros(shape=(samples_to_pad, life.shape[1]))
@@ -376,7 +421,7 @@ class SSMRegressionDataset(Dataset):
             sequences = np.concatenate((life.values, pad_arr))
             targets = np.concatenate((rul.values, pad_arr[:, -1]))
 
-        #NOTE: Time series longer than sequence_length we take the last sequence_length samples
+        # NOTE: Time series longer than sequence_length we take the last sequence_length samples
 
         else:
             sequences = life.values[life.shape[0] - self.sequence_length :, :]
@@ -538,7 +583,9 @@ class SSMWindowRegressionDataset(Dataset):
         if not self.ad:
             # seq_to_keep = seq_to_keep[-int(keep_long_rul_prob*len(seq_to_keep)):] # keep the last keep_long_rul_prob percentage of constant windows
             # seq_to_keep = seq_to_keep[-len(self.anomalous_seq):] # balanced case → select the last len(self.anomalous_seq) constant windows
-            seq_to_keep = seq_to_keep[-n_const_win:] # keep the last n_const_win constant windows
+            seq_to_keep = seq_to_keep[
+                -n_const_win:
+            ]  # keep the last n_const_win constant windows
 
             seq_to_keep.extend(filtered_indices)
             self.data_indices = seq_to_keep
@@ -645,6 +692,7 @@ class SSMFullLifeRegressionDataset(Dataset):
         mask = torch.tensor(self.mask[idx], dtype=torch.float32)
         return sequence, target, mask
 
+
 def get_feature_type(
     config: ExperimentConfig,
     df: Union[CMAPSSDataset, PHMDataset2018],
@@ -671,6 +719,7 @@ def get_feature_type(
             FEATURES = PHM_FEATURES
 
     return FEATURES
+
 
 def get_transformer(
     config: ExperimentConfig,
@@ -700,15 +749,17 @@ def get_transformer(
         scaler = StandardScaler()
 
     if config.transformer_type == 0:
-        rul_scaler = MinMaxScaler(range=(0,1))
-        setattr(config,"rul_scaler",rul_scaler)
+        rul_scaler = MinMaxScaler(range=(0, 1))
+        setattr(config, "rul_scaler", rul_scaler)
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
                 MeanImputer(),
                 scaler,
             ),
-            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"]), rul_scaler),
+            pipelineY=make_pipeline(
+                ByNameFeatureSelector(features=["RUL"]), rul_scaler
+            ),
         )
     elif config.transformer_type == 1:
         transformer = Transformer(
@@ -739,13 +790,11 @@ def get_transformer(
                 ByNameFeatureSelector(features=FEATURES),
                 MeanImputer(),
             ),
-            pipelineY=make_pipeline(
-                ByNameFeatureSelector(features=["RUL"])
-            ),
+            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"])),
         )
 
     elif config.transformer_type == 4:
-        rul_scaler = MinMaxScaler(range=(0,1))
+        rul_scaler = MinMaxScaler(range=(0, 1))
         transformer = Transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
@@ -758,15 +807,15 @@ def get_transformer(
     elif config.transformer_type == 5:
         transformer = Transformer(
             pipelineX=make_pipeline(
-                Filter(values=[1.0],columns=["FIXTURESHUTTERPOSITION"]),
+                Filter(values=[1.0], columns=["FIXTURESHUTTERPOSITION"]),
                 ByNameFeatureSelector(features=FEATURES),
                 MeanImputer(),
                 scaler,
             ),
             pipelineY=make_pipeline(
-                Filter(values=[1.0],columns=["FIXTURESHUTTERPOSITION"]),
+                Filter(values=[1.0], columns=["FIXTURESHUTTERPOSITION"]),
                 ByNameFeatureSelector(features=["RUL"]),
-                Clip(lower=0.0, upper=500.0)
+                Clip(lower=0.0, upper=500.0),
             ),
         )
 
@@ -860,12 +909,12 @@ def load_reg_data(config: ExperimentConfig) -> dict:
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
-    assert config.data_name == "CMAPSS", (
-        "This function works just with the CMAPSS dataset"
-    )
-    assert config.cmapss_models in CMAPSS_MODELS, (
-        f"The models must be one of {CMAPSS_MODELS}"
-    )
+    assert (
+        config.data_name == "CMAPSS"
+    ), "This function works just with the CMAPSS dataset"
+    assert (
+        config.cmapss_models in CMAPSS_MODELS
+    ), f"The models must be one of {CMAPSS_MODELS}"
 
     train_data = CMAPSSDataset(train=True, models=config.cmapss_models)
     # train_data, val_data = train_test_split(train_data, test_size=config.val_size, shuffle=False)
@@ -993,22 +1042,22 @@ def create_padding_loaders(
     """
 
     train_datasets = SSMRegressionDataset(
-            lifes=train_lifes,
-            sequence_length=config.sequence_length,
-            max_rul=config.max_rul,
-            normalize_rul=config.normalize_rul,
+        lifes=train_lifes,
+        sequence_length=config.sequence_length,
+        max_rul=config.max_rul,
+        normalize_rul=config.normalize_rul,
     )
     val_datasets = SSMRegressionDataset(
-            lifes=val_lifes,
-            sequence_length=config.sequence_length,
-            max_rul=config.max_rul,
-            normalize_rul=config.normalize_rul,
+        lifes=val_lifes,
+        sequence_length=config.sequence_length,
+        max_rul=config.max_rul,
+        normalize_rul=config.normalize_rul,
     )
     test_datasets = SSMRegressionDataset(
-            lifes=test_lifes,
-            sequence_length=config.sequence_length,
-            max_rul=config.max_rul,
-            normalize_rul=config.normalize_rul,
+        lifes=test_lifes,
+        sequence_length=config.sequence_length,
+        max_rul=config.max_rul,
+        normalize_rul=config.normalize_rul,
     )
 
     batch_size = config.batch_size
@@ -1180,7 +1229,7 @@ def create_window_loaders(
         print("window dataloaders created successfully")
         print("-" * 50)
 
-        loaders_dict = { "test_loaders": test_loaders }
+        loaders_dict = {"test_loaders": test_loaders}
 
         return loaders_dict
 
@@ -1239,20 +1288,18 @@ def print_life_info(phm_data: PHMDataset2018) -> None:
         print(f"Shape of life {i}: {life.shape}")
         print("-" * 50)
 
-def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, TransformedDataset, TransformedDataset, np.ndarray, np.ndarray, np.ndarray]:
+def get_raw_phm_data(
+    config: ExperimentConfig
+) -> Tuple[PHMDataset2018, PHMDataset2018]:
     """
-    Load raw PHM data and transform them
+    Load the PHMDataset2018 objects with the raw data
 
     Args:
         config (ExperimentConfig): The configuration dictionary
 
     Returns:
-        transformed_train_data (TransformedDataset): transformed training set
-        transformed_val_data (TransformedDataset): transformed validation set
-        transformed_test_data (TransformedDataset): transformed test set
-        train_idx (np.ndarray): indexes of training lifes
-        val_idx (np.ndarray): indexes of validation lifes
-        test_phm_idx (np.ndarray): indexes of test lifes
+        train_phm_data (PHMDataset2018): training data
+        test_phm_data (PHMDataset2018): test data
     """
 
     if os.path.exists(PHM_PATH_ACQ4):
@@ -1314,6 +1361,38 @@ def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, Tr
 
     print_life_info(phm_data=test_phm_data)
 
+    return train_phm_data, test_phm_data
+
+def transform_phm_data(
+    config: ExperimentConfig,
+) -> Tuple[
+    TransformedDataset,
+    TransformedDataset,
+    TransformedDataset,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+]:
+    """
+    Load raw PHM data and transform them
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+
+    Returns:
+        transformed_train_data (TransformedDataset): transformed training set
+        transformed_val_data (TransformedDataset): transformed validation set
+        transformed_test_data (TransformedDataset): transformed test set
+        train_idx (np.ndarray): indexes of training lifes
+        val_idx (np.ndarray): indexes of validation lifes
+        test_phm_idx (np.ndarray): indexes of test lifes
+    """
+
+    train_phm_data, test_phm_data = get_raw_phm_data(config=config)
+
+    merged_phm_data = MergeData(data_list=[train_phm_data, test_phm_data])
+    ipdb.set_trace()
+
     train_phm_idx = np.arange(len(train_phm_data))
     test_phm_idx = np.arange(len(test_phm_data))
 
@@ -1330,7 +1409,15 @@ def transform_phm_data(config: ExperimentConfig) -> Tuple[TransformedDataset, Tr
     transformed_val_data = val_data.map(transformer)
     transformed_test_data = test_phm_data.map(transformer)
 
-    return transformed_train_data, transformed_val_data, transformed_test_data, train_idx, val_idx, test_phm_idx
+    return (
+        transformed_train_data,
+        transformed_val_data,
+        transformed_test_data,
+        train_idx,
+        val_idx,
+        test_phm_idx,
+    )
+
 
 def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
     """
@@ -1345,7 +1432,14 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
-    transformed_train_data, transformed_val_data, transformed_test_data, train_idx, val_idx, test_phm_idx = transform_phm_data(config=config)
+    (
+        transformed_train_data,
+        transformed_val_data,
+        transformed_test_data,
+        train_idx,
+        val_idx,
+        test_phm_idx,
+    ) = transform_phm_data(config=config)
 
     train_lifes = TransData(transformed_train_data)
     val_lifes = TransData(transformed_val_data)
@@ -1489,9 +1583,9 @@ def sample_quantile(
     if quantile_dist == "normal":
         assert bounds[1] > 0, "The standard deviation must be positive"
     if quantile_dist == "uniform":
-        assert bounds[0] < bounds[1], (
-            "The lower bound must be less than the upper bound"
-        )
+        assert (
+            bounds[0] < bounds[1]
+        ), "The lower bound must be less than the upper bound"
 
     quantile = 0.5
 
@@ -1559,6 +1653,7 @@ def extract_number(
     else:
         return None
 
+
 def an_score_to_rul(an_scores: np.ndarray, max_rul: int = MAX_RUL) -> np.ndarray:
     """
     This function converts an array containing the anomaly scores over the samples
@@ -1580,6 +1675,7 @@ def an_score_to_rul(an_scores: np.ndarray, max_rul: int = MAX_RUL) -> np.ndarray
 
     return rul_scores
 
+
 def get_mono_mask(config: ExperimentConfig, feature_names: List[str]) -> np.ndarray:
     """
     Function to compute the monotonic mask from the list of input features
@@ -1593,17 +1689,20 @@ def get_mono_mask(config: ExperimentConfig, feature_names: List[str]) -> np.ndar
     """
 
     if config.data_name == "PHM":
-        #NOTE: Hard code mono_mask for PHMDataset
-        mono_mask = np.array([0]*13+[1]*3+[0])
+        # NOTE: Hard code mono_mask for PHMDataset
+        mono_mask = np.array([0] * 13 + [1] * 3 + [0])
     elif config.data_name == "CMAPSS":
-        #NOTE: Hard code mono_mask for CMAPSS → for the moment let's put all monotonic
+        # NOTE: Hard code mono_mask for CMAPSS → for the moment let's put all monotonic
         mono_mask = np.ones(shape=len(feature_names))
     else:
         raise ValueError(f"{config.data_name} not supported")
 
     return mono_mask
 
-def split_input(mask_mono:np.ndarray, inputs: torch.Tensor, device: str = "cpu") -> Tuple[torch.Tensor, torch.Tensor]:
+
+def split_input(
+    mask_mono: np.ndarray, inputs: torch.Tensor, device: str = "cpu"
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     This function splits the input data into monotonic and non monotonic features
 
@@ -1617,16 +1716,16 @@ def split_input(mask_mono:np.ndarray, inputs: torch.Tensor, device: str = "cpu")
         mono_inputs (torch.Tensor): tensor with the monotonic features
     """
 
-    non_mono_inputs = inputs[:, :, np.where(mask_mono==0)[0]]
-    mono_inputs = inputs[:, :,  np.where(mask_mono!=0)[0]] * torch.tensor(mask_mono[np.where(mask_mono!=0)][None,:], dtype=torch.float32).to(device)
+    non_mono_inputs = inputs[:, :, np.where(mask_mono == 0)[0]]
+    mono_inputs = inputs[:, :, np.where(mask_mono != 0)[0]] * torch.tensor(
+        mask_mono[np.where(mask_mono != 0)][None, :], dtype=torch.float32
+    ).to(device)
 
     return non_mono_inputs, mono_inputs
 
+
 def concat_tau(
-    x: torch.Tensor,
-    tau: float = 0.5,
-    device: str = "cpu",
-    tau_feat: bool = False
+    x: torch.Tensor, tau: float = 0.5, device: str = "cpu", tau_feat: bool = False
 ) -> torch.Tensor:
     """
     This function checks some stuff on the quantile level tau
@@ -1656,6 +1755,7 @@ def concat_tau(
         )
 
     return x
+
 
 def model_summary_manual(model: nn.Module) -> int:
     """
