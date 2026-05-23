@@ -554,9 +554,9 @@ def load_baseline_model(
     baseline_model = BaselineModel(mode=mode, tau=tau)
     return baseline_model
 
-
-# Function to get the best model performance
-
+#TODO: For the cv case I need to use load_cv_data to load the data
+# for the current cross validation fold. See how to do that, in case
+# create a new function in place of best_model_perf
 
 def best_model_perf(
     config: ExperimentConfig,

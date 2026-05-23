@@ -19,6 +19,7 @@ from utils import (
     generate_path,
     set_seed,
 )
+from cv_training import train_k_fold
 
 from perf import lifes_metrics
 from models import exp_run, best_model_perf
@@ -93,5 +94,10 @@ if exp_config.test_script:
 
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script-cv")
 
-#TODO: Call a function like train_k_fold used in ssm_vr
+
+metrics_dict, exp_name = train_k_fold(
+    exp_config = exp_config,
+    model_config = model_config
+)
+
 

@@ -34,7 +34,7 @@ from ceruleo.dataset.catalog.PHMDataset2018 import PHMDataset2018
 from ceruleo.dataset.transformed import TransformedDataset
 
 # ceruleo imports
-from ceruleo.dataset.ts_dataset import AbstractPDMDataset
+from ceruleo.dataset.ts_dataset import AbstractPDMDataset, FoldedDataset
 from ceruleo.transformation import Transformer
 from ceruleo.transformation.features.imputers import MeanImputer, RollingMeanImputer
 from ceruleo.transformation.features.scalers import (
@@ -1365,6 +1365,8 @@ def get_raw_phm_data(
 
 def transform_phm_data(
     config: ExperimentConfig,
+    train_data: PHMDataset2018,
+    test_data: PHMDataset2018,
 ) -> Tuple[
     TransformedDataset,
     TransformedDataset,
@@ -1378,6 +1380,8 @@ def transform_phm_data(
 
     Args:
         config (ExperimentConfig): The configuration dictionary
+        train_data (PHMDataset2018): raw training data
+        test_data (PHMDataset2018): raw test data
 
     Returns:
         transformed_train_data (TransformedDataset): transformed training set
@@ -1388,26 +1392,21 @@ def transform_phm_data(
         test_phm_idx (np.ndarray): indexes of test lifes
     """
 
-    train_phm_data, test_phm_data = get_raw_phm_data(config=config)
-
-    merged_phm_data = MergeData(data_list=[train_phm_data, test_phm_data])
-    ipdb.set_trace()
-
-    train_phm_idx = np.arange(len(train_phm_data))
-    test_phm_idx = np.arange(len(test_phm_data))
+    train_phm_idx = np.arange(len(train_data))
+    test_phm_idx = np.arange(len(test_data))
 
     train_data, val_data, train_idx, val_idx = train_test_split(
-        train_phm_data, train_phm_idx, test_size=config.val_size, random_state=42
+        train_data, train_phm_idx, test_size=config.val_size, random_state=42
     )
 
     transformer = get_transformer(
         config=config,
-        df=train_phm_data,
+        df=train_data,
     )
     transformer.fit(train_data)
     transformed_train_data = train_data.map(transformer)
     transformed_val_data = val_data.map(transformer)
-    transformed_test_data = test_phm_data.map(transformer)
+    transformed_test_data = test_data.map(transformer)
 
     return (
         transformed_train_data,
@@ -1418,28 +1417,33 @@ def transform_phm_data(
         test_phm_idx,
     )
 
-
-def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
+def get_phm_loaders(
+    config: ExperimentConfig,
+    transformed_train_data: TransformedDataset,
+    transformed_val_data: TransformedDataset,
+    transformed_test_data: TransformedDataset,
+    train_idx: np.ndarray,
+    val_idx: np.ndarray,
+    test_idx: np.ndarray,
+    eval: bool = False
+) -> dict:
     """
-    Clone of the load_reg_data function but adapted for the PHM dataset.
+    Return a dictionary containing the dataloaders for training, validation and test set
+    and also the training, validation and test indexes
 
     Args:
-        config (ExperimentConfig): The configuration dictionary
-        eval (bool): weather to load the loaders in eval mode in the windowed approach
+        transformed_train_data (TransformedDataset): transformed training set
+        transformed_val_data (TransformedDataset): transformed validation set
+        transformed_test_data (TransformedDataset): transformed test set
+        train_idx (np.ndarray): indexes of training lifes
+        val_idx (np.ndarray): indexes of validation lifes
+        test_phm_idx (np.ndarray): indexes of test lifes
+        eval (bool): boolean flag indicating weather we want to load the loaders for evaluation
 
     Returns:
         loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
-
-    (
-        transformed_train_data,
-        transformed_val_data,
-        transformed_test_data,
-        train_idx,
-        val_idx,
-        test_phm_idx,
-    ) = transform_phm_data(config=config)
 
     train_lifes = TransData(transformed_train_data)
     val_lifes = TransData(transformed_val_data)
@@ -1485,6 +1489,95 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
     loaders_dict["train_idx"] = train_idx
     loaders_dict["val_idx"] = val_idx
     loaders_dict["test_idx"] = test_phm_idx
+
+    return loaders_dict
+
+
+def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
+    """
+    Clone of the load_reg_data function but adapted for the PHM dataset.
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+        eval (bool): weather to load the loaders in eval mode in the windowed approach
+
+    Returns:
+        loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
+        approach, it also contains a list of DataLoader objects for each life in the test set.
+    """
+
+    train_phm_data, test_phm_data = get_raw_phm_data(config=config)
+
+    (
+        transformed_train_data,
+        transformed_val_data,
+        transformed_test_data,
+        train_idx,
+        val_idx,
+        test_phm_idx,
+    ) = transform_phm_data(
+        config=config,
+        train_data=train_phm_data,
+        test_data=test_phm_data
+    )
+
+    loaders_dict = get_phm_loaders(
+        config = config,
+        transformed_train_data = transformed_train_data,
+        transformed_val_data = transformed_val_data,
+        transformed_test_data = transformed_test_data,
+        train_idx = train_idx,
+        val_idx = val_idx,
+        test_idx = test_phm_idx,
+        eval = eval
+    )
+
+    return loaders_dict
+
+def load_cv_data(
+    config: ExperimentConfig,
+    train_val_data: FoldedDataset,
+    test_data: FoldedDataset,
+    eval: bool = False,
+) -> dict:
+    """
+    Equivalent of load_phm_data but for the cross validation case.
+    It creates the dataloaders for the current fold of cross validation
+
+    Args:
+        config (ExperimentConfig): The configuration dictionary
+        train_val_data (FoldedDataset): training and validation data for the current fold
+        test_data (FoldedDataset): test data for the current fold
+        eval (bool): weather to load the loaders in eval mode in the windowed approach
+
+    Returns:
+        loaders_dict (dict): A dictionary containing the DataLoader objects for the train, validation and test sets. In the case of the windowed
+        approach, it also contains a list of DataLoader objects for each life in the test set.
+    """
+
+    (
+        transformed_train_data,
+        transformed_val_data,
+        transformed_test_data,
+        train_idx,
+        val_idx,
+        test_phm_idx,
+    )  = transform_phm_data(
+        config  = exp_config,
+        train_data =  train_val_data,
+        test_data = test_data
+    )
+
+    loaders_dict = get_phm_loaders(
+        config = exp_config,
+        transformed_train_data = transformed_train_data,
+        transformed_val_data = transformed_val_data,
+        transformed_test_data = transformed_test_data,
+        train_idx = train_idx,
+        val_idx = val_idx,
+        test_idx = test_phm_idx,
+        eval = eval
+    )
 
     return loaders_dict
 
