@@ -25,6 +25,7 @@ class ExperimentConfig:
     test_size: float = 0.2
     val_size: float = 0.1
     # cv training
+    cv: bool = False
     n_folds: int = 5
     test_idx: List[int] = field(default_factory=lambda: [0])
     # transformer params

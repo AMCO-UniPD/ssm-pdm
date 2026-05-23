@@ -62,7 +62,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
     print(f"Saving outputs for run: {run+1}")
     print("-" * 50)
 
-    run_folders = [f"run_{run+1}"]
+    run_folders = [f"run_{run+1}"] if not exp_config.cv else [f"fold_{run+1}"]
     run_outputs_path = generate_path(
         basepath=outputs_path, folders=run_folders
     )

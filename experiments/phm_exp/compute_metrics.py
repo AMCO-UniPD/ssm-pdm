@@ -91,12 +91,12 @@ else:
 
         run_metrics_path = generate_path(
             basepath = metrics_path,
-            folders = [f"run_{run+1}"]
+            folders = [f"run_{run+1}"] if not exp_config.cv else [f"fold_{run+1}"]
         )
 
         run_outputs_path = generate_path(
             basepath = outputs_path,
-            folders = [f"run_{run+1}"]
+            folders = [f"run_{run+1}"] if not exp_config.cv else [f"fold_{run+1}"]
         )
 
         for quantile in exp_config.quantiles:

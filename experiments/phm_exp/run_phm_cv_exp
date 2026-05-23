@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+echo "-------------------------------------------"
+echo "Running PHM Dataset experiment with cross validation training"
+echo "-------------------------------------------"
+
+echo "-------------------------------------------"
+echo "Step 1: Train the model with cv, save the best one"
+echo "and save outputs and metrics"
+echo "-------------------------------------------"
+
+./launch_train_phm_cv training
+
+echo "-------------------------------------------"
+echo "Step 2: Group the outputs from different quantiles"
+echo "-------------------------------------------"
+
+./launch_train_phm_cv save_outputs_run
+
+echo "-------------------------------------------"
+echo "Step 3: Group the metrics from different quantiles"
+echo "-------------------------------------------"
+
+./launch_train_phm_cv quantile_metrics
+
+echo "-------------------------------------------"
+echo "Step 4: Group the business metrics from different quantiles"
+echo "-------------------------------------------"
+
+./launch_train_phm_cv compute_business_metrics
+
+echo "-------------------------------------------"
+echo "Step 5: Produce the quantile plots"
+echo "-------------------------------------------"
+
+./launch_train_phm_cv quantile_plots
+
+
+
+

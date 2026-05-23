@@ -85,7 +85,7 @@ for quantile in exp_config.quantiles:
         quantile_outputs_path = generate_path(
             basepath=outputs_path,
             folders=[
-                f"run_{run_id+1}",
+                f"run_{run_id+1}" if not exp_config.cv else f"fold_{run_id+1}",
                 f"quantile_{quantile}"
             ]
         )
