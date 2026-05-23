@@ -508,7 +508,10 @@ def exp_run(
         print("Saving outputs")
         print("#" * 50)
 
+        eval_loaders_dict = load_phm_data(config,eval=True)
+
         best_model_perf(
+            loaders_dict = eval_loaders_dict,
             config=config,
             model_config=model_config,
             device=device,
@@ -554,11 +557,8 @@ def load_baseline_model(
     baseline_model = BaselineModel(mode=mode, tau=tau)
     return baseline_model
 
-#TODO: For the cv case I need to use load_cv_data to load the data
-# for the current cross validation fold. See how to do that, in case
-# create a new function in place of best_model_perf
-
 def best_model_perf(
+    loaders_dict: dict,
     config: ExperimentConfig,
     model_config: ModelConfig,
     device: torch.device = torch.device("cpu"),
@@ -574,6 +574,7 @@ def best_model_perf(
     prediction and true values obtained on the different test lifes
 
     Args:
+        loaders_dict (dict): dictionary containing the dataloaders
         config (ExperimentConfig): The configuration dictionary
         model_config (ModelConfig): The model configuration object
         device (str): The device to use
@@ -590,11 +591,6 @@ def best_model_perf(
             If return_outputs is set to True the function returns the outputs dictionary, but it will not save the outputs
     """
 
-    loaders_dict = (
-        load_phm_data(config, eval=True)
-        if config.data_name == "PHM"
-        else load_reg_data(config)
-    )
     test_lifes = loaders_dict["test_lifes"]
     test_loaders = loaders_dict["test_loaders"]
     test_idx = loaders_dict["test_idx"] if config.data_name == "PHM" else None

@@ -15,6 +15,7 @@ sys.path.append(src_path)
 
 from exp_config import setup_exp
 from utils import (
+    load_cv_data,
     get_current_time,
     generate_path,
     set_seed,
@@ -95,9 +96,16 @@ if exp_config.test_script:
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script-cv")
 
 
-metrics_dict, exp_name = train_k_fold(
+metrics_list, exp_name = train_k_fold(
     exp_config = exp_config,
     model_config = model_config
 )
+
+for i, metric in enumerate(metrics_list):
+
+    print("-"*50)
+    print(f"Metrics dataframe for fold {i+1}")
+    print(metric.to_markdown())
+    print("-"*50)
 
 

@@ -52,7 +52,7 @@ for run in range(exp_config.start_run_id, exp_config.n_runs):
 
     run_metrics_path = generate_path(
         basepath = metrics_path,
-        folders = [f"run_{run+1}"]
+        folders = [f"run_{run+1}"] if not exp_config.cv else [f"fold_{run+1}"]
     )
 
     metrics_df = pd.DataFrame()
