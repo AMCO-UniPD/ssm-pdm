@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-script_path="baseline_model_outputs.py"
+# script_path="baseline_model_outputs.py"
+script_path="cv_baseline_model_outputs.py"
 
 source "./phm_exp_config"
 

@@ -15,13 +15,24 @@ src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from exp_config import setup_exp
-from utils import generate_path, transform_phm_data, get_current_time, save_element
+from utils import (
+    generate_path,
+    get_raw_phm_data,
+    transform_phm_data,
+    get_current_time,
+    save_element,
+)
 from models import load_baseline_model
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 exp_config, model_config, device, exp_name = setup_exp()
 
-transformed_train_data, _, transformed_test_data, _, _, _ = transform_phm_data(config=exp_config)
+train_phm_data, test_phm_data = get_raw_phm_data(config=exp_config)
+transformed_train_data, _, transformed_test_data, _, _, _ = transform_phm_data(
+    config=exp_config,
+    train_data=train_phm_data,
+    test_data=test_phm_data
+)
 
 for baseline_model_name in exp_config.baseline_model_names:
 

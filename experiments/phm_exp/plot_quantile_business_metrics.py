@@ -111,6 +111,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
             results_dict[f"{model_name}_quantile_{quantile}"] = prediction_results
 
 base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}_quantile"
+cv_filename = f"{base_filename}_fold_{exp_config.plot_run_id}" if exp_config.cv else f"{base_filename}_run_{exp_config.plot_run_id}"
 
 print("-"*50)
 print("Producing business metrics plots")
@@ -120,5 +121,5 @@ plot_business_metrics(
     exp_config = exp_config,
     results_dict = results_dict,
     plot_path = plot_path,
-    base_filename = base_filename
+    base_filename = cv_filename
 )

@@ -10,7 +10,9 @@ n_folds: 5
 # dataset transformations
 # transformer_type: 1 # data normalization
 # transformer_type: 2 # no data normalization
+# transformer_type: 3 # data normalization and not RUL clipping
 transformer_type: 5 # filter with FIXTURESHUTTERPOSITION=1.0
+# transformer_type: 6 # filter with FIXTURESHUTTERPOSITION=1.0 and without RUL clipping (needed for baseline models)
 # feature_type: phm
 feature_type: phm_in
 # scaler: standard
@@ -63,7 +65,7 @@ summary_func: torchinfo
 
 # RUL plots
 file_pos: 0
-plot_run_id: 1
+plot_run_id: 2
 quantile_plot: 0.5
 plot_life_idx: [0,1,2,3]
 # life_idx: [0]

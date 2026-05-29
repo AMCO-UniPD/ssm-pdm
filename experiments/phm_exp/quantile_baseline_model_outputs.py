@@ -51,7 +51,7 @@ for quantile in exp_config.quantiles:
         "y_true": baseline_true_vals,
     }
 
-    filename = f"{get_current_time()}baseline_outputs_{exp_config.model_name}"
+    filename = f"{get_current_time()}_baseline_outputs_quantile_{quantile}"
 
     save_element(
         element=combined_outputs,

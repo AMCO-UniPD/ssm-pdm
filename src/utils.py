@@ -789,8 +789,11 @@ def get_transformer(
             pipelineX=make_pipeline(
                 ByNameFeatureSelector(features=FEATURES),
                 MeanImputer(),
+                scaler,
             ),
-            pipelineY=make_pipeline(ByNameFeatureSelector(features=["RUL"])),
+            pipelineY=make_pipeline(
+                ByNameFeatureSelector(features=["RUL"])
+            ),
         )
 
     elif config.transformer_type == 4:
@@ -816,6 +819,20 @@ def get_transformer(
                 Filter(values=[1.0], columns=["FIXTURESHUTTERPOSITION"]),
                 ByNameFeatureSelector(features=["RUL"]),
                 Clip(lower=0.0, upper=500.0),
+            ),
+        )
+
+    elif config.transformer_type == 6:
+        transformer = Transformer(
+            pipelineX=make_pipeline(
+                Filter(values=[1.0], columns=["FIXTURESHUTTERPOSITION"]),
+                ByNameFeatureSelector(features=FEATURES),
+                MeanImputer(),
+                scaler,
+            ),
+            pipelineY=make_pipeline(
+                Filter(values=[1.0], columns=["FIXTURESHUTTERPOSITION"]),
+                ByNameFeatureSelector(features=["RUL"]),
             ),
         )
 
