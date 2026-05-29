@@ -71,7 +71,9 @@ wandb_data(config=exp_config,model_config=model_config)
 
 business_metrics_dfs = []
 
-for run_id in range(exp_config.start_run_id, exp_config.n_runs):
+run_iterator = range(exp_config.n_folds) if exp_config.cv else range(exp_config.start_run_id, exp_config.n_runs)
+
+for run_id in run_iterator:
 
     print("-"*50)
     print(f"Computing business metrics for run {run_id+1}")

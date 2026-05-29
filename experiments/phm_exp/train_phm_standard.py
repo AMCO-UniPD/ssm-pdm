@@ -115,7 +115,9 @@ if exp_config.test_script:
 
     setproctitle.setproctitle(f"{exp_config.model_name}-standard-test-script")
 
-    for run in range(exp_config.start_run_id, exp_config.n_runs):
+    run_iterator = range(exp_config.n_folds) if exp_config.cv else range(exp_config.start_run_id, exp_config.n_runs)
+
+    for run in run_iterator:
 
         best_model_path_test_script = generate_path(
             basepath = best_model_path,
@@ -166,7 +168,9 @@ if exp_config.test_script:
 
     quit()
 
-for run in range(exp_config.start_run_id, exp_config.n_runs):
+run_iterator = range(exp_config.n_folds) if exp_config.cv else range(exp_config.start_run_id, exp_config.n_runs)
+
+for run in run_iterator:
 
     print("-"*50)
     print(f"Experiment run for run {run+1}")

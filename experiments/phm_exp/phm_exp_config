@@ -10,7 +10,7 @@ test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 model_name="S4"
 device_num=0
 # exp_name="super_benchmark_S4D_flow_low_windowed_weighted"
-exp_name="super_benchmark_${model_name}_${failure_type}_windowed_quantile_weighted_phm_in"
+exp_name="super_benchmark_${model_name}_${failure_type}_windowed_quantile_weighted_cv"
 # exp_name="super_benchmark_S4D_flow_low_windowed_quantile_standard"
 # exp_name="super_benchmark_S5_flow_low_windowed_quantile_standard"
 

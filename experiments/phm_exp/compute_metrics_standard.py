@@ -88,7 +88,9 @@ else:
 
     metrics_dfs = []
 
-    for run in range(exp_config.start_run_id, exp_config.n_runs):
+    run_iterator = range(exp_config.n_folds) if exp_config.cv else range(exp_config.start_run_id, exp_config.n_runs)
+
+    for run in run_iterator:
 
         run_metrics_path = generate_path(
             basepath = metrics_path,

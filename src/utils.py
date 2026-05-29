@@ -1483,12 +1483,12 @@ def get_phm_loaders(
         return {
             "test_lifes": test_lifes,
             "test_loaders": loaders_dict["test_loaders"],
-            "test_idx": test_phm_idx,
+            "test_idx": test_idx,
         }
 
     loaders_dict["train_idx"] = train_idx
     loaders_dict["val_idx"] = val_idx
-    loaders_dict["test_idx"] = test_phm_idx
+    loaders_dict["test_idx"] = test_idx
 
     return loaders_dict
 
@@ -1563,13 +1563,13 @@ def load_cv_data(
         val_idx,
         test_phm_idx,
     )  = transform_phm_data(
-        config  = exp_config,
+        config  = config,
         train_data =  train_val_data,
         test_data = test_data
     )
 
     loaders_dict = get_phm_loaders(
-        config = exp_config,
+        config = config,
         transformed_train_data = transformed_train_data,
         transformed_val_data = transformed_val_data,
         transformed_test_data = transformed_test_data,

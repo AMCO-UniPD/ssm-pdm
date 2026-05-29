@@ -76,7 +76,9 @@ for quantile in exp_config.quantiles:
     )
     business_metrics_dfs = []
 
-    for run_id in range(exp_config.start_run_id, exp_config.n_runs):
+    run_iterator = range(exp_config.n_folds) if exp_config.cv else range(exp_config.start_run_id, exp_config.n_runs)
+
+    for run_id in run_iterator:
 
         print("-"*50)
         print(f"Computing business metrics for quantile {quantile} and run {run_id+1}")
