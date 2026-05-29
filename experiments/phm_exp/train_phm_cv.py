@@ -85,9 +85,6 @@ plot_path = generate_path(
     ],
 )
 
-#NOTE: In this case I do not have to iterate over runs with different seeds
-# but over different splits of the data
-
 if exp_config.test_script:
     print("-" * 50)
     print("Running best model performance test")
@@ -95,17 +92,14 @@ if exp_config.test_script:
 
     setproctitle.setproctitle(f"{exp_config.model_name}-test-script-cv")
 
-
 metrics_list, exp_name = train_k_fold(
     exp_config = exp_config,
-    model_config = model_config
+    model_config = model_config,
+    device = device,
+    best_model_path = best_model_path,
+    outputs_path = outputs_path,
+    combined_outputs_path = combined_outputs_path,
+    metrics_path = metrics_path
 )
-
-for i, metric in enumerate(metrics_list):
-
-    print("-"*50)
-    print(f"Metrics dataframe for fold {i+1}")
-    print(metric.to_markdown())
-    print("-"*50)
 
 

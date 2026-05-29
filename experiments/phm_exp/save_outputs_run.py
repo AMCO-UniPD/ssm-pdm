@@ -56,7 +56,9 @@ print("-" * 50)
 print("Save the prediction on the different quantiles of the same run together")
 print("-" * 50)
 
-for run in range(exp_config.start_run_id, exp_config.n_runs):
+run_iterator = range(exp_config.n_folds) if exp_config.cv else range(exp_config.start_run_id, exp_config.n_runs)
+
+for run in run_iterator:
 
     print("-" * 50)
     print(f"Saving outputs for run: {run+1}")

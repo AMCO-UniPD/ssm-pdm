@@ -176,7 +176,9 @@ def get_fitted_lifes(
 
     outputs_dicts = []
 
-    for run_id in range(config.start_run_id, config.n_runs):
+    run_iterator = range(config.n_folds) if config.cv else range(config.start_run_id, config.n_runs)
+
+    for run_id in run_iterator:
 
         if config.quantile_reg:
 
@@ -191,7 +193,7 @@ def get_fitted_lifes(
                 run_outputs_path = generate_path(
                     basepath = outputs_path,
                     folders = [
-                        f"run_{run_id+1}",
+                        f"run_{run_id+1}" if not config.cv else f"fold_{run_id+1}",
                         f"quantile_{tau}"
                     ]
                 )
@@ -202,7 +204,7 @@ def get_fitted_lifes(
             else:
                 run_outputs_path = generate_path(
                     basepath = outputs_path,
-                    folders = [f"run_{run_id+1}"]
+                    folders = [f"run_{run_id+1}"] if not config.cv else f"fold_{run_id+1}"
                 )
 
         outputs_filepath = get_most_recent_file(run_outputs_path)

@@ -26,7 +26,7 @@ from models import (best_model_perf, compute_window_info, load_best_model,
 from perf import lifes_metrics
 from trainer import get_trainer
 from utils import (MergeData, generate_path, get_current_time, get_mono_mask,
-                   get_phm_feature_names, load_cv_data, get_raw_phm_data)
+                   get_phm_feature_names, load_cv_data, get_raw_phm_data, load_phm_data)
 from wandb_funcs import init_wandb
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -165,6 +165,10 @@ def train_k_fold(
 
         train_val_data, test_data = merged_phm_data[train_val_idx], merged_phm_data[test_idx]
 
+        print("-"*50)
+        print(f"Creating dataloaders for fold {fold_idx+1}/{exp_config.n_folds}")
+        print("-"*50)
+
         loaders_dict = load_cv_data(
             config = exp_config,
             train_val_data = train_val_data,
@@ -172,10 +176,12 @@ def train_k_fold(
             eval = False
         )
 
-        eval_loaders_dict = load_cv_data(
+        print("-"*50)
+        print(f"Creating evaluation dataloaders for fold {fold_idx+1}/{exp_config.n_folds}")
+        print("-"*50)
+
+        eval_loaders_dict = load_phm_data(
             config = exp_config,
-            train_val_data = train_val_data,
-            test_data = test_data,
             eval = True
         )
 
@@ -190,7 +196,7 @@ def train_k_fold(
             eval_criterion,
             config
         ) = wandb_cv_data(
-            config = config,
+            config = exp_config,
             model_config = model_config,
             loaders_dict = loaders_dict,
             best_model_path = best_model_path
@@ -238,7 +244,7 @@ def train_k_fold(
                 eval_criterion=eval_criterion,
                 scheduler=scheduler,
                 device=device,
-                best_model_path=best_model_path,
+                best_model_path=quantile_best_model_path,
                 config=config,
                 tau=quantile,
             )
@@ -277,6 +283,14 @@ def train_k_fold(
                 )
 
                 metrics_list.append(metrics_df)
+
+            #NOTE: End run for the current quantile
+
+            wandb.finish()
+
+        #NOTE: End run for the current fold
+
+        wandb.finish()
 
 
     return metrics_list, exp_name
