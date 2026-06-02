@@ -152,8 +152,13 @@ def train_k_fold(
         random_state = 42
     )
 
+    #NOTE: Here I do not have to merge the training and test data:
+    # the test data should be held out and used just to evalute the model
+    # over different folds in best_model_perf
+
     train_phm_data, test_phm_data = get_raw_phm_data(config=exp_config)
-    merged_phm_data = MergeData(data_list=[train_phm_data, test_phm_data])
+    merged_phm_data = MergeData(data_list=[train_phm_data])
+    ipdb.set_trace()
 
     metrics_list = []
 
@@ -164,6 +169,7 @@ def train_k_fold(
         print("-"*50)
 
         train_val_data, test_data = merged_phm_data[train_val_idx], merged_phm_data[test_idx]
+        ipdb.set_trace()
 
         print("-"*50)
         print(f"Creating dataloaders for fold {fold_idx+1}/{exp_config.n_folds}")
@@ -175,6 +181,7 @@ def train_k_fold(
             test_data = test_data,
             eval = False
         )
+        ipdb.set_trace()
 
         print("-"*50)
         print(f"Creating evaluation dataloaders for fold {fold_idx+1}/{exp_config.n_folds}")
@@ -184,6 +191,7 @@ def train_k_fold(
             config = exp_config,
             eval = True
         )
+        ipdb.set_trace()
 
         (
             train_loader,
