@@ -8,8 +8,9 @@ echo "-------------------------------------------"
 echo "Executing $script_path"
 echo "-------------------------------------------"
 
-# baseline_model_names=("mean" "median")
 baseline_model_names=(
+  "mean"
+  "median"
   "quantile_0.1"
   "quantile_0.25"
   "quantile_0.5"
