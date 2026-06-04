@@ -14,7 +14,7 @@ src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from exp_config import setup_exp
-from utils import generate_path, print_life_info
+from utils import generate_path
 from config_vars import MAX_RUL, PHM_FEATURES
 from plots import (
     plot_prediction_interval,

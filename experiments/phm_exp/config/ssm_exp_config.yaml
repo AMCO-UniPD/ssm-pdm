@@ -5,7 +5,8 @@ val_size: 0.1
 
 # cv training
 cv: true
-n_folds: 5
+n_folds: 2
+start_fold_id: 0
 
 # dataset transformations
 # transformer_type: 1 # data normalization
@@ -65,7 +66,7 @@ summary_func: torchinfo
 
 # RUL plots
 file_pos: 0
-plot_run_id: 2
+plot_run_id: 1
 quantile_plot: 0.5
 plot_life_idx: [0,1,2,3]
 # life_idx: [0]
