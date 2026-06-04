@@ -158,18 +158,37 @@ def train_k_fold(
 
     train_phm_data, test_phm_data = get_raw_phm_data(config=exp_config)
     merged_phm_data = MergeData(data_list=[train_phm_data])
-    ipdb.set_trace()
+
+    #NOTE: Since the evaluation dataloaders are the same across all folds we can
+    # create them just once
+
+    print("-"*50)
+    print(f"Creating evaluation dataloaders")
+    print("-"*50)
+
+    eval_loaders_dict = load_phm_data(
+        config = exp_config,
+        eval = True
+    )
 
     metrics_list = []
 
     for fold_idx, (train_val_idx, test_idx) in enumerate(skf.split(merged_phm_data)):
 
-        print("-"*50)
-        print(f"Processing fold {fold_idx+1}/{exp_config.n_folds}")
-        print("-"*50)
+        if fold_idx < exp_config.start_fold_id:
+
+            print("-"*50)
+            print(f"Skipping fold {fold_idx+1} because the training was already done")
+            print("-"*50)
+            continue
+
+        else:
+
+            print("-"*50)
+            print(f"Processing fold {fold_idx+1}/{exp_config.n_folds}")
+            print("-"*50)
 
         train_val_data, test_data = merged_phm_data[train_val_idx], merged_phm_data[test_idx]
-        ipdb.set_trace()
 
         print("-"*50)
         print(f"Creating dataloaders for fold {fold_idx+1}/{exp_config.n_folds}")
@@ -181,17 +200,6 @@ def train_k_fold(
             test_data = test_data,
             eval = False
         )
-        ipdb.set_trace()
-
-        print("-"*50)
-        print(f"Creating evaluation dataloaders for fold {fold_idx+1}/{exp_config.n_folds}")
-        print("-"*50)
-
-        eval_loaders_dict = load_phm_data(
-            config = exp_config,
-            eval = True
-        )
-        ipdb.set_trace()
 
         (
             train_loader,

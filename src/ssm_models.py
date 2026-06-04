@@ -38,7 +38,7 @@ from transformer_encoder.utils import PositionalEncoding
 from torchinfo import summary
 from calflops import calculate_flops
 
-from utils import print_life_info, save_element, generate_path
+from utils import save_element, generate_path
 from exp_config import ExperimentConfig, ModelConfig
 
 
