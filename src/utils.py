@@ -1288,17 +1288,22 @@ def create_window_loaders(
         return loaders_dict
 
 
-def print_life_info(phm_data: PHMDataset2018) -> None:
+def print_life_info(config: ExperimentConfig, phm_data: PHMDataset2018) -> None:
     """
     print statement with some information on the lifes durations
 
     Args:
+        config (ExperimentConfig): experiment configuration object
         phm_data (PHMDataset2018): PHM dataset object
 
     Results:
         None: the function does not return anything, it just prints some information on the shape of the
         lifes in the dataset
     """
+
+    print("-"*50)
+    print(f"Test tools: {config.test_phm_tools}")
+    print("-"*50)
 
     for i, life in enumerate(phm_data):
         print("-" * 50)
@@ -1376,7 +1381,8 @@ def get_raw_phm_data(
             train=False,
         )
 
-    print_life_info(phm_data=test_phm_data)
+    print_life_info(config=config, phm_data=test_phm_data)
+    ipdb.set_trace()
 
     return train_phm_data, test_phm_data
 
@@ -1415,6 +1421,23 @@ def transform_phm_data(
     train_data, val_data, train_idx, val_idx = train_test_split(
         train_data, train_phm_idx, test_size=config.val_size, random_state=42
     )
+
+    if config.print_statistical_moments:
+
+        stat_moments_df = pd.DataFrame({
+            "mean": np.mean(train_data.durations()),
+            "median": np.median(train_data.durations()),
+            "quantile_0.1": np.percentile(train_data.durations(),10),
+            "quantile_0.25": np.percentile(train_data.durations(),25),
+            "quantile_0.75": np.percentile(train_data.durations(),75),
+            "quantile_0.9": np.percentile(train_data.durations(),90),
+        }, index=["Value"])
+        stat_moments_df.index.name = "Statistical Moments"
+
+        print("-"*50)
+        print(f"Statistical moments of training lifes:")
+        print(stat_moments_df.T.to_markdown())
+        print("-"*50)
 
     transformer = get_transformer(
         config=config,

@@ -27,6 +27,7 @@ class ExperimentConfig:
     # cv training
     cv: bool = False
     n_folds: int = 5
+    start_fold_id: int = 0
     test_idx: List[int] = field(default_factory=lambda: [0])
     # transformer params
     transformer_type: int = 1
@@ -448,6 +449,12 @@ def define_arguments() -> Namespace:
         "--model_summary_manual",
         action="store_true",
         help="If set, compute the model summary manually"
+    )
+
+    parser.add_argument(
+        "--print_statistical_moments",
+        action="store_true",
+        help="If set, compute and print the statistical moment of the training lifes"
     )
 
     parser.add_argument(
