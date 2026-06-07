@@ -219,7 +219,7 @@ def get_fitted_lifes(
                 y_pred = outputs_dicts[run_id]["y_pred"][j],
                 time = np.arange(np.squeeze(outputs_dicts[run_id]["y_pred"][j]).shape[0]),
             )
-            for j in config.life_idx
+            for j in range(len(outputs_dicts[0]["y_true"]))
         ]
     ]
 

@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import wandb
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data import DataLoader
 
 from exp_config import ExperimentConfig, ModelConfig
@@ -156,14 +156,23 @@ def train_k_fold(
     # the test data should be held out and used just to evalute the model
     # over different folds in best_model_perf
 
-    train_phm_data, test_phm_data = get_raw_phm_data(config=exp_config)
+    train_phm_data, _ = get_raw_phm_data(config=exp_config)
+
+    train_phm_data, test_phm_data, train_idx, test_idx = train_test_split(
+        train_phm_data,
+        np.arange(len(train_phm_data)),
+        test_size=exp_config.test_size,
+        random_state=42
+    )
+    exp_config.test_idx = test_idx
+
     merged_phm_data = MergeData(data_list=[train_phm_data])
 
     #NOTE: Since the evaluation dataloaders are the same across all folds we can
     # create them just once
 
     print("-"*50)
-    print(f"Creating evaluation dataloaders")
+    print("Creating evaluation dataloaders")
     print("-"*50)
 
     eval_loaders_dict = load_phm_data(

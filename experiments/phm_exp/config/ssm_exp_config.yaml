@@ -5,7 +5,7 @@ val_size: 0.1
 
 # cv training
 cv: true
-n_folds: 2
+n_folds: 5
 start_fold_id: 0
 
 # dataset transformations
@@ -68,7 +68,9 @@ summary_func: torchinfo
 file_pos: 0
 plot_run_id: 1
 quantile_plot: 0.5
-plot_life_idx: [0,1,2,3]
+# WARN: Change these into some indexes that are part of test_idx otherwise it won't work
+# plot_life_idx: [0,1,2,3]
+plot_life_idx: [495,164,54,582]
 # life_idx: [0]
 col_idx: 0
 # start_idx: 0
@@ -84,7 +86,9 @@ show_plot: false
 use_test_set: true
 
 # business metrics plots
+# WARN: Change these into some indexes that are part of test_idx otherwise it won't work
 life_idx: [0,1,2,3,4]
+# life_idx: [495,164,54,582]
 max_windows: 100
 n_maintenance_windows: 10
 

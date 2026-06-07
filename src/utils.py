@@ -150,8 +150,11 @@ def open_element(
     ), f"filetype must be one of {FILETYPES}, but got {filetype}"
 
     if filetype == "pickle":
-        with open(file_path, "rb") as fl:
-            element = pickle.load(fl)
+        try:
+            element = pd.read_pickle(file_path)
+        except Exception as _:
+            with open(file_path, "rb") as fl:
+                element = pickle.load(fl)
     elif filetype == "pth":
         element = torch.load(file_path)
     elif filetype == "json":
@@ -215,8 +218,11 @@ def save_element(
     if filetype == "pth":
         torch.save(element.state_dict(), path + ".pth")
     elif filetype == "pickle":
-        with open(path + ".pickle", "wb") as f:
-            pickle.dump(element, f)
+        if isinstance(element, pd.DataFrame):
+            element.to_pickle(f"{path}.pickle")
+        else:
+            with open(path + ".pickle", "wb") as f:
+                pickle.dump(element, f)
 
     print(f"Element successfully saved at path: {path}")
 
@@ -1382,7 +1388,6 @@ def get_raw_phm_data(
         )
 
     print_life_info(config=config, phm_data=test_phm_data)
-    ipdb.set_trace()
 
     return train_phm_data, test_phm_data
 
@@ -1416,7 +1421,8 @@ def transform_phm_data(
     """
 
     train_phm_idx = np.arange(len(train_data))
-    test_phm_idx = np.arange(len(test_data))
+    # test_phm_idx = np.arange(len(test_data))
+    test_phm_idx = config.test_idx
 
     train_data, val_data, train_idx, val_idx = train_test_split(
         train_data, train_phm_idx, test_size=config.val_size, random_state=42
@@ -1546,7 +1552,15 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
-    train_phm_data, test_phm_data = get_raw_phm_data(config=config)
+    train_phm_data, _ = get_raw_phm_data(config=config)
+
+    train_phm_data, test_phm_data, _, test_phm_idx = train_test_split(
+        train_phm_data,
+        np.arange(len(train_phm_data)),
+        test_size=config.test_size,
+        random_state=42
+
+    )
 
     (
         transformed_train_data,
@@ -1554,7 +1568,7 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
         transformed_test_data,
         train_idx,
         val_idx,
-        test_phm_idx,
+        _,
     ) = transform_phm_data(
         config=config,
         train_data=train_phm_data,

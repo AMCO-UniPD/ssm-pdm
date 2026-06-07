@@ -663,7 +663,7 @@ def best_model_perf(
             combined_preds, combined_true_vals = combine_values(
                 predictions=y_pred,
                 true_values=y_true,
-                original_shape=test_lifes[test_idx[i]].shape[0],
+                original_shape=test_lifes[i].shape[0],
                 sequence_length=config.sequence_length,
                 stride=config.stride
             )

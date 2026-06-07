@@ -48,7 +48,7 @@ plot_path = generate_path(
 
 results_dict = {}
 
-for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
+for model_name in exp_config.model_names:
     print(f"model: {model_name}")
     print(f"experiment_name: {exp_name}")
     print("-"*50)
@@ -60,6 +60,8 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
             folders=[
                 "baseline_outputs",
                 model_name,
+                exp_name,
+                f"fold_{exp_config.plot_run_id}"
                 ]
         )
 

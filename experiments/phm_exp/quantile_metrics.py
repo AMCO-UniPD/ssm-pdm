@@ -85,6 +85,13 @@ if exp_config.print_summary_metrics:
 
 if exp_config.print_mean_metrics_df:
 
+    stat_cols = ["Life_mean", "Life_median", "Life_std"]
+
+    if mean_metrics_df.shape[0] > 10:
+        print("-"*50)
+        print(f"Too many test lifes, printing just the stats")
+        mean_metrics_df = mean_metrics_df.loc[stat_cols]
+
     print("-"*50)
     print("Mean metrics df:")
     print(mean_metrics_df.to_markdown())

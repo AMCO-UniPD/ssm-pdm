@@ -11,7 +11,7 @@ import setproctitle
 import ipdb
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
@@ -36,15 +36,22 @@ skf = KFold(
     random_state = 42
 )
 
-train_phm_data, test_phm_data = get_raw_phm_data(config=exp_config)
+train_phm_data, _ = get_raw_phm_data(config=exp_config)
 
-_, _, transformed_test_data, _, _, _= transform_phm_data(
-    config=exp_config,
-    train_data=train_phm_data,
-    test_data=test_phm_data
+train_phm_data, test_phm_data, train_idx, test_idx = train_test_split(
+    train_phm_data,
+    np.arange(len(train_phm_data)),
+    test_size=exp_config.test_size,
+    random_state=42
 )
 
-merged_phm_data = MergeData(data_list=[train_phm_data, test_phm_data])
+_, _, transformed_test_data, _, _, _  = transform_phm_data(
+    config  = exp_config,
+    train_data =  train_phm_data,
+    test_data = test_phm_data
+)
+
+merged_phm_data = MergeData(data_list=[train_phm_data])
 
 for fold_idx, (train_val_idx, test_idx) in enumerate(skf.split(merged_phm_data)):
 
@@ -77,6 +84,7 @@ for fold_idx, (train_val_idx, test_idx) in enumerate(skf.split(merged_phm_data))
             folders=[
                 "baseline_outputs",
                 baseline_model_name,
+                exp_name,
                 f"fold_{fold_idx+1}"
             ],
         )
