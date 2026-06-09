@@ -5,7 +5,7 @@ val_size: 0.1
 
 # cv training
 cv: true
-n_folds: 2
+n_folds: 5
 start_fold_id: 0
 
 # dataset transformations
