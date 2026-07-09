@@ -8,23 +8,13 @@ import ipdb
 import os
 import sys
 import setproctitle
-import wandb
 
 src_path = os.path.join(os.path.dirname(__file__), "..", "..", "src")
 sys.path.append(src_path)
 
 from exp_config import setup_exp
-from utils import (
-    load_cv_data,
-    get_current_time,
-    generate_path,
-    set_seed,
-)
+from utils import generate_path
 from cv_training import train_k_fold
-
-from perf import lifes_metrics
-from models import exp_run, best_model_perf
-from wandb_funcs import init_wandb
 
 experiment_path = os.path.dirname((os.path.realpath(__file__)))
 
