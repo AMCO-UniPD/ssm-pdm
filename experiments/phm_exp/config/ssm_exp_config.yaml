@@ -7,6 +7,7 @@ val_size: 0.1
 cv: true
 n_folds: 5
 start_fold_id: 0
+stop_fold_id: 5
 
 # dataset transformations
 # transformer_type: 1 # data normalization
@@ -33,7 +34,7 @@ approach: windowed_quantile_weighted
 quantile_dist: uniform
 bounds: [0.1, 0.9]
 quantiles: [0.1,0.25,0.5,0.75,0.9]
-# quantiles: [0.75, 0.9]
+# quantiles: [0.1]
 quantile_run: 0.5
 
 # select_windows (windowed approach)

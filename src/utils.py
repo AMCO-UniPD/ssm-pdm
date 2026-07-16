@@ -1382,7 +1382,6 @@ def get_raw_phm_data(
         )
 
     print_life_info(config=config, phm_data=test_phm_data)
-    ipdb.set_trace()
 
     return train_phm_data, test_phm_data
 

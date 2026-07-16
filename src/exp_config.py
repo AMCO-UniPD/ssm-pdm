@@ -28,6 +28,7 @@ class ExperimentConfig:
     cv: bool = False
     n_folds: int = 5
     start_fold_id: int = 0
+    stop_fold_id: int = 5
     test_idx: List[int] = field(default_factory=lambda: [0])
     # transformer params
     transformer_type: int = 1

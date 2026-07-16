@@ -182,6 +182,13 @@ def train_k_fold(
             print("-"*50)
             continue
 
+        elif fold_idx >= exp_config.stop_fold_id:
+
+            print("-"*50)
+            print(f"Skipping fold {fold_idx+1} because the training was already done")
+            print("-"*50)
+            continue
+
         else:
 
             print("-"*50)
