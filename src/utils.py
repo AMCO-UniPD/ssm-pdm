@@ -2,20 +2,26 @@
 Script containing some utility functions for the `chronos-pdm` project
 """
 
+import hashlib
 import json
 import math
 import os
 import pickle
 import random
 import re
+import shutil
 import sys
+import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import ipdb
 import numpy as np
 import pandas as pd
 import yaml
+from filelock import FileLock
 
 ceruleo_path = os.path.join(os.path.dirname(__file__), "ceruleo")
 sys.path.append(ceruleo_path)
@@ -248,7 +254,15 @@ def generate_path(basepath: str = os.getcwd(), folders: List[str] = []) -> str:
 
 
 class TransData(AbstractPDMDataset):
-    def __init__(self, data: AbstractPDMDataset):
+    def __init__(
+        self,
+        data: Optional[AbstractPDMDataset] = None,
+        *,
+        feature_arrays: Optional[List[np.ndarray]] = None,
+        target_arrays: Optional[List[np.ndarray]] = None,
+        feature_names: Optional[List[str]] = None,
+        workers: int = 1,
+    ):
         """
         TransData dataset type. This dataset puts the
         input sensor data and the RUL target values into a
@@ -259,13 +273,45 @@ class TransData(AbstractPDMDataset):
             containing the transformed data
         """
         super().__init__()
-        self.lives = []
-        for life in data:
-            current_life = pd.concat([life[0], life[1]], axis=1)
-            self.lives.append(current_life)
+        self.feature_arrays = []
+        self.target_arrays = []
+
+        if feature_arrays is not None or target_arrays is not None:
+            if feature_arrays is None or target_arrays is None:
+                raise ValueError("feature_arrays and target_arrays must be provided together")
+            if len(feature_arrays) != len(target_arrays):
+                raise ValueError("feature_arrays and target_arrays must have equal length")
+            self.feature_arrays = feature_arrays
+            self.target_arrays = target_arrays
+            self.feature_names = list(feature_names or [])
+            return
+
+        if data is None:
+            raise ValueError("data must be provided when cached arrays are not supplied")
+
+        def transform_life(i: int):
+            X, y, _ = data[i]
+            return (
+                np.asarray(X, dtype=np.float32),
+                np.asarray(y, dtype=np.float32).reshape(-1),
+                list(X.columns),
+            )
+
+        indices = range(len(data))
+        if workers > 1 and len(data) > 1:
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                transformed = list(executor.map(transform_life, indices))
+        else:
+            transformed = [transform_life(i) for i in indices]
+
+        self.feature_arrays = [life[0] for life in transformed]
+        self.target_arrays = [life[1] for life in transformed]
+        self.feature_names = transformed[0][2] if transformed else list(feature_names or [])
 
     def get_time_series(self, i):
-        return self.lives[i]
+        life = pd.DataFrame(self.feature_arrays[i], columns=self.feature_names)
+        life["RUL"] = self.target_arrays[i]
+        return life
 
     @property
     def rul_column(self) -> str:
@@ -273,7 +319,15 @@ class TransData(AbstractPDMDataset):
 
     @property
     def n_time_series(self):
-        return len(self.lives)
+        return len(self.feature_arrays)
+
+    def subset(self, indices) -> "TransData":
+        indices = list(indices)
+        return TransData(
+            feature_arrays=[self.feature_arrays[i] for i in indices],
+            target_arrays=[self.target_arrays[i] for i in indices],
+            feature_names=self.feature_names,
+        )
 
 
 class MergeData(AbstractPDMDataset):
@@ -287,6 +341,7 @@ class MergeData(AbstractPDMDataset):
 
         super().__init__()
         self.lives = []
+        self.source_datasets = data_list
 
         for data in data_list:
             for life in data:
@@ -387,8 +442,12 @@ class SSMRegressionDataset(Dataset):
         self.max_rul = max_rul
         self.normalize_rul = normalize_rul
 
-        self.lifes = [life.iloc[:, :-1] for life in lifes]
-        self.ruls = [life["RUL"] for life in lifes]
+        if isinstance(lifes, TransData):
+            self.lifes = [torch.from_numpy(np.asarray(life)) for life in lifes.feature_arrays]
+            self.ruls = [torch.from_numpy(np.asarray(rul)) for rul in lifes.target_arrays]
+        else:
+            self.lifes = [torch.as_tensor(life.iloc[:, :-1].values, dtype=torch.float32) for life in lifes]
+            self.ruls = [torch.as_tensor(life["RUL"].values, dtype=torch.float32) for life in lifes]
 
         self.data_indices = []
 
@@ -411,29 +470,21 @@ class SSMRegressionDataset(Dataset):
         # NOTE: Time series shorter than sequence_length, we use 0 padding
 
         if self.sequence_length > life.shape[0]:
-            pad_arr = np.zeros(shape=(samples_to_pad, life.shape[1]))
-            mask = np.concatenate(
-                (
-                    np.ones(shape=(life.shape[0])),
-                    np.zeros(shape=(samples_to_pad)),
-                )
-            )
-            sequences = np.concatenate((life.values, pad_arr))
-            targets = np.concatenate((rul.values, pad_arr[:, -1]))
+            pad_arr = torch.zeros((samples_to_pad, life.shape[1]), dtype=torch.float32)
+            mask = torch.cat((torch.ones(life.shape[0]), torch.zeros(samples_to_pad)))
+            sequences = torch.cat((life, pad_arr))
+            targets = torch.cat((rul, torch.zeros(samples_to_pad)))
 
         # NOTE: Time series longer than sequence_length we take the last sequence_length samples
 
         else:
-            sequences = life.values[life.shape[0] - self.sequence_length :, :]
-            mask = np.ones(shape=(self.sequence_length))
-            targets = rul.values[life.shape[0] - self.sequence_length :]
+            sequences = life[life.shape[0] - self.sequence_length :, :]
+            mask = torch.ones(self.sequence_length)
+            targets = rul[life.shape[0] - self.sequence_length :]
 
         targets = targets / self.max_rul if self.normalize_rul else targets
 
-        sequence = torch.tensor(sequences, dtype=torch.float32)
-        target = torch.tensor(targets, dtype=torch.float32)
-        mask = torch.tensor(mask, dtype=torch.float32)
-        return sequence, target, mask
+        return sequences, targets, mask
 
 
 # SSM Regression dataset class for the windowed approach
@@ -467,8 +518,12 @@ class SSMWindowRegressionDataset(Dataset):
             ad (bool): weather to use AD version or not
         """
 
-        self.lifes = [life.iloc[:, :-1] for life in lifes]
-        self.ruls = [life["RUL"] for life in lifes]
+        if isinstance(lifes, TransData):
+            self.lifes = [torch.from_numpy(np.asarray(life)) for life in lifes.feature_arrays]
+            self.ruls = [torch.from_numpy(np.asarray(rul)) for rul in lifes.target_arrays]
+        else:
+            self.lifes = [torch.as_tensor(life.iloc[:, :-1].values, dtype=torch.float32) for life in lifes]
+            self.ruls = [torch.as_tensor(life["RUL"].values, dtype=torch.float32) for life in lifes]
         self.targets = self.ruls if not ad else self.lifes
         self.sequence_length = sequence_length
         self.stride = stride
@@ -499,35 +554,35 @@ class SSMWindowRegressionDataset(Dataset):
         life_idx, start_idx = self.data_indices[idx]
         life = self.lifes[life_idx]
         rul = self.targets[life_idx]
-        mask = np.ones(shape=(self.sequence_length, 1))
+        mask = torch.ones((self.sequence_length, 1), dtype=torch.float32)
 
         # NOTE: Life longer than sequence_length: we create the sub sequence
 
         end_idx = start_idx + self.sequence_length
         if end_idx <= life.shape[0]:
-            inputs = life.iloc[start_idx:end_idx].values
-            targets = rul.iloc[start_idx:end_idx].values
+            inputs = life[start_idx:end_idx]
+            targets = rul[start_idx:end_idx]
 
         # NOTE: Life shorter than sequence_length: we use 0 padding
 
         else:
-            inputs = life.iloc[start_idx : life.shape[0]].values
-            targets = rul.iloc[start_idx : rul.shape[0]].values
+            inputs = life[start_idx : life.shape[0]]
+            targets = rul[start_idx : rul.shape[0]]
             pad_idx = self.sequence_length - (life.shape[0] - start_idx)
 
             # NOTE: Concatenate inputs and targets with pad_idx
 
-            inputs = np.concatenate(
-                (inputs, np.zeros(shape=(pad_idx, inputs.shape[1])))
+            inputs = torch.cat(
+                (inputs, torch.zeros((pad_idx, inputs.shape[1]), dtype=torch.float32))
             )
 
             if self.ad:
-                targets = np.concatenate(
-                    (targets, np.zeros(shape=(pad_idx, inputs.shape[1])))
+                targets = torch.cat(
+                    (targets, torch.zeros((pad_idx, inputs.shape[1]), dtype=torch.float32))
                 )
 
             else:
-                targets = np.concatenate((targets, np.zeros(shape=(pad_idx,))))
+                targets = torch.cat((targets, torch.zeros(pad_idx, dtype=torch.float32)))
 
             # NOTE: From pad_idx to the end the mask becomes 0
 
@@ -536,12 +591,9 @@ class SSMWindowRegressionDataset(Dataset):
         # NOTE: Normalize the RUL if self.normalize_rul is true
         if not self.ad:
             targets = targets / self.max_rul if self.normalize_rul else targets
-            targets = np.expand_dims(targets, axis=-1)
+            targets = targets.unsqueeze(-1)
 
-        sequence = torch.tensor(inputs, dtype=torch.float32)
-        target = torch.tensor(targets, dtype=torch.float32)
-        mask = torch.tensor(mask, dtype=torch.float32)
-        return sequence, target, mask
+        return inputs, targets, mask
 
     def select_windows(
         self,
@@ -567,10 +619,10 @@ class SSMWindowRegressionDataset(Dataset):
             # Determine the target window values for this specific index
             end_idx = start_idx + self.sequence_length
             # Use the same logic as __getitem__ to get the target slice
-            target_slice = rul.iloc[start_idx : min(end_idx, len(rul))].values
+            target_slice = rul[start_idx : min(end_idx, len(rul))]
 
             # Condition: at least one RUL value < self.max_rul
-            is_near_failure = np.unique(target_slice).shape[0] > 1
+            is_near_failure = torch.unique(target_slice).numel() > 1
 
             if is_near_failure:
                 filtered_indices.append(self.data_indices[idx])
@@ -1085,12 +1137,12 @@ def create_padding_loaders(
 
     eval_datasets = [
         SSMRegressionDataset(
-            lifes=[test_life],
+            lifes=test_lifes.subset([i]),
             sequence_length=config.sequence_length,
             max_rul=config.max_rul,
             normalize_rul=config.normalize_rul,
         )
-        for test_life in test_lifes
+        for i in range(len(test_lifes))
     ]
     test_loaders = [DataLoader(eval_dataset) for eval_dataset in eval_datasets]
 
@@ -1233,8 +1285,10 @@ def create_window_loaders(
         print("-" * 50)
 
         test_datasets = []
-        for test_life in test_lifes:
-            test_dataset = create_window_dataset(config=config, lifes=[test_life])
+        for i in range(len(test_lifes)):
+            test_dataset = create_window_dataset(
+                config=config, lifes=test_lifes.subset([i])
+            )
             test_datasets.append(test_dataset)
 
         test_loaders = [
@@ -1438,11 +1492,7 @@ def transform_phm_data(
         print(stat_moments_df.T.to_markdown())
         print("-"*50)
 
-    transformer = get_transformer(
-        config=config,
-        df=train_data,
-    )
-    transformer.fit(train_data)
+    transformer = _load_or_fit_phm_transformer(config, train_data)
     transformed_train_data = train_data.map(transformer)
     transformed_val_data = val_data.map(transformer)
     transformed_test_data = test_data.map(transformer)
@@ -1455,6 +1505,236 @@ def transform_phm_data(
         val_idx,
         test_phm_idx,
     )
+
+
+def fit_phm_transformer(
+    transformer: Transformer,
+    dataset: AbstractPDMDataset,
+    workers: int = 1,
+) -> Transformer:
+    """Fit independent transformer branches concurrently without changing results."""
+    pipelines = [transformer.pipelineX]
+    if transformer.pipelineY is not None:
+        pipelines.append(transformer.pipelineY)
+
+    if workers > 1 and len(pipelines) > 1:
+        with ThreadPoolExecutor(max_workers=min(workers, len(pipelines))) as executor:
+            list(executor.map(lambda pipeline: pipeline.fit(dataset), pipelines))
+    else:
+        for pipeline in pipelines:
+            pipeline.fit(dataset)
+
+    if transformer.pipelineMetadata is not None:
+        transformer.pipelineMetadata.fit(dataset)
+
+    transformer.minimal_df = dataset[0].head(n=20)
+    X = transformer.pipelineX.transform(transformer.minimal_df)
+    transformer.number_of_features_ = X.shape[1]
+    transformer.fitted_ = True
+    transformer.column_names = transformer._compute_column_names()
+    return transformer
+
+
+_PHM_CACHE_VERSION = 1
+
+
+def _dataset_fingerprint(dataset: AbstractPDMDataset) -> dict:
+    fingerprint = {"type": type(dataset).__name__, "length": len(dataset)}
+    if hasattr(dataset, "indices"):
+        fingerprint["indices"] = [int(i) for i in dataset.indices]
+    if hasattr(dataset, "cycles_table_filename"):
+        path = Path(dataset.cycles_table_filename)
+        if path.exists():
+            stat = path.stat()
+            fingerprint["cycles_table"] = [str(path.resolve()), stat.st_size, stat.st_mtime_ns]
+    if hasattr(dataset, "cycles_metadata") and "Filename" in dataset.cycles_metadata:
+        total_size = 0
+        latest_mtime = 0
+        for filename in dataset.cycles_metadata["Filename"]:
+            source_path = Path(filename)
+            if source_path.exists():
+                stat = source_path.stat()
+                total_size += stat.st_size
+                latest_mtime = max(latest_mtime, stat.st_mtime_ns)
+        fingerprint["source_files"] = [len(dataset.cycles_metadata), total_size, latest_mtime]
+    if hasattr(dataset, "dataset"):
+        fingerprint["dataset"] = _dataset_fingerprint(dataset.dataset)
+    if hasattr(dataset, "source_datasets"):
+        fingerprint["source_datasets"] = [
+            _dataset_fingerprint(source) for source in dataset.source_datasets
+        ]
+    return fingerprint
+
+
+def _phm_cache_key(config: ExperimentConfig, datasets: List[AbstractPDMDataset], eval: bool) -> str:
+    preprocessing_config = {
+        "version": _PHM_CACHE_VERSION,
+        "eval": eval,
+        "transformer_type": config.transformer_type,
+        "feature_type": config.feature_type,
+        "scaler": config.scaler,
+        "scaler_kwargs": config.scaler_kwargs,
+        "failure_type": getattr(config, "failure_type", None),
+        "train_phm_tools": getattr(config, "train_phm_tools", None),
+        "test_phm_tools": getattr(config, "test_phm_tools", None),
+        "datasets": [_dataset_fingerprint(dataset) for dataset in datasets],
+    }
+    payload = json.dumps(preprocessing_config, sort_keys=True, default=str).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _phm_cache_root(config: ExperimentConfig) -> Path:
+    if config.data_cache_dir:
+        return Path(config.data_cache_dir).expanduser()
+    xdg_cache = os.environ.get("XDG_CACHE_HOME")
+    base = Path(xdg_cache).expanduser() if xdg_cache else Path.home() / ".cache"
+    return base / "ssm-pdm" / "phm_preprocessed"
+
+
+def _load_or_fit_phm_transformer(
+    config: ExperimentConfig,
+    train_data: AbstractPDMDataset,
+) -> Transformer:
+    transformer = get_transformer(config=config, df=train_data)
+    # transformer_type 0 exposes its fitted RUL scaler through config, so retain
+    # the legacy fitting path until that public coupling can be removed safely.
+    cache_enabled = config.data_cache_enabled and config.transformer_type != 0
+    cache_root = _phm_cache_root(config)
+    cache_key = _phm_cache_key(config, [train_data], False)
+    transformer_path = cache_root / f"transformer-{cache_key}.pickle"
+
+    if cache_enabled and not config.rebuild_data_cache and transformer_path.exists():
+        try:
+            with open(transformer_path, "rb") as file:
+                return pickle.load(file)
+        except (OSError, ValueError, EOFError, pickle.UnpicklingError):
+            pass
+
+    fit_phm_transformer(
+        transformer,
+        train_data,
+        workers=max(1, int(config.preprocess_workers)),
+    )
+
+    if cache_enabled:
+        cache_root.mkdir(parents=True, exist_ok=True)
+        lock = FileLock(str(transformer_path) + ".lock")
+        with lock:
+            if config.rebuild_data_cache or not transformer_path.exists():
+                fd, temporary_name = tempfile.mkstemp(
+                    prefix=f".{transformer_path.name}-", dir=cache_root
+                )
+                try:
+                    with os.fdopen(fd, "wb") as file:
+                        pickle.dump(transformer, file)
+                    os.replace(temporary_name, transformer_path)
+                finally:
+                    if os.path.exists(temporary_name):
+                        os.unlink(temporary_name)
+    return transformer
+
+
+def _save_trans_data(path: Path, name: str, data: TransData) -> dict:
+    offsets = np.zeros(len(data) + 1, dtype=np.int64)
+    for i, life in enumerate(data.feature_arrays):
+        offsets[i + 1] = offsets[i] + life.shape[0]
+
+    n_features = len(data.feature_names)
+    features_path = path / f"{name}_features.npy"
+    targets_path = path / f"{name}_targets.npy"
+    features = np.lib.format.open_memmap(
+        features_path, mode="w+", dtype=np.float32,
+        shape=(int(offsets[-1]), n_features),
+    )
+    targets = np.lib.format.open_memmap(
+        targets_path, mode="w+", dtype=np.float32, shape=(int(offsets[-1]),),
+    )
+    for i, (life, rul) in enumerate(zip(data.feature_arrays, data.target_arrays)):
+        start, end = offsets[i], offsets[i + 1]
+        features[start:end] = life
+        targets[start:end] = rul
+    features.flush()
+    targets.flush()
+    del features, targets
+    np.save(path / f"{name}_offsets.npy", offsets)
+    return {"name": name, "n_lives": len(data), "feature_names": data.feature_names}
+
+
+def _load_trans_data(path: Path, metadata: dict) -> TransData:
+    name = metadata["name"]
+    features = np.load(path / f"{name}_features.npy", mmap_mode="c")
+    targets = np.load(path / f"{name}_targets.npy", mmap_mode="c")
+    offsets = np.load(path / f"{name}_offsets.npy")
+    feature_arrays = [features[offsets[i] : offsets[i + 1]] for i in range(len(offsets) - 1)]
+    target_arrays = [targets[offsets[i] : offsets[i + 1]] for i in range(len(offsets) - 1)]
+    return TransData(
+        feature_arrays=feature_arrays,
+        target_arrays=target_arrays,
+        feature_names=metadata["feature_names"],
+    )
+
+
+def _materialize_phm_lifes(
+    config: ExperimentConfig,
+    transformed_train_data: TransformedDataset,
+    transformed_val_data: TransformedDataset,
+    transformed_test_data: TransformedDataset,
+    eval: bool,
+) -> Tuple[Optional[TransData], Optional[TransData], TransData]:
+    datasets = [
+        transformed_train_data.dataset,
+        transformed_val_data.dataset,
+        transformed_test_data.dataset,
+    ]
+    cache_key = _phm_cache_key(config, datasets, eval)
+    cache_path = _phm_cache_root(config) / cache_key
+    manifest_path = cache_path / "manifest.json"
+
+    invalid_cache = False
+    if config.data_cache_enabled and not config.rebuild_data_cache and manifest_path.exists():
+        try:
+            with open(manifest_path) as file:
+                manifest = json.load(file)
+            loaded = {item["name"]: _load_trans_data(cache_path, item) for item in manifest["splits"]}
+            print(f"Loaded preprocessed PHM arrays from cache {cache_key[:12]}")
+            return loaded.get("train"), loaded.get("val"), loaded["test"]
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+            invalid_cache = True
+
+    workers = max(1, int(config.preprocess_workers))
+    materialize_start = time.perf_counter()
+    train_lifes = None if eval else TransData(transformed_train_data, workers=workers)
+    val_lifes = None if eval else TransData(transformed_val_data, workers=workers)
+    test_lifes = TransData(transformed_test_data, workers=workers)
+    print(
+        "Materialized transformed PHM arrays in "
+        f"{time.perf_counter() - materialize_start:.3f} s"
+    )
+
+    if config.data_cache_enabled:
+        cache_root = _phm_cache_root(config)
+        cache_root.mkdir(parents=True, exist_ok=True)
+        lock = FileLock(str(cache_root / f"{cache_key}.lock"))
+        with lock:
+            if (config.rebuild_data_cache or invalid_cache) and cache_path.exists():
+                shutil.rmtree(cache_path)
+            if not cache_path.exists():
+                temporary_path = Path(tempfile.mkdtemp(prefix=f".{cache_key}-", dir=cache_root))
+                try:
+                    splits = []
+                    if train_lifes is not None:
+                        splits.append(_save_trans_data(temporary_path, "train", train_lifes))
+                    if val_lifes is not None:
+                        splits.append(_save_trans_data(temporary_path, "val", val_lifes))
+                    splits.append(_save_trans_data(temporary_path, "test", test_lifes))
+                    with open(temporary_path / "manifest.json", "w") as file:
+                        json.dump({"version": _PHM_CACHE_VERSION, "splits": splits}, file)
+                    os.replace(temporary_path, cache_path)
+                finally:
+                    if temporary_path.exists():
+                        shutil.rmtree(temporary_path)
+
+    return train_lifes, val_lifes, test_lifes
 
 def get_phm_loaders(
     config: ExperimentConfig,
@@ -1484,9 +1764,16 @@ def get_phm_loaders(
         approach, it also contains a list of DataLoader objects for each life in the test set.
     """
 
-    train_lifes = TransData(transformed_train_data)
-    val_lifes = TransData(transformed_val_data)
-    test_lifes = TransData(transformed_test_data)
+    train_lifes, val_lifes, test_lifes = _materialize_phm_lifes(
+        config,
+        transformed_train_data,
+        transformed_val_data,
+        transformed_test_data,
+        eval,
+    )
+
+    if eval and "windowed" not in config.approach:
+        raise ValueError("Evaluation-only loading is supported for windowed approaches")
 
     if "padding" in config.approach:
         loaders_dict = create_padding_loaders(
@@ -1547,6 +1834,7 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
 
     train_phm_data, test_phm_data = get_raw_phm_data(config=config)
 
+    start_time = time.perf_counter()
     (
         transformed_train_data,
         transformed_val_data,
@@ -1559,7 +1847,13 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
         train_data=train_phm_data,
         test_data=test_phm_data
     )
+    transformer_time = time.perf_counter() - start_time
 
+    print("-"*50)
+    print(f"Prepared transformer and lazy datasets in {transformer_time:.3f} s")
+    print("-"*50)
+
+    start_time = time.perf_counter()
     loaders_dict = get_phm_loaders(
         config = config,
         transformed_train_data = transformed_train_data,
@@ -1570,6 +1864,11 @@ def load_phm_data(config: ExperimentConfig, eval: bool = False) -> dict:
         test_idx = test_phm_idx,
         eval = eval
     )
+    loaders_time = time.perf_counter() - start_time
+
+    print("-"*50)
+    print(f"Materialized data and created dataloaders in {loaders_time:.3f} s")
+    print("-"*50)
 
     return loaders_dict
 
@@ -1607,6 +1906,11 @@ def load_cv_data(
         test_data = test_data
     )
 
+    print("-"*50)
+    print("Loaded transformed data, let's pass to creating the dataloaders")
+    print("-"*50)
+
+    start_time = time.perf_counter()
     loaders_dict = get_phm_loaders(
         config = config,
         transformed_train_data = transformed_train_data,
@@ -1617,6 +1921,11 @@ def load_cv_data(
         test_idx = test_phm_idx,
         eval = eval
     )
+    loaders_time = time.perf_counter() - start_time
+
+    print("-"*50)
+    print(f"Materialized data and created dataloaders in {loaders_time:.3f} s")
+    print("-"*50)
 
     return loaders_dict
 

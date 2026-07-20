@@ -92,6 +92,11 @@ class ExperimentConfig:
     n_const_win: int = 10
     normalize_rul: bool = False
     ad: bool = False
+    # PHM preprocessing/cache parameters
+    data_cache_enabled: bool = True
+    data_cache_dir: Optional[str] = None
+    rebuild_data_cache: bool = False
+    preprocess_workers: int = 4
     # monotonic approach
     monotonic: bool = False
     # wandb sweep
