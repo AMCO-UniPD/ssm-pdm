@@ -19,6 +19,8 @@ model_names=(
   "LSTM"
   "GRU"
   "RNN"
+  "mean"
+  "median"
 )
 
 exp_names=()
