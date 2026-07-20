@@ -3,7 +3,7 @@
 
 # General model parametrers
 d_model: 128
-n_layers: 5
+n_layers: 4
 dropout: 0.205
 
 # Global Average Pooling in the Regression Head
@@ -34,8 +34,8 @@ ff_dropout: 0.2
 attn_dropout: 0.2
 
 # RULTransformer config
-d_ff: 64
-n_heads: 8
+d_ff: 256
+n_heads: 2
 
 # RULInformer config
 factor: 5

@@ -19,8 +19,6 @@ from exp_config import (
 from exp_config import ModelConfig
 from models import (
     wandb_data,
-    train_loop,
-    eval_loop,
 )
 from utils import load_yaml_to_dict
 from trainer import get_trainer
@@ -58,6 +56,7 @@ def define_sweep_config(
     config = ExperimentConfig.from_dict(sweep_config_dict)
     config.add_params(args=args.__dict__)
     setattr(exp_config,"sweep_method",config.sweep_method)
+    setattr(exp_config, "sweep_param_names", config.sweep_param_names)
 
     if exp_config.sweep_name == "sweep":
         sweep_name = set_sweep_name(config = exp_config)
@@ -264,6 +263,12 @@ def exp_run_sweep(
         else:
             raise ValueError(f"Error: {param_name} is neither in the experiment or the model config")
 
+    if exp_config.model_name == "Transformer" and model_config.d_model % model_config.n_heads != 0:
+        raise AssertionError(
+            "Transformer d_model must be divisible by n_heads, but got "
+            f"d_model={model_config.d_model} and n_heads={model_config.n_heads}"
+        )
+
     (
         train_loader,
         val_loader,
@@ -320,7 +325,7 @@ def wandb_run_sweep():
                 wandb_config = sweep_run.config
             )
 
-            check_arguments(args=sweep_run.config)
+            check_arguments(args=exp_config)
 
             setproctitle.setproctitle(sweep_run.name)
 
@@ -333,11 +338,24 @@ def wandb_run_sweep():
             )
             sweep_run.log({"score": score})
 
-        except AssertionError as _:
+        except AssertionError as error:
 
             print("-"*50)
-            print("Skipping run due to an invalid configuration")
+            print(f"Skipping run due to an invalid configuration: {error}")
             print("-"*50)
+
+            return
+
+        except torch.cuda.OutOfMemoryError as error:
+
+            print("-"*50)
+            print(f"CUDA out of memory; marking this configuration as infeasible: {error}")
+            print("-"*50)
+
+            # Keep the agent alive and give the optimizer a finite, deliberately
+            # poor objective for configurations that do not fit on the GPU.
+            sweep_run.log({"score": 1.0e12, "oom": 1})
+            torch.cuda.empty_cache()
 
             return
 
@@ -350,5 +368,3 @@ def wandb_run_sweep():
             sweep_run.finish(exit_code=1)
 
             raise e
-
-

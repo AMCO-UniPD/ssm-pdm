@@ -108,7 +108,10 @@ class ExperimentConfig:
     dropout_vals: List[float] = field(default_factory=lambda: [0.1, 0.2])
     sequence_length_vals: List[int] = field(default_factory=lambda: [10000, 20000])
     stride_vals: List[int] = field(default_factory=lambda: [100, 200])
-    d_model_vals: List[float] = field(default_factory=lambda: [32, 64])
+    d_model_vals: List[int] = field(default_factory=lambda: [32, 64])
+    n_layers_vals: List[int] = field(default_factory=lambda: [1, 2, 3])
+    d_ff_vals: List[int] = field(default_factory=lambda: [64, 128])
+    n_heads_vals: List[int] = field(default_factory=lambda: [2, 4, 8])
 
     @classmethod
     def from_dict(cls, config: dict) -> "ExperimentConfig":

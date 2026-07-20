@@ -1,0 +1,9 @@
+# Local CUDA feasibility grid for Transformer training.
+# Each configuration runs the specified number of real optimizer steps.
+d_model_vals: [32, 64, 128]
+n_layers_vals: [1, 2, 3, 4]
+d_ff_vals: [64, 128, 256]
+n_heads_vals: [2, 4, 8]
+batch_size_vals: [1, 2, 4, 8]
+train_steps: 1
+output_path: transformer_memory_results.json
