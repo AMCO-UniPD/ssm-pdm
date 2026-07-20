@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source "./phm_exp_config"
+
+export CUDA_VISIBLE_DEVICES="$device_num"
+
+python check_transformer_memory.py \
+  --exp_config_path "config/ssm_exp_config.yaml" \
+  --data_name "$data_name" \
+  --model_name "Transformer" \
+  --failure_type "$failure_type" \
+  --train_phm_tools "${train_phm_tools[@]}" \
+  --test_phm_tools "${test_phm_tools[@]}" \
+  --device_num "$device_num"
