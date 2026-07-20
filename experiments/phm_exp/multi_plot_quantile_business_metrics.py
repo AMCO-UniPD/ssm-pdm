@@ -87,7 +87,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
                 exp_config.failure_type,
                 exp_config.plot_approach,
                 exp_name,
-                f"run_{exp_config.plot_run_id}",
+                f"run_{exp_config.plot_run_id}" if not exp_config.cv else f"fold_{exp_config.plot_run_id}",
                 f"quantile_{exp_config.quantile_run}"
             ],
         )
@@ -105,7 +105,9 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
             for i in range(len(outputs_dict["y_true"]))
         ]
 
-        results_dict[f"{model_name}_quantile_{exp_config.quantile_run}"] = prediction_results
+        #WARN: Remove the quantile_{exp_config.quantile_run} from the model name
+        # results_dict[f"{model_name}_quantile_{exp_config.quantile_run}"] = prediction_results
+        results_dict[model_name] = prediction_results
 
 base_filename = f"{get_current_time()}_{exp_config.failure_type}_{exp_config.plot_approach}_multi_plot_business_metrics_quantile"
 

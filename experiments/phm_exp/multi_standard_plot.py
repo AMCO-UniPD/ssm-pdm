@@ -34,7 +34,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
             exp_config.failure_type,
             exp_config.plot_approach,
             exp_name,
-            f"run_{exp_config.plot_run_id}"
+            f"run_{exp_config.plot_run_id}" if not exp_config.cv else f"fold_{exp_config.plot_run_id}"
         ],
     )
 
@@ -46,7 +46,7 @@ plot_path = generate_path(
         "multi_plots",
         exp_config.failure_type,
         exp_config.plot_approach,
-        f"run_{exp_config.plot_run_id}",
+        f"run_{exp_config.plot_run_id}" if not exp_config.cv else f"fold_{exp_config.plot_run_id}"
     ],
 )
 

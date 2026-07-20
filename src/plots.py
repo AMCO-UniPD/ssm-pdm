@@ -259,6 +259,9 @@ def multi_plot_predictions_grid(
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.plot_life_idx]
 
     for model_name, output_path in plot_dict.items():
+        print("-"*50)
+        print(f"Retrieving outputs for model {model_name} and path \n {output_path}")
+        print("-"*50)
         outputs_path = get_most_recent_file(output_path, file_pos=config.file_pos)
         outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
 
@@ -271,8 +274,8 @@ def multi_plot_predictions_grid(
             true = [y_true[i][-n_last_samples:] for i in life_idxs]
             pred = [y_pred[i][-n_last_samples:] for i in life_idxs]
         else:
-            true = [y_true[i][start_idx:end_idx] for i in life_idxs]
-            pred = [y_pred[i][start_idx:end_idx] for i in life_idxs]
+            true = [y_true[i][config.start_idx:config.end_idx] for i in life_idxs]
+            pred = [y_pred[i][config.start_idx:config.end_idx] for i in life_idxs]
 
         pred_dict[model_name] = [pred[i].squeeze() for i in life_idxs]
 
