@@ -76,3 +76,4 @@ package.json
 
 # ignore all the slurm related stuff
 slurm_jobs/
+.worktrees/
