@@ -13,21 +13,21 @@ plot_approach="${2:-windowed_quantile_weighted}"
 
 model_names=(
   "$model_name"
-  "quantile_0.1"
-  "quantile_0.25"
-  "quantile_0.5"
-  "quantile_0.75"
-  "quantile_0.9"
+  # "quantile_0.1"
+  # "quantile_0.25"
+  # "quantile_0.5"
+  # "quantile_0.75"
+  # "quantile_0.9"
 )
 
 exp_names=(
   # "super_benchmark_${model_names[0]}_${failure_type}_${plot_approach}_cv_phm_in_features"
   "${model_names[0]}_${failure_type}_${plot_approach}_cv_phm_in_features"
-  "quantile_0.1"
-  "quantile_0.25"
-  "quantile_0.5"
-  "quantile_0.75"
-  "quantile_0.9"
+  # "quantile_0.1"
+  # "quantile_0.25"
+  # "quantile_0.5"
+  # "quantile_0.75"
+  # "quantile_0.9"
 )
 
 python $script_path \
