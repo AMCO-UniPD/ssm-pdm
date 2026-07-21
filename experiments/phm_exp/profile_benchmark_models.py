@@ -49,7 +49,7 @@ def parse_args() -> argparse.Namespace:
         default=EXPERIMENT_PATH / "config" / "ssm_config.yaml",
     )
     parser.add_argument("--failure-type", default="flow_low")
-    parser.add_argument("--test-phm-tools", nargs="+", default=["01M02"])
+    parser.add_argument("--test-phm-tools", nargs="+", default=["01M02", "02M02", "03M01", "04M01", "06M01"])
     parser.add_argument(
         "--input-features",
         type=int,
@@ -66,6 +66,10 @@ def parse_args() -> argparse.Namespace:
 def load_configs(args: argparse.Namespace) -> tuple[ExperimentConfig, ModelConfig]:
     exp_config = ExperimentConfig.from_dict(load_yaml_to_dict(str(args.exp_config)))
     model_config = ModelConfig.from_dict(load_yaml_to_dict(str(args.model_config)))
+    # ``data_name`` normally comes from the shared experiment CLI and is added
+    # dynamically by ``setup_exp``.  This standalone profiler has its own CLI,
+    # so set the dataset explicitly before calling the shared PHM utilities.
+    exp_config.data_name = "PHM"
     exp_config.failure_type = args.failure_type
     exp_config.test_phm_tools = args.test_phm_tools
     model_config.device = "cpu"
