@@ -30,7 +30,8 @@ MODEL_ALIASES = {
     "RULTransformer": "Transformer",
     "RULInformer": "Informer",
 }
-DEFAULT_MODELS = ["S4", "S5", "S4D", "LSTM", "RULTransformer", "RULInformer"]
+DEFAULT_MODELS = ["S4", "S5", "S4D", "Linear", "MLP", "LSTM", "RNN", "GRU"]
+# DEFAULT_MODELS = ["S4", "S5", "S4D", "Linear", "MLP", "LSTM", "RNN", "GRU", "RULTransformer"]
 
 
 def parse_args() -> argparse.Namespace:

@@ -28,11 +28,16 @@ def parse_args() -> argparse.Namespace:
         default=EXPERIMENT_PATH / "profile_outputs" / "benchmark_model_profile.json",
     )
     parser.add_argument(
-        "--model-experiment",
-        action="append",
+        "--model_names",
+        nargs="+",
         required=True,
-        metavar="MODEL=EXPERIMENT_NAME",
-        help="Repeat once for every profiled model.",
+        help="Names of the profiled models to include in the plot.",
+    )
+    parser.add_argument(
+        "--exp_names",
+        nargs="+",
+        required=True,
+        help="Experiment names corresponding positionally to --model_names.",
     )
     parser.add_argument(
         "--exp-config",
@@ -64,19 +69,19 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def parse_model_experiments(
-    values: list[str], expected_models: set[str]
+def map_model_experiments(
+    model_names: list[str], exp_names: list[str], expected_models: set[str]
 ) -> dict[str, str]:
-    mappings: dict[str, str] = {}
-    for value in values:
-        if value.count("=") != 1:
-            raise ValueError(f"Invalid mapping '{value}'; use MODEL=EXPERIMENT_NAME")
-        model_name, experiment_name = (item.strip() for item in value.split("="))
-        if not model_name or not experiment_name:
-            raise ValueError(f"Invalid mapping '{value}'; both sides are required")
-        if model_name in mappings:
-            raise ValueError(f"Duplicate mapping for model '{model_name}'")
-        mappings[model_name] = experiment_name
+    if len(model_names) != len(exp_names):
+        raise ValueError(
+            "--model_names and --exp_names must contain the same number of values"
+        )
+    if len(set(model_names)) != len(model_names):
+        raise ValueError("--model_names must not contain duplicates")
+    if any(not exp_name.strip() for exp_name in exp_names):
+        raise ValueError("--exp_names must not contain empty values")
+
+    mappings = dict(zip(model_names, exp_names))
     if set(mappings) != expected_models:
         missing = sorted(expected_models - set(mappings))
         unknown = sorted(set(mappings) - expected_models)
@@ -129,8 +134,8 @@ def main() -> None:
     if not 0 <= quantile <= 1:
         raise ValueError("--quantile must be between 0 and 1")
     eval_loss = args.eval_loss or exp_config.life_eval_loss
-    mappings = parse_model_experiments(
-        args.model_experiment, set(profile_data["models"])
+    mappings = map_model_experiments(
+        args.model_names, args.exp_names, set(profile_data["models"])
     )
 
     rows = []
@@ -181,7 +186,7 @@ def main() -> None:
     figure.update_layout(template="plotly_white")
 
     output_dir = args.output_dir or (
-        EXPERIMENT_PATH / "plots" / "blob_plot" / failure_type / approach
+        EXPERIMENT_PATH / "blob_plot" / failure_type / approach
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     filename = (
