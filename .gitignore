@@ -15,6 +15,8 @@
 # # Paper
 # chronos-pdm-notes/Paper
 
+.worktrees
+
 # env variables
 .env
 experiments/phm_exp/export_env
