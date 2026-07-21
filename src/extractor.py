@@ -51,9 +51,14 @@ class Extractor(nn.Module):
         else:
             self.activation = nn.Identity()
 
-        for _ in range(self.config.n_layers):
-            self.hidden_layers.append(nn.LazyLinear(self.config.d_model))
-            self.acts.append(self.activation)
+        # Most specialized extractors override ``forward`` and build their own
+        # layers. Registering the generic LazyLinear stack for those classes
+        # leaves parameters that can never be initialized by a model forward
+        # pass, which in turn breaks parameter counters and profilers.
+        if type(self).forward is Extractor.forward:
+            for _ in range(self.config.n_layers):
+                self.hidden_layers.append(nn.LazyLinear(self.config.d_model))
+                self.acts.append(self.activation)
 
     def forward(self, x):
 

@@ -17,6 +17,8 @@
 
 .worktrees
 
+profile_outputs/
+
 # env variables
 .env
 experiments/phm_exp/export_env
