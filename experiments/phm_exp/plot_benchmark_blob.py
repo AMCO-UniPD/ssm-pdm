@@ -171,13 +171,13 @@ def main() -> None:
         log_x=True,
         size_max=60,
         labels={
-            "Parameters": "Number of parameters",
+            "Parameters": "Number of parameters (M)",
             "Life_mean evaluation loss": (
                 f"Life_mean {eval_loss} (quantile {quantile})"
             ),
             "GFLOPs": "GFLOPs per input window",
         },
-        title=f"PHM benchmark: complexity vs. predictive loss ({failure_type})",
+        title=f"PHM benchmark: complexity vs. predictive loss",
     )
     figure.update_traces(
         marker={"color": "#2563eb", "opacity": 0.8},
