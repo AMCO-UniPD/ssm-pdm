@@ -68,6 +68,41 @@ class QuantileHead(Head):
         return x
 
 
+class QuantileScaleHead(Head):
+    """
+    Quantile head that predicts a median and separate positive scales for the
+    lower and upper halves of the conditional distribution.
+
+    For a fixed representation, the output is monotonic in ``tau``:
+
+        Q(tau) = median + (2 * tau - 1) * scale
+
+    where the lower scale is used below the median and the upper scale above
+    it. Unlike :class:`QuantileHead`, this head does not rely on ``tau_feat`` or
+    ``tau_mult``.
+    """
+
+    def __init__(self, tau: float = 0.5, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not 0.0 <= tau <= 1.0:
+            raise ValueError(f"tau must be between 0 and 1, got {tau}")
+
+        self.tau = tau
+        self.lower_scale_decoder = nn.LazyLinear(self.d_output)
+        self.upper_scale_decoder = nn.LazyLinear(self.d_output)
+
+    def forward(self, x):
+        x = x[:, -1, :].squeeze(1)  # (B, L, H) -> (B, H)
+
+        median = self.decoder(x)
+        lower_scale = F.softplus(self.lower_scale_decoder(x))
+        upper_scale = F.softplus(self.upper_scale_decoder(x))
+
+        centered_tau = 2.0 * self.tau - 1.0
+        scale = lower_scale if self.tau < 0.5 else upper_scale
+        return median + centered_tau * scale
+
+
 class MonotonicHead(Head):
     def __init__(self, n_mono_neurons: int = 3,  *args, **kwargs):
         super().__init__(*args, **kwargs)

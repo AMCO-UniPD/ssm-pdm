@@ -30,6 +30,7 @@ from trainer import get_trainer
 from model_classes import (
     RULModel,
     QuantileRULModel,
+    QuantileScaleRULModel,
     MonotonicRULModel,
     MonoQuantileRULModel
 )
@@ -244,12 +245,22 @@ def load_ssm_model(
         scheduler: torch.optim.lr_scheduler object
     """
 
+    if exp_config.quantile_scale and not exp_config.quantile_reg:
+        raise ValueError("quantile_scale requires quantile_reg to be enabled")
+    if exp_config.quantile_scale and exp_config.monotonic:
+        raise ValueError("quantile_scale is not supported with monotonic models")
+
     if exp_config.quantile_reg and exp_config.monotonic:
         model = MonoQuantileRULModel(tau=tau, mono_mask=mono_mask, **kwargs)
     elif not exp_config.quantile_reg and exp_config.monotonic:
         model = MonotonicRULModel(mono_mask=mono_mask, **kwargs)
     elif exp_config.quantile_reg and not exp_config.monotonic:
-        model = QuantileRULModel(tau=tau, **kwargs)
+        model_class = (
+            QuantileScaleRULModel
+            if exp_config.quantile_scale
+            else QuantileRULModel
+        )
+        model = model_class(tau=tau, **kwargs)
     else:
         model = RULModel(**kwargs)
 

@@ -44,6 +44,7 @@ class ExperimentConfig:
     approach: str = "windowed"
     # quantile regression parameters
     quantile_reg: bool = True
+    quantile_scale: bool = False
     quantile_dist: str = "uniform"
     quantile_run: float = 0.25
     bounds: List[float] = field(default_factory=lambda: [0.1, 0.9])

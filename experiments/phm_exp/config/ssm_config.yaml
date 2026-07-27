@@ -11,10 +11,13 @@ gap: false
 
 # Quantile Regression config
 quantile_reg: true
+
+#WARN: tau_mult and tau_feat should be false if
+# we use QuantileScaleHead
 # tau_mult approach
-tau_mult: true
+tau_mult: false
 # tau as input feature
-tau_feat: true
+tau_feat: false
 
 # S4 config
 lr: 0.006

@@ -40,7 +40,13 @@ from extractor import (
     InformerExtractor,
 )
 
-from head import Head, QuantileHead, MonotonicHead, MonoQuantileHead
+from head import (
+    Head,
+    QuantileHead,
+    QuantileScaleHead,
+    MonotonicHead,
+    MonoQuantileHead,
+)
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd, "experiments", "chronos_exp")
@@ -169,6 +175,25 @@ class QuantileRULModel(RULModel):
         x = self.head(x)
 
         return x
+
+
+class QuantileScaleRULModel(RULModel):
+    """
+    Quantile regression model using a location-and-scale head.
+
+    The quantile level is consumed by the head, so it is neither concatenated
+    to the input features nor multiplied with the prediction.
+    """
+
+    def __init__(self, tau: float = 0.5, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.tau = tau
+        self.head = QuantileScaleHead(
+            tau=self.tau,
+            config=self.model_config,
+            d_output=self.output_size,
+        )
 
 
 class MonotonicRULModel(RULModel):
