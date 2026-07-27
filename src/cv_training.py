@@ -170,7 +170,6 @@ def train_k_fold(
         config = exp_config,
         eval = True
     )
-    ipdb.set_trace()
 
     metrics_list = []
 

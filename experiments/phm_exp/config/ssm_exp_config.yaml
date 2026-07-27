@@ -26,6 +26,7 @@ scaler_kwargs:
 # approach
 monotonic: false
 quantile_reg: true
+quantile_scale: true
 approach: windowed_quantile_weighted
 # approach: windowed_weighted_monotonic
 # approach: windowed_quantile_standard
@@ -89,4 +90,3 @@ use_test_set: true
 life_idx: [0,1,2,3,4]
 max_windows: 100
 n_maintenance_windows: 10
-
