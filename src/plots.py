@@ -229,6 +229,7 @@ def multi_plot_predictions_grid(
     plot_dict: dict = {"S4":experiment_path},
     plot_path: str = experiment_path,
     n_last_samples: int = 0,
+    filetype: str = "pdf"
 ) -> None:
     """
     Extension of plot_predictions_grid that reports the predicted RULs from
@@ -242,6 +243,8 @@ def multi_plot_predictions_grid(
         Dictionary containing the informations to produce the plot (model names and output paths)
     plot_path: str
         Path to save the plot
+    filetype: str
+        filetype to use for saving the image
 
     Returns:
     --------
@@ -325,8 +328,9 @@ def multi_plot_predictions_grid(
                     else f"Life {config.plot_life_idx[i * config.ncols + j]}"
                 )
                 ax.set_title(plot_title)
-                ax.set_xticks([])
+                ax.set_xlabel("Time step")
                 ax.set_ylabel("RUL")
+                ax.margins(x=0)
                 ax.legend()
 
     if config.save_plot:
@@ -335,7 +339,7 @@ def multi_plot_predictions_grid(
         else:
             filename = f"{get_current_time()}_{config.plot_approach}_multi_predictions_grid_pad"
         life_idx_str = "_".join(str(x) for x in config.plot_life_idx)
-        filename = f"{filename}_life_{life_idx_str}.png"
+        filename = f"{filename}_life_{life_idx_str}.{filetype}"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
         print("#" * 50)
@@ -347,6 +351,7 @@ def plot_prediction_interval(
     outputs_path: str = experiment_path,
     plot_path: str = experiment_path,
     n_last_samples: int = 0,
+    filetype: str = "pdf"
 ) -> None:
     """
     Function to plot in a grid the `RUL` predictions of each life compared to the true `RUL`,M
@@ -362,6 +367,8 @@ def plot_prediction_interval(
         Path to save the plot
     n_last_samples: int
         Number of last samples to show. If you pass 500 it will show the last 500 samples. By default it's 0 meaning that all the samples are shown
+    filetype: str
+        filetype to use for saving the image
 
     Returns:
     --------
@@ -435,8 +442,9 @@ def plot_prediction_interval(
                     else f"Life {config.plot_life_idx[i * config.ncols + j]}"
                 )
                 ax.set_title(plot_title)
-                ax.set_xticks([])
+                ax.set_xlabel("Time step")
                 ax.set_ylabel("RUL")
+                ax.margins(x=0)
                 ax.legend()
 
                 # Use plt.fill_between to create the prediction interval using predictions
@@ -479,7 +487,7 @@ def plot_prediction_interval(
             )
 
         life_idx_str = "_".join(str(x) for x in config.plot_life_idx)
-        filename = f"{filename}_life_{life_idx_str}_last_{n_last_samples}_samples.png"
+        filename = f"{filename}_life_{life_idx_str}_last_{n_last_samples}_samples.{filetype}"
         plot_path = os.path.join(plot_path, filename)
         plt.savefig(plot_path, bbox_inches="tight")
         print("#" * 50)
@@ -513,7 +521,7 @@ def plot_business_metrics(
             n = exp_config.n_maintenance_windows,
             add_shade = exp_config.add_shade,
             save_plot = True,
-            filename = f"{base_filename}_unexpected_breaks.png",
+            filename = f"{base_filename}_unexpected_breaks.pdf",
             plot_path = plot_path
         )
 
@@ -526,7 +534,7 @@ def plot_business_metrics(
             add_shade = exp_config.add_shade,
             log_scale = exp_config.log_scale,
             save_plot = True,
-            filename = f"{base_filename}_unexploited_lifetime.png",
+            filename = f"{base_filename}_unexploited_lifetime.pdf",
             plot_path = plot_path
         )
 
@@ -538,7 +546,7 @@ def plot_business_metrics(
             step = exp_config.n_maintenance_windows,
             save_plot = True,
             log_scale = exp_config.log_scale,
-            filename = f"{base_filename}_J_Cost.png",
+            filename = f"{base_filename}_J_Cost.pdf",
             plot_path = plot_path
         )
 

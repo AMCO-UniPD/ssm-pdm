@@ -82,6 +82,8 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
 
         for quantile in exp_config.quantiles:
 
+            plot_run_id = 5 if model_name == "RULTransformer" else 1
+
             quantile_combined_outputs_path = generate_path(
                 basepath=experiment_path,
                 folders=[
@@ -90,7 +92,7 @@ for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
                     exp_config.failure_type,
                     exp_config.plot_approach,
                     exp_name,
-                    f"run_{exp_config.plot_run_id}" if not exp_config.cv else f"fold_{exp_config.plot_run_id}",
+                    f"run_{plot_run_id}" if not exp_config.cv else f"fold_{plot_run_id}",
                     f"quantile_{quantile}"
                 ],
             )

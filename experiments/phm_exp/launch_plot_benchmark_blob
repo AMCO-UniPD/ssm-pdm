@@ -19,7 +19,7 @@ model_names=(
   "LSTM"
   "RNN"
   "GRU"
-  # "RULTransformer"
+  "RULTransformer"
 )
 
 exp_names=()

@@ -19,6 +19,7 @@ model_names=(
   "LSTM"
   "GRU"
   "RNN"
+  "RULTransformer"
   "mean"
   "median"
 )

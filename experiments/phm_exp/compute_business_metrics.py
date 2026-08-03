@@ -104,6 +104,7 @@ for quantile in exp_config.quantiles:
             config=exp_config,
         )
         business_metrics_dfs.append(business_metrics_df)
+        ipdb.set_trace()
 
     print("-"*50)
     print(f"Computing mean business metrics table for quantile {quantile}")

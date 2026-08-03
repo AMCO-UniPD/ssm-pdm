@@ -26,6 +26,8 @@ plot_dict = {}
 
 for model_name, exp_name in zip(exp_config.model_names, exp_config.exp_names):
 
+    plot_run_id = 5 if model_name == "RULTransformer" else 1
+
     outputs_path = generate_path(
         basepath=experiment_path,
         folders=[

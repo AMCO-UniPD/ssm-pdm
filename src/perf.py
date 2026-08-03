@@ -263,7 +263,7 @@ def lifes_business_metrics(
         lives = fitted_lifes,
         window_size = config.max_windows,
         n = config.n_maintenance_windows,
-        c_ub = 10.0,
+        c_ub = 100.0,
         c_ul = 1.0
     )
 
