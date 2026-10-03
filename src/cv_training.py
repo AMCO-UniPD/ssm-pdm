@@ -6,7 +6,7 @@ validation training
 import os
 import sys
 import time
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import ipdb
 import numpy as np
@@ -26,7 +26,8 @@ from models import (best_model_perf, compute_window_info, load_best_model,
 from perf import lifes_metrics
 from trainer import get_trainer
 from utils import (MergeData, generate_path, get_current_time, get_mono_mask,
-                   get_phm_feature_names, load_cv_data, get_raw_phm_data, load_phm_data)
+                   get_phm_feature_names, load_cv_data, get_raw_phm_data, load_phm_data,
+                   set_seed)
 from wandb_funcs import init_wandb
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -107,6 +108,7 @@ def wandb_cv_data(
     criterion, eval_criterion = load_loss_functions(
         loss_name=config.loss,
         eval_loss_name=config.eval_loss,
+        window_weight_ratio=config.window_weight_ratio,
     )
 
     return (
@@ -129,6 +131,7 @@ def train_k_fold(
     outputs_path: str = experiment_path,
     combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
+    seed: Optional[int] = None,
 ) -> Tuple[List[pd.DataFrame],str]:
     """
     Function to implement the k fold cross validation training
@@ -145,6 +148,9 @@ def train_k_fold(
         wandb and returns the metrics_list dictionary which contains the main metrics from all the folds
         exp_name (str): name of the experiment, needed to save the metrics_dict into a pickle file
     """
+
+    if seed is not None:
+        set_seed(seed)
 
     skf = KFold(
         n_splits = exp_config.n_folds,
@@ -174,6 +180,9 @@ def train_k_fold(
     metrics_list = []
 
     for fold_idx, (train_val_idx, test_idx) in enumerate(skf.split(merged_phm_data)):
+
+        if seed is not None:
+            set_seed(seed + fold_idx)
 
         if fold_idx < exp_config.start_fold_id:
 
@@ -317,4 +326,3 @@ def train_k_fold(
 
 
     return metrics_list, exp_name
-
