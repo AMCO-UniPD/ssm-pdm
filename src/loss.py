@@ -2,7 +2,8 @@
 Python script with the loss functions for the `chronos-pdm` project
 """
 
-from typing import Tuple
+import math
+from typing import Optional, Tuple
 
 import ipdb
 import torch
@@ -301,9 +302,35 @@ class QuantileLoss(nn.Module):
 
         return torch.mean(loss)
 
+def window_group_weights(
+    is_constant: torch.Tensor,
+    n_const_wins: int,
+    n_decreasing_wins: int,
+    ratio: Optional[float] = 1.0,
+) -> torch.Tensor:
+    """Return per-window weights with a fixed total weight of two.
+
+    ``ratio=None`` gives uniform weights. A ratio of one reproduces the
+    original inverse-frequency scheme; larger ratios emphasize decreasing
+    windows. Counts must come from the training split of the current fold.
+    """
+    if n_const_wins <= 0 or n_decreasing_wins <= 0:
+        raise ValueError("Both window groups must contain at least one window")
+    if ratio is None:
+        weight = 2.0 / (n_const_wins + n_decreasing_wins)
+        return torch.full(is_constant.shape, weight, device=is_constant.device)
+    if not math.isfinite(ratio) or ratio <= 0:
+        raise ValueError("window_weight_ratio must be positive or None")
+
+    constant_weight = 2.0 / ((1.0 + ratio) * n_const_wins)
+    decreasing_weight = 2.0 * ratio / ((1.0 + ratio) * n_decreasing_wins)
+    return torch.where(is_constant, constant_weight, decreasing_weight)
+
+
 class WindowedQuantileLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, ratio: Optional[float] = 1.0):
         super().__init__()
+        self.ratio = ratio
 
     def forward(
         self,
@@ -327,10 +354,8 @@ class WindowedQuantileLoss(nn.Module):
         ], device=y_true.device)
 
         # shape: (batch_size,)
-        weights = torch.where(
-            is_constant,
-            1.0 / (n_const_wins + 1e-6),
-            1.0 / (n_decreasing_wins + 1e-6)
+        weights = window_group_weights(
+            is_constant, n_const_wins, n_decreasing_wins, self.ratio
         )
 
         # ---------------------------------------------------
@@ -375,10 +400,11 @@ class WindowedQuantileLoss(nn.Module):
         return weighted_loss.sum()
 
 class WindowedPinballLoss(nn.Module):
-    def __init__(self, tau: float = 0.5):
+    def __init__(self, tau: float = 0.5, ratio: Optional[float] = 1.0):
         super().__init__()
 
         self.tau = tau
+        self.ratio = ratio
 
     def forward(
         self,
@@ -401,10 +427,8 @@ class WindowedPinballLoss(nn.Module):
         ], device=y_true.device)
 
         # shape: (batch_size,)
-        weights = torch.where(
-            is_constant,
-            1.0 / (n_const_wins + 1e-6),
-            1.0 / (n_decreasing_wins + 1e-6)
+        weights = window_group_weights(
+            is_constant, n_const_wins, n_decreasing_wins, self.ratio
         )
 
         # ---------------------------------------------------
@@ -453,6 +477,7 @@ def load_loss_functions(
     loss_name:str,
     eval_loss_name:str,
     tau:float=0.5,
+    window_weight_ratio: Optional[float] = 1.0,
 ) -> Tuple[nn.Module, nn.Module]:
     """
     Load the loss functions for the training and evaluation phases
@@ -480,7 +505,7 @@ def load_loss_functions(
     elif loss_name=="quantile_reg":
         criterion=QuantileLoss()
     elif loss_name=="window_quantile_reg":
-        criterion=WindowedQuantileLoss()
+        criterion=WindowedQuantileLoss(ratio=window_weight_ratio)
     else:
         raise ValueError(f"loss {loss_name} not recognized")
 
@@ -495,7 +520,7 @@ def load_loss_functions(
     elif eval_loss_name=="pinball":
         eval_criterion=SSMPinballLoss(tau=tau)
     elif eval_loss_name=="window_pinball":
-        eval_criterion=WindowedPinballLoss(tau=tau)
+        eval_criterion=WindowedPinballLoss(tau=tau, ratio=window_weight_ratio)
     else:
         raise ValueError(f"loss {eval_loss_name} not recognized")
 

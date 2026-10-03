@@ -445,7 +445,8 @@ def plot_prediction_interval(
                 ax.set_xlabel("Time step")
                 ax.set_ylabel("RUL")
                 ax.margins(x=0)
-                ax.legend()
+                #NOTE: Increase font size of the legend
+                ax.legend(fontsize=20)
 
                 # Use plt.fill_between to create the prediction interval using predictions
                 # from the max and min quantile levels contained in quantiles

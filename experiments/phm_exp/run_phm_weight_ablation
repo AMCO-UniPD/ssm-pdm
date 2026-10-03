@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")"
+source ./phm_exp_config
+export CUDA_VISIBLE_DEVICES="$device_num"
+
+python phm_weight_ablation.py \
+  --model-name "$model_name" \
+  --failure-type "$failure_type" \
+  --train-phm-tools "${train_phm_tools[@]}" \
+  --test-phm-tools "${test_phm_tools[@]}" \
+  --device-num 0 \
+  "$@"
