@@ -94,6 +94,26 @@ def test_figure_colors_and_connects_the_pareto_front(metric, x_title):
 
     assert figure.layout.xaxis.type == "log"
     assert figure.layout.xaxis.title.text == x_title
+    assert (figure.layout.width, figure.layout.height) == (1000, 600)
+    assert figure.layout.font.size == 16
+    assert figure.layout.title.font.size == 22
+    if metric == "gflops":
+        front, *models = figure.data
+        assert front.name == "Pareto optimal"
+        assert front.mode == "lines"
+        assert front.line.color == "#16a34a"
+        assert front.showlegend is False
+        assert list(front.x) == [0.1, 0.2]
+        assert [trace.name for trace in models] == ["A", "B", "C"]
+        assert all(trace.mode == "markers" and trace.text is None for trace in models)
+        assert len({trace.marker.symbol for trace in models}) == len(models)
+        assert [trace.marker.color for trace in models] == [
+            "#16a34a",
+            "#dc2626",
+            "#16a34a",
+        ]
+        assert figure.layout.legend.x > 1
+        return
     assert figure.data[-1].name == "Pareto optimal"
     assert figure.data[-1].mode == "lines+markers+text"
     assert figure.data[-1].marker.color == "#16a34a"

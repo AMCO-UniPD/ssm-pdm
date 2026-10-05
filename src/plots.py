@@ -252,86 +252,97 @@ def multi_plot_predictions_grid(
     """
 
     if config.plot_life_idx is None:
-        config.plot_life_idx = np.arange(config.nrows * config.ncols)
-    else:
-        assert config.nrows * config.ncols == len(config.plot_life_idx), (
-            "Number of rows and columns must match the number of lives"
-        )
+        config.plot_life_idx = list(config.test_idx)
+    assert config.nrows * config.ncols >= len(config.plot_life_idx), (
+        "The subplot grid must have at least as many cells as the selected lives"
+    )
 
+    true = None
     pred_dict = {}
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.plot_life_idx]
 
     for model_name, output_path in plot_dict.items():
-        print("-"*50)
+        print("-" * 50)
         print(f"Retrieving outputs for model {model_name} and path \n {output_path}")
-        print("-"*50)
+        print("-" * 50)
         outputs_path = get_most_recent_file(output_path, file_pos=config.file_pos)
         outputs_dict = open_element(file_path=outputs_path, filetype="pickle")
+        y_true = outputs_dict["y_true"]
+        y_pred = (
+            outputs_dict["y_pred"] if "y_pred" in outputs_dict
+            else outputs_dict[f"pred_quantile_{config.quantile_run}"]
+        )
 
-        if "y_pred" in outputs_dict.keys():
-            y_pred, y_true = outputs_dict["y_pred"], outputs_dict["y_true"]
-        else:
-            y_pred, y_true = outputs_dict[f"pred_quantile_{config.quantile_run}"], outputs_dict["y_true"]
+        model_true = []
+        pred_dict[model_name] = []
+        for life_idx in life_idxs:
+            life_true = np.asarray(y_true[life_idx]).reshape(-1)
+            life_pred = np.asarray(y_pred[life_idx]).reshape(-1)
+            if len(life_pred) != len(life_true):
+                raise ValueError(
+                    f"{model_name}, life {life_idx}: prediction has "
+                    f"{len(life_pred)} samples, but true RUL has {len(life_true)}"
+                )
 
-        if n_last_samples > 0:
-            true = [y_true[i][-n_last_samples:] for i in life_idxs]
-            pred = [y_pred[i][-n_last_samples:] for i in life_idxs]
-        else:
-            true = [y_true[i][config.start_idx:config.end_idx] for i in life_idxs]
-            pred = [y_pred[i][config.start_idx:config.end_idx] for i in life_idxs]
+            # Filter padding before taking the tail, using the same positions
+            # for true RUL and the prediction. Preserve explicit range slices.
+            sample_idxs = np.arange(len(life_true))
+            if n_last_samples <= 0:
+                sample_idxs = sample_idxs[config.start_idx:config.end_idx]
+            if not config.full_life:
+                sample_idxs = sample_idxs[life_true[sample_idxs] != 0]
+            if n_last_samples > 0:
+                sample_idxs = sample_idxs[-n_last_samples:]
+            model_true.append(life_true[sample_idxs])
+            pred_dict[model_name].append(life_pred[sample_idxs])
 
-        pred_dict[model_name] = [pred[i].squeeze() for i in life_idxs]
+        if true is None:
+            true = model_true
+        elif any(
+            not np.array_equal(reference, current)
+            for reference, current in zip(true, model_true)
+        ):
+            raise ValueError(f"{model_name}: selected true RUL differs across models")
 
-    if not config.full_life:
-        mask = [true[i] != 0 for i in range(len(true))]
-    else:
-        mask = [np.ones(len(t), dtype=bool) for t in true]
+    if true is None:
+        raise ValueError("At least one model is required for the comparison plot")
 
-    # Produce the plot
-    if config.nrows == config.ncols == 1:
-        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(10, 8))
-    else:
-        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(50, 20))
-
+    figsize = (10, 8) if config.nrows == config.ncols == 1 else (50, 20)
+    fig, axs = plt.subplots(
+        config.nrows, config.ncols, figsize=figsize, squeeze=False
+    )
     cmap = plt.get_cmap("tab10")
     colors = [cmap(i) for i in range(len(plot_dict))]
 
-    for i in range(config.nrows):
-        for j in range(config.ncols):
-            if i * config.ncols + j < (config.nrows * config.ncols):
-                if config.nrows == 1 and config.ncols == 1:
-                    ax = axs
-                elif config.nrows == 1:
-                    ax = axs[j]
-                elif config.ncols == 1:
-                    ax = axs[i]
-                else:
-                    ax = axs[i, j]
+    for plot_idx, ax in enumerate(axs.flat):
+        if plot_idx >= len(life_idxs):
+            ax.set_visible(False)
+            continue
 
-                ax.plot(
-                    true[i * config.ncols + j][mask[i * config.ncols + j]],
-                    color="blue",
-                    label="True RUL",
-                )
+        ax.plot(true[plot_idx], color="blue", label="True RUL")
+        for model_name, color in zip(plot_dict, colors):
+            ax.plot(
+                pred_dict[model_name][plot_idx], color=color, label=model_name
+            )
 
-                for model_name, color in zip(plot_dict.keys(), colors):
+        ax.set_title(f"Life {config.plot_life_idx[plot_idx]}")
+        ax.set_xlabel("Time step")
+        ax.set_ylabel("RUL")
+        ax.margins(x=0)
 
-                    ax.plot(
-                        pred_dict[model_name][i * config.ncols + j][mask[i * config.ncols + j]],
-                        color=color,
-                        label=model_name,
-                    )
-
-                plot_title = (
-                    f"Life {config.plot_life_idx[i * config.ncols + j]}"
-                    if config.data_name == "CMAPSS"
-                    else f"Life {config.plot_life_idx[i * config.ncols + j]}"
-                )
-                ax.set_title(plot_title)
-                ax.set_xlabel("Time step")
-                ax.set_ylabel("RUL")
-                ax.margins(x=0)
-                ax.legend()
+    if life_idxs:
+        if axs.size > len(life_idxs):
+            legend_ax = axs.flat[len(life_idxs)]
+            legend_ax.set_visible(True)
+            legend_ax.set_axis_off()
+            handles, labels = axs.flat[0].get_legend_handles_labels()
+            legend_ax.legend(
+                handles, labels, loc="center", fontsize=18,
+                frameon=False, handlelength=3, labelspacing=1.2,
+            )
+        else:
+            for ax in axs.flat:
+                ax.legend(fontsize=16)
 
     if config.save_plot:
         if config.full_life:
@@ -366,7 +377,8 @@ def plot_prediction_interval(
     plot_path: str
         Path to save the plot
     n_last_samples: int
-        Number of last samples to show. If you pass 500 it will show the last 500 samples. By default it's 0 meaning that all the samples are shown
+        Number of last samples to show after applying the full_life filter.
+        By default it's 0 meaning that all the samples are shown.
     filetype: str
         filetype to use for saving the image
 
@@ -375,8 +387,8 @@ def plot_prediction_interval(
         None: the function produces the plot but does not return anything
     """
 
-    assert config.nrows * config.ncols == len(config.plot_life_idx), (
-        "Number of rows and columns must match the number of lives"
+    assert config.nrows * config.ncols >= len(config.plot_life_idx), (
+        "The subplot grid must have at least as many cells as the selected lives"
     )
 
     # Get the outputs dictionary
@@ -386,84 +398,89 @@ def plot_prediction_interval(
     y_true = outputs_dict["y_true"]
     life_idxs = [np.where(config.test_idx == x)[0][0] for x in config.plot_life_idx]
 
-    if n_last_samples > 0:
-        true = [y_true[i][-n_last_samples:] for i in life_idxs]
-    else:
-        true = [y_true[i] for i in life_idxs]
-
+    true = []
     quantile_signals = {}
+    for quantile in config.quantiles:
+        quantile_signals[f"pred_quantile_{quantile}"] = []
+
+    for life_idx in life_idxs:
+        life_true = np.asarray(y_true[life_idx]).reshape(-1)
+        # Legacy output files identify padding by zero true RUL. Filter the
+        # complete life before selecting its tail, and reuse those positions
+        # for every prediction so the signals stay aligned.
+        sample_idxs = np.arange(len(life_true))
+        if not config.full_life:
+            sample_idxs = sample_idxs[life_true != 0]
+        if n_last_samples > 0:
+            sample_idxs = sample_idxs[-n_last_samples:]
+        true.append(life_true[sample_idxs])
+
+        for quantile in config.quantiles:
+            key = f"pred_quantile_{quantile}"
+            life_pred = np.asarray(outputs_dict[key][life_idx]).reshape(-1)
+            if len(life_pred) != len(life_true):
+                raise ValueError(
+                    f"Life {life_idx}: {key} has {len(life_pred)} samples, "
+                    f"but true RUL has {len(life_true)}"
+                )
+            quantile_signals[key].append(life_pred[sample_idxs])
+
     cmap = plt.get_cmap("Set1")
     colors = cmap.colors
 
-    if not config.full_life:
-        mask = [true[i] != 0 for i in range(len(true))]
-    else:
-        mask = [np.ones(len(t), dtype=bool) for t in true]
+    # Keep axes two-dimensional for every grid shape, including a single cell.
+    figsize = (10, 8) if config.nrows == config.ncols == 1 else (50, 20)
+    fig, axs = plt.subplots(
+        config.nrows, config.ncols, figsize=figsize, squeeze=False
+    )
 
-    # Produce the plot
-    if config.nrows == config.ncols == 1:
-        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(10, 8))
-    else:
-        fig, axs = plt.subplots(config.nrows, config.ncols, figsize=(50, 20))
+    for plot_idx, ax in enumerate(axs.flat):
+        if plot_idx >= len(life_idxs):
+            ax.set_visible(False)
+            continue
 
-    for i in range(config.nrows):
-        for j in range(config.ncols):
-            if i * config.ncols + j < (config.nrows * config.ncols):
-                if config.nrows == 1 and config.ncols == 1:
-                    ax = axs
-                elif config.nrows == 1:
-                    ax = axs[j]
-                elif config.ncols == 1:
-                    ax = axs[i]
-                else:
-                    ax = axs[i, j]
+        ax.plot(true[plot_idx], color="#00008B", label="True RUL")
 
-                ax.plot(
-                    np.squeeze(true[i * config.ncols + j][mask[i * config.ncols+j]],axis=0) if "padding" in config.approach else true[i * config.ncols +j][mask[i*config.ncols+j]],
-                    color="#00008B",
-                    label="True RUL",
-                )
+        for quantile, color in zip(config.quantiles, colors):
+            ax.plot(
+                quantile_signals[f"pred_quantile_{quantile}"][plot_idx],
+                color=color,
+                label=f"Predicted RUL {quantile}",
+            )
 
-                for quantile,color in zip(config.quantiles,colors):
-                    quantile_signals[f"pred_quantile_{quantile}"] = [
-                        np.squeeze(outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:],axis=0) if "padding" in config.approach else outputs_dict[f"pred_quantile_{quantile}"][i][-n_last_samples:]
-                        for i in life_idxs
-                    ]
+        ax.set_title(f"Life {config.plot_life_idx[plot_idx]}")
+        ax.set_xlabel("Time step")
+        ax.set_ylabel("RUL")
+        ax.margins(x=0)
 
-                    ax.plot(
-                        quantile_signals[f"pred_quantile_{quantile}"][i * config.ncols + j][mask[i*config.ncols+j]],
-                        color=color,
-                        label=f"Predicted RUL {quantile}",
-                    )
+        if len(config.quantiles) == 2:
+            quantile_min, quantile_max = (
+                np.min(config.quantiles),
+                np.max(config.quantiles),
+            )
+            ax.fill_between(
+                np.arange(len(true[plot_idx])),
+                quantile_signals[f"pred_quantile_{quantile_min}"][plot_idx],
+                quantile_signals[f"pred_quantile_{quantile_max}"][plot_idx],
+                color="#ADD8E6",
+                alpha=0.5,
+                label=f"Prediction Interval {quantile_min}-{quantile_max}",
+            )
 
-                plot_title = (
-                    f"Life {config.plot_life_idx[i * config.ncols + j]}"
-                    if config.data_name == "CMAPSS"
-                    else f"Life {config.plot_life_idx[i * config.ncols + j]}"
-                )
-                ax.set_title(plot_title)
-                ax.set_xlabel("Time step")
-                ax.set_ylabel("RUL")
-                ax.margins(x=0)
-                ax.legend()
-
-                # Use plt.fill_between to create the prediction interval using predictions
-                # from the max and min quantile levels contained in quantiles
-
-                if len(config.quantiles) == 2:
-                    quantile_min, quantile_max = (
-                        np.min(config.quantiles),
-                        np.max(config.quantiles),
-                    )
-
-                    ax.fill_between(
-                        np.arange(len(true[i * config.ncols + j][mask[i * config.ncols + j]])),
-                        quantile_signals[f"pred_quantile_{quantile_min}"][i * config.ncols + j],
-                        quantile_signals[f"pred_quantile_{quantile_max}"][i * config.ncols + j],
-                        color="#ADD8E6",
-                        alpha=0.5,
-                        label="Prediction Interval {quantile_min}-{quantile_max}",
-                    )
+    if life_idxs:
+        if axs.size > len(life_idxs):
+            # Reuse the first unused cell for one legend shared by all lives.
+            legend_ax = axs.flat[len(life_idxs)]
+            legend_ax.set_visible(True)
+            legend_ax.set_axis_off()
+            handles, labels = axs.flat[0].get_legend_handles_labels()
+            legend_ax.legend(
+                handles, labels, loc="center", fontsize=28,
+                frameon=False, handlelength=3, labelspacing=1.2,
+            )
+        else:
+            for ax in axs.flat:
+                ax.legend(fontsize=16)
 
 
     if config.show_plot:

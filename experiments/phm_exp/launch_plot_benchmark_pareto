@@ -2,7 +2,7 @@
 
 script_paths=(
   "plot_benchmark_parameters_pareto.py"
-  "plot_benchmark_gflops_pareto.py"
+  # "plot_benchmark_gflops_pareto.py"
 )
 
 source "./phm_exp_config"

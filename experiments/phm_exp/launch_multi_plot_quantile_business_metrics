@@ -22,6 +22,7 @@ model_names=(
   "RULTransformer"
   "mean"
   "median"
+  "quantile_0.1"
 )
 
 exp_names=()

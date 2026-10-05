@@ -235,7 +235,53 @@ def build_pareto_figure(
         "RMSE: %{y:.5g}<extra>%{fullData.name}</extra>"
     )
 
-    if not dominated.empty:
+    if metric == "gflops":
+        # Separate model traces give the external legend a key for every point.
+        # Shapes distinguish models even when their GFLOPs are identical.
+        symbols = [
+            "circle",
+            "square",
+            "diamond",
+            "cross",
+            "x",
+            "triangle-up",
+            "triangle-down",
+            "triangle-left",
+            "triangle-right",
+            "pentagon",
+            "hexagon",
+            "star",
+            "hourglass",
+            "bowtie",
+        ]
+        figure.add_trace(
+            go.Scatter(
+                x=pareto[complexity_column],
+                y=pareto["RMSE"],
+                mode="lines",
+                name="Pareto optimal",
+                line={"color": "#16a34a", "width": 2},
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+        for index, (_, row) in enumerate(plotted.iterrows()):
+            figure.add_trace(
+                go.Scatter(
+                    x=[row[complexity_column]],
+                    y=[row["RMSE"]],
+                    mode="markers",
+                    name=row["Model"],
+                    marker={
+                        "color": "#16a34a" if row["Pareto optimal"] else "#dc2626",
+                        "size": 12,
+                        "symbol": symbols[index % len(symbols)],
+                    },
+                    customdata=[[row["Model"], row["Parameters"], row["GFLOPs"]]],
+                    hovertemplate=hover_template,
+                )
+            )
+    elif not dominated.empty:
         figure.add_trace(
             go.Scatter(
                 x=dominated[complexity_column],
@@ -245,34 +291,53 @@ def build_pareto_figure(
                 marker={"color": "#dc2626", "size": 11},
                 text=dominated["Model"],
                 textposition="bottom center",
+                cliponaxis=False,
                 customdata=dominated[["Model", "Parameters", "GFLOPs"]],
                 hovertemplate=hover_template,
             )
         )
-    figure.add_trace(
-        go.Scatter(
-            x=pareto[complexity_column],
-            y=pareto["RMSE"],
-            mode="lines+markers+text",
-            name="Pareto optimal",
-            line={"color": "#16a34a", "width": 2},
-            marker={"color": "#16a34a", "size": 12},
-            text=pareto["Model"],
-            textposition="bottom center",
-            customdata=pareto[["Model", "Parameters", "GFLOPs"]],
-            hovertemplate=hover_template,
+    if metric == "parameters":
+        figure.add_trace(
+            go.Scatter(
+                x=pareto[complexity_column],
+                y=pareto["RMSE"],
+                mode="lines+markers+text",
+                name="Pareto optimal",
+                line={"color": "#16a34a", "width": 2},
+                marker={"color": "#16a34a", "size": 12},
+                text=pareto["Model"],
+                textposition="bottom center",
+                cliponaxis=False,
+                customdata=pareto[["Model", "Parameters", "GFLOPs"]],
+                hovertemplate=hover_template,
+            )
         )
-    )
     figure.update_layout(
         template="plotly_white",
-        title=(
-            f"PHM benchmark Pareto front: RMSE vs. {config['axis_title']}"
-            f"<br><sup>{failure_type} · {approach} · quantile {quantile}</sup>"
-        ),
+        # Equal canvas sizes keep text the same size when LaTeX scales both
+        # figures to the same printed width.
+        width=1000,
+        height=600,
+        font={"size": 16},
+        title={
+            "text": f"PHM benchmark Pareto front: RMSE vs. {config['axis_title']}",
+            "font": {"size": 22},
+        },
         xaxis={"title": config["axis_title"], "type": "log"},
         yaxis={"title": f"Life_mean RMSE (quantile {quantile})"},
         legend={"title": "Pareto status"},
     )
+    if metric == "gflops":
+        figure.update_layout(
+            xaxis={"dtick": "D2", "tickformat": ".3~g"},
+            legend={
+                "title": "Model<br>Green: Pareto optimal<br>Red: dominated",
+                "x": 1.02,
+                "xanchor": "left",
+                "y": 1,
+                "yanchor": "top",
+            },
+        )
     return figure
 
 
