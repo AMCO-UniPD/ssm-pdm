@@ -1,8 +1,8 @@
-"""Train the PHM quantile model for each window-weight ratio and collect RMSE.
+"""Train the PHM quantile model for each window-weight ratio and collect accuracy and uncertainty metrics.
 
 Run through ``run_phm_weight_ablation`` from this directory. The underlying
 SQR trainer samples quantiles during training; one model is trained per fold
-and ratio, then its median prediction is evaluated on the PHM test lives.
+and ratio, then its quantile predictions are evaluated on the PHM test lives.
 """
 
 import argparse
@@ -12,15 +12,24 @@ import statistics
 import sys
 from pathlib import Path
 
+import numpy as np
 import torch
 
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(EXPERIMENT_DIR.parent.parent / "src"))
 
-from ablation_metrics import rmse_by_rul_region
+from ablation_metrics import (
+    interval_by_rul_region,
+    pinball_by_rul_region,
+    rmse_by_rul_region,
+)
 from cv_training import train_k_fold
 from exp_config import ExperimentConfig, ModelConfig, check_arguments
 from utils import get_most_recent_file, load_yaml_to_dict, open_element
+
+
+EVALUATION_QUANTILES = (0.1, 0.25, 0.5, 0.75, 0.9)
+REGIONS = ("overall", "constant", "decreasing")
 
 
 def parse_args():
@@ -67,7 +76,7 @@ def save_csv(path, fieldnames, rows):
         writer.writerows(rows)
 
 
-def save_plot(path, summaries, region):
+def save_plot(path, summaries, region, metric="rmse", nominal_coverage=None):
     import matplotlib
 
     matplotlib.use("Agg")
@@ -77,18 +86,161 @@ def save_plot(path, summaries, region):
     fig, ax = plt.subplots(figsize=(8, 4.5))
     ax.errorbar(
         x,
-        [row[f"mean_{region}_rmse"] for row in summaries],
-        yerr=[row[f"std_{region}_rmse"] for row in summaries],
+        np.asarray([row[f"mean_{region}_{metric}"] for row in summaries], dtype=float),
+        yerr=np.asarray(
+            [row[f"std_{region}_{metric}"] for row in summaries], dtype=float
+        ),
         fmt="o-",
         capsize=4,
     )
     ax.set_xticks(x, [row["setting"] for row in summaries])
-    ax.set_ylabel(f"{region.capitalize()} RUL RMSE (mean ± SD across folds)")
+    units = "fraction" if metric in ("coverage", "crossing_rate") else "RUL units"
+    ax.set_ylabel(
+        f"{region.capitalize()} {metric.replace('_', ' ')} ({units}; mean ± SD)"
+    )
+    if nominal_coverage is not None:
+        ax.axhline(
+            nominal_coverage, linestyle="--", color="gray", label="Nominal coverage"
+        )
+        ax.legend()
+
     ax.set_xlabel("Total decreasing / constant loss ratio")
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+def mean_over_lives(scores):
+    means = {}
+    for region in REGIONS:
+        values = [score[region] for score in scores if score[region] is not None]
+        means[region] = statistics.mean(values) if values else None
+    return means
+
+
+def uncertainty_rows(outputs_by_tau, max_rul, setting, fold):
+    """Require aligned lives/targets before computing intervals across quantiles."""
+    reference = outputs_by_tau[0.5]["y_true"]
+    if not reference:
+        raise ValueError("No test lives available")
+    for outputs in outputs_by_tau.values():
+        if len(outputs["y_pred"]) != len(reference) or len(outputs["y_true"]) != len(
+            reference
+        ):
+            raise ValueError("Quantile outputs must have the same test life counts")
+        if any(
+            not np.array_equal(target, expected)
+            for target, expected in zip(outputs["y_true"], reference)
+        ):
+            raise ValueError("Quantile outputs must have identical target ordering")
+
+    pinball_rows = []
+    for tau, outputs in outputs_by_tau.items():
+        scores = mean_over_lives(
+            [
+                pinball_by_rul_region(pred, target, max_rul, tau)
+                for pred, target in zip(outputs["y_pred"], reference)
+            ]
+        )
+        pinball_rows.append(
+            {
+                "setting": setting,
+                "fold": fold,
+                "quantile": tau,
+                **{f"{region}_pinball": value for region, value in scores.items()},
+            }
+        )
+
+    intervals = [
+        interval_by_rul_region(lower, upper, target, max_rul)
+        for lower, upper, target in zip(
+            outputs_by_tau[0.1]["y_pred"], outputs_by_tau[0.9]["y_pred"], reference
+        )
+    ]
+    interval_row = {
+        "setting": setting,
+        "fold": fold,
+        "lower_quantile": 0.1,
+        "upper_quantile": 0.9,
+        "nominal_coverage": 0.8,
+    }
+    for metric in ("coverage", "width", "crossing_rate"):
+        scores = mean_over_lives([item[metric] for item in intervals])
+        interval_row.update(
+            {f"{region}_{metric}": value for region, value in scores.items()}
+        )
+    return pinball_rows, interval_row
+
+
+def summarize(rows, identifiers, metrics):
+    summary = dict(identifiers)
+    for region in REGIONS:
+        for metric in metrics:
+            key = f"{region}_{metric}"
+            values = [row[key] for row in rows if row[key] is not None]
+            summary[f"mean_{key}"] = statistics.mean(values) if values else None
+            summary[f"std_{key}"] = (
+                statistics.stdev(values) if len(values) > 1 else 0.0 if values else None
+            )
+    return summary
+
+
+def save_uncertainty_results(results_dir, pinball_rows, interval_rows):
+    pinball_summaries = []
+    interval_summaries = []
+    settings = list(dict.fromkeys(row["setting"] for row in interval_rows))
+    for setting in settings:
+        for tau in EVALUATION_QUANTILES:
+            rows = [
+                row
+                for row in pinball_rows
+                if row["setting"] == setting and row["quantile"] == tau
+            ]
+            pinball_summaries.append(
+                summarize(rows, {"setting": setting, "quantile": tau}, ("pinball",))
+            )
+        rows = [row for row in interval_rows if row["setting"] == setting]
+        interval_summaries.append(
+            summarize(
+                rows,
+                {
+                    key: rows[0][key]
+                    for key in (
+                        "setting",
+                        "lower_quantile",
+                        "upper_quantile",
+                        "nominal_coverage",
+                    )
+                },
+                ("coverage", "width", "crossing_rate"),
+            )
+        )
+
+    for name, rows in (
+        ("fold_pinball", pinball_rows),
+        ("summary_pinball", pinball_summaries),
+        ("fold_intervals", interval_rows),
+        ("summary_intervals", interval_summaries),
+    ):
+        save_csv(results_dir / f"{name}.csv", list(rows[0]), rows)
+    for region in REGIONS:
+        for tau in EVALUATION_QUANTILES:
+            rows = [row for row in pinball_summaries if row["quantile"] == tau]
+            save_plot(
+                results_dir / f"{region}_pinball_quantile_{tau}_by_weight.png",
+                rows,
+                region,
+                "pinball",
+            )
+        for metric in ("coverage", "width", "crossing_rate"):
+            save_plot(
+                results_dir / f"{region}_{metric}_80_by_weight.png",
+                interval_summaries,
+                region,
+                metric,
+                nominal_coverage=0.8 if metric == "coverage" else None,
+            )
 
 
 def main():
@@ -137,6 +289,8 @@ def main():
 
     fold_rows = []
     summary_rows = []
+    pinball_rows = []
+    interval_rows = []
     for ratio in ratios:
         setting = label_for(ratio)
         config.window_weight_ratio = ratio
@@ -144,10 +298,16 @@ def main():
         print(f"\nRunning {setting} on {device}", flush=True)
 
         def output_dir(name):
-            return str(
-                EXPERIMENT_DIR / name / args.model_name / args.failure_type
-                / config.approach / exp_name
+            path = (
+                EXPERIMENT_DIR
+                / name
+                / args.model_name
+                / args.failure_type
+                / config.approach
+                / exp_name
             )
+            path.mkdir(parents=True, exist_ok=True)
+            return str(path)
 
         metrics, _ = train_k_fold(
             exp_config=config,
@@ -158,6 +318,7 @@ def main():
             combined_outputs_path=output_dir("combined_outputs"),
             metrics_path=output_dir("metrics"),
             seed=args.seed,
+            evaluation_quantiles=list(EVALUATION_QUANTILES),
         )
         if len(metrics) != config.n_folds:
             raise RuntimeError(
@@ -171,9 +332,23 @@ def main():
             output_path = (
                 Path(output_dir("outputs")) / f"fold_{fold_idx}" / "quantile_0.5"
             )
-            outputs = open_element(get_most_recent_file(str(output_path)), filetype="pickle")
+            outputs_by_tau = {
+                tau: open_element(
+                    get_most_recent_file(str(output_path.parent / f"quantile_{tau}")),
+                    filetype="pickle",
+                )
+                for tau in EVALUATION_QUANTILES
+            }
+            fold_pinball, fold_interval = uncertainty_rows(
+                outputs_by_tau, config.max_rul, setting, fold_idx
+            )
+            pinball_rows.extend(fold_pinball)
+            interval_rows.append(fold_interval)
+            outputs = outputs_by_tau[0.5]
             if len(outputs["y_pred"]) != len(outputs["y_true"]):
-                raise RuntimeError(f"Prediction/target life count differs in {output_path}")
+                raise RuntimeError(
+                    f"Prediction/target life count differs in {output_path}"
+                )
             life_metrics = []
             for prediction, target in zip(outputs["y_pred"], outputs["y_true"]):
                 life_metrics.append(
@@ -181,10 +356,14 @@ def main():
                 )
             fold_result = {"setting": setting, "fold": fold_idx}
             for region in ("overall", "constant", "decreasing"):
-                values = [item[region] for item in life_metrics if item[region] is not None]
+                values = [
+                    item[region] for item in life_metrics if item[region] is not None
+                ]
                 if region == "decreasing" and not values:
                     raise ValueError(f"No decreasing RUL samples in {output_path}")
-                fold_result[f"{region}_rmse"] = statistics.mean(values) if values else None
+                fold_result[f"{region}_rmse"] = (
+                    statistics.mean(values) if values else None
+                )
             fold_metrics.append(fold_result)
             fold_rows.append(fold_result)
 
@@ -208,13 +387,22 @@ def main():
         )
         save_csv(
             results_dir / "summary_rmse.csv",
-            ["setting", "mean_overall_rmse", "std_overall_rmse",
-             "mean_constant_rmse", "std_constant_rmse",
-             "mean_decreasing_rmse", "std_decreasing_rmse"],
+            [
+                "setting",
+                "mean_overall_rmse",
+                "std_overall_rmse",
+                "mean_constant_rmse",
+                "std_constant_rmse",
+                "mean_decreasing_rmse",
+                "std_decreasing_rmse",
+            ],
             summary_rows,
         )
         save_plot(results_dir / "overall_rmse_by_weight.png", summary_rows, "overall")
-        save_plot(results_dir / "decreasing_rmse_by_weight.png", summary_rows, "decreasing")
+        save_plot(
+            results_dir / "decreasing_rmse_by_weight.png", summary_rows, "decreasing"
+        )
+        save_uncertainty_results(results_dir, pinball_rows, interval_rows)
 
     print(f"Saved ablation results to {results_dir}")
 
