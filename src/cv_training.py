@@ -132,6 +132,7 @@ def train_k_fold(
     combined_outputs_path: str = experiment_path,
     metrics_path: str = experiment_path,
     seed: Optional[int] = None,
+    evaluation_quantiles: Optional[List[float]] = None,
 ) -> Tuple[List[pd.DataFrame],str]:
     """
     Function to implement the k fold cross validation training
@@ -142,12 +143,21 @@ def train_k_fold(
         device (str): CUDA device to use
         best_model_path (str): path where to save the best model
         outputs_path (str): path where to save the outputs
+        evaluation_quantiles: additional inference levels for the same SQR checkpoint
 
     Returns:
         metrics_list (List[pd.DataFrame]): the function performs the training and the evaluation and logs the results to
         wandb and returns the metrics_list dictionary which contains the main metrics from all the folds
         exp_name (str): name of the experiment, needed to save the metrics_dict into a pickle file
     """
+
+    if evaluation_quantiles is not None:
+        if not exp_config.quantile_reg or len(exp_config.quantiles) != 1:
+            raise ValueError("Additional quantile evaluation requires one SQR training run")
+        if not exp_config.save_outputs:
+            raise ValueError("Additional quantile evaluation requires saved outputs")
+        if any(not 0 < tau < 1 for tau in evaluation_quantiles):
+            raise ValueError("Evaluation quantiles must lie strictly between zero and one")
 
     if seed is not None:
         set_seed(seed)
@@ -298,6 +308,25 @@ def train_k_fold(
                     outputs_path=quantile_outputs_path,
                     combined_outputs_path=quantile_combined_outputs_path,
                     tau=quantile,
+                )
+
+            # Evaluate the same selected checkpoint at other quantiles, without
+            # entering the training loop again or changing checkpoint selection.
+            for eval_tau in dict.fromkeys(evaluation_quantiles or []):
+                if eval_tau == quantile:
+                    continue
+                eval_folders = [f"fold_{fold_idx+1}", f"quantile_{eval_tau}"]
+                best_model_perf(
+                    loaders_dict=eval_loaders_dict,
+                    config=config,
+                    model_config=model_config,
+                    device=device,
+                    best_model_path=quantile_best_model_path,
+                    outputs_path=generate_path(basepath=outputs_path, folders=eval_folders),
+                    combined_outputs_path=generate_path(
+                        basepath=combined_outputs_path, folders=eval_folders
+                    ),
+                    tau=eval_tau,
                 )
 
             if config.compute_metrics:
