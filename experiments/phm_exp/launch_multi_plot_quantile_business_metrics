@@ -23,6 +23,7 @@ model_names=(
   "mean"
   "median"
   "quantile_0.1"
+  "quantile_0.9"
 )
 
 exp_names=()
