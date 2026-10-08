@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 import wandb
+from phm_monitor import emit
 from wandb.sdk.wandb_run import Run as WandbRun
 
 import torch
@@ -195,6 +196,10 @@ class Trainer:
                     "eval_loss/eval_test_loss": eval_test_loss,
                 }
 
+                emit("epoch", epoch=epoch + 1, epochs=self.config.epochs,
+                     train_loss=float(train_loss), val_loss=float(val_loss),
+                     eval_val_loss=float(eval_val_loss), best_val_loss=float(min_val_loss))
+
                 if runWB is not None:
                     wandb.log(model_info)
                 else:
@@ -213,6 +218,7 @@ class Trainer:
                 best_model_state_dict=best_model_state_dict,
                 best_model_path=self.best_model_path,
             )
+            raise
 
         except torch.cuda.OutOfMemoryError:
             print("-" * 50)
@@ -220,7 +226,7 @@ class Trainer:
             print("-" * 50)
             traceback.print_exc()  # Print the full traceback of the error
             error = True
-            quit()
+            raise
 
         except Exception as e:
             print("-" * 50)
@@ -230,7 +236,10 @@ class Trainer:
             traceback.print_exc()  # Print the full traceback of the error
             error = True
 
+            raise
+
         if not error:
+            self.best_val_loss = float(min_val_loss)
             print(
                 "No errors occured during the training process, saving the best model"
             )

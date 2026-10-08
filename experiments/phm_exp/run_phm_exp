@@ -1,40 +1,21 @@
 #!/usr/bin/env bash
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
-echo "-------------------------------------------"
-echo "Running PHM Dataset experiment"
-echo "-------------------------------------------"
+launcher=./launch_train_phm
+if python -c 'import os,yaml; c=yaml.safe_load(open(os.environ.get("PHM_EXP_CONFIG", "config/ssm_exp_config.yaml"))); raise SystemExit(0 if c.get("cv") else 1)'; then
+  launcher=./launch_train_phm_cv
+fi
 
-echo "-------------------------------------------"
-echo "Step 1: Train the model, save the best one"
-echo "and save outputs and metrics"
-echo "-------------------------------------------"
+for stage in training save_outputs_run quantile_metrics compute_business_metrics; do
+  echo "PHM pipeline: $stage"
+  python ../../src/phm_monitor.py "$stage"
+  "$launcher" "$stage"
+done
 
-./launch_train_phm training
-
-echo "-------------------------------------------"
-echo "Step 2: Group the outputs from different quantiles"
-echo "-------------------------------------------"
-
-./launch_train_phm save_outputs_run
-
-echo "-------------------------------------------"
-echo "Step 3: Group the metrics from different quantiles"
-echo "-------------------------------------------"
-
-./launch_train_phm quantile_metrics
-
-echo "-------------------------------------------"
-echo "Step 4: Group the business metrics from different quantiles"
-echo "-------------------------------------------"
-
-./launch_train_phm compute_business_metrics
-
-echo "-------------------------------------------"
-echo "Step 5: Produce the quantile plots"
-echo "-------------------------------------------"
-
-./launch_train_phm quantile_plots
-
-
-
-
+if [[ -n "${PHM_MONITOR_DIR:-}" ]]; then
+  python ../../src/phm_monitor.py best_fold_plots
+  python phm_campaign_report.py
+else
+  "$launcher" quantile_plots
+fi

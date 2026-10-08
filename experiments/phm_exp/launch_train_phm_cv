@@ -4,7 +4,8 @@ script_path="train_phm_cv.py"
 
 mode="${1:-training_no_wandb}"
 
-source "./phm_exp_config"
+set -euo pipefail
+source "${PHM_SHELL_CONFIG:-./phm_exp_config}"
 
 echo "-------------------------------------------"
 echo "Executing $script_path"
@@ -26,7 +27,7 @@ case "$mode" in
 
   python $script_path \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --project_name "$project_name" \
     --data_name "$data_name" \
     --model_name "$model_name" \
@@ -51,7 +52,7 @@ case "$mode" in
 
   python $script_path \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --data_name "$data_name" \
     --model_name "$model_name" \
     --failure_type "$failure_type" \
@@ -73,7 +74,7 @@ case "$mode" in
 
   python "save_outputs_run.py" \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --project_name "$project_name" \
     --data_name "$data_name" \
     --model_name "$model_name" \
@@ -92,7 +93,7 @@ case "$mode" in
 
   python "compute_metrics.py" \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --project_name "$project_name" \
     --data_name "$data_name" \
     --model_name "$model_name" \
@@ -112,7 +113,7 @@ case "$mode" in
 
   python "compute_business_metrics.py" \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --project_name "$project_name" \
     --data_name "$data_name" \
     --model_name "$model_name" \
@@ -133,7 +134,7 @@ case "$mode" in
 
   python "print_business_metrics_tables.py" \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --model_name "$model_name" \
     --failure_type "$failure_type"
 
@@ -147,7 +148,7 @@ case "$mode" in
 
   python "quantile_metrics.py" \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --project_name "$project_name" \
     --data_name "$data_name" \
     --model_name "$model_name" \
@@ -168,7 +169,7 @@ case "$mode" in
 
   python "quantile_plot.py" \
     --exp_name "$exp_name" \
-    --exp_config_path "config/ssm_exp_config.yaml" \
+    --exp_config_path "${PHM_EXP_CONFIG:-config/ssm_exp_config.yaml}" \
     --project_name "$project_name" \
     --data_name "$data_name" \
     --model_name "$model_name" \
