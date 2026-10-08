@@ -15,7 +15,7 @@ test_phm_tools=("01M02" "02M02" "03M01" "04M01" "06M01")
 model_name="S4D"
 device_num=0
 # exp_name="${model_name}_${failure_type}_windowed_quantile_weighted_cv_quantile_head"
-exp_name="${model_name}_${failure_type}_windowed_quantile_weighted_cv_phm_in_features"
+exp_name="${PHM_CAMPAIGN_ID:-${model_name}_${failure_type}_windowed_quantile_weighted_cv_phm_in_features}"
 
 #NOTE: sweep id in case I have to restart and old wandb sweep
 sweep_name="sweep"

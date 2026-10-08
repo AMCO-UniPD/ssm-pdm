@@ -29,6 +29,7 @@ from utils import (MergeData, generate_path, get_current_time, get_mono_mask,
                    get_phm_feature_names, load_cv_data, get_raw_phm_data, load_phm_data,
                    set_seed)
 from wandb_funcs import init_wandb
+from phm_monitor import emit, table_payload
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd,"experiments")
@@ -188,6 +189,7 @@ def train_k_fold(
     )
 
     metrics_list = []
+    fold_tables = []
 
     for fold_idx, (train_val_idx, test_idx) in enumerate(skf.split(merged_phm_data)):
 
@@ -213,6 +215,11 @@ def train_k_fold(
             print("-"*50)
             print(f"Processing fold {fold_idx+1}/{exp_config.n_folds}")
             print("-"*50)
+
+        emit("fold_started", fold=fold_idx + 1, n_folds=exp_config.n_folds,
+             stage="training", status="running")
+        fold_table = pd.DataFrame()
+        validation_losses = []
 
         train_val_data, test_data = merged_phm_data[train_val_idx], merged_phm_data[test_idx]
 
@@ -246,6 +253,14 @@ def train_k_fold(
 
         for quantile in exp_config.quantiles:
 
+            # Each quantile run starts from a fresh model and optimizer.
+            if quantile != exp_config.quantiles[0]:
+                (_, _, _, model, optimizer, scheduler, criterion, eval_criterion,
+                 config) = wandb_cv_data(
+                    config=exp_config, model_config=model_config,
+                    loaders_dict=loaders_dict, best_model_path=best_model_path)
+            emit("quantile_started", tau=quantile)
+
             print("-"*50)
             print(f"Experiment run for quantile level {quantile} and fold {fold_idx+1}")
             print("-"*50)
@@ -256,6 +271,8 @@ def train_k_fold(
             )
 
             if runWB is not None:
+                emit("wandb_run", url=runWB.url,
+                     project_url=runWB.url.split("/runs/", 1)[0])
                 exp_name = runWB.name
                 run_name = f"{runWB.name}_fold_{fold_idx+1}_quantile_{quantile}"
                 runWB.name = run_name
@@ -292,6 +309,7 @@ def train_k_fold(
             )
 
             trainer.run(runWB=runWB)
+            validation_losses.append(trainer.best_val_loss)
 
             if config.return_outputs or config.save_outputs or config.save_combined_outputs:
 
@@ -331,6 +349,9 @@ def train_k_fold(
 
             if config.compute_metrics:
 
+                # These predictions are for the fixed held-out PHM lives.
+                config.test_idx = eval_loaders_dict["test_idx"]
+
                 print("#" * 50)
                 print("Computing metrics for each life in the test set")
                 print("#" * 50)
@@ -344,6 +365,7 @@ def train_k_fold(
                 )
 
                 metrics_list.append(metrics_df)
+                fold_table[f"quantile_{quantile}"] = metrics_df["Eval Loss"]
 
             #NOTE: End run for the current quantile
 
@@ -353,5 +375,17 @@ def train_k_fold(
 
         wandb.finish()
 
+        if not fold_table.empty:
+            fold_tables.append(fold_table)
+            print(f"Fold {fold_idx + 1} quantile metrics:\n{fold_table.to_markdown()}")
+            emit("fold_completed", fold=fold_idx + 1,
+                 validation_loss=float(np.mean(validation_losses)),
+                 test_idx=[int(index) for index in eval_loaders_dict["test_idx"]],
+                 table=table_payload(fold_table))
+
+    if fold_tables:
+        mean_table = sum(fold_tables) / len(fold_tables)
+        print(f"Average quantile metrics:\n{mean_table.to_markdown()}")
+        emit("summary", table=table_payload(mean_table), completed_folds=len(fold_tables))
 
     return metrics_list, exp_name

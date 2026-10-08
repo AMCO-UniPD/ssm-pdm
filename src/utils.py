@@ -42,6 +42,14 @@ from ceruleo.dataset.transformed import TransformedDataset
 # ceruleo imports
 from ceruleo.dataset.ts_dataset import AbstractPDMDataset, FoldedDataset
 from ceruleo.transformation import Transformer
+from sklearn.base import BaseEstimator
+
+# Ceruleo's standalone Transformer predates the estimator-tags API required by
+# scikit-learn 1.8. Default estimator tags also cover transformers loaded from
+# existing preprocessing caches, without changing their fit/transform behavior.
+if not hasattr(Transformer, "__sklearn_tags__"):
+    Transformer.__sklearn_tags__ = BaseEstimator.__sklearn_tags__
+
 from ceruleo.transformation.features.imputers import MeanImputer, RollingMeanImputer
 from ceruleo.transformation.features.scalers import (
     MinMaxScaler,

@@ -4,6 +4,8 @@ to wandb logging
 """
 
 import os
+import json
+from pathlib import Path
 from typing import Union
 
 # wandb imports
@@ -66,7 +68,12 @@ def init_wandb(
     runWB = wandb.init(
         project=config.project_name,
         save_code=False,
+        group=os.environ.get("PHM_CAMPAIGN_ID"),
     )
+
+    if os.environ.get("PHM_MONITOR_DIR"):
+        manifest = json.loads((Path(os.environ["PHM_MONITOR_DIR"]) / "manifest.json").read_text())
+        runWB.config.update({"experiment": manifest["config"], "model": manifest["model_config"]})
 
     runWB = set_wandb_run_name(
         config = config,
@@ -79,4 +86,3 @@ def init_wandb(
     print("-"*50)
 
     return runWB
-

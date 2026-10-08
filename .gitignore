@@ -16,6 +16,7 @@
 # chronos-pdm-notes/Paper
 
 .worktrees
+experiments/phm_exp/campaigns/
 
 profile_outputs/
 
