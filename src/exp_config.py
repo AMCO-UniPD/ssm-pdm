@@ -24,6 +24,7 @@ class ExperimentConfig:
     # train test split params
     test_size: float = 0.2
     val_size: float = 0.1
+    print_statistical_moments: bool = False
     # cv training
     cv: bool = False
     n_folds: int = 5
@@ -69,6 +70,8 @@ class ExperimentConfig:
     run_id: int = 1
     # model summary
     summary_func: str = "torchinfo"
+    model_summary: bool = False
+    save_summary_dict: bool = False
     # 500test_script parameters
     file_pos: int = 0
     # quantile plots

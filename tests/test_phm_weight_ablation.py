@@ -1,5 +1,6 @@
 """Uncertainty aggregation and inference-only quantile evaluation checks."""
 
+import ast
 import csv
 import sys
 from pathlib import Path
@@ -13,11 +14,50 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "experiments" / "phm_exp"))
 
 import cv_training
+from exp_config import ExperimentConfig
 from phm_weight_ablation import (
     EVALUATION_QUANTILES,
     save_uncertainty_results,
     uncertainty_rows,
 )
+
+
+def test_ablation_post_training_config_attributes_are_available():
+    config = ExperimentConfig.from_dict({})
+    runner = ast.parse((ROOT / "experiments/phm_exp/phm_weight_ablation.py").read_text())
+    # The runner sets dataset identities and output controls before training.
+    supplied = {
+        node.attr
+        for node in ast.walk(runner)
+        if isinstance(node, ast.Attribute)
+        and isinstance(node.ctx, ast.Store)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "config"
+    }
+    for filename, functions in {
+        "models.py": {"load_best_model", "load_ssm_model", "best_model_perf"},
+        "perf.py": {"lifes_metrics"},
+        "utils.py": {"get_phm_feature_names", "get_mono_mask", "get_transformer"},
+        "evaluator.py": {"get_life_evaluator", "QuantileLifeEvaluator", "LifeEvaluator"},
+    }.items():
+        module = ast.parse((ROOT / "src" / filename).read_text())
+        for function in module.body:
+            if getattr(function, "name", None) not in functions:
+                continue
+            for node in ast.walk(function):
+                if not isinstance(node, ast.Attribute) or not isinstance(node.ctx, ast.Load):
+                    continue
+                owner = ast.unparse(node.value)
+                if owner not in {"config", "exp_config", "self.config"}:
+                    continue
+                # CMAPSS-only branches and the explicitly guarded optional scaler.
+                if node.attr in {"cmapss_models", "rul_scaler"}:
+                    continue
+                assert node.attr in supplied or hasattr(config, node.attr), (
+                    f"{filename}:{node.lineno} requires missing config.{node.attr}"
+                )
+    assert config.save_summary_dict is False
+    assert config.model_summary is False
 
 
 def make_outputs(targets):
