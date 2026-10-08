@@ -29,7 +29,10 @@ def emit(kind, **values):
     if kind == "started":
         for key in ("exit_code", "error", "fold", "tau", "epoch"):
             state.pop(key, None)
-    context = {key: state[key] for key in ("fold", "tau") if key in state}
+    if kind == "setting_started":
+        for key in ("fold", "tau", "epoch"):
+            state.pop(key, None)
+    context = {key: state[key] for key in ("fold", "tau", "setting", "ratio") if key in state}
     event = safe({**context, "time": datetime.now(timezone.utc).isoformat(),
                   "kind": kind, **values})
     with (root / "events.jsonl").open("a") as stream:

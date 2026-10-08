@@ -297,6 +297,7 @@ class MonoQuantileRULModel(RULModel):
 
         # [(B,L,D_m), (B,L,H)] → (B,L,D_m+H)
         x = torch.cat((x, x_mono), dim=-1)
+        self.head.tau = self.tau
         x = self.head(x)  # (B,L,D_m+H)
 
         return x

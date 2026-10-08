@@ -8,6 +8,7 @@ and ratio, then its quantile predictions are evaluated on the PHM test lives.
 import argparse
 import csv
 import math
+import os
 import statistics
 import sys
 from pathlib import Path
@@ -23,6 +24,7 @@ from ablation_metrics import (
     pinball_by_rul_region,
     rmse_by_rul_region,
 )
+from phm_monitor import emit
 from cv_training import train_k_fold
 from exp_config import ExperimentConfig, ModelConfig, check_arguments
 from utils import get_most_recent_file, load_yaml_to_dict, open_element
@@ -47,6 +49,7 @@ def parse_args():
         default=["unweighted", "0.25", "0.5", "1", "2", "4"],
         help="Total decreasing/constant loss ratios; 'unweighted' is the baseline",
     )
+    parser.add_argument("--wandb", action="store_true", help="Enable W&B (disabled by default)")
     parser.add_argument("--results-dir", default="ablation_results/window_weights")
     return parser.parse_args()
 
@@ -70,10 +73,12 @@ def label_for(ratio):
 
 
 def save_csv(path, fieldnames, rows):
-    with path.open("w", newline="") as stream:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    with temporary.open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+    temporary.replace(path)
 
 
 def save_plot(path, summaries, region, metric="rmse", nominal_coverage=None):
@@ -107,7 +112,9 @@ def save_plot(path, summaries, region, metric="rmse", nominal_coverage=None):
     ax.set_xlabel("Total decreasing / constant loss ratio")
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
-    fig.savefig(path, dpi=200)
+    temporary = path.with_name("." + path.name)
+    fig.savefig(temporary, dpi=200)
+    temporary.replace(path)
     plt.close(fig)
 
 
@@ -174,7 +181,7 @@ def uncertainty_rows(outputs_by_tau, max_rul, setting, fold):
 
 
 def summarize(rows, identifiers, metrics):
-    summary = dict(identifiers)
+    summary = {**identifiers, "completed_folds": len(rows)}
     for region in REGIONS:
         for metric in metrics:
             key = f"{region}_{metric}"
@@ -260,7 +267,7 @@ def main():
     config.test_phm_tools = args.test_phm_tools
     config.quantiles = [0.5]
     config.quantile_run = 0.5
-    config.use_wandb = False
+    config.use_wandb = args.wandb
     config.resume_training = False
     config.save_best_model = True
     config.save_outputs = True
@@ -273,6 +280,10 @@ def main():
 
     if config.loss != "window_quantile_reg" or not config.quantile_reg:
         raise ValueError("The ablation requires the windowed SQR training loss")
+    if config.quantile_scale and (model_config.tau_feat or model_config.tau_mult):
+        raise ValueError("Scale head requires tau_feat=false and tau_mult=false")
+    if not config.quantile_scale and not (model_config.tau_feat or model_config.tau_mult):
+        raise ValueError("QuantileHead requires tau_feat or tau_mult")
     if not config.cv:
         raise ValueError("The ablation requires cross validation")
     if config.start_fold_id != 0 or config.stop_fold_id != config.n_folds:
@@ -288,18 +299,31 @@ def main():
     results_dir.mkdir(parents=True, exist_ok=True)
 
     fold_rows = []
-    summary_rows = []
     pinball_rows = []
     interval_rows = []
+
+    def persist_results():
+        summaries = []
+        for label in dict.fromkeys(row["setting"] for row in fold_rows):
+            rows = [row for row in fold_rows if row["setting"] == label]
+            summary = summarize(rows, {"setting": label, "completed_folds": len(rows)}, ("rmse",))
+            summaries.append(summary)
+        save_csv(results_dir / "fold_rmse.csv", list(fold_rows[0]), fold_rows)
+        save_csv(results_dir / "summary_rmse.csv", list(summaries[0]), summaries)
+        for region in REGIONS:
+            save_plot(results_dir / f"{region}_rmse_by_weight.png", summaries, region)
+        save_uncertainty_results(results_dir, pinball_rows, interval_rows)
+
     for ratio in ratios:
         setting = label_for(ratio)
         config.window_weight_ratio = ratio
         exp_name = f"{args.model_name}_{args.failure_type}_window_weight_{setting}"
         print(f"\nRunning {setting} on {device}", flush=True)
+        emit("setting_started", setting=setting, ratio=ratio, stage="training", status="running")
 
         def output_dir(name):
             path = (
-                EXPERIMENT_DIR
+                Path(os.environ.get("PHM_RESULTS_DIR", EXPERIMENT_DIR))
                 / name
                 / args.model_name
                 / args.failure_type
@@ -309,24 +333,7 @@ def main():
             path.mkdir(parents=True, exist_ok=True)
             return str(path)
 
-        metrics, _ = train_k_fold(
-            exp_config=config,
-            model_config=model_config,
-            device=device,
-            best_model_path=output_dir("best_models"),
-            outputs_path=output_dir("outputs"),
-            combined_outputs_path=output_dir("combined_outputs"),
-            metrics_path=output_dir("metrics"),
-            seed=args.seed,
-            evaluation_quantiles=list(EVALUATION_QUANTILES),
-        )
-        if len(metrics) != config.n_folds:
-            raise RuntimeError(
-                f"Expected {config.n_folds} fold results for {setting}; got {len(metrics)}"
-            )
-
-        fold_metrics = []
-        for fold_idx, _ in enumerate(metrics, start=1):
+        def collect_fold(fold_idx):
             # Use the saved predictions to avoid the two-decimal rounding in
             # lifes_metrics. Match its nonzero-target mask and mean over lives.
             output_path = (
@@ -364,45 +371,22 @@ def main():
                 fold_result[f"{region}_rmse"] = (
                     statistics.mean(values) if values else None
                 )
-            fold_metrics.append(fold_result)
             fold_rows.append(fold_result)
 
-        summary = {"setting": setting}
-        for region in ("overall", "constant", "decreasing"):
-            values = [
-                row[f"{region}_rmse"]
-                for row in fold_metrics
-                if row[f"{region}_rmse"] is not None
-            ]
-            summary[f"mean_{region}_rmse"] = statistics.mean(values) if values else None
-            if len(values) > 1:
-                summary[f"std_{region}_rmse"] = statistics.stdev(values)
-            else:
-                summary[f"std_{region}_rmse"] = 0.0 if values else None
-        summary_rows.append(summary)
-        save_csv(
-            results_dir / "fold_rmse.csv",
-            ["setting", "fold", "overall_rmse", "constant_rmse", "decreasing_rmse"],
-            fold_rows,
+            emit("ablation_fold_evaluated", setting=setting, fold=fold_idx,
+                 rmse=fold_result, intervals=fold_interval, pinball=fold_pinball)
+            persist_results()
+
+        metrics, _ = train_k_fold(
+            exp_config=config, model_config=model_config, device=device,
+            best_model_path=output_dir("best_models"), outputs_path=output_dir("outputs"),
+            combined_outputs_path=output_dir("combined_outputs"), metrics_path=output_dir("metrics"),
+            seed=args.seed, evaluation_quantiles=list(EVALUATION_QUANTILES),
+            fold_complete_callback=collect_fold,
         )
-        save_csv(
-            results_dir / "summary_rmse.csv",
-            [
-                "setting",
-                "mean_overall_rmse",
-                "std_overall_rmse",
-                "mean_constant_rmse",
-                "std_constant_rmse",
-                "mean_decreasing_rmse",
-                "std_decreasing_rmse",
-            ],
-            summary_rows,
-        )
-        save_plot(results_dir / "overall_rmse_by_weight.png", summary_rows, "overall")
-        save_plot(
-            results_dir / "decreasing_rmse_by_weight.png", summary_rows, "decreasing"
-        )
-        save_uncertainty_results(results_dir, pinball_rows, interval_rows)
+        if len(metrics) != config.n_folds:
+            raise RuntimeError(f"Expected {config.n_folds} fold results for {setting}; got {len(metrics)}")
+        emit("setting_completed", setting=setting, completed_folds=config.n_folds)
 
     print(f"Saved ablation results to {results_dir}")
 
