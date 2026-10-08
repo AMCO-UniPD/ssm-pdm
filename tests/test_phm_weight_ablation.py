@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -137,12 +138,12 @@ def test_cv_evaluates_one_checkpoint_per_fold_without_retraining(
         save_combined_outputs=False,
         compute_metrics=True,
     )
-    trained, evaluated = [], []
+    trained, evaluated, completed = [], [], []
     monkeypatch.setattr(
         cv_training, "get_raw_phm_data", lambda **kwargs: (np.arange(4), [])
     )
     monkeypatch.setattr(cv_training, "MergeData", lambda data_list: data_list[0])
-    monkeypatch.setattr(cv_training, "load_phm_data", lambda **kwargs: {})
+    monkeypatch.setattr(cv_training, "load_phm_data", lambda **kwargs: {"test_idx": [7]})
     monkeypatch.setattr(cv_training, "load_cv_data", lambda **kwargs: {})
     monkeypatch.setattr(
         cv_training, "wandb_cv_data", lambda **kwargs: (None,) * 8 + (config,)
@@ -150,12 +151,12 @@ def test_cv_evaluates_one_checkpoint_per_fold_without_retraining(
     monkeypatch.setattr(
         cv_training,
         "get_trainer",
-        lambda **kwargs: SimpleNamespace(run=lambda runWB: trained.append(kwargs)),
+        lambda **kwargs: SimpleNamespace(best_val_loss=0.1, run=lambda runWB: trained.append(kwargs)),
     )
     monkeypatch.setattr(
         cv_training, "best_model_perf", lambda **kwargs: evaluated.append(kwargs)
     )
-    monkeypatch.setattr(cv_training, "lifes_metrics", lambda **kwargs: "metrics")
+    monkeypatch.setattr(cv_training, "lifes_metrics", lambda **kwargs: pd.DataFrame({"Eval Loss": [1.0]}, index=["Life_7"]))
     monkeypatch.setattr(cv_training, "init_wandb", lambda **kwargs: None)
     monkeypatch.setattr(cv_training.wandb, "finish", lambda: None)
     monkeypatch.setattr(cv_training.setproctitle, "setproctitle", lambda name: None)
@@ -176,11 +177,14 @@ def test_cv_evaluates_one_checkpoint_per_fold_without_retraining(
         SimpleNamespace(),
         **paths,
         evaluation_quantiles=extra_quantiles,
+        fold_complete_callback=lambda fold: completed.append((fold, len(evaluated))),
     )
 
     assert len(trained) == 2
     assert len(evaluated) == expected_evaluations
-    assert metrics == ["metrics", "metrics"]
+    assert len(metrics) == 2
+    assert all(frame["Eval Loss"].tolist() == [1.0] for frame in metrics)
+    assert completed == [(1, expected_evaluations // 2), (2, expected_evaluations)]
     for fold in (1, 2):
         calls = [
             call for call in evaluated if f"fold_{fold}" in call["best_model_path"]
@@ -190,3 +194,50 @@ def test_cv_evaluates_one_checkpoint_per_fold_without_retraining(
         assert {call["tau"] for call in calls} == set(extra_quantiles or [0.5])
         for call in calls:
             assert f"quantile_{call['tau']}" in call["outputs_path"]
+
+
+def test_ablation_collects_and_exports_each_fold_before_next_training(monkeypatch, tmp_path):
+    import pickle
+    import yaml
+    import phm_weight_ablation as runner
+
+    model = tmp_path / 'model.yaml'
+    model.write_text(yaml.safe_dump({'tau_feat': False, 'tau_mult': False}))
+    config = tmp_path / 'experiment.yaml'
+    config.write_text(yaml.safe_dump({'model_config_path': str(model), 'cv': True,
+        'n_folds': 2, 'start_fold_id': 0, 'stop_fold_id': 2, 'quantile_reg': True,
+        'quantile_scale': True, 'transformer_type': 5, 'max_rul': 500,
+        'loss': 'window_quantile_reg', 'eval_loss': 'window_pinball'}))
+    results = tmp_path / 'summaries'
+    artifacts = tmp_path / 'isolated results'
+    monkeypatch.setenv('PHM_RESULTS_DIR', str(artifacts))
+    monkeypatch.setattr(sys, 'argv', ['ablation', '--config', str(config),
+        '--train-phm-tools', '01M01', '--test-phm-tools', '01M02',
+        '--ratios', 'unweighted', '1', '--results-dir', str(results)])
+    monkeypatch.setattr(runner.torch.cuda, 'is_available', lambda: False)
+    plotted = []
+    monkeypatch.setattr(runner, 'save_plot', lambda path, *a, **kw: plotted.append(path.name))
+    partial_counts = []
+    def train(**kwargs):
+        assert str(artifacts) in kwargs['outputs_path']
+        assert kwargs['exp_config'].quantiles == [0.5]
+        assert kwargs['evaluation_quantiles'] == list(EVALUATION_QUANTILES)
+        for fold in (1, 2):
+            for tau in EVALUATION_QUANTILES:
+                path = Path(kwargs['outputs_path']) / f'fold_{fold}' / f'quantile_{tau}'
+                path.mkdir(parents=True)
+                with (path / 'outputs.pickle').open('wb') as stream:
+                    pickle.dump(make_outputs([np.array([500., 400., 100., 0.])])[tau], stream)
+            kwargs['fold_complete_callback'](fold)
+            with (results / 'summary_rmse.csv').open() as stream:
+                rows = list(csv.DictReader(stream))
+            partial_counts.append([int(row['completed_folds']) for row in rows])
+        return [pd.DataFrame(), pd.DataFrame()], 'fixture'
+    monkeypatch.setattr(runner, 'train_k_fold', train)
+    runner.main()
+    assert partial_counts == [[1], [2], [2, 1], [2, 2]]
+    with (results / 'fold_intervals.csv').open() as stream:
+        rows = list(csv.DictReader(stream))
+    assert len(rows) == 4
+    assert all(float(row['overall_width']) == 16 for row in rows)
+    assert len(set(plotted)) == 27

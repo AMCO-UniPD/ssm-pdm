@@ -6,7 +6,7 @@ validation training
 import os
 import sys
 import time
-from typing import List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import ipdb
 import numpy as np
@@ -134,6 +134,7 @@ def train_k_fold(
     metrics_path: str = experiment_path,
     seed: Optional[int] = None,
     evaluation_quantiles: Optional[List[float]] = None,
+    fold_complete_callback: Optional[Callable[[int], None]] = None,
 ) -> Tuple[List[pd.DataFrame],str]:
     """
     Function to implement the k fold cross validation training
@@ -145,6 +146,7 @@ def train_k_fold(
         best_model_path (str): path where to save the best model
         outputs_path (str): path where to save the outputs
         evaluation_quantiles: additional inference levels for the same SQR checkpoint
+        fold_complete_callback: called after each fold has saved all its predictions
 
     Returns:
         metrics_list (List[pd.DataFrame]): the function performs the training and the evaluation and logs the results to
@@ -259,7 +261,7 @@ def train_k_fold(
                  config) = wandb_cv_data(
                     config=exp_config, model_config=model_config,
                     loaders_dict=loaders_dict, best_model_path=best_model_path)
-            emit("quantile_started", tau=quantile)
+            emit("quantile_started", tau=quantile, stage="training")
 
             print("-"*50)
             print(f"Experiment run for quantile level {quantile} and fold {fold_idx+1}")
@@ -328,6 +330,7 @@ def train_k_fold(
                     tau=quantile,
                 )
 
+            emit("stage", stage="held-out quantile evaluation", status="running")
             # Evaluate the same selected checkpoint at other quantiles, without
             # entering the training loop again or changing checkpoint selection.
             for eval_tau in dict.fromkeys(evaluation_quantiles or []):
@@ -382,6 +385,9 @@ def train_k_fold(
                  validation_loss=float(np.mean(validation_losses)),
                  test_idx=[int(index) for index in eval_loaders_dict["test_idx"]],
                  table=table_payload(fold_table))
+
+        if fold_complete_callback is not None:
+            fold_complete_callback(fold_idx + 1)
 
     if fold_tables:
         mean_table = sum(fold_tables) / len(fold_tables)
