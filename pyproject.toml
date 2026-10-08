@@ -27,5 +27,5 @@ dependencies = [
     "torchinfo>=1.8.0",
     "transformer-encoder>=0.0.3",
     "transformers>=4.57.5",
-    "wandb>=0.23.1",
+    "wandb>=0.24.1",
 ]
