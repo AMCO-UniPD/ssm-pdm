@@ -60,6 +60,8 @@ class QuantileHead(Head):
         self.tau = tau
 
     def forward(self, x):
+        if getattr(self, "debug_tau", False):
+            print(f"[{type(self).__name__}] tau={self.tau}")
         x = x[:, -1, :].squeeze(1)  # (B, L, H) -> (B,1,H) → (B, H)
         # (B,H) → (B,O)
         x = self.decoder(
@@ -92,6 +94,8 @@ class QuantileScaleHead(Head):
         self.upper_scale_decoder = nn.LazyLinear(self.d_output)
 
     def forward(self, x):
+        if getattr(self, "debug_tau", False):
+            print(f"[{type(self).__name__}] tau={self.tau}")
         x = x[:, -1, :].squeeze(1)  # (B, L, H) -> (B, H)
 
         median = self.decoder(x)

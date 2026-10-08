@@ -139,6 +139,10 @@ class RULModel(nn.Module):
         Typical method for implementing the forward pass of the model
         """
 
+        if getattr(self, "debug_tau", False):
+            print(f"[{type(self).__name__} backbone] tau={self.tau} "
+                  "(backbone does not condition on tau)")
+
         x = self.projector(x)  # (B,L,D) → (B,L,H)
         x = self.extractor(x)  # (B,L,H) → (B,L,H)
         x = self.head(x)  # (B,L,H) → (B,O)
@@ -163,6 +167,10 @@ class QuantileRULModel(RULModel):
             tau=self.tau, config=self.model_config, d_output=self.output_size)
 
     def forward(self, x):
+        if getattr(self, "debug_tau", False):
+            print(f"[{type(self).__name__} backbone] tau={self.tau}, "
+                  f"tau_feat={self.model_config.tau_feat}")
+
         x = concat_tau(
             x=x,
             tau=self.tau,
@@ -172,6 +180,8 @@ class QuantileRULModel(RULModel):
 
         x = self.projector(x)
         x = self.extractor(x)
+        # Training and evaluation update model.tau after construction.
+        self.head.tau = self.tau
         x = self.head(x)
 
         return x
@@ -194,6 +204,11 @@ class QuantileScaleRULModel(RULModel):
             config=self.model_config,
             d_output=self.output_size,
         )
+
+    def forward(self, x):
+        # The backbone is independent of tau; the head must use the current level.
+        self.head.tau = self.tau
+        return super().forward(x)
 
 
 class MonotonicRULModel(RULModel):
