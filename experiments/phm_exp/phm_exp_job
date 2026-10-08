@@ -24,7 +24,5 @@ echo "-----------------------------"
 echo "Starting PHM experiment run"
 echo "-----------------------------"
 
-# ./run_phm_exp
-
-./launch_train_phm training
+./run_phm_exp
 
