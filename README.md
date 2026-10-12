@@ -63,12 +63,50 @@ Inspect a campaign without starting training, a dashboard, or a tunnel:
 
 Additional options are `--exp-config`, `--shell-config`, and `--artifact-root`;
 run the launcher with `--help` for details. Artifacts default to
-`experiments/phm_exp/campaigns/<campaign-id>/`.
+`/mnt/disk1/davide_frizzo/experiments/ssm-pdm/<campaign-id>/`. To choose another
+root for all results:
+
+```bash
+./experiments/phm_exp/launch_phm_campaign_tmux \
+  --campaign-id my_campaign --port 8880 \
+  --artifact-root /mnt/disk1/davide_frizzo/experiments/ssm-pdm
+```
+
+Alternatively set `PHM_ARTIFACT_ROOT` before launching. `--artifact-root` takes
+precedence over that environment variable. Each campaign directory contains:
+
+| Path | Contents |
+| --- | --- |
+| `results/` | Checkpoints, predictions, combined outputs, metrics, and business metrics |
+| `plots/` | Best-fold PNG and PDF plots |
+| `wandb/` | Local W&B run files and SDK logs |
+| Campaign root | Configuration snapshots, dashboard events/status, and service logs |
+
+The launcher sets `PHM_MONITOR_DIR` to the campaign directory,
+`PHM_RESULTS_DIR` to its `results/` subdirectory, and `WANDB_DIR` to the campaign
+directory. You do not need to set these yourself. Results retain the existing
+category/model/failure/approach/campaign/fold/quantile organization beneath
+`results/`. Already-running campaigns keep the paths recorded at launch.
 
 The dashboard displays the effective configuration, current/total W&B runs,
 W&B links, epoch losses, live logs, and quantile metric tables after each fold.
 After all folds, it displays the average table and quantile/business plots for
 the fold with the lowest mean checkpoint validation loss across quantiles.
+
+Use **Download offline HTML** at the top of the dashboard to save a
+self-contained snapshot with configuration, metrics, loss curves, logs, and
+available plots. It opens locally after the tmux session and tunnel have been
+stopped. The snapshot captures the moment of download; download after completion
+to include all results and final plots. W&B links remain available as external
+links, while viewing the dashboard itself requires no network connection.
+
+You can also export from saved artifacts after stopping the dashboard:
+
+```bash
+python3 experiments/phm_exp/phm_dashboard.py \
+  --directory /mnt/disk1/davide_frizzo/experiments/ssm-pdm/my_campaign \
+  --export dashboard-my_campaign.html
+```
 
 To attach or stop a campaign, substitute its ID below:
 

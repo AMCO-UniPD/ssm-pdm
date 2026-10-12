@@ -8,14 +8,20 @@ if python -c 'import os,yaml; c=yaml.safe_load(open(os.environ.get("PHM_EXP_CONF
 fi
 
 for stage in training save_outputs_run quantile_metrics compute_business_metrics; do
+  if [[ "$stage" != training ]] && python ../../src/phm_resume.py "$stage"; then
+    echo "PHM resume: keeping completed stage $stage"
+    continue
+  fi
   echo "PHM pipeline: $stage"
   python ../../src/phm_monitor.py "$stage"
   "$launcher" "$stage"
+  python ../../src/phm_resume.py "$stage" --complete
 done
 
 if [[ -n "${PHM_MONITOR_DIR:-}" ]]; then
   python ../../src/phm_monitor.py best_fold_plots
   python phm_campaign_report.py
+  python ../../src/phm_resume.py best_fold_plots --complete
 else
   "$launcher" quantile_plots
 fi

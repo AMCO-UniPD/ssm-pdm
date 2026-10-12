@@ -20,6 +20,7 @@ from urllib.request import urlopen
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
+from phm_resume import load_campaign, prepare_resume_config, resume_existing_pipeline, worker_lock
 from phm_monitor import emit
 from phm_campaign import settings
 from ablation_dashboard import export_snapshot
@@ -31,9 +32,14 @@ def atomic_json(path, value):
     tmp.replace(path)
 
 
-def worker(directory):
+def worker(directory, resume=False):
+    lock = worker_lock(directory)
     manifest = json.loads((directory / 'manifest.json').read_text())
+    if resume:
+        manifest = load_campaign(directory)
+        prepare_resume_config(directory)
     env = {**os.environ, **manifest['environment']}
+    env["PHM_RESUME"] = "1" if resume else "0"
     os.environ['PHM_MONITOR_DIR'] = str(directory)
     process = None
     cancelled = False
@@ -89,6 +95,8 @@ def worker(directory):
             target.replace(directory / 'dashboard_snapshot.html')
         except Exception as error:
             print(f'Final snapshot export failed; existing snapshot retained: {error}', flush=True)
+        finally:
+            lock.close()
 
 
 def build_plan(args):
@@ -174,10 +182,17 @@ def build_plan(args):
     return directory, json.loads(json.dumps(manifest, default=str))
 
 
-def launch(directory, manifest, port, tunnel=False, dashboard_only=False):
+def launch(directory, manifest, port, tunnel=False, dashboard_only=False, resume=False):
     session = manifest['session'] + ('-monitor' if dashboard_only else '')
     if not shutil.which('tmux'):
         raise ValueError('tmux is required')
+    worker_argv = [sys.executable, str(Path(__file__).resolve()), '--worker', str(directory)]
+    if resume:
+        worker_argv.append('--resume')
+        command = shlex.join(worker_argv) + ' 2>&1 | tee -a ' + shlex.quote(str(directory / 'runner.log'))
+        if resume_existing_pipeline(session, shlex.join(['bash', '-o', 'pipefail', '-c', command])):
+            print(f'Resumed campaign {manifest["campaign_id"]} · Attach: tmux attach -t {session}', flush=True)
+            return
     cloudflared = shutil.which(os.environ.get('CLOUDFLARED_BIN', 'cloudflared')) if tunnel else None
     if tunnel and not cloudflared:
         raise ValueError('--tunnel requires cloudflared')
@@ -210,10 +225,12 @@ def launch(directory, manifest, port, tunnel=False, dashboard_only=False):
             raise RuntimeError('Dashboard readiness failed; inspect dashboard.log')
         url = f'http://127.0.0.1:{port}'
         if tunnel:
+            log = directory / 'cloudflared.log'
+            tunnel_offset = log.stat().st_size if log.exists() else 0
             window('tunnel', [cloudflared, 'tunnel', '--no-autoupdate', '--url', url], directory / 'cloudflared.log')
             for _ in range(100):
                 log = directory / 'cloudflared.log'
-                contents = log.read_text(errors='replace') if log.exists() else ''
+                contents = log.read_bytes()[tunnel_offset:].decode(errors='replace') if log.exists() else ''
                 matches = re.findall(r'https://[a-z0-9-]+\.trycloudflare\.com', contents)
                 if matches and 'Registered tunnel connection' in contents:
                     url = matches[-1]; break
@@ -222,7 +239,7 @@ def launch(directory, manifest, port, tunnel=False, dashboard_only=False):
                 raise RuntimeError('Tunnel readiness failed; inspect cloudflared.log')
         (directory / 'dashboard_url.txt').write_text(url + '\n')
         if not dashboard_only:
-            window('pipeline', [sys.executable, str(Path(__file__).resolve()), '--worker', str(directory)], directory / 'runner.log')
+            window('pipeline', worker_argv, directory / 'runner.log')
         window('logs', ['tail', '-n', '80', '-F', str(directory / 'runner.log')], directory / 'log-tail.log')
         tmux('kill-window', '-t', session + ':control')
     except BaseException:
@@ -245,20 +262,32 @@ def main():
     parser.add_argument('--port', type=int, default=8879)
     parser.add_argument('--tunnel', action='store_true', help='Explicitly expose the dashboard through a public Cloudflare tunnel')
     parser.add_argument('--dry-run', action='store_true', help='Print resolved plan without creating files, sessions, or processes')
+    parser.add_argument("--resume", action="store_true", help="Reuse saved configuration and skip completed folds/quantiles; requires --campaign-id")
     parser.add_argument('--dashboard-only', type=Path, help='Restart monitoring from an existing campaign; does not train')
     parser.add_argument('--worker', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.resume and not args.worker and not any(arg == "--campaign-id" or arg.startswith("--campaign-id=") for arg in sys.argv):
+        parser.error("--resume requires the original --campaign-id and --artifact-root")
     if args.worker:
-        return worker(args.worker.resolve())
+        return worker(args.worker.resolve(), args.resume)
     if not re.fullmatch(r'[A-Za-z0-9_-]+', args.campaign_id) or not 1024 <= args.port <= 65535:
         parser.error('Invalid campaign ID or port (expected 1024–65535)')
     try:
+        if args.resume and args.dashboard_only:
+            raise ValueError("--resume and --dashboard-only cannot be combined")
         if args.dashboard_only:
             directory = args.dashboard_only.resolve()
             manifest = json.loads((directory / 'manifest.json').read_text())
             if args.dry_run:
                 print(json.dumps({'directory': str(directory), 'port': args.port, 'mode': 'dashboard only'}, indent=2)); return 0
             launch(directory, manifest, args.port, args.tunnel, dashboard_only=True); return 0
+        if args.resume:
+            directory = (args.artifact_root.expanduser() / args.campaign_id).resolve()
+            manifest = load_campaign(directory)
+            print(json.dumps({'directory': str(directory), 'mode': 'resume', 'manifest': manifest}, indent=2), flush=True)
+            if not args.dry_run:
+                launch(directory, manifest, args.port, args.tunnel, resume=True)
+            return 0
         directory, manifest = build_plan(args)
         print(json.dumps(manifest, indent=2), flush=True)
         if args.dry_run:

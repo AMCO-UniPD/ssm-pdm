@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parents[1] / "src"))
 sys.path.insert(0, str(ROOT.parents[1] / "src/ceruleo"))
 from phm_monitor import best_fold, emit
+from phm_paths import campaign_results_root
 from phm_dashboard import read_events
 from ceruleo.graphics.results import plot_J_Cost, plot_unexpected_breaks, plot_unexploited_lifetime
 from ceruleo.results.results import PredictionResult
@@ -39,7 +40,8 @@ def generate(directory):
     fold = selected["fold"]
     emit("best_fold_selected", best_fold=fold, validation_loss=selected["validation_loss"])
     print(f"Selected fold {fold}: mean checkpoint validation loss {selected['validation_loss']}")
-    outputs = ROOT / "combined_outputs" / settings["model_name"] / settings["failure_type"] / config["approach"] / manifest["campaign_id"] / f"fold_{fold}"
+    results_root = campaign_results_root(directory, manifest, ROOT)
+    outputs = results_root / "combined_outputs" / settings["model_name"] / settings["failure_type"] / config["approach"] / manifest["campaign_id"] / f"fold_{fold}"
     combined = load_latest(outputs)
     plot_dir = directory / "plots"
     plot_dir.mkdir(exist_ok=True)
@@ -52,7 +54,7 @@ def generate(directory):
 
     indices = selected["test_idx"]
     lives = config["plot_life_idx"]
-    for last in dict.fromkeys((0, config["n_last_samples"])):
+    for last in dict.fromkeys((0, 1000, config["n_last_samples"])):
         fig, axes = plt.subplots(config["nrows"], config["ncols"], figsize=(16, 9), squeeze=False)
         if len(lives) > axes.size:
             raise ValueError("Plot grid is smaller than selected lives")
@@ -61,15 +63,17 @@ def generate(directory):
             true = np.asarray(combined["y_true"][i]).reshape(-1)
             predictions = {tau: np.asarray(combined[f"pred_quantile_{tau}"][i]).reshape(-1)
                            for tau in config["quantiles"]}
+            valid = true != 0 if not config["full_life"] else np.ones(true.shape, dtype=bool)
+            true = true[valid]
+            predictions = {tau: pred[valid] for tau, pred in predictions.items()}
             if last:
                 true = true[-last:]
                 predictions = {tau: pred[-last:] for tau, pred in predictions.items()}
-            valid = true != 0 if not config["full_life"] else np.ones(true.shape, dtype=bool)
-            ax.plot(true[valid], color="black", label="True RUL")
+            ax.plot(true, color="black", label="True RUL")
             for tau, pred in predictions.items():
-                ax.plot(pred[valid], label=f"τ={tau}", alpha=0.85)
+                ax.plot(pred, label=f"τ={tau}", alpha=0.85)
             low, high = min(predictions), max(predictions)
-            ax.fill_between(np.arange(valid.sum()), predictions[low][valid], predictions[high][valid], alpha=0.12)
+            ax.fill_between(np.arange(len(true)), predictions[low], predictions[high], alpha=0.12)
             ax.set(title=f"Life {life}", xlabel="Time step", ylabel="RUL")
             ax.legend()
         for ax in list(axes.flat)[len(lives):]:

@@ -26,7 +26,7 @@ scaler_kwargs:
 # approach
 monotonic: false
 quantile_reg: true
-quantile_scale: true
+quantile_scale: false
 approach: windowed_quantile_weighted
 # approach: windowed_weighted_monotonic
 # approach: windowed_quantile_standard
