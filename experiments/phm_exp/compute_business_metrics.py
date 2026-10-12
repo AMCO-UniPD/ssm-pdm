@@ -16,7 +16,9 @@ from utils import generate_path, get_current_time, save_element
 from perf import get_fitted_lifes, lifes_business_metrics
 from models import wandb_data
 
-experiment_path = os.path.dirname((os.path.realpath(__file__)))
+from phm_paths import results_root
+
+experiment_path = str(results_root(os.path.dirname(os.path.realpath(__file__))))
 
 exp_config, model_config, device, exp_name = setup_exp()
 

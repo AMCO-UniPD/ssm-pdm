@@ -24,7 +24,9 @@ from utils import (
 from perf import lifes_metrics
 from models import wandb_data
 
-experiment_path = os.path.dirname((os.path.realpath(__file__)))
+from phm_paths import results_root
+
+experiment_path = str(results_root(os.path.dirname(os.path.realpath(__file__))))
 
 exp_config, model_config, device, exp_name = setup_exp()
 

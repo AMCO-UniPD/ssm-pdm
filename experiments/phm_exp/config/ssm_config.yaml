@@ -15,9 +15,9 @@ quantile_reg: true
 #WARN: tau_mult and tau_feat should be false if
 # we use QuantileScaleHead
 # tau_mult approach
-tau_mult: false
+tau_mult: true
 # tau as input feature
-tau_feat: false
+tau_feat: true
 
 # S4 config
 lr: 0.006

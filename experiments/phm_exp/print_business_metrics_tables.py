@@ -17,7 +17,9 @@ sys.path.append(src_path)
 from exp_config import setup_exp
 from utils import generate_path, get_most_recent_file, open_element
 
-experiment_path = os.path.dirname((os.path.realpath(__file__)))
+from phm_paths import results_root
+
+experiment_path = str(results_root(os.path.dirname(os.path.realpath(__file__))))
 
 exp_config, model_config, device, exp_name = setup_exp()
 

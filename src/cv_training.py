@@ -30,6 +30,8 @@ from utils import (MergeData, generate_path, get_current_time, get_mono_mask,
                    set_seed)
 from wandb_funcs import init_wandb
 from phm_monitor import emit, table_payload
+from phm_resume import completed_quantiles
+from utils import get_most_recent_file, open_element
 
 cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 experiment_path = os.path.join(cwd,"experiments")
@@ -192,6 +194,9 @@ def train_k_fold(
 
     metrics_list = []
     fold_tables = []
+    exp_name = "resumed_campaign"
+    recovered = completed_quantiles(best_model_path, outputs_path, metrics_path,
+                                    exp_config.quantiles, evaluation_quantiles)
 
     for fold_idx, (train_val_idx, test_idx) in enumerate(skf.split(merged_phm_data)):
 
@@ -217,6 +222,24 @@ def train_k_fold(
             print("-"*50)
             print(f"Processing fold {fold_idx+1}/{exp_config.n_folds}")
             print("-"*50)
+
+        if all((fold_idx + 1, tau) in recovered for tau in exp_config.quantiles):
+            fold_table = pd.DataFrame()
+            for tau in exp_config.quantiles:
+                folder = os.path.join(metrics_path, f"fold_{fold_idx+1}", f"quantile_{tau}")
+                frame = open_element(get_most_recent_file(folder), filetype="pickle")
+                metrics_list.append(frame)
+                fold_table[f"quantile_{tau}"] = frame["Eval Loss"]
+            fold_tables.append(fold_table)
+            emit("fold_completed", fold=fold_idx + 1,
+                 validation_loss=float(np.mean([recovered[(fold_idx+1, tau)]["validation_loss"]
+                                                for tau in exp_config.quantiles])),
+                 test_idx=[int(index) for index in eval_loaders_dict["test_idx"]],
+                 table=table_payload(fold_table))
+            print(f"Resuming: keeping completed fold {fold_idx+1}", flush=True)
+            if fold_complete_callback is not None:
+                fold_complete_callback(fold_idx + 1)
+            continue
 
         emit("fold_started", fold=fold_idx + 1, n_folds=exp_config.n_folds,
              stage="training", status="running")
@@ -254,6 +277,16 @@ def train_k_fold(
         )
 
         for quantile in exp_config.quantiles:
+
+            previous = recovered.get((fold_idx + 1, quantile))
+            if previous is not None:
+                folder = os.path.join(metrics_path, f"fold_{fold_idx+1}", f"quantile_{quantile}")
+                frame = open_element(get_most_recent_file(folder), filetype="pickle")
+                metrics_list.append(frame)
+                fold_table[f"quantile_{quantile}"] = frame["Eval Loss"]
+                validation_losses.append(previous["validation_loss"])
+                print(f"Resuming: keeping fold {fold_idx+1}, quantile {quantile}", flush=True)
+                continue
 
             # Each quantile run starts from a fresh model and optimizer.
             if quantile != exp_config.quantiles[0]:
@@ -369,6 +402,9 @@ def train_k_fold(
 
                 metrics_list.append(metrics_df)
                 fold_table[f"quantile_{quantile}"] = metrics_df["Eval Loss"]
+
+            emit("quantile_completed", fold=fold_idx + 1, tau=quantile,
+                 validation_loss=float(trainer.best_val_loss))
 
             #NOTE: End run for the current quantile
 

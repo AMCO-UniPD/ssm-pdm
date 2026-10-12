@@ -22,6 +22,13 @@ import phm_dashboard
 
 
 class MonitorTests(unittest.TestCase):
+    def test_result_paths_respect_override_and_legacy_default(self):
+        from phm_paths import results_root
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(results_root(tmp), Path(tmp).resolve())
+            with patch.dict(os.environ, {"PHM_RESULTS_DIR": str(Path(tmp) / "external results")}):
+                self.assertEqual(results_root("/unused"), Path(tmp) / "external results")
+
     def test_cached_ceruleo_transformer_has_sklearn_estimator_tags(self):
         import utils
         from sklearn.utils.validation import check_is_fitted
@@ -69,6 +76,45 @@ class MonitorTests(unittest.TestCase):
             self.assertEqual(len(data["events"]), 2)
             self.assertEqual(data["wandb"]["url"], events[0]["url"])
 
+    def test_offline_snapshot_embeds_data_images_and_escapes_html(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "plots").mkdir()
+            (directory / "plots/result.png").write_bytes(b"saved plot bytes")
+            manifest = {"campaign_id": "snapshot", "config": {}, "model_config": {}, "settings": {}}
+            (directory / "manifest.json").write_text(json.dumps(manifest))
+            (directory / "runner.log").write_text('</script><script>alert("unsafe")</script>')
+            events = [{"kind": "plot", "filename": "result.png", "title": "Result"},
+                      {"kind": "plot", "filename": "../outside.png", "title": "Outside"}]
+            (directory / "outside.png").write_bytes(b"must not embed")
+            (directory / "events.jsonl").write_text("\n".join(json.dumps(e) for e in events))
+            html = phm_dashboard.snapshot_html(directory)
+            saved = html.split('<script id="saved-dashboard" type="application/json">', 1)[1].split('</script>', 1)[0]
+            data = json.loads(saved)
+            self.assertEqual(data["log"], (directory / "runner.log").read_text())
+            self.assertNotIn("</script>", saved)
+            self.assertEqual(data["plot_assets"], {"result.png": "data:image/png;base64,c2F2ZWQgcGxvdCBieXRlcw=="})
+            self.assertIn('href="data:image/svg+xml;base64,', html)
+            self.assertIn('if(offlineData){render(offlineData)}else{refresh()}', html)
+
+    def test_snapshot_download_response(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "manifest.json").write_text(json.dumps(
+                {"campaign_id": "offline_test", "config": {}, "model_config": {}, "settings": {}}))
+            server = ThreadingHTTPServer(("127.0.0.1", 0), partial(phm_dashboard.Handler, directory=directory))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                with urlopen(f"http://127.0.0.1:{server.server_port}/snapshot.html") as response:
+                    self.assertEqual(response.headers.get_content_type(), "text/html")
+                    self.assertEqual(response.headers["Content-Disposition"], 'attachment; filename="phm-dashboard-offline_test.html"')
+                    self.assertIn(b'id="saved-dashboard"', response.read())
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
+
     def test_http_does_not_expose_arbitrary_campaign_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
@@ -96,35 +142,53 @@ class MonitorTests(unittest.TestCase):
         import phm_campaign_report as report
         from exp_config import ExperimentConfig
 
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {"PHM_MONITOR_DIR": tmp}):
-            directory = Path(tmp)
-            config = vars(ExperimentConfig(n_folds=2, nrows=1, ncols=1, plot_life_idx=[0], life_idx=[0], n_last_samples=50))
-            manifest = {"campaign_id": "fixture", "config": config,
-                        "settings": {"model_name": "S4D", "failure_type": "flow_low"}}
-            (directory / "manifest.json").write_text(json.dumps(manifest))
-            phm_monitor.emit("fold_completed", fold=1, validation_loss=2.0, test_idx=[0])
-            phm_monitor.emit("fold_completed", fold=2, validation_loss=1.0, test_idx=[0])
-            outputs = directory / "combined_outputs/S4D/flow_low" / config["approach"] / "fixture/fold_2"
-            outputs.mkdir(parents=True)
-            true = np.linspace(100, 0, 101)
-            combined = {"y_true": [true]}
-            for tau in config["quantiles"]:
-                pred = true + (tau - 0.5) * 10
-                combined[f"pred_quantile_{tau}"] = [pred]
-                path = outputs / f"quantile_{tau}"
-                path.mkdir()
-                with (path / "outputs.pickle").open("wb") as stream:
-                    pickle.dump({"y_true": [true], "y_pred": [pred]}, stream)
-            with (outputs / "combined.pickle").open("wb") as stream:
-                pickle.dump(combined, stream)
-            with patch.object(report, "ROOT", directory):
-                report.generate(directory)
-            plots = list((directory / "plots").glob("*.png"))
-            self.assertEqual(len(plots), 5)
-            self.assertTrue(all(path.name.startswith("fold_2_") for path in plots))
-            events = phm_dashboard.read_events(directory)
-            self.assertEqual([e for e in events if e["kind"] == "best_fold_selected"][0]["best_fold"], 2)
-            self.assertEqual(len([e for e in events if e["kind"] == "plot"]), 5)
+        for migrated in (False, True):
+            with self.subTest(migrated=migrated):
+                with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {"PHM_MONITOR_DIR": tmp}):
+                    os.environ.pop("PHM_RESULTS_DIR", None)
+                    directory = Path(tmp)
+                    config = vars(ExperimentConfig(n_folds=2, nrows=1, ncols=1, plot_life_idx=[0], life_idx=[0], n_last_samples=50))
+                    manifest = {"campaign_id": "fixture", "config": config,
+                                "results_root": str(directory / "external results"),
+                                "settings": {"model_name": "S4D", "failure_type": "flow_low"}}
+                    output_root = Path(manifest["results_root"])
+                    if migrated:
+                        manifest.pop("results_root")
+                        manifest["environment"] = {"PHM_MONITOR_DIR": "/old/home/campaign"}
+                        output_root = directory / "results"
+                    (directory / "manifest.json").write_text(json.dumps(manifest))
+                    phm_monitor.emit("fold_completed", fold=1, validation_loss=2.0, test_idx=[0])
+                    phm_monitor.emit("fold_completed", fold=2, validation_loss=1.0, test_idx=[0])
+                    outputs = output_root / "combined_outputs/S4D/flow_low" / config["approach"] / "fixture/fold_2"
+                    outputs.mkdir(parents=True)
+                    true = np.concatenate([np.linspace(100, 0, 1501), np.zeros(1200)])
+                    combined = {"y_true": [true]}
+                    for tau in config["quantiles"]:
+                        pred = true + (tau - 0.5) * 10
+                        combined[f"pred_quantile_{tau}"] = [pred]
+                        path = outputs / f"quantile_{tau}"
+                        path.mkdir()
+                        with (path / "outputs.pickle").open("wb") as stream:
+                            pickle.dump({"y_true": [true], "y_pred": [pred]}, stream)
+                    with (outputs / "combined.pickle").open("wb") as stream:
+                        pickle.dump(combined, stream)
+                    from matplotlib.axes import Axes
+                    original_plot = Axes.plot
+                    lengths = []
+                    def tracked_plot(ax, values, *args, **kwargs):
+                        if kwargs.get("label") == "True RUL":
+                            lengths.append(len(values))
+                        return original_plot(ax, values, *args, **kwargs)
+                    with patch.object(report, "ROOT", directory), patch.object(Axes, "plot", tracked_plot):
+                        report.generate(directory)
+                    self.assertEqual(lengths, [1500, 1000, 50])
+                    plots = list((directory / "plots").glob("*.png"))
+                    self.assertEqual(len(plots), 6)
+                    self.assertTrue(all(path.name.startswith("fold_2_") for path in plots))
+                    events = phm_dashboard.read_events(directory)
+                    self.assertEqual([e for e in events if e["kind"] == "best_fold_selected"][0]["best_fold"], 2)
+                    self.assertEqual(len([e for e in events if e["kind"] == "plot"]), 6)
+                    self.assertTrue((directory / "plots/fold_2_quantiles_last_1000.png").is_file())
 
     def test_cv_publishes_fold_tables_and_resets_quantile_models(self):
         import numpy as np

@@ -38,8 +38,36 @@ changes if you need an independently reproducible repository revision.
 The default artifact root is
 `/mnt/disk1/davide_frizzo/experiments/ssm-pdm`; override with `--artifact-root`
 or `PHM_ARTIFACT_ROOT`. Each campaign gets a new directory; existing directories
-and tmux sessions are rejected. No checkpoint resume is implemented: use a new
-campaign ID for a fresh run.
+and tmux sessions are rejected for fresh launches. To continue a failed or
+interrupted campaign, issue the original command with `--resume`:
+
+```bash
+experiments/phm_exp/launch_window_weight_campaign \
+  --campaign-id S4D_window_weights_scale --head scale --port 8879 --resume
+```
+
+Keep the original campaign ID and pass the artifact root containing its saved directory. Resume reads the saved
+manifest/configuration rather than applying current YAML, head, ratio, seed,
+or W&B options. It preserves logs, events, and completed training/evaluation
+artifacts. Completed folds are retained, and their saved predictions rebuild
+all ablation tables and plots together with newly completed folds. Historical
+campaigns are supported using completed-fold events or final-epoch records
+with readable checkpoints, predictions at all evaluation quantiles, and metrics.
+A missing or truncated result causes that work unit to be retried.
+
+Recovery is at the fold/quantile boundary. The interrupted training run starts
+again; checkpoints do not save optimizer/scheduler/random state for exact epoch
+recovery. This differs from the existing `resume_training` model-loading option.
+An exited pipeline window is respawned while its dashboard stays available.
+If the original session was stopped, monitoring is launched again. An active
+pipeline is rejected, and a worker lock prevents concurrent campaign writers.
+Moved campaign directories are supported: paths beneath the old campaign
+location are relocated to the directory selected by `--artifact-root`.
+`resume_experiment.yaml` points to its local model snapshot, leaving the original
+manifest and YAML snapshots intact. Older migrated campaigns with `results/`
+use that directory even if their original manifest predates `PHM_RESULTS_DIR`.
+Use `--resume --dry-run` to inspect saved settings without starting processes.
+A new campaign ID still starts a fresh experiment.
 
 ## Execution and evaluation
 
@@ -137,3 +165,50 @@ Regenerate it from saved artifacts without training or evaluation:
 
 The tests use synthetic metrics and cheap workers; creating the dashboard does
 not start a full experimental campaign.
+
+
+## Standard PHM CV campaign recovery
+
+The standard launcher supports the same resume flag:
+
+```bash
+experiments/phm_exp/launch_phm_campaign_tmux \
+  --campaign-id S4D_my_campaign --resume
+```
+
+For campaigns under an older artifact root, also pass that root, for example
+`--artifact-root /mnt/disk1/davide_frizzo/experiments/ssm-pdm/campaigns`.
+Completed quantile runs within a partially completed fold are retained when
+completion telemetry and readable artifacts are available. Fold summaries
+include retained and newly completed quantile results; validation losses remain
+the checkpoint-selection criterion. Successful downstream stages recorded by
+this version are skipped, and the failed stage is retried. Historical downstream
+stages without completion markers are rerun from saved predictions.
+
+
+The final plot report uses `PHM_RESULTS_DIR` from the resumed worker, then a
+saved results location (relocated when it was inside the moved campaign), then
+an existing campaign-local `results/` directory. Older manifests without a
+results path therefore work after migration. Separately recorded external
+results directories remain authoritative.
+
+To regenerate only the validation-selected fold's plots from saved predictions:
+
+```bash
+PHM_MONITOR_DIR=/mnt/disk1/davide_frizzo/experiments/ssm-pdm/campaigns/S4D_flow_low_tau_fixed_wandb030_20261008 \
+  ~/ssm-pdm/.venv/bin/python experiments/phm_exp/phm_campaign_report.py
+```
+
+This does not train or evaluate a model. Plots are written to the campaign's
+`plots/` directory and published in its saved dashboard events. Running the
+normal launcher with `--resume` also retries this stage and records the campaign
+as completed once every stage succeeds.
+
+
+For a completed standard PHM campaign, `--resume` regenerates the current plot
+report and offline dashboard directly from saved predictions. It does not enter
+training or recompute metrics. If its tmux session was killed, the launcher
+recreates monitoring and runs this report refresh. Quantile plots include the
+full sequence, the last 1000 samples, and the configured trailing window;
+padding is removed before selecting the last samples when `full_life=false`.
+Repeated refreshes replace the displayed plot with the same filename.
