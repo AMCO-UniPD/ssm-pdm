@@ -40,6 +40,7 @@ from ceruleo.results.results import (
     metric_J_from_cv
 )
 
+from metrics_summary import add_life_statistics
 from loss import load_loss_functions
 from exp_config import ModelConfig
 
@@ -99,12 +100,7 @@ def lifes_metrics(
         metrics_df.at[life_name, "Eval Loss"] = round(eval_loss, 2)
 
     if compute_stats:
-        # Add a row Life_mean with the mean of the metrics over all the columns
-        metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
-        # Add a row Life_median with the median of the metrics over all the columns
-        metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
-        # Add a row Life_std with the std of the metrics over all the columns
-        metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
+        add_life_statistics(metrics_df)
 
         print("#" * 50)
         print(f"Mean eval loss over all the test lifes: {metrics_df.loc['Life_mean']}")
@@ -319,9 +315,7 @@ def sub_lifes_metrics(
         sub_metrics_df = metrics_df.loc[metrics_idx]
 
     if compute_stats:
-        sub_metrics_df.loc["Life_mean"] = sub_metrics_df.mean(axis=0).round(2)
-        sub_metrics_df.loc["Life_median"] = sub_metrics_df.median(axis=0).round(2)
-        sub_metrics_df.loc["Life_std"] = sub_metrics_df.std(axis=0).round(2)
+        sub_metrics_df = add_life_statistics(sub_metrics_df.copy())
         if len(config.metrics_cols) > 1 and config.model_name.startswith("chronos"):
             sub_metrics_df["Sensor_mean"] = sub_metrics_df.mean(axis=1).round(2)
             sub_metrics_df["Sensor_median"] = sub_metrics_df.median(axis=1).round(2)
@@ -366,10 +360,7 @@ def print_summary_metrics(metrics_df: pd.DataFrame, model_name: str = "S4") -> N
         None: The function computes and prints the summary metrics and does not return anything
     """
 
-    # Compute the mean, median and std of the metrics
-    metrics_df.loc["Life_mean"] = metrics_df.mean(axis=0).round(2)
-    metrics_df.loc["Life_median"] = metrics_df.median(axis=0).round(2)
-    metrics_df.loc["Life_std"] = metrics_df.std(axis=0).round(2)
+    add_life_statistics(metrics_df)
 
     print("#" * 50)
     print(f"Summary metrics for model {model_name}")

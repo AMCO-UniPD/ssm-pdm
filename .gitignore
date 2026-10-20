@@ -19,6 +19,7 @@
 experiments/phm_exp/campaigns/
 
 profile_outputs/
+reports/
 
 # env variables
 .env

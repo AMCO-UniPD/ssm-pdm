@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+export CMAPSS_OUTPUTS_DIR=/home/davide_frizzo/chronos-pdm/experiments/chronos_exp/outputs
+
+python "$script_dir/quantile_metrics.py" \
+  --data_name CMAPSS \
+  --report_dir reports/cmapss-fd002-quantile-metrics
+
+

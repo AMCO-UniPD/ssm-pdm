@@ -1,0 +1,35 @@
+# Input root: set CMAPSS_OUTPUTS_DIR to the external outputs directory.
+# Experiment names are aligned with model_names; selection never uses mtime.
+data_name: CMAPSS
+cmapss_models: FD002
+approach: windowed
+quantile_approach: quantile_reg
+# model_names: [S4, S5, S4D, LSTM, RULTransformer, RULInformer]
+model_names: [RULInformer]
+
+# FD001 exp names
+# exp_names:
+#   - multi_run_26-03-2025_17-48-45_S4_FD001_windowed_quantile_reg_tau_mult
+#   - multi_run_27-03-2025_14-23-46_S5_FD001_windowed_quantile_reg_tau_mult
+#   - multi_run_27-03-2025_17-30-47_S4D_FD001_windowed_quantile_reg_tau_mult
+#   - multi_run_30-03-2025_07-32-15_LSTM_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+#   - multi_run_29-03-2025_14-29-45_RULTransformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+#   - multi_run_29-03-2025_17-44-54_RULInformer_FD001_windowed_quantile_reg_tau_mult_no_tau_feat
+
+# FD002 exp names
+exp_names:
+  # - multi_run_28-03-2025_08-57-13_S4_FD002_windowed_quantile_reg_tau_mult
+  # - multi_run_28-03-2025_12-35-12_S5_FD002_windowed_quantile_reg_tau_mult
+  # - multi_run_29-03-2025_07-30-40_S4D_FD002_windowed_quantile_reg_tau_mult
+  # - multi_run_01-04-2025_08-30-46_LSTM_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+  # - multi_run_31-03-2025_15-10-51_RULTransformer_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+  - multi_run_01-04-2025_10-36-18_RULInformer_FD002_windowed_quantile_reg_tau_mult_no_tau_feat
+
+quantiles: [0.1, 0.25, 0.5, 0.75, 0.9]
+# Zero-based start, exclusive upper bound (run_1 through run_15).
+start_run_id: 0
+n_runs: 1
+# Saved outputs contain the second half of the 100 FD001 test lives.
+# test_idx: [50, 100] # for FD001
+test_idx: [131, 259] # for FD002
+file_pos: 0
