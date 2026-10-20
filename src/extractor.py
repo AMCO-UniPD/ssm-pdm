@@ -340,6 +340,10 @@ class RecurrentExtractor(Extractor):
 
         self.norm = nn.LayerNorm(self.config.d_model)
 
+    def forward(self, x):
+        x, _ = self.recurrent(x)
+        return self.norm(x)
+
 
 class TransformerExtractor(Extractor):
     """
